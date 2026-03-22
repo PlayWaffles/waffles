@@ -11,7 +11,7 @@ import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useTokenAllowance } from "./waffleContractHooks";
 import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
-import waffleGameAbi from "@/lib/chain/abi.json";
+import { waffleGameAbi } from "@/lib/chain/abi";
 import { ERC20_ABI } from "@/lib/constants";
 import { purchaseGameTicket } from "@/actions/game";
 import {

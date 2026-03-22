@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { createPublicClient, http, formatUnits } from "viem";
-import waffleGameAbi from "@/lib/chain/abi.json";
+import { waffleGameAbi } from "@/lib/chain/abi";
 import { env } from "@/lib/env";
 import {
   chain,

@@ -14,7 +14,7 @@ import {
   generateAllProofs,
   type Winner,
 } from "@/lib/chain/merkle";
-import waffleGameAbi from "@/lib/chain/abi.json";
+import { waffleGameAbi } from "@/lib/chain/abi";
 import { sendToUser, sendBatch } from "@/lib/notifications";
 import { env } from "@/lib/env";
 import {

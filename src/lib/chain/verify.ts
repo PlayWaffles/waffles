@@ -9,7 +9,7 @@
 
 import { formatUnits } from "viem";
 import { publicClient } from "./client";
-import waffleGameAbi from "./abi.json";
+import { waffleGameAbi } from "./abi";
 import { PAYMENT_TOKEN_DECIMALS, WAFFLE_CONTRACT_ADDRESS } from "./config";
 
 // ============================================================================

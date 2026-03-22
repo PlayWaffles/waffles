@@ -9,7 +9,7 @@
 import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { env } from "@/lib/env";
-import waffleGameAbi from "./abi.json";
+import { waffleGameAbi } from "./abi";
 import { chain, WAFFLE_CONTRACT_ADDRESS } from "./config";
 
 // ============================================================================

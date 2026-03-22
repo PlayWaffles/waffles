@@ -10,7 +10,7 @@ import {
   WAFFLE_CONTRACT_ADDRESS,
 } from "@/lib/chain";
 import { withBuilderCodeDataSuffix } from "@/lib/chain/builderCode";
-import waffleGameAbi from "@/lib/chain/abi.json";
+import { waffleGameAbi } from "@/lib/chain/abi";
 import { ERC20_ABI } from "@/lib/constants";
 
 /**

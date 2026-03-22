@@ -16,9 +16,9 @@ import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSendCalls, useCallsStatus, useAccount } from "wagmi";
 import { useMiniKit, useComposeCast } from "@coinbase/onchainkit/minikit";
-import { Abi, encodeFunctionData } from "viem";
+import { encodeFunctionData } from "viem";
 
-import waffleGameAbi from "@/lib/chain/abi.json";
+import { waffleGameAbi } from "@/lib/chain/abi";
 import { Spinner } from "@/components/ui/spinner";
 import confetti from "canvas-confetti";
 import { Game } from "@prisma";
@@ -541,7 +541,7 @@ export default function ResultPageClient({
           {
             to: WAFFLE_CONTRACT_ADDRESS,
             data: encodeFunctionData({
-              abi: waffleGameAbi as Abi,
+              abi: waffleGameAbi,
               functionName: "claimPrize",
               args: [onchainId, BigInt(amount), proof],
             }),

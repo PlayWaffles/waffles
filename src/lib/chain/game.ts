@@ -7,7 +7,7 @@
 import { parseUnits } from "viem";
 
 import { publicClient, getOperatorWalletClient } from "./client";
-import waffleGameAbi from "./abi.json";
+import { waffleGameAbi } from "./abi";
 import { withBuilderCodeDataSuffix } from "./builderCode";
 import { PAYMENT_TOKEN_DECIMALS, WAFFLE_CONTRACT_ADDRESS } from "./config";
 
