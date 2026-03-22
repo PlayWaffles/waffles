@@ -8,6 +8,7 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
+    "cloudinary:fetch": "node --import tsx scripts/fetch-cloudinary-images.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
