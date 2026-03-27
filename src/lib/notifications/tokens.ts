@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/db";
 import { LOG_PREFIX } from "./constants";
-import type { NotificationDetails, UserWithTokens, UserFilter } from "./types";
+import type { NotificationDetails } from "./types";
 
 /**
  * Save notification token (MUST be fast for webhook response)
@@ -106,47 +106,3 @@ export async function getTokensForUser(fid: number) {
   return user?.notifs ?? [];
 }
 
-/**
- * Get users with tokens (for batch sending)
- */
-export async function getUsersWithTokens(
-  filter: UserFilter
-): Promise<UserWithTokens[]> {
-  const where: Record<string, unknown> = { notifs: { some: {} } };
-
-  switch (filter) {
-    case "active":
-      where.hasGameAccess = true;
-      where.isBanned = false;
-      break;
-  }
-
-  return prisma.user.findMany({
-    where,
-    select: {
-      fid: true,
-      username: true,
-      notifs: {
-        select: { id: true, appFid: true, token: true, url: true },
-      },
-    },
-  });
-}
-
-/**
- * Count users with tokens
- */
-export async function countUsersWithTokens(
-  filter: UserFilter
-): Promise<number> {
-  const where: Record<string, unknown> = { notifs: { some: {} } };
-
-  switch (filter) {
-    case "active":
-      where.hasGameAccess = true;
-      where.isBanned = false;
-      break;
-  }
-
-  return prisma.user.count({ where });
-}

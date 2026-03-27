@@ -337,17 +337,16 @@ export async function sendResultNotifications(gameId: string) {
   const allEntries = await prisma.gameEntry.findMany({
     where: { gameId, user: { hasGameAccess: true, isBanned: false } },
     select: {
+      userId: true,
       rank: true,
       prize: true,
-      user: { select: { fid: true, notifs: { take: 1 } } },
     },
   });
 
-  const usersToNotify = allEntries.filter((e) => e.user.notifs.length > 0);
-  const winners = usersToNotify.filter(
+  const winners = allEntries.filter(
     (e) => e.rank && e.rank <= WINNERS_COUNT && e.prize,
   );
-  const nonWinners = usersToNotify.filter(
+  const nonWinners = allEntries.filter(
     (e) => !(e.rank && e.rank <= WINNERS_COUNT && e.prize),
   );
 
@@ -360,7 +359,7 @@ export async function sendResultNotifications(gameId: string) {
     winners.map((entry) => {
       const template = postGame.winner(game.gameNumber, entry.rank!);
       const payload = buildPayload(template, gameId, "result");
-      return sendToUser(entry.user.fid, payload);
+      return sendToUser(entry.userId, payload);
     }),
   );
 
@@ -368,7 +367,7 @@ export async function sendResultNotifications(gameId: string) {
   if (nonWinners.length > 0) {
     const template = postGame.results(game.gameNumber);
     const payload = buildPayload(template, gameId, "result");
-    await sendBatch(payload, { fids: nonWinners.map((e) => e.user.fid) });
+    await sendBatch(payload, nonWinners.map((e) => e.userId));
   }
 
   console.log(

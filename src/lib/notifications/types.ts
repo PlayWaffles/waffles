@@ -23,11 +23,6 @@ export interface BatchResult {
 }
 
 /**
- * Filter for targeting users
- */
-export type UserFilter = "all" | "active";
-
-/**
  * Notification payload
  */
 export interface NotificationPayload {

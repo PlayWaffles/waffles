@@ -2,7 +2,6 @@
 export type {
   SendResult,
   BatchResult,
-  UserFilter,
   NotificationPayload,
   WebhookEventType,
   NotificationDetails,
@@ -14,13 +13,15 @@ export {
   saveToken,
   deleteToken,
   getTokensForUser,
-  getUsersWithTokens,
-  countUsersWithTokens,
 } from "./tokens";
 
 // Sending
 export { sendToUser } from "./send";
-export { sendBatch, type BatchTarget } from "./batch";
+export { sendBatch } from "./batch";
+
+// Platform adapters
+export { getNotifier } from "./adapters";
+export type { PlatformNotifier } from "./adapters";
 
 // Webhook
 export { handleWebhookEvent, sendWelcomeNotification } from "./webhook";

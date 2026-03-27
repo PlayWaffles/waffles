@@ -1,5 +1,5 @@
 import { saveToken, deleteToken } from "./tokens";
-import { sendToUser } from "./send";
+import { sendToFid } from "./adapters/farcaster";
 import { LOG_PREFIX } from "./constants";
 import type { NotificationDetails, WebhookEventType } from "./types";
 
@@ -59,7 +59,7 @@ export async function sendWelcomeNotification(fid: number): Promise<void> {
     const { onboarding, buildPayload } = await import("./templates");
     const payload = buildPayload(onboarding.welcome());
 
-    await sendToUser(fid, payload);
+    await sendToFid(fid, payload);
     console.log(`${LOG_PREFIX} Welcome sent: fid=${fid}`);
   } catch (error) {
     console.error(`${LOG_PREFIX} Welcome failed: fid=${fid}`, error);

@@ -73,7 +73,7 @@ export async function checkAndNotifyFlipped(
         const template = liveGame.flipped(gameNumber, scoringUsername);
         const payload = buildPayload(template, gameId, "pregame"); // Links to game lobby
 
-        await sendToUser(pushedPlayer.user.fid, payload);
+        await sendToUser(pushedPlayer.userId, payload);
 
         console.log("[LiveNotify] Sent flip notification", {
           gameId,
