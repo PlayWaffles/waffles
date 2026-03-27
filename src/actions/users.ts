@@ -127,61 +127,13 @@ export async function upsertUser(
 export async function syncFarcasterWalletAndRecover(
   wallet: string,
 ): Promise<SyncFarcasterWalletResult> {
-  const normalizedWallet = normalizeAddress(wallet);
-  if (!normalizedWallet) {
-    return { success: false, error: "Invalid wallet address" };
-  }
-
   try {
     const user = await requireCurrentUser();
     if (user.user.platform !== UserPlatform.FARCASTER) {
       return { success: false, error: "Only Farcaster users can use this sync" };
     }
 
-    const conflict = await prisma.user.findUnique({
-      where: { wallet: normalizedWallet },
-      select: { id: true },
-    });
-
-    if (conflict && conflict.id !== user.user.id) {
-      return {
-        success: false,
-        error: "This wallet is already linked to another user",
-      };
-    }
-
-    await prisma.user.update({
-      where: { id: user.user.id },
-      data: { wallet: normalizedWallet },
-    });
-
-    const recovery = await recoverRecentPurchasesForUser({
-      userId: user.user.id,
-      platform: UserPlatform.FARCASTER,
-      wallet: normalizedWallet,
-    });
-
-    if (recovery.recovered > 0) {
-      void import("@/lib/notifications/templates").then(
-        ({ transactional, buildPayload }) => {
-          const payload = buildPayload(
-            transactional.ticketRecovered(recovery.recovered),
-          );
-          sendToUser(user.user.id, payload).catch((error) =>
-            console.error("syncFarcasterWalletAndRecover notification error:", error),
-          );
-        },
-      );
-    }
-
-    revalidatePath("/game");
-    revalidatePath("/(app)/(game)", "layout");
-
-    return {
-      success: true,
-      wallet: normalizedWallet,
-      recovered: recovery.recovered,
-    };
+    return syncFarcasterWalletAndRecoverForUser(user.user.id, wallet);
   } catch (err) {
     console.error("syncFarcasterWalletAndRecover Error:", err);
     return {
@@ -189,4 +141,68 @@ export async function syncFarcasterWalletAndRecover(
       error: err instanceof Error ? err.message : "Wallet sync failed",
     };
   }
+}
+
+export async function syncFarcasterWalletAndRecoverForUser(
+  userId: string,
+  wallet: string,
+): Promise<SyncFarcasterWalletResult> {
+  const normalizedWallet = normalizeAddress(wallet);
+  if (!normalizedWallet) {
+    return { success: false, error: "Invalid wallet address" };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, platform: true },
+  });
+
+  if (!user || user.platform !== UserPlatform.FARCASTER) {
+    return { success: false, error: "Only Farcaster users can use this sync" };
+  }
+
+  const conflict = await prisma.user.findUnique({
+    where: { wallet: normalizedWallet },
+    select: { id: true },
+  });
+
+  if (conflict && conflict.id !== user.id) {
+    return {
+      success: false,
+      error: "This wallet is already linked to another user",
+    };
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { wallet: normalizedWallet },
+  });
+
+  const recovery = await recoverRecentPurchasesForUser({
+    userId: user.id,
+    platform: UserPlatform.FARCASTER,
+    wallet: normalizedWallet,
+  });
+
+  if (recovery.recovered > 0) {
+    void import("@/lib/notifications/templates").then(
+      ({ transactional, buildPayload }) => {
+        const payload = buildPayload(
+          transactional.ticketRecovered(recovery.recovered),
+        );
+        sendToUser(user.id, payload).catch((error) =>
+          console.error("syncFarcasterWalletAndRecover notification error:", error),
+        );
+      },
+    );
+  }
+
+  revalidatePath("/game");
+  revalidatePath("/(app)/(game)", "layout");
+
+  return {
+    success: true,
+    wallet: normalizedWallet,
+    recovered: recovery.recovered,
+  };
 }

@@ -14,7 +14,6 @@ import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
 import { OnboardingOverlay } from "../OnboardingOverlay";
 import { WaffleButton } from "../buttons/WaffleButton";
-import { syncFarcasterWalletAndRecover } from "@/actions/users";
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
 import {
@@ -282,7 +281,17 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     farcasterRecoveryAttemptRef.current = attemptKey;
     setIsSyncingFarcasterWallet(true);
 
-    syncFarcasterWalletAndRecover(address)
+    authenticatedFetch("/api/v1/users/me/farcaster-wallet", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ wallet: address }),
+    })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Farcaster wallet sync failed");
+        }
+        return response.json();
+      })
       .then((result) => {
         if (!cancelled && result.success) {
           refetch().catch(console.error);
