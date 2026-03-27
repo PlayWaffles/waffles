@@ -3,9 +3,7 @@ export { publicClient, getOperatorWalletClient, getSettlerWalletClient } from ".
 
 export {
   chain,
-  PAYMENT_TOKEN_ADDRESS,
   PAYMENT_TOKEN_DECIMALS,
-  WAFFLE_CONTRACT_ADDRESS,
   getPaymentTokenAddress,
   getWaffleContractAddress,
 } from "./config";

@@ -18,6 +18,4 @@ export function getPaymentTokenAddress(platform: ChainPlatform): `0x${string}` {
     : env.nextPublicPaymentTokenAddressFarcaster;
 }
 
-export const WAFFLE_CONTRACT_ADDRESS = getWaffleContractAddress("FARCASTER");
-export const PAYMENT_TOKEN_ADDRESS = getPaymentTokenAddress("FARCASTER");
 export const PAYMENT_TOKEN_DECIMALS = 6;
