@@ -12,7 +12,6 @@ import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
 import { waffleGameAbi } from "@/lib/chain/abi";
 import { ERC20_ABI } from "@/lib/constants";
-import { purchaseGameTicket } from "@/actions/game";
 import {
   PAYMENT_TOKEN_DECIMALS,
   getPaymentTokenAddress,
@@ -22,6 +21,7 @@ import { useCorrectChain } from "./useCorrectChain";
 import { useUser } from "./useUser";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import { wagmiConfig } from "@/lib/wagmi/config";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
 // TYPES
@@ -114,12 +114,19 @@ export function useTicketPurchase(
             attempt: attempt + 1,
           });
 
-          const result = await purchaseGameTicket({
-            gameId,
-            txHash,
-            paidAmount: price,
-            payerWallet: address,
+          const response = await authenticatedFetch(`/api/v1/games/${gameId}/purchase`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              txHash,
+              paidAmount: price,
+              payerWallet: address,
+            }),
           });
+
+          const result = (await response.json()) as
+            | { success: true; entryId: string }
+            | { success: false; error: string; code?: string };
 
           if (result.success) {
             // Success! Clear any pending recovery data
