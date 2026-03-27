@@ -4,14 +4,16 @@ import { prisma } from "@/lib/db";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { syncUserSchema } from "@/lib/schemas";
-import { Prisma } from "@prisma";
+import { Prisma, UserPlatform } from "@prisma";
 import { generateInviteCode } from "@/lib/utils";
+import { normalizeAddress } from "@/lib/auth";
 
 const MAX_RETRIES = 10;
 
 // --- Types ---
 type SyncedUser = {
-  fid: number;
+  platform: UserPlatform;
+  fid: number | null;
   username: string | null;
   pfpUrl: string | null;
   wallet: string | null;
@@ -36,20 +38,33 @@ export async function upsertUser(
     };
   }
 
-  const { fid, username, pfpUrl, wallet } = validation.data;
+  const { platform, fid, username, pfpUrl, wallet } = validation.data;
+  const normalizedWallet = wallet ? normalizeAddress(wallet) : null;
 
   try {
-    // Check if user exists
-    const existingUser = await prisma.user.findUnique({ where: { fid } });
+    const existingUser =
+      platform === "FARCASTER"
+        ? await prisma.user.findUnique({
+            where: { fid: fid! },
+          })
+        : await prisma.user.findUnique({
+            where: { wallet: normalizedWallet! },
+          });
 
     let user: SyncedUser;
 
     if (existingUser) {
-      // Update existing user
       user = await prisma.user.update({
-        where: { fid },
-        data: { username, pfpUrl, wallet },
+        where: { id: existingUser.id },
+        data: {
+          platform,
+          username,
+          pfpUrl,
+          fid: platform === "FARCASTER" ? fid ?? null : null,
+          wallet: platform === "MINIPAY" ? normalizedWallet : null,
+        },
         select: {
+          platform: true,
           fid: true,
           username: true,
           pfpUrl: true,
@@ -58,18 +73,19 @@ export async function upsertUser(
         },
       });
     } else {
-      // Create new user with unique invite code
       for (let i = 0; i < MAX_RETRIES; i++) {
         try {
           user = await prisma.user.create({
             data: {
-              fid,
+              platform,
+              fid: platform === "FARCASTER" ? fid ?? undefined : undefined,
               username,
               pfpUrl,
-              wallet,
+              wallet: platform === "MINIPAY" ? normalizedWallet ?? undefined : undefined,
               inviteCode: generateInviteCode(),
-            },
+            } as Prisma.UserCreateInput,
             select: {
+              platform: true,
               fid: true,
               username: true,
               pfpUrl: true,

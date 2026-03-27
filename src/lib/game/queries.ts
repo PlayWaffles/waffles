@@ -8,7 +8,7 @@
 
 import { cache } from "react";
 import { prisma } from "@/lib/db";
-import type { Game } from "@prisma";
+import type { Game, UserPlatform } from "@prisma";
 
 // ============================================================================
 // Types
@@ -48,12 +48,13 @@ const gameInclude = {
  * @returns Game with question count and recent players for avatar display
  */
 export const getCurrentOrNextGame = cache(
-  async (): Promise<GameQueryResult> => {
+  async (platform: UserPlatform): Promise<GameQueryResult> => {
     const now = new Date();
 
     // First try to get current live or upcoming game
     const activeGame = await prisma.game.findFirst({
       where: {
+        platform,
         OR: [
           { startsAt: { lte: now }, endsAt: { gt: now } }, // Live
           { startsAt: { gt: now } }, // Scheduled
@@ -72,7 +73,7 @@ export const getCurrentOrNextGame = cache(
 
     // Fallback: get most recent ended game
     const endedGame = await prisma.game.findFirst({
-      where: { endsAt: { lte: now } },
+      where: { platform, endsAt: { lte: now } },
       orderBy: [{ endsAt: "desc" }],
       include: gameInclude,
     });
@@ -96,9 +97,12 @@ export const getCurrentOrNextGame = cache(
  * @returns Game with question count and recent players, or null if not found
  */
 export const getGameById = cache(
-  async (gameId: string): Promise<GameQueryResult> => {
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
+  async (
+    gameId: string,
+    platform: UserPlatform,
+  ): Promise<GameQueryResult> => {
+    const game = await prisma.game.findFirst({
+      where: { id: gameId, platform },
       include: gameInclude,
     });
 

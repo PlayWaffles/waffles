@@ -1,13 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
-import { calculateStreak } from "@/lib/streaks";
+import { type ApiError } from "@/lib/auth";
 
 type Params = { fid: string };
-
-interface ApiError {
-  error: string;
-  code?: string;
-}
 
 interface StatsResponse {
   totalGames: number;
@@ -39,13 +35,17 @@ export async function GET(
       );
     }
 
-    // Look up user by fid
     const user = await prisma.user.findUnique({
       where: { fid },
-      select: { id: true },
+      select: {
+        id: true,
+        platform: true,
+        currentStreak: true,
+        bestStreak: true,
+      },
     });
 
-    if (!user) {
+    if (!user || user.platform !== UserPlatform.FARCASTER) {
       return NextResponse.json<ApiError>(
         { error: "User not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -54,28 +54,35 @@ export async function GET(
 
     const userId = user.id;
 
-    // Parallel queries for efficiency
-    const [statsAggregate, winStats, bestRankEntry, streakData] =
+    const [statsAggregate, winStats, bestRankEntry] =
       await Promise.all([
         prisma.gameEntry.aggregate({
-          where: { userId, paidAt: { not: null } },
+          where: {
+            userId,
+            paidAt: { not: null },
+            game: { platform: UserPlatform.FARCASTER },
+          },
           _count: { _all: true },
           _sum: { score: true, prize: true },
           _max: { score: true },
         }),
         prisma.gameEntry.count({
-          where: { userId, rank: 1, paidAt: { not: null } },
+          where: {
+            userId,
+            rank: 1,
+            paidAt: { not: null },
+            game: { platform: UserPlatform.FARCASTER },
+          },
         }),
         prisma.gameEntry.findFirst({
-          where: { userId, rank: { not: null }, paidAt: { not: null } },
+          where: {
+            userId,
+            rank: { not: null },
+            paidAt: { not: null },
+            game: { platform: UserPlatform.FARCASTER },
+          },
           orderBy: { rank: "asc" },
           select: { rank: true },
-        }),
-        prisma.gameEntry.findMany({
-          where: { userId, paidAt: { not: null } },
-          select: { paidAt: true },
-          orderBy: { paidAt: "desc" },
-          take: 100,
         }),
       ]);
 
@@ -87,11 +94,6 @@ export async function GET(
     const winRate = totalGames > 0 ? (winStats / totalGames) * 100 : 0;
     const bestRank = bestRankEntry?.rank ?? null;
 
-    const gameDates = streakData
-      .map((g) => g.paidAt)
-      .filter((d): d is Date => d !== null);
-    const currentStreak = calculateStreak(gameDates);
-
     const response: StatsResponse = {
       totalGames,
       wins: winStats,
@@ -99,7 +101,7 @@ export async function GET(
       totalWon,
       highestScore,
       avgScore,
-      currentStreak,
+      currentStreak: user.currentStreak,
       bestRank,
     };
 

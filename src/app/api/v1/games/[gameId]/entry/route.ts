@@ -1,27 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { getAuthFromRequest, type ApiError } from "@/lib/auth";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 type Params = { gameId: string };
 
-interface ApiError {
-  error: string;
-  code?: string;
-}
-
 /**
- * GET /api/v1/games/:gameId/entry?fid=123
+ * GET /api/v1/games/:gameId/entry
  * Get a user's entry for a specific game.
- * Public endpoint - requires fid query parameter.
+ * Uses the authenticated session, with optional legacy fid fallback.
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<Params> }
 ) {
   try {
+    const requestPlatform = await resolveRuntimePlatform(request);
     const { gameId } = await params;
-    const { searchParams } = new URL(request.url);
-    const fidParam = searchParams.get("fid");
-
     if (!gameId) {
       return NextResponse.json<ApiError>(
         { error: "Invalid game ID", code: "INVALID_INPUT" },
@@ -29,26 +24,33 @@ export async function GET(
       );
     }
 
-    if (!fidParam) {
-      return NextResponse.json<ApiError>(
-        { error: "fid query parameter required", code: "INVALID_INPUT" },
-        { status: 400 }
-      );
-    }
-
-    const fid = parseInt(fidParam, 10);
-    if (isNaN(fid)) {
-      return NextResponse.json<ApiError>(
-        { error: "Invalid fid", code: "INVALID_INPUT" },
-        { status: 400 }
-      );
-    }
-
-    // Look up user by fid
-    const user = await prisma.user.findUnique({
-      where: { fid },
-      select: { id: true },
+    const auth = await getAuthFromRequest(request);
+    const expectedPlatform = auth?.platform ?? requestPlatform;
+    const fidParam = new URL(request.url).searchParams.get("fid");
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, platform: true },
     });
+
+    if (!game || game.platform !== expectedPlatform) {
+      return NextResponse.json<ApiError>(
+        { error: "Game not found", code: "NOT_FOUND" },
+        { status: 404 }
+      );
+    }
+
+    const legacyFid = fidParam ? parseInt(fidParam, 10) : NaN;
+    const user = auth
+      ? await prisma.user.findUnique({
+          where: { id: auth.userId },
+          select: { id: true },
+        })
+      : !isNaN(legacyFid)
+        ? await prisma.user.findUnique({
+            where: { fid: legacyFid },
+            select: { id: true },
+          })
+        : null;
 
     if (!user) {
       return NextResponse.json<ApiError>(

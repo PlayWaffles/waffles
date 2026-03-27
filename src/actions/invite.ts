@@ -29,7 +29,7 @@ export async function redeemInviteCodeAction(
 ): Promise<ValidateReferralResult> {
   const validation = validateReferralSchema.safeParse({
     code: formData.get("inviteCode"),
-    fid: formData.get("userFid"),
+    userId: formData.get("userId"),
   });
 
   if (!validation.success) {
@@ -37,12 +37,11 @@ export async function redeemInviteCodeAction(
     return { valid: false, error };
   }
 
-  const { code, fid } = validation.data;
+  const { code, userId } = validation.data;
 
   try {
-    // 1. Find the invitee (by their FID)
     const invitee = await prisma.user.findUnique({
-      where: { fid },
+      where: { id: userId },
       select: { id: true, hasGameAccess: true, accessGrantedBy: true },
     });
 

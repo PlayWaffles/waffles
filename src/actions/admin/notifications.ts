@@ -4,6 +4,7 @@ import { z } from "zod";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { logAdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/db";
 import { sendBatch } from "@/lib/notifications";
 import { env } from "@/lib/env";
 
@@ -41,14 +42,16 @@ export async function sendAdminNotificationAction(
 
   const { title, body } = validation.data;
 
-  // Default to ALL users and Game Lobby
   const targetUrl = `${env.rootUrl}/game`;
-  const filter = "all";
 
   try {
     console.log("[AdminNotification] Sending to ALL:", { title, targetUrl });
 
-    const results = await sendBatch({ title, body, targetUrl }, filter);
+    const users = await prisma.user.findMany({
+      where: { hasGameAccess: true, isBanned: false },
+      select: { id: true },
+    });
+    const results = await sendBatch({ title, body, targetUrl }, users.map((u) => u.id));
 
     // Log admin action
     await logAdminAction({

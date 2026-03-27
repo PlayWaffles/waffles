@@ -1,15 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
+import { type ApiError } from "@/lib/auth";
 
 type Params = { fid: string };
 
-interface ApiError {
-  error: string;
-  code?: string;
-}
-
 interface Mutual {
-  fid: number;
+  fid: number | null;
   username: string | null;
   pfpUrl: string | null;
 }
@@ -37,33 +34,35 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const context = searchParams.get("context") || "game";
 
-    // Look up user by fid
     const user = await prisma.user.findUnique({
       where: { fid },
-      select: { id: true },
+      select: { id: true, platform: true },
     });
 
-    if (!user) {
+    if (!user || user.platform !== UserPlatform.FARCASTER) {
       return NextResponse.json<ApiError>(
         { error: "User not found", code: "NOT_FOUND" },
         { status: 404 }
       );
     }
 
-    // Get games the user has played (paid entries)
     const myEntries = await prisma.gameEntry.findMany({
-      where: { userId: user.id, paidAt: { not: null } },
+      where: {
+        userId: user.id,
+        paidAt: { not: null },
+        game: { platform: UserPlatform.FARCASTER },
+      },
       select: { gameId: true },
     });
 
     const myGameIds = myEntries.map((e) => e.gameId);
 
-    // Find other users who played the same games
     const mutualPlayers = await prisma.gameEntry.findMany({
       where: {
         gameId: { in: myGameIds },
         userId: { not: user.id },
         paidAt: { not: null },
+        game: { platform: UserPlatform.FARCASTER },
       },
       include: {
         user: {

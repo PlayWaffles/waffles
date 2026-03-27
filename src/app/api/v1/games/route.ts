@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma";
 import { getGamePhase, type GamePhase } from "@/lib/types";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { gameWhere } from "@/lib/platform/query";
 
 /**
  * GET /api/v1/games
@@ -12,13 +14,13 @@ import { getGamePhase, type GamePhase } from "@/lib/types";
  */
 export async function GET(request: Request) {
   try {
+    const platform = await resolveRuntimePlatform(request);
     const { searchParams } = new URL(request.url);
     const phaseFilter = searchParams.get("status") as GamePhase | null;
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const now = new Date();
 
-    // Build where clause for time-based phase filtering
-    const whereClause: Prisma.GameWhereInput = {};
+    const whereClause: Prisma.GameWhereInput = gameWhere(platform);
 
     if (phaseFilter === "LIVE") {
       whereClause.startsAt = { lte: now };

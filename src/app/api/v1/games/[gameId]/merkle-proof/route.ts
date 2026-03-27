@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { CLAIM_DELAY_MS } from "@/lib/constants";
+import { getAuthFromRequest, type ApiError } from "@/lib/auth";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 type Params = { gameId: string };
 
-interface ApiError {
-  error: string;
-  code?: string;
+interface MerkleProofApiError extends ApiError {
   claimOpensAt?: string;
   remainingMs?: number;
 }
@@ -21,7 +21,7 @@ interface MerkleProofResponse {
 }
 
 /**
- * GET /api/v1/games/[gameId]/merkle-proof?fid=123
+ * GET /api/v1/games/[gameId]/merkle-proof
  * Returns the stored Merkle proof for a user's prize claim (public endpoint)
  */
 export async function GET(
@@ -29,10 +29,8 @@ export async function GET(
   { params }: { params: Promise<Params> }
 ) {
   try {
+    const requestPlatform = await resolveRuntimePlatform(request);
     const { gameId } = await params;
-    const { searchParams } = new URL(request.url);
-    const fidParam = searchParams.get("fid");
-
     if (!gameId) {
       return NextResponse.json<ApiError>(
         { error: "Invalid game ID", code: "INVALID_ID" },
@@ -40,26 +38,21 @@ export async function GET(
       );
     }
 
-    if (!fidParam) {
-      return NextResponse.json<ApiError>(
-        { error: "fid query parameter required", code: "INVALID_INPUT" },
-        { status: 400 }
-      );
-    }
-
-    const fid = parseInt(fidParam, 10);
-    if (isNaN(fid)) {
-      return NextResponse.json<ApiError>(
-        { error: "Invalid fid", code: "INVALID_INPUT" },
-        { status: 400 }
-      );
-    }
-
-    // Look up user by fid
-    const user = await prisma.user.findUnique({
-      where: { fid },
-      select: { id: true },
-    });
+    const auth = await getAuthFromRequest(request);
+    const expectedPlatform = auth?.platform ?? requestPlatform;
+    const fidParam = new URL(request.url).searchParams.get("fid");
+    const legacyFid = fidParam ? parseInt(fidParam, 10) : NaN;
+    const user = auth
+      ? await prisma.user.findUnique({
+          where: { id: auth.userId },
+          select: { id: true },
+        })
+      : !isNaN(legacyFid)
+        ? await prisma.user.findUnique({
+            where: { fid: legacyFid },
+            select: { id: true },
+          })
+        : null;
 
     if (!user) {
       return NextResponse.json<ApiError>(
@@ -68,18 +61,18 @@ export async function GET(
       );
     }
 
-    // Get game and check if settled
     const game = await prisma.game.findUnique({
       where: { id: gameId },
       select: {
         id: true,
+        platform: true,
         merkleRoot: true,
         onChainAt: true,
         endsAt: true,
       },
     });
 
-    if (!game) {
+    if (!game || game.platform !== expectedPlatform) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -100,7 +93,7 @@ export async function GET(
     const claimOpensAt = new Date(game.endsAt.getTime() + CLAIM_DELAY_MS);
     const now = new Date();
     if (now < claimOpensAt) {
-      return NextResponse.json<ApiError>(
+      return NextResponse.json<MerkleProofApiError>(
         {
           error: "Claim window not yet open",
           code: "CLAIM_NOT_OPEN",

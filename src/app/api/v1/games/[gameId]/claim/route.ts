@@ -67,10 +67,10 @@ export const POST = withAuth<Params>(
       // Find game with onchainId
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { id: true, onchainId: true },
+        select: { id: true, platform: true, onchainId: true },
       });
 
-      if (!game || !game.onchainId) {
+      if (!game || game.platform !== auth.platform || !game.onchainId) {
         return NextResponse.json<ApiError>(
           { error: "Game not found or not on-chain", code: "NOT_FOUND" },
           { status: 404 },
@@ -86,7 +86,14 @@ export const POST = withAuth<Params>(
           rank: true,
           paidAt: true,
           prize: true,
-          user: { select: { fid: true, hasGameAccess: true, isBanned: true } },
+          user: {
+            select: {
+              id: true,
+              wallet: true,
+              hasGameAccess: true,
+              isBanned: true,
+            },
+          },
         },
       });
 
@@ -103,7 +110,7 @@ export const POST = withAuth<Params>(
       if (entry.claimedAt) {
         console.log("["+SERVICE+"]", "claim_already_recorded", {
           gameId,
-          fid: entry.user.fid,
+          userId: entry.user.id,
         });
         return NextResponse.json<ClaimResponse>({
           success: true,
@@ -146,7 +153,7 @@ export const POST = withAuth<Params>(
       if (!verification.verified) {
         console.error("["+SERVICE+"]", "claim_verification_failed", {
           gameId,
-          fid: entry.user.fid,
+          userId: entry.user.id,
           txHash,
           wallet,
           error: verification.error,
@@ -162,7 +169,7 @@ export const POST = withAuth<Params>(
 
       console.log("["+SERVICE+"]", "claim_verified", {
         gameId,
-        fid: entry.user.fid,
+        userId: entry.user.id,
         txHash,
         amount: verification.details?.amountFormatted,
       });
@@ -179,7 +186,7 @@ export const POST = withAuth<Params>(
       // Send congratulations notification (async, don't wait)
       if (entry.user.hasGameAccess && !entry.user.isBanned) {
         const prizeAmount = entry.prize ?? 0;
-        sendToUser(entry.user.fid, {
+        sendToUser(entry.user.id, {
           title: "💰 Prize Claimed!",
           body: `Congratulations! $${prizeAmount.toFixed(2)} has been sent to your wallet.`,
           targetUrl: `${env.rootUrl}/profile`,
@@ -190,7 +197,7 @@ export const POST = withAuth<Params>(
 
       console.log("["+SERVICE+"]", "claim_recorded", {
         gameId,
-        fid: entry.user.fid,
+        userId: entry.user.id,
         prize: entry.prize,
       });
 

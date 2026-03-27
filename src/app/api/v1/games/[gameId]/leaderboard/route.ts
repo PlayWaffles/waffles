@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 type Params = { gameId: string };
 
 interface LeaderboardEntry {
   rank: number;
   userId: string;
-  fid: number;
+  fid: number | null;
+  wallet: string | null;
   username: string | null;
   pfpUrl: string | null;
   score: number;
@@ -24,6 +26,7 @@ export async function GET(
   context: { params: Promise<Params> }
 ) {
   try {
+    const platform = await resolveRuntimePlatform(request);
     const { gameId } = await context.params;
 
     if (!gameId) {
@@ -40,20 +43,18 @@ export async function GET(
     );
     const offset = parseInt(searchParams.get("offset") || "0", 10);
 
-    // Check if game exists
     const game = await prisma.game.findUnique({
       where: { id: gameId },
-      select: { id: true },
+      select: { id: true, platform: true },
     });
 
-    if (!game) {
+    if (!game || game.platform !== platform) {
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
       );
     }
 
-    // Get leaderboard from game entries (paid entries only)
     const entries = await prisma.gameEntry.findMany({
       where: {
         gameId: gameId,
@@ -64,6 +65,7 @@ export async function GET(
           select: {
             id: true,
             fid: true,
+            wallet: true,
             username: true,
             pfpUrl: true,
           },
@@ -78,12 +80,12 @@ export async function GET(
       rank: offset + index + 1,
       userId: entry.user.id,
       fid: entry.user.fid,
+      wallet: entry.user.wallet,
       username: entry.user.username,
       pfpUrl: entry.user.pfpUrl,
       score: entry.score,
     }));
 
-    // Get total count for pagination
     const totalCount = await prisma.gameEntry.count({
       where: {
         gameId: gameId,

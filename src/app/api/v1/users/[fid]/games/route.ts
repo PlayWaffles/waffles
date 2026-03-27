@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
+import { type ApiError } from "@/lib/auth";
 
 type Params = { fid: string };
-
-interface ApiError {
-  error: string;
-  code?: string;
-}
 
 /**
  * GET /api/v1/users/[fid]/games
@@ -27,13 +24,12 @@ export async function GET(
       );
     }
 
-    // Look up user by fid
     const user = await prisma.user.findUnique({
       where: { fid },
-      select: { id: true },
+      select: { id: true, platform: true },
     });
 
-    if (!user) {
+    if (!user || user.platform !== UserPlatform.FARCASTER) {
       return NextResponse.json<ApiError>(
         { error: "User not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -41,7 +37,10 @@ export async function GET(
     }
 
     const entries = await prisma.gameEntry.findMany({
-      where: { userId: user.id },
+      where: {
+        userId: user.id,
+        game: { platform: UserPlatform.FARCASTER },
+      },
       select: {
         id: true,
         gameId: true,
@@ -54,6 +53,7 @@ export async function GET(
         game: {
           select: {
             id: true,
+            platform: true,
             gameNumber: true,
             onchainId: true,
             title: true,
@@ -83,6 +83,7 @@ export async function GET(
         gameNumber: entry.game.gameNumber,
         onchainId: entry.game.onchainId,
         title: entry.game.title,
+        platform: entry.game.platform,
         theme: entry.game.theme,
         startsAt: entry.game.startsAt,
         endsAt: entry.game.endsAt,

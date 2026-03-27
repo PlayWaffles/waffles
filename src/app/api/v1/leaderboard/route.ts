@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { z } from "zod";
+import { UserPlatform } from "@prisma";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { entryWhere, gameWhere } from "@/lib/platform/query";
 
 // ============================================
 // CONFIGURATION
@@ -13,7 +16,9 @@ const PAGE_SIZE = env.nextPublicLeaderboardPageSize;
 // ============================================
 interface LeaderboardEntry {
   id: string;
-  fid: number;
+  userId: string;
+  fid: number | null;
+  wallet?: string | null;
   rank: number;
   username: string | null;
   prize: number;
@@ -42,6 +47,7 @@ const querySchema = z.object({
 // ============================================
 export async function GET(request: NextRequest) {
   try {
+    const platform = await resolveRuntimePlatform(request);
     // 1. Parse params
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
@@ -61,9 +67,9 @@ export async function GET(request: NextRequest) {
 
     // 2. Route to appropriate handler
     if (tab === "allTime") {
-      return handleAllTime(page);
+      return handleAllTime(page, platform);
     }
-    return handleGame(page, gameId);
+    return handleGame(page, platform, gameId);
   } catch (error) {
     console.error("GET /api/v1/leaderboard Error:", error);
     return NextResponse.json(
@@ -77,25 +83,28 @@ export async function GET(request: NextRequest) {
 // ALL TIME HANDLER
 // ============================================
 async function handleAllTime(
-  page: number
+  page: number,
+  platform: UserPlatform,
 ): Promise<NextResponse<LeaderboardResponse>> {
-  const [aggregated, allUsers] = await prisma.$transaction([
+  const [aggregated, countResult] = await Promise.all([
     prisma.gameEntry.groupBy({
       by: ["userId"],
-      where: { paidAt: { not: null } },
+      where: { paidAt: { not: null }, ...entryWhere(platform) },
       _sum: { prize: true },
       orderBy: { _sum: { prize: "desc" } },
       take: PAGE_SIZE,
       skip: page * PAGE_SIZE,
     }),
-    prisma.gameEntry.groupBy({
-      by: ["userId"],
-      where: { paidAt: { not: null } },
-      orderBy: { userId: "asc" },
-    }),
+    prisma.$queryRaw<[{ count: bigint }]>`
+      SELECT COUNT(DISTINCT "userId") as count
+      FROM "GameEntry" ge
+      JOIN "Game" g ON ge."gameId" = g.id
+      WHERE ge."paidAt" IS NOT NULL
+        AND g.platform = ${platform}::"UserPlatform"
+    `,
   ]);
 
-  const totalPlayers = allUsers.length;
+  const totalPlayers = Number(countResult[0]?.count ?? 0);
 
   if (aggregated.length === 0) {
     return NextResponse.json({
@@ -105,11 +114,10 @@ async function handleAllTime(
     });
   }
 
-  // Fetch user details
   const userIds = aggregated.map((a) => a.userId);
   const users = await prisma.user.findMany({
     where: { id: { in: userIds } },
-    select: { id: true, fid: true, username: true, pfpUrl: true },
+    select: { id: true, fid: true, wallet: true, username: true, pfpUrl: true },
   });
   const userMap = new Map(users.map((u) => [u.id, u]));
 
@@ -117,7 +125,9 @@ async function handleAllTime(
     const user = userMap.get(a.userId);
     return {
       id: user?.id ?? a.userId,
-      fid: user?.fid ?? 0,
+      userId: user?.id ?? a.userId,
+      fid: user?.fid ?? null,
+      wallet: user?.wallet ?? null,
       rank: page * PAGE_SIZE + i + 1,
       username: user?.username ?? "Unknown",
       prize: a._sum?.prize ?? 0,
@@ -137,6 +147,7 @@ async function handleAllTime(
 // ============================================
 async function handleGame(
   page: number,
+  platform: UserPlatform,
   gameId?: string
 ): Promise<NextResponse<LeaderboardResponse>> {
   // Resolve game ID - use provided or get latest
@@ -144,6 +155,7 @@ async function handleGame(
 
   if (!targetGameId) {
     const latest = await prisma.game.findFirst({
+      where: gameWhere(platform),
       orderBy: { endsAt: "desc" },
       select: { id: true },
     });
@@ -158,26 +170,48 @@ async function handleGame(
     });
   }
 
-  // Fetch game info + entries in parallel
-  const [game, players, total] = await prisma.$transaction([
-    prisma.game.findUnique({
-      where: { id: targetGameId },
-      select: { title: true, gameNumber: true },
-    }),
+  const game = await prisma.game.findUnique({
+    where: { id: targetGameId },
+    select: { title: true, gameNumber: true, platform: true },
+  });
+
+  if (!game || game.platform !== platform) {
+    return NextResponse.json({
+      entries: [],
+      hasMore: false,
+      totalPlayers: 0,
+    });
+  }
+
+  const [players, total] = await prisma.$transaction([
     prisma.gameEntry.findMany({
-      where: { gameId: targetGameId, paidAt: { not: null } },
+      where: {
+        gameId: targetGameId,
+        paidAt: { not: null },
+      },
       select: {
         prize: true,
         rank: true,
         score: true,
-        user: { select: { id: true, fid: true, username: true, pfpUrl: true } },
+        user: {
+          select: {
+            id: true,
+            fid: true,
+            wallet: true,
+            username: true,
+            pfpUrl: true,
+          },
+        },
       },
       orderBy: [{ rank: { sort: "asc", nulls: "last" } }, { score: "desc" }],
       take: PAGE_SIZE,
       skip: page * PAGE_SIZE,
     }),
     prisma.gameEntry.count({
-      where: { gameId: targetGameId, paidAt: { not: null } },
+      where: {
+        gameId: targetGameId,
+        paidAt: { not: null },
+      },
     }),
   ]);
 
@@ -193,7 +227,9 @@ async function handleGame(
 
   const entries: LeaderboardEntry[] = players.map((p, i) => ({
     id: p.user.id,
+    userId: p.user.id,
     fid: p.user.fid,
+    wallet: p.user.wallet,
     rank: p.rank ?? page * PAGE_SIZE + i + 1,
     username: p.user.username,
     prize: p.prize ?? 0,

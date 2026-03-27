@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { gameWhere } from "@/lib/platform/query";
 import { z } from "zod";
 
 type Params = { gameId: string };
@@ -33,10 +35,24 @@ export async function GET(
   try {
     const { gameId } = await context.params;
 
-    if (gameId) {
+    if (!gameId) {
       return NextResponse.json(
         { error: "Invalid game ID", code: "INVALID_PARAM" },
         { status: 400 }
+      );
+    }
+
+    const platform = await resolveRuntimePlatform(request);
+
+    const game = await prisma.game.findFirst({
+      where: { id: gameId, ...gameWhere(platform) },
+      select: { id: true },
+    });
+
+    if (!game) {
+      return NextResponse.json(
+        { error: "Game not found", code: "NOT_FOUND" },
+        { status: 404 }
       );
     }
 
@@ -88,7 +104,7 @@ export const POST = withAuth<Params>(
     try {
       const gameId = params.gameId;
 
-      if (gameId) {
+      if (!gameId) {
         return NextResponse.json<ApiError>(
           { error: "Invalid game ID", code: "INVALID_PARAM" },
           { status: 400 }
@@ -108,9 +124,8 @@ export const POST = withAuth<Params>(
         );
       }
 
-      // Check if game exists
-      const game = await prisma.game.findUnique({
-        where: { id: gameId },
+      const game = await prisma.game.findFirst({
+        where: { id: gameId, ...gameWhere(auth.platform) },
         select: { id: true },
       });
 
@@ -121,7 +136,6 @@ export const POST = withAuth<Params>(
         );
       }
 
-      // Create the message
       const message = await prisma.chat.create({
         data: {
           gameId: gameId,

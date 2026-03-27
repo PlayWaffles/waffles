@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
+import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
+import { type ApiError } from "@/lib/auth";
 
 type Params = { fid: string };
-
-interface ApiError {
-  error: string;
-  code?: string;
-}
 
 interface EntryResponse {
   id: string;
@@ -20,6 +17,7 @@ interface EntryResponse {
   answered: number;
   game: {
     id: string;
+    platform: UserPlatform;
     startsAt: Date;
     endsAt: Date;
     status: string;
@@ -47,13 +45,12 @@ export async function GET(
       );
     }
 
-    // Look up user by fid
     const user = await prisma.user.findUnique({
       where: { fid },
-      select: { id: true },
+      select: { id: true, platform: true },
     });
 
-    if (!user) {
+    if (!user || user.platform !== UserPlatform.FARCASTER) {
       return NextResponse.json<ApiError>(
         { error: "User not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -72,11 +69,15 @@ export async function GET(
     }
 
     const entries = await prisma.gameEntry.findMany({
-      where: whereClause,
+      where: {
+        ...whereClause,
+        game: { platform: UserPlatform.FARCASTER },
+      },
       include: {
         game: {
           select: {
             id: true,
+            platform: true,
             startsAt: true,
             endsAt: true,
             tierPrices: true,
@@ -97,6 +98,7 @@ export async function GET(
       answered: entry.answered,
       game: {
         id: entry.gameId,
+        platform: entry.game.platform,
         startsAt: entry.game.startsAt,
         endsAt: entry.game.endsAt,
         status: getGamePhase(entry.game),

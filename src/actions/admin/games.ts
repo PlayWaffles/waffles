@@ -7,13 +7,14 @@ import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
-import { GameTheme } from "@prisma";
+import { GameTheme, UserPlatform } from "@prisma";
 
 // ==========================================
 // SCHEMA
 // ==========================================
 
 const gameSchema = z.object({
+  platform: z.enum(UserPlatform),
   title: z.string().min(3, "Title must be at least 3 characters"),
   description: z.string().optional(),
   theme: z.enum(GameTheme),
@@ -53,6 +54,7 @@ export async function createGameAction(
 
   // 1. VALIDATE INPUT
   const rawData = {
+    platform: formData.get("platform"),
     title: formData.get("title"),
     description: formData.get("description"),
     theme: formData.get("theme"),
@@ -83,6 +85,7 @@ export async function createGameAction(
     const game = await prisma.game.create({
       data: {
         title: data.title,
+        platform: data.platform,
         description: data.description || null,
         theme: data.theme,
         coverUrl: data.coverUrl,
@@ -124,13 +127,17 @@ export async function createGameAction(
     const { buildPayload } = await import("@/lib/notifications/templates");
 
     const usersToNotify = await prisma.user.findMany({
-      where: { hasGameAccess: true, isBanned: false },
-      select: { fid: true },
+      where: {
+        hasGameAccess: true,
+        isBanned: false,
+        platform: data.platform,
+      },
+      select: { id: true },
     });
 
     if (usersToNotify.length > 0) {
       const payload = buildPayload(template(gameNumber), undefined, "pregame");
-      sendBatch(payload, { fids: usersToNotify.map((u) => u.fid) }).catch(
+      sendBatch(payload, usersToNotify.map((u) => u.id)).catch(
         (err) => {
           console.error("[admin-games] notification_failed", {
             gameId: game.id,
@@ -158,6 +165,7 @@ export async function createGameAction(
       entityId: game.id,
       details: {
         title: game.title,
+        platform: data.platform,
         theme: data.theme,
         onchainId,
         txHash,
@@ -209,6 +217,7 @@ export async function updateGameAction(
 
   // 1. VALIDATE INPUT
   const rawData = {
+    platform: formData.get("platform"),
     title: formData.get("title"),
     description: formData.get("description"),
     theme: formData.get("theme"),
@@ -238,6 +247,7 @@ export async function updateGameAction(
       where: { id: gameId },
       data: {
         title: data.title,
+        platform: data.platform,
         description: data.description || null,
         theme: data.theme,
         coverUrl: data.coverUrl,

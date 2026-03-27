@@ -42,10 +42,9 @@ export async function POST(
     const body = await request.json();
     const message = body.message || "Game update";
 
-    // Get game info
     const game = await prisma.game.findUnique({
       where: { id: gameId },
-      select: { id: true, title: true },
+      select: { id: true, title: true, platform: true },
     });
 
     if (!game) {
@@ -53,33 +52,31 @@ export async function POST(
       return NextResponse.json({ error: "Game not found" }, { status: 404 });
     }
 
-    // Get all FIDs for users with game access (not just entries)
-    // Notify everyone who CAN play, not just those who already joined
     const users = await prisma.user.findMany({
       where: {
+        platform: game.platform,
         hasGameAccess: true,
         isBanned: false,
       },
-      select: { fid: true },
+      select: { id: true },
     });
 
-    const fids = users.map((u) => u.fid);
+    const userIds = users.map((u) => u.id);
 
     console.log("["+SERVICE+"]", "notify_sending_batch", {
       gameId,
       gameTitle: game.title,
       message,
-      recipientCount: fids.length,
+      recipientCount: userIds.length,
     });
 
-    // Send batch notification (100 tokens per request)
     const results = await sendBatch(
       {
         title: game.title || "Waffle Game",
         body: message,
         targetUrl: `${env.rootUrl}/game`,
       },
-      { fids }
+      userIds,
     );
 
     console.log("["+SERVICE+"]", "notify_batch_complete", {

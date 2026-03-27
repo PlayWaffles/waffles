@@ -21,7 +21,6 @@ export const POST = withAuth<Params>(
         );
       }
 
-      // Get user's entry with game timing info
       const entry = await prisma.gameEntry.findUnique({
         where: {
           gameId_userId: {
@@ -34,6 +33,7 @@ export const POST = withAuth<Params>(
           leftAt: true,
           game: {
             select: {
+              platform: true,
               startsAt: true,
               endsAt: true,
             },
@@ -48,12 +48,18 @@ export const POST = withAuth<Params>(
         );
       }
 
+      if (entry.game.platform !== auth.platform) {
+        return NextResponse.json<ApiError>(
+          { error: "You are not in this game", code: "NOT_IN_GAME" },
+          { status: 404 }
+        );
+      }
+
       if (entry.leftAt) {
         // Already left - idempotent, return success
         return NextResponse.json({ success: true, leftAt: entry.leftAt });
       }
 
-      // Check if game is currently live
       const now = new Date();
       const isLive = now >= entry.game.startsAt && now < entry.game.endsAt;
 

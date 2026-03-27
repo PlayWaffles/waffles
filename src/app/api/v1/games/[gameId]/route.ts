@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 type Params = { gameId: string };
 
@@ -13,9 +14,10 @@ export async function GET(
   context: { params: Promise<Params> }
 ) {
   try {
+    const platform = await resolveRuntimePlatform(request);
     const { gameId } = await context.params;
 
-    if (gameId) {
+    if (!gameId) {
       return NextResponse.json(
         { error: "Invalid game ID", code: "INVALID_PARAM" },
         { status: 400 }
@@ -26,6 +28,7 @@ export async function GET(
       where: { id: gameId },
       select: {
         id: true,
+        platform: true,
         title: true,
         description: true,
         theme: true,
@@ -59,7 +62,7 @@ export async function GET(
       },
     });
 
-    if (!game) {
+    if (!game || game.platform !== platform) {
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

@@ -11,6 +11,8 @@ import { PAYMENT_TOKEN_DECIMALS, verifyTicketPurchase } from "@/lib/chain";
 import { parseUnits } from "viem";
 import { formatGameTime } from "@/lib/utils";
 import { getScore } from "@/lib/game/scoring";
+import { requireCurrentUser } from "@/lib/auth";
+import { getDisplayName } from "@/lib/address";
 
 // ============================================================================
 // Types
@@ -22,7 +24,6 @@ export type PurchaseResult =
 
 interface PurchaseInput {
   gameId: string;
-  fid: number;
   txHash: string;
   paidAmount: number;
   payerWallet: string;
@@ -39,10 +40,10 @@ interface PurchaseInput {
 export async function purchaseGameTicket(
   input: PurchaseInput,
 ): Promise<PurchaseResult> {
-  const { gameId, fid, txHash, paidAmount, payerWallet } = input;
+  const { gameId, txHash, paidAmount, payerWallet } = input;
 
   // Validate input
-  if (!gameId || !txHash || !fid) {
+  if (!gameId || !txHash) {
     return {
       success: false,
       error: "Missing required fields",
@@ -59,15 +60,7 @@ export async function purchaseGameTicket(
   }
 
   try {
-    // Get user by fid
-    const user = await prisma.user.findUnique({
-      where: { fid },
-      select: { id: true, fid: true, username: true, pfpUrl: true },
-    });
-
-    if (!user) {
-      return { success: false, error: "User not found", code: "NOT_FOUND" };
-    }
+    const { user } = await requireCurrentUser();
 
     // Check if entry already exists (idempotent)
     const existing = await prisma.gameEntry.findUnique({
@@ -86,6 +79,7 @@ export async function purchaseGameTicket(
       where: { id: gameId },
       select: {
         id: true,
+        platform: true,
         onchainId: true,
         startsAt: true,
         endsAt: true,
@@ -99,6 +93,14 @@ export async function purchaseGameTicket(
 
     if (!game) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
+    }
+
+    if (game.platform !== user.platform) {
+      return {
+        success: false,
+        error: "This game belongs to a different platform",
+        code: "WRONG_PLATFORM",
+      };
     }
 
     // Validate payment amount against allowed tiers
@@ -143,7 +145,7 @@ export async function purchaseGameTicket(
     if (!verification.verified) {
       console.error("[game-actions]", "payment_verification_failed", {
         gameId,
-        fid,
+        userId: user.id,
         txHash,
         payerWallet,
         error: verification.error,
@@ -157,7 +159,7 @@ export async function purchaseGameTicket(
 
     console.log("[game-actions]", "payment_verified", {
       gameId,
-      fid,
+      userId: user.id,
       txHash,
       verifiedAmount: verification.details?.amountFormatted,
     });
@@ -207,10 +209,10 @@ export async function purchaseGameTicket(
     import("@/lib/notifications/templates").then(
       ({ transactional, buildPayload }) => {
         const payload = buildPayload(transactional.ticketSecured(timeStr));
-        sendToUser(fid, payload).catch((err) =>
+        sendToUser(user.id, payload).catch((err) =>
           console.error("[game-actions]", "notification_error", {
             gameId,
-            fid,
+            userId: user.id,
             error: err instanceof Error ? err.message : String(err),
           }),
         );
@@ -252,7 +254,7 @@ export async function purchaseGameTicket(
             none: { gameId }, // User has NOT entered this game
           },
         },
-        select: { fid: true },
+        select: { id: true },
         take: 500, // Limit blast radius
       });
 
@@ -266,9 +268,7 @@ export async function purchaseGameTicket(
           recipients: eligibleUsers.length,
         });
 
-        sendBatch(payload, {
-          fids: eligibleUsers.map((u) => u.fid),
-        }).catch((err) =>
+        sendBatch(payload, eligibleUsers.map((u) => u.id)).catch((err) =>
           console.error("[game-actions]", "sold_out_notify_error", err),
         );
       }
@@ -277,7 +277,7 @@ export async function purchaseGameTicket(
     console.log("[game-actions]", "ticket_purchased", {
       gameId,
       entryId: entry.id,
-      fid,
+      userId: user.id,
       paidAmount,
     });
 
@@ -285,7 +285,7 @@ export async function purchaseGameTicket(
   } catch (error) {
     console.error("[game-actions]", "purchase_error", {
       gameId,
-      fid,
+      userId: "unknown",
       error: error instanceof Error ? error.message : String(error),
     });
     return { success: false, error: "Purchase failed", code: "INTERNAL_ERROR" };
@@ -302,7 +302,6 @@ export type LeaveGameResult =
 
 interface LeaveGameInput {
   gameId: string;
-  fid: number;
 }
 
 /**
@@ -312,9 +311,10 @@ interface LeaveGameInput {
 export async function leaveGame(
   input: LeaveGameInput,
 ): Promise<LeaveGameResult> {
-  const { gameId, fid } = input;
+  const { gameId } = input;
+  let currentUserId = "unknown";
 
-  if (!gameId || !fid) {
+  if (!gameId) {
     return {
       success: false,
       error: "Missing required fields",
@@ -323,14 +323,8 @@ export async function leaveGame(
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { fid },
-      select: { id: true },
-    });
-
-    if (!user) {
-      return { success: false, error: "User not found", code: "NOT_FOUND" };
-    }
+    const { user } = await requireCurrentUser();
+    currentUserId = user.id;
 
     const entry = await prisma.gameEntry.findUnique({
       where: {
@@ -379,13 +373,13 @@ export async function leaveGame(
     revalidatePath("/game");
     revalidatePath("/(app)/(game)", "layout");
 
-    console.log("[game-actions]", "game_left", { gameId, fid });
+    console.log("[game-actions]", "game_left", { gameId, userId: user.id });
 
     return { success: true, leftAt: updated.leftAt! };
   } catch (error) {
     console.error("[game-actions]", "leave_error", {
       gameId,
-      fid,
+      userId: currentUserId,
       error: error instanceof Error ? error.message : String(error),
     });
     return {
@@ -411,7 +405,6 @@ export type SubmitAnswerResult =
 
 interface SubmitAnswerInput {
   gameId: string;
-  fid: number;
   questionId: string;
   selectedIndex: number | null;
   timeTakenMs: number;
@@ -430,10 +423,11 @@ interface AnswerEntry {
 export async function submitAnswer(
   input: SubmitAnswerInput,
 ): Promise<SubmitAnswerResult> {
-  const { gameId, fid, questionId, selectedIndex, timeTakenMs } = input;
+  const { gameId, questionId, selectedIndex, timeTakenMs } = input;
+  let currentUserId = "unknown";
 
   // 1. VALIDATE INPUT
-  if (!gameId || !fid || !questionId) {
+  if (!gameId || !questionId) {
     return {
       success: false,
       error: "Missing required fields",
@@ -444,21 +438,31 @@ export async function submitAnswer(
   const selectedIndexValue = selectedIndex ?? -1;
 
   try {
-    // 2. GET USER
-    const user = await prisma.user.findUnique({
-      where: { fid },
-      select: { id: true, username: true },
-    });
+    const { user } = await requireCurrentUser();
+    currentUserId = user.id;
 
-    if (!user) {
-      return { success: false, error: "User not found", code: "NOT_FOUND" };
-    }
-
-    // 3. GET GAME AND CHECK IF LIVE
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      select: { startsAt: true, endsAt: true, gameNumber: true },
-    });
+    // Fetch game, entry, and question in parallel
+    const [game, entry, question] = await Promise.all([
+      prisma.game.findUnique({
+        where: { id: gameId },
+        select: { startsAt: true, endsAt: true, gameNumber: true },
+      }),
+      prisma.gameEntry.findUnique({
+        where: { gameId_userId: { gameId, userId: user.id } },
+        select: {
+          id: true,
+          score: true,
+          answered: true,
+          answers: true,
+          paidAt: true,
+          leftAt: true,
+        },
+      }),
+      prisma.question.findUnique({
+        where: { id: questionId },
+        select: { correctIndex: true, durationSec: true, gameId: true },
+      }),
+    ]);
 
     if (!game) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
@@ -471,21 +475,6 @@ export async function submitAnswer(
     if (now > game.endsAt) {
       return { success: false, error: "Game has ended", code: "GAME_ENDED" };
     }
-
-    // 4. GET ENTRY AND CHECK ELIGIBILITY
-    const entry = await prisma.gameEntry.findUnique({
-      where: {
-        gameId_userId: { gameId, userId: user.id },
-      },
-      select: {
-        id: true,
-        score: true,
-        answered: true,
-        answers: true,
-        paidAt: true,
-        leftAt: true,
-      },
-    });
 
     if (!entry) {
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
@@ -502,16 +491,6 @@ export async function submitAnswer(
     if (entry.leftAt) {
       return { success: false, error: "You left this game", code: "LEFT_GAME" };
     }
-
-    // 5. GET QUESTION
-    const question = await prisma.question.findUnique({
-      where: { id: questionId },
-      select: {
-        correctIndex: true,
-        durationSec: true,
-        gameId: true,
-      },
-    });
 
     if (!question) {
       return { success: false, error: "Question not found", code: "NOT_FOUND" };
@@ -613,7 +592,7 @@ export async function submitAnswer(
       gameId,
       game.gameNumber,
       user.id,
-      user.username || `User ${fid}`,
+      getDisplayName({ username: user.username, wallet: user.wallet }),
       updatedEntry.score,
     ).catch((err) => console.error("[game-actions] flip_check_error", err));
 
@@ -626,7 +605,7 @@ export async function submitAnswer(
   } catch (error) {
     console.error("[game-actions] answer_error", {
       gameId,
-      fid,
+      userId: currentUserId,
       questionId,
       error: error instanceof Error ? error.message : String(error),
     });

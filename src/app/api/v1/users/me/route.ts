@@ -1,31 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { UserPlatform } from "@prisma";
+
+import { withAuth, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { type ApiError } from "@/lib/auth";
 
-type Params = { fid: string };
-
-/**
- * GET /api/v1/users/[fid]
- * Get user profile by fid (public endpoint)
- */
-export async function GET(
-  request: NextRequest,
-  context: { params: Promise<Params> }
-) {
+export const GET = withAuth(async (_request: NextRequest, auth) => {
   try {
-    const { fid } = await context.params;
-    const fidNum = parseInt(fid, 10);
-
-    if (isNaN(fidNum)) {
-      return NextResponse.json<ApiError>(
-        { error: "Invalid FID", code: "INVALID_PARAM" },
-        { status: 400 }
-      );
-    }
-
     const user = await prisma.user.findUnique({
-      where: { fid: fidNum },
+      where: { id: auth.userId },
       select: {
         id: true,
         platform: true,
@@ -44,15 +25,16 @@ export async function GET(
       },
     });
 
-    if (!user || user.platform !== UserPlatform.FARCASTER) {
+    if (!user) {
       return NextResponse.json<ApiError>(
         { error: "User not found", code: "NOT_FOUND" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     return NextResponse.json({
       id: user.id,
+      platform: user.platform,
       fid: user.fid,
       username: user.username,
       pfpUrl: user.pfpUrl,
@@ -65,10 +47,10 @@ export async function GET(
       invitesCount: user._count.referrals,
     });
   } catch (error) {
-    console.error("GET /api/v1/users/[fid] Error:", error);
+    console.error("GET /api/v1/users/me Error:", error);
     return NextResponse.json<ApiError>(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
-      { status: 500 }
+      { status: 500 },
     );
   }
-}
+});

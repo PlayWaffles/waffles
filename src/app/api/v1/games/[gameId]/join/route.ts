@@ -24,10 +24,9 @@ export const POST = withAuth<Params>(
         );
       }
 
-      // Check if game exists and is joinable
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { id: true, startsAt: true, endsAt: true },
+        select: { id: true, platform: true, startsAt: true, endsAt: true },
       });
 
       if (!game) {
@@ -37,7 +36,13 @@ export const POST = withAuth<Params>(
         );
       }
 
-      // Check game phase
+      if (game.platform !== auth.platform) {
+        return NextResponse.json<ApiError>(
+          { error: "Game not found", code: "NOT_FOUND" },
+          { status: 404 }
+        );
+      }
+
       const phase = getGamePhase(game);
       if (phase === "ENDED") {
         return NextResponse.json<ApiError>(
@@ -46,7 +51,6 @@ export const POST = withAuth<Params>(
         );
       }
 
-      // Check if user has a paid entry
       const entry = await prisma.gameEntry.findUnique({
         where: {
           gameId_userId: {
