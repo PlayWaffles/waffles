@@ -12,6 +12,7 @@ const envSchema = z.object({
   DATABASE_URL: isServer
     ? z.string().min(1, "DATABASE_URL is required")
     : z.string().optional(),
+  AUTH_SECRET: z.string().optional(),
 
   // Chain role keys (server-only, optional - only needed for admin operations)
   OPERATOR_PRIVATE_KEY: z.string().optional(),
@@ -41,6 +42,15 @@ const envSchema = z.object({
     .string()
     .min(1, "NEXT_PUBLIC_ONCHAINKIT_API_KEY is required"),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  NEXT_PUBLIC_BLOCK_EXPLORER_URL: z.string().url().optional(),
   NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE: z.coerce
     .number()
     .int()
@@ -71,6 +81,7 @@ const getEnv = () => {
   const parsed = envSchema.safeParse({
     NEYNAR_API_KEY: process.env.NEYNAR_API_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
+    AUTH_SECRET: process.env.AUTH_SECRET,
     OPERATOR_PRIVATE_KEY: process.env.OPERATOR_PRIVATE_KEY,
     SETTLER_PRIVATE_KEY: process.env.SETTLER_PRIVATE_KEY,
     PARTYKIT_SECRET: process.env.PARTYKIT_SECRET,
@@ -80,6 +91,12 @@ const getEnv = () => {
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     NEXT_PUBLIC_ONCHAINKIT_API_KEY: process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
     NEXT_PUBLIC_BASE_BUILDER_CODE: process.env.NEXT_PUBLIC_BASE_BUILDER_CODE,
+    NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS:
+      process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
+    NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS:
+      process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS,
+    NEXT_PUBLIC_BLOCK_EXPLORER_URL:
+      process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL,
     NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE:
       process.env.NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE,
     NEXT_PUBLIC_TREASURY_WALLET: process.env.NEXT_PUBLIC_TREASURY_WALLET,
@@ -116,6 +133,7 @@ const getEnv = () => {
         rootUrl: "http://localhost:3000",
         neynarApiKey: "",
         databaseUrl: "",
+        authSecret: undefined,
         operatorPrivateKey: undefined,
         settlerPrivateKey: undefined,
         partykitSecret: "",
@@ -125,10 +143,15 @@ const getEnv = () => {
         cloudinaryApiSecret: "",
         nextPublicOnchainkitApiKey: "",
         nextPublicBaseBuilderCode: undefined,
+        nextPublicWaffleContractAddress:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicPaymentTokenAddress:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicBlockExplorerUrl: "https://celo-sepolia.blockscout.com",
         nextPublicLeaderboardPageSize: 25,
         homeUrlPath: "",
         nextPublicTreasuryWallet:
-          "0xd584F8079192E078F0f3237622345E19360384A2" as `0x${string}`,
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
         accountAssociation: {
           header: undefined,
           payload: undefined,
@@ -158,6 +181,7 @@ const getEnv = () => {
     neynarApiKey: data.NEYNAR_API_KEY!,
     // Database
     databaseUrl: data.DATABASE_URL,
+    authSecret: data.AUTH_SECRET,
     // Chain role keys
     operatorPrivateKey: data.OPERATOR_PRIVATE_KEY,
     settlerPrivateKey: data.SETTLER_PRIVATE_KEY,
@@ -171,10 +195,17 @@ const getEnv = () => {
     // Client-side
     nextPublicOnchainkitApiKey: data.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
     nextPublicBaseBuilderCode: data.NEXT_PUBLIC_BASE_BUILDER_CODE,
+    nextPublicWaffleContractAddress: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicPaymentTokenAddress: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicBlockExplorerUrl:
+      data.NEXT_PUBLIC_BLOCK_EXPLORER_URL ||
+      "https://celo-sepolia.blockscout.com",
     nextPublicLeaderboardPageSize: data.NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE,
     homeUrlPath: data.NEXT_PUBLIC_HOME_URL_PATH,
     nextPublicTreasuryWallet: (data.NEXT_PUBLIC_TREASURY_WALLET ||
-      "0xd584F8079192E078F0f3237622345E19360384A2") as `0x${string}`,
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
     accountAssociation: {
       header: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_HEADER,
       payload: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_PAYLOAD,

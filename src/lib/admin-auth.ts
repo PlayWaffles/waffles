@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { prisma } from "./db";
+import { env } from "./env";
 import bcrypt from "bcryptjs";
 
 const SESSION_COOKIE_NAME = "admin-session";
@@ -7,22 +8,18 @@ const SESSION_DURATION = 60 * 60 * 24 * 7; // 7 days in seconds
 
 export interface AdminSession {
   userId: string;
-  fid: number;
+  fid: number | null;
   username: string | null;
   pfpUrl: string | null;
   role: "ADMIN";
   expiresAt: number;
 }
 
-/**
- * Verify admin credentials and create session
- */
 export async function verifyAdminCredentials(
   username: string,
   password: string
 ): Promise<{ success: boolean; error?: string; session?: AdminSession }> {
   try {
-    // Find user by username (case-insensitive check could be added if needed, but strict for now)
     const user = await prisma.user.findFirst({
       where: { username },
       select: {
@@ -43,7 +40,6 @@ export async function verifyAdminCredentials(
       return { success: false, error: "Access denied: Admin role required" };
     }
 
-    // Check if password is set
     if (!user.password) {
       return {
         success: false,
@@ -51,14 +47,12 @@ export async function verifyAdminCredentials(
       };
     }
 
-    // Verify password against database hash
     const isValid = await bcrypt.compare(password, user.password);
 
     if (!isValid) {
       return { success: false, error: "Invalid credentials" };
     }
 
-    // Create session
     const session: AdminSession = {
       userId: user.id,
       fid: user.fid,
@@ -75,25 +69,19 @@ export async function verifyAdminCredentials(
   }
 }
 
-/**
- * Store session in HTTP-only cookie
- */
 export async function createAdminSession(session: AdminSession): Promise<void> {
   const cookieStore = await cookies();
   const sessionData = JSON.stringify(session);
 
   cookieStore.set(SESSION_COOKIE_NAME, sessionData, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
+    secure: env.rootUrl.startsWith("https://"),
     sameSite: "lax",
     maxAge: SESSION_DURATION,
     path: "/",
   });
 }
 
-/**
- * Get current admin session from cookie
- */
 export async function getAdminSession(): Promise<AdminSession | null> {
   try {
     const cookieStore = await cookies();
@@ -105,10 +93,7 @@ export async function getAdminSession(): Promise<AdminSession | null> {
 
     const session: AdminSession = JSON.parse(sessionCookie.value);
 
-    // Check if session is expired
     if (session.expiresAt < Date.now()) {
-      // Note: Don't delete cookie here - can't modify cookies during render
-      // Stale cookie is harmless since we always verify
       return null;
     }
 
@@ -119,9 +104,6 @@ export async function getAdminSession(): Promise<AdminSession | null> {
   }
 }
 
-/**
- * Verify current request is from an admin
- */
 export async function requireAdminSession(): Promise<{
   authenticated: boolean;
   session?: AdminSession;
@@ -136,15 +118,12 @@ export async function requireAdminSession(): Promise<{
     };
   }
 
-  // Verify user still has admin role in database
   const user = await prisma.user.findUnique({
     where: { id: session.userId },
     select: { role: true },
   });
 
   if (!user || user.role !== "ADMIN") {
-    // Note: Don't delete cookie here - can't modify cookies during render
-    // Stale cookie is harmless since we always verify against DB
     return {
       authenticated: false,
       error: "Admin access revoked",
@@ -157,17 +136,11 @@ export async function requireAdminSession(): Promise<{
   };
 }
 
-/**
- * Destroy admin session
- */
 export async function destroyAdminSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
 }
 
-/**
- * Create admin account with password
- */
 export async function createAdminAccount(
   username: string,
   password: string
@@ -186,7 +159,6 @@ export async function createAdminAccount(
       };
     }
 
-    // CRITICAL: Only allow if they are ALREADY an admin (manually assigned)
     if (existingUser.role !== "ADMIN") {
       return {
         success: false,
@@ -194,7 +166,6 @@ export async function createAdminAccount(
       };
     }
 
-    // If user exists with password, they're already signed up
     if (existingUser.password) {
       return {
         success: false,
@@ -202,12 +173,10 @@ export async function createAdminAccount(
       };
     }
 
-    // Hash password
     const hashedPassword = await hashPassword(password);
 
-    // Update user with password
     await prisma.user.update({
-      where: { id: existingUser.id }, // Use ID for update to be safe
+      where: { id: existingUser.id },
       data: {
         password: hashedPassword,
       },
@@ -220,9 +189,6 @@ export async function createAdminAccount(
   }
 }
 
-/**
- * Generate bcrypt hash for password (helper for setup)
- */
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 10);
 }
