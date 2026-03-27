@@ -85,51 +85,6 @@ export function PurchaseView({
 
   return (
     <>
-      {/* Theme Section */}
-      <div
-        className="flex flex-col items-center w-full"
-        style={{
-          gap: "clamp(8px, 2vh, 12px)",
-          paddingTop: "clamp(12px, 3vh, 20px)",
-          opacity: isVisible ? 1 : 0,
-          transform: isVisible ? "translateY(0)" : "translateY(-20px)",
-          transition: "all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)",
-        }}
-      >
-        <span
-          className="font-display text-white text-center"
-          style={{
-            fontSize: "clamp(12px, 2vw, 14px)",
-            opacity: 0.6,
-            letterSpacing: "-0.03em",
-          }}
-        >
-          Next game theme
-        </span>
-        <div className="flex items-center gap-2.5">
-          <span
-            className="font-body text-white"
-            style={{ fontSize: "clamp(24px, 5vw, 32px)" }}
-          >
-            {theme.toUpperCase()}
-          </span>
-          {themeIcon && (
-            <Image
-              src={themeIcon}
-              alt={theme}
-              width={41}
-              height={40}
-              className="object-contain"
-              style={{
-                width: "clamp(32px, 6vw, 41px)",
-                height: "auto",
-                animation: isVisible ? "float 3s ease-in-out infinite" : "none",
-              }}
-            />
-          )}
-        </div>
-      </div>
-
       {/* Choose Tier Title */}
       <h2
         className="font-body text-white text-center w-full"
