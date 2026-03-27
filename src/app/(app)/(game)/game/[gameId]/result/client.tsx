@@ -24,7 +24,6 @@ import { CLAIM_DELAY_MS } from "@/lib/constants";
 import { WAFFLE_CONTRACT_ADDRESS } from "@/lib/chain";
 import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
 import { useUser } from "@/hooks/useUser";
-import { getDisplayName } from "@/lib/address";
 import { shareTextOrCopy } from "@/lib/share";
 import { authenticatedFetch } from "@/lib/client/runtime";
 
@@ -174,8 +173,8 @@ export default function ResultPageClient({
   // Claim state
   const [claimState, setClaimState] = useState<ClaimState>("idle");
   const [claimError, setClaimError] = useState<string | null>(null);
-  console.log("claimError", claimError);
   const [claimCountdown, setClaimCountdown] = useState<string | null>(null);
+  const [isClaimWindowOpen, setIsClaimWindowOpen] = useState(false);
 
   // Check if already claimed from entry
   const hasClaimed =
@@ -187,37 +186,32 @@ export default function ResultPageClient({
     return new Date(new Date(game.endsAt).getTime() + CLAIM_DELAY_MS);
   }, [game?.endsAt]);
 
-  // Check if claim window is open
-  const isClaimWindowOpen = useMemo(() => {
-    if (!claimOpensAt) return false;
-    return new Date() >= claimOpensAt;
-  }, [claimOpensAt]);
-
-  // Countdown timer for claim window
+  // Countdown timer — also flips isClaimWindowOpen when it reaches zero
   useEffect(() => {
-    if (!claimOpensAt || isClaimWindowOpen || hasClaimed) {
+    if (!claimOpensAt || hasClaimed) {
       setClaimCountdown(null);
       return;
     }
 
-    const updateCountdown = () => {
-      const now = new Date();
-      const diff = claimOpensAt.getTime() - now.getTime();
-
+    const update = () => {
+      const diff = claimOpensAt.getTime() - Date.now();
       if (diff <= 0) {
+        setIsClaimWindowOpen(true);
         setClaimCountdown(null);
-        return;
+        return true; // signal to clear interval
       }
-
       const minutes = Math.floor(diff / 60000);
       const seconds = Math.floor((diff % 60000) / 1000);
       setClaimCountdown(`${minutes}m ${seconds}s`);
+      return false;
     };
 
-    updateCountdown();
-    const interval = setInterval(updateCountdown, 1000);
+    if (update()) return; // already open
+    const interval = setInterval(() => {
+      if (update()) clearInterval(interval);
+    }, 1000);
     return () => clearInterval(interval);
-  }, [claimOpensAt, isClaimWindowOpen, hasClaimed]);
+  }, [claimOpensAt, hasClaimed]);
 
   // Get onchainId
   const onchainId = game?.onchainId;
@@ -369,7 +363,7 @@ export default function ResultPageClient({
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        const response = await fetch(
+        const response = await authenticatedFetch(
           `/api/v1/games/${gameId}/claim`,
           {
             method: "POST",

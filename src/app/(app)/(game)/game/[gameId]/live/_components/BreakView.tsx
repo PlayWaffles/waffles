@@ -6,6 +6,8 @@ import CircularProgress from "./CircularProgress";
 import { LiveEventFeed } from "../../../_components/LiveEventFeed";
 import { GameChat } from "../../../_components/chat/GameChat";
 import Image from "next/image";
+import { authenticatedFetch } from "@/lib/client/runtime";
+import { getDisplayName } from "@/lib/address";
 
 const MAX_LEADERBOARD_ENTRIES = 8;
 
@@ -56,7 +58,7 @@ export default function BreakView({
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const res = await fetch(
+        const res = await authenticatedFetch(
           `/api/v1/games/${gameId}/leaderboard?limit=${MAX_LEADERBOARD_ENTRIES}`
         );
         if (res.ok) {
@@ -196,7 +198,7 @@ export default function BreakView({
 
                   {/* Username */}
                   <span className="text-base sm:text-lg md:text-[20px] text-white truncate flex-1">
-                    {entry.username || entry.wallet || "Player"}
+                    {getDisplayName({ username: entry.username, wallet: entry.wallet })}
                   </span>
 
                   {/* Score */}

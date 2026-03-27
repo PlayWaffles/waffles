@@ -4,6 +4,7 @@ import {
   useRef,
   useEffect,
   useState,
+  useMemo,
   useImperativeHandle,
   forwardRef,
 } from "react";
@@ -74,7 +75,10 @@ export const ChatMessageList = forwardRef<
   const username = user?.username ?? "Player";
 
   const { messages: storeMessages } = useRealtime().state;
-  const comments = storeMessages.map((m) => mapMessageToComment(m, username));
+  const comments = useMemo(
+    () => storeMessages.map((m) => mapMessageToComment(m, username)),
+    [storeMessages, username],
+  );
   const prevMessageCount = useRef(storeMessages.length);
 
   // Play sound when new message from others arrives

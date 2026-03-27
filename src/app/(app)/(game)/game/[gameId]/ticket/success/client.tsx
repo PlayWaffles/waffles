@@ -16,7 +16,6 @@ import {
 } from "@/lib/calendar";
 import { shareTextOrCopy } from "@/lib/share";
 import { useUser } from "@/hooks/useUser";
-import { authenticatedFetch } from "@/lib/client/runtime";
 
 interface TicketSuccessClientProps {
     gameId: string;
@@ -40,12 +39,6 @@ export function TicketSuccessClient({
     const { user } = useUser();
     const [showCalendarOptions, setShowCalendarOptions] = useState(false);
     const hasCelebrated = useRef(false);
-    const [userInfo, setUserInfo] = useState<{
-        fid: number | null;
-        username: string | null;
-        pfpUrl: string | null;
-    } | null>(null);
-
     // Celebration confetti on mount
     useEffect(() => {
         if (hasCelebrated.current) return;
@@ -83,21 +76,6 @@ export function TicketSuccessClient({
         fireConfetti();
     }, []);
 
-    // Fetch user info on mount
-    useEffect(() => {
-        async function fetchUser() {
-            try {
-                const res = await authenticatedFetch(`/api/v1/users/me`);
-                if (res.ok) {
-                    setUserInfo(await res.json());
-                }
-            } catch (error) {
-                console.error("Error fetching user:", error);
-            }
-        }
-        fetchUser();
-    }, [user?.id]);
-
     // Create calendar event
     const calendarEvent = createGameCalendarEvent(
         theme,
@@ -133,7 +111,7 @@ export function TicketSuccessClient({
         } catch (error) {
             console.error("Error sharing cast:", error);
         }
-    }, [theme, prizePool, ticketCode, gameId]);
+    }, [theme, prizePool, gameId]);
 
     return (
         <>

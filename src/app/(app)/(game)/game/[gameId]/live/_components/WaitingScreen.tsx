@@ -15,6 +15,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTimer } from "@/hooks/useTimer";
 import { GameChat } from "../../../_components/chat/GameChat";
 import { LiveEventFeed } from "../../../_components/LiveEventFeed";
+import { authenticatedFetch } from "@/lib/client/runtime";
+import { getDisplayName } from "@/lib/address";
 import { FlashIcon, ArrowLeftIcon } from "@/components/icons";
 
 // ==========================================
@@ -83,7 +85,7 @@ export default function WaitingScreen({
   // Fetch leaderboard data
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await fetch(
+      const res = await authenticatedFetch(
         `/api/v1/games/${gameId}/leaderboard?limit=${MAX_LEADERBOARD}`
       );
       if (res.ok) {
@@ -384,7 +386,7 @@ export default function WaitingScreen({
                         className={`font-display text-[14px] truncate flex-1 ${entry.isCurrentUser ? "text-[#14B985]" : "text-white"
                           }`}
                       >
-                        {entry.username || `Player ${entry.fid}`}
+                        {getDisplayName({ username: entry.username, wallet: entry.wallet })}
                         {entry.isCurrentUser && (
                           <span className="ml-1 text-[10px] text-[#14B985]/70">
                             (you)
