@@ -106,6 +106,7 @@ export async function rankGame(gameId: string): Promise<RankResult> {
       userId: true,
       paidAmount: true,
       paidAt: true,
+      purchaseSource: true,
       user: { select: { username: true } },
     },
   });
@@ -130,7 +131,8 @@ export async function rankGame(gameId: string): Promise<RankResult> {
     id: e.id,
     userId: e.userId,
     score: e.score,
-    paidAmount: e.paidAt ? (e.paidAmount ?? 0) : 0, // Only count paid entries
+    paidAmount:
+      e.purchaseSource === "FREE_ADMIN" ? 0 : e.paidAt ? (e.paidAmount ?? 0) : 0,
     username: e.user.username ?? undefined,
   }));
 

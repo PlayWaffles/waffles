@@ -63,7 +63,7 @@ export function useTicketPurchase(
   const { entry, isLoadingEntry } = realtimeState;
 
   // Has ticket = entry exists and is paid
-  const hasTicket = !!entry?.paidAt;
+  const hasTicket = !!entry?.hasTicket;
 
   // ==========================================
   // TOKEN & ALLOWANCE

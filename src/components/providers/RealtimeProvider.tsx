@@ -41,6 +41,8 @@ export interface GameEntryData {
   score: number;
   answered: number;
   paidAt: Date | null;
+  purchaseSource: "PAID" | "DISCOUNTED" | "FREE_ADMIN";
+  hasTicket: boolean;
   rank: number | null;
   prize: number | null;
   claimedAt: Date | null;
@@ -381,6 +383,8 @@ export function RealtimeProvider({
             answered: data.answered ?? 0,
             answeredQuestionIds: data.answeredQuestionIds ?? [],
             paidAt: data.paidAt ? new Date(data.paidAt) : null,
+            purchaseSource: data.purchaseSource ?? "PAID",
+            hasTicket: Boolean(data.hasTicket),
             rank: data.rank ?? null,
             prize: data.prize ?? null,
             claimedAt: data.claimedAt ? new Date(data.claimedAt) : null,

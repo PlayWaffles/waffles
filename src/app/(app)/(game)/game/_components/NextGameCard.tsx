@@ -60,7 +60,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const countdown = useTimer(targetMs);
 
   // Derived state
-  const hasTicket = !!entry?.paidAt;
+  const hasTicket = !!entry?.hasTicket;
 
   // Check if player has answered all questions (finished playing)
   const hasFinishedAnswering =
@@ -123,7 +123,11 @@ export function NextGameCard({ game }: NextGameCardProps) {
           : { text: "GET TICKET", disabled: false, href: null }
         : hasTicket
           ? { text: "YOU'RE IN!", disabled: true, href: null }
-          : { text: "BUY WAFFLE", disabled: false, href: null };
+          : {
+              text: `BUY WAFFLE - $${game.pricing.currentPrice.toFixed(2)}`,
+              disabled: false,
+              href: null,
+            };
 
   const handleButtonClick = () => {
     if (buttonConfig.disabled) return;
@@ -325,7 +329,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         onchainId={(game.onchainId as `0x${string}`) ?? null}
         theme={game.theme ?? ""}
         themeIcon={game.coverUrl ?? undefined}
-        tierPrices={game.tierPrices ?? []}
+        pricing={game.pricing}
         onPurchaseSuccess={() => {
           refetchEntry();
         }}

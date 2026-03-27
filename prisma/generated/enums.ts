@@ -86,3 +86,12 @@ export const Difficulty = {
 } as const
 
 export type Difficulty = (typeof Difficulty)[keyof typeof Difficulty]
+
+
+export const TicketPurchaseSource = {
+  PAID: 'PAID',
+  DISCOUNTED: 'DISCOUNTED',
+  FREE_ADMIN: 'FREE_ADMIN'
+} as const
+
+export type TicketPurchaseSource = (typeof TicketPurchaseSource)[keyof typeof TicketPurchaseSource]

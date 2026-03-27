@@ -9,6 +9,7 @@ type Params = { fid: string };
 interface EntryResponse {
   id: string;
   status: string;
+  purchaseSource: string;
   amountUSDC: number;
   gameId: string;
   paidAt: Date | null;
@@ -89,7 +90,13 @@ export async function GET(
 
     const response: EntryResponse[] = entries.map((entry) => ({
       id: entry.id,
-      status: entry.paidAt ? "PAID" : "PENDING",
+      status:
+        entry.purchaseSource === "FREE_ADMIN"
+          ? "FREE"
+          : entry.paidAt
+            ? "PAID"
+            : "PENDING",
+      purchaseSource: entry.purchaseSource,
       amountUSDC: entry.paidAmount ?? 0,
       gameId: entry.gameId,
       paidAt: entry.paidAt,

@@ -48,6 +48,7 @@ export async function GET(
         rank: true,
         prize: true,
         paidAt: true,
+        purchaseSource: true,
         claimedAt: true,
         answered: true,
         game: {
@@ -76,6 +77,7 @@ export async function GET(
       rank: entry.rank,
       prize: entry.prize ?? 0,
       paidAt: entry.paidAt,
+      purchaseSource: entry.purchaseSource,
       claimedAt: entry.claimedAt,
       answeredQuestions: entry.answered,
       game: {

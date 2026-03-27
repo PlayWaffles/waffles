@@ -2,6 +2,8 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { TicketIcon, CheckCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { GameFilter } from "./_components/GameFilter";
+import { IssueFreeTicketCard } from "./_components/IssueFreeTicketCard";
+import { TicketPurchaseSource } from "@prisma";
 
 // ============================================
 // DATA FETCHING
@@ -19,11 +21,14 @@ async function getTickets(searchParams: {
 
     const where: any = {};
 
-    // Filter by payment status
+    // Filter by ticket status
     if (searchParams.status === "paid") {
         where.paidAt = { not: null };
-    } else if (searchParams.status === "pending") {
+    } else if (searchParams.status === "free") {
+        where.purchaseSource = TicketPurchaseSource.FREE_ADMIN;
+    } else if (searchParams.status === "unpaid") {
         where.paidAt = null;
+        where.purchaseSource = { not: TicketPurchaseSource.FREE_ADMIN };
     } else if (searchParams.status === "claimed") {
         where.claimedAt = { not: null };
     }
@@ -71,9 +76,10 @@ async function getTickets(searchParams: {
 }
 
 async function getStats() {
-    const [totalEntries, paidEntries, claimedPrizes, games] = await Promise.all([
+    const [totalEntries, paidEntries, freeEntries, claimedPrizes, games] = await Promise.all([
         prisma.gameEntry.count(),
         prisma.gameEntry.count({ where: { paidAt: { not: null } } }),
+        prisma.gameEntry.count({ where: { purchaseSource: TicketPurchaseSource.FREE_ADMIN } }),
         prisma.gameEntry.count({ where: { claimedAt: { not: null } } }),
         prisma.game.findMany({
             orderBy: { startsAt: "desc" },
@@ -90,7 +96,8 @@ async function getStats() {
     return {
         totalEntries,
         paidEntries,
-        pendingEntries: totalEntries - paidEntries,
+        freeEntries,
+        pendingEntries: totalEntries - paidEntries - freeEntries,
         claimedPrizes,
         totalRevenue: totalRevenue._sum.paidAmount || 0,
         games,
@@ -122,6 +129,8 @@ export default async function TicketsPage({
                     </p>
                 </div>
             </div>
+
+            <IssueFreeTicketCard games={stats.games} />
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -178,7 +187,8 @@ export default async function TicketsPage({
                     {[
                         { label: "All", value: undefined },
                         { label: "Paid", value: "paid" },
-                        { label: "Pending", value: "pending" },
+                        { label: "Free", value: "free" },
+                        { label: "Unpaid", value: "unpaid" },
                         { label: "Claimed", value: "claimed" },
                     ].map((filter) => (
                         <Link
@@ -273,6 +283,10 @@ export default async function TicketsPage({
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#00CFF2]/15 text-[#00CFF2]">
                                                     Claimed
                                                 </span>
+                                            ) : entry.purchaseSource === "FREE_ADMIN" ? (
+                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#FB72FF]/15 text-[#FB72FF]">
+                                                    Free
+                                                </span>
                                             ) : entry.paidAt ? (
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#14B985]/15 text-[#14B985]">
                                                     <span className="w-1.5 h-1.5 bg-[#14B985] rounded-full mr-1.5" />
@@ -285,7 +299,7 @@ export default async function TicketsPage({
                                             )}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            {entry.paidAmount ? (
+                                            {typeof entry.paidAmount === "number" ? (
                                                 <span className="text-[#14B985] font-mono font-medium">
                                                     ${entry.paidAmount.toFixed(2)}
                                                 </span>

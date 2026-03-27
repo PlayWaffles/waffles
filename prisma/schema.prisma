@@ -209,8 +209,8 @@ model Game {
   startsAt DateTime
   endsAt   DateTime
 
-  // -- PRICING (3 tier prices) --
-  tierPrices Float[] @default([5, 10, 25])
+  // -- PRICING (flat $1 ticket) --
+  tierPrices Float[] @default([1])
 
   // -- PRE-COMPUTED STATS (updated atomically) --
   prizePool   Float @default(0) // Sum of ticket prices
@@ -347,6 +347,9 @@ model GameEntry {
   payerWallet String?   @db.VarChar(42) // Wallet address used for this purchase
   paidAmount  Float? // Tier price paid
   paidAt      DateTime?
+  purchaseSource TicketPurchaseSource @default(PAID)
+  freeIssuedById String?
+  freeIssueNote  String? @db.VarChar(255)
 
   // -- PROGRESS (updated per answer) --
   score    Int @default(0)
@@ -376,6 +379,13 @@ model GameEntry {
   @@unique([gameId, userId])
   @@index([gameId, score(sort: Desc)])
   @@index([userId, createdAt(sort: Desc)])
+  @@index([gameId, purchaseSource])
+}
+
+enum TicketPurchaseSource {
+  PAID
+  DISCOUNTED
+  FREE_ADMIN
 }
 
 // ==========================================

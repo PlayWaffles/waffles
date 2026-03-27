@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthFromRequest, type ApiError } from "@/lib/auth";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { hasPlayableTicket } from "@/lib/tickets";
 
 type Params = { gameId: string };
 
@@ -73,6 +74,7 @@ export async function GET(
         answers: true,
         paidAt: true,
         paidAmount: true,
+        purchaseSource: true,
         rank: true,
         prize: true,
         claimedAt: true,
@@ -93,6 +95,7 @@ export async function GET(
 
     return NextResponse.json({
       ...entry,
+      hasTicket: hasPlayableTicket(entry),
       answers: undefined,
       answeredQuestionIds,
     });

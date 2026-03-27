@@ -8,13 +8,20 @@
 
 import { cache } from "react";
 import { prisma } from "@/lib/db";
-import type { Game, UserPlatform } from "@prisma";
+import { type Game, type UserPlatform } from "@prisma";
+import {
+  getTicketPricingSnapshot,
+  type TicketPricingSnapshot,
+} from "@/lib/tickets";
 
 // ============================================================================
 // Types
 // ============================================================================
 
-export type GameWithQuestionCount = Game & { questionCount: number };
+export type GameWithQuestionCount = Game & {
+  questionCount: number;
+  pricing: TicketPricingSnapshot;
+};
 
 export interface GameQueryResult {
   game: GameWithQuestionCount | null;
@@ -74,7 +81,13 @@ export const getCurrentOrNextGame = cache(
     const result = activeGame ?? endedGame;
     if (result) {
       const { _count, ...gameData } = result;
-      return { game: { ...gameData, questionCount: _count.questions } };
+      return {
+        game: {
+          ...gameData,
+          questionCount: _count.questions,
+          pricing: getTicketPricingSnapshot(gameData),
+        },
+      };
     }
 
     return { game: null };
@@ -104,7 +117,11 @@ export const getGameById = cache(
 
     const { _count, ...gameData } = game;
     return {
-      game: { ...gameData, questionCount: _count.questions },
+      game: {
+        ...gameData,
+        questionCount: _count.questions,
+        pricing: getTicketPricingSnapshot(gameData),
+      },
     };
   }
 );

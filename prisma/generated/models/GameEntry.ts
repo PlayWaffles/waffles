@@ -50,6 +50,9 @@ export type GameEntryMinAggregateOutputType = {
   payerWallet: string | null
   paidAmount: number | null
   paidAt: Date | null
+  purchaseSource: $Enums.TicketPurchaseSource | null
+  freeIssuedById: string | null
+  freeIssueNote: string | null
   score: number | null
   answered: number | null
   rank: number | null
@@ -69,6 +72,9 @@ export type GameEntryMaxAggregateOutputType = {
   payerWallet: string | null
   paidAmount: number | null
   paidAt: Date | null
+  purchaseSource: $Enums.TicketPurchaseSource | null
+  freeIssuedById: string | null
+  freeIssueNote: string | null
   score: number | null
   answered: number | null
   rank: number | null
@@ -88,6 +94,9 @@ export type GameEntryCountAggregateOutputType = {
   payerWallet: number
   paidAmount: number
   paidAt: number
+  purchaseSource: number
+  freeIssuedById: number
+  freeIssueNote: number
   score: number
   answered: number
   answers: number
@@ -127,6 +136,9 @@ export type GameEntryMinAggregateInputType = {
   payerWallet?: true
   paidAmount?: true
   paidAt?: true
+  purchaseSource?: true
+  freeIssuedById?: true
+  freeIssueNote?: true
   score?: true
   answered?: true
   rank?: true
@@ -146,6 +158,9 @@ export type GameEntryMaxAggregateInputType = {
   payerWallet?: true
   paidAmount?: true
   paidAt?: true
+  purchaseSource?: true
+  freeIssuedById?: true
+  freeIssueNote?: true
   score?: true
   answered?: true
   rank?: true
@@ -165,6 +180,9 @@ export type GameEntryCountAggregateInputType = {
   payerWallet?: true
   paidAmount?: true
   paidAt?: true
+  purchaseSource?: true
+  freeIssuedById?: true
+  freeIssueNote?: true
   score?: true
   answered?: true
   answers?: true
@@ -273,6 +291,9 @@ export type GameEntryGroupByOutputType = {
   payerWallet: string | null
   paidAmount: number | null
   paidAt: Date | null
+  purchaseSource: $Enums.TicketPurchaseSource
+  freeIssuedById: string | null
+  freeIssueNote: string | null
   score: number
   answered: number
   answers: runtime.JsonValue
@@ -317,6 +338,9 @@ export type GameEntryWhereInput = {
   payerWallet?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   paidAmount?: Prisma.FloatNullableFilter<"GameEntry"> | number | null
   paidAt?: Prisma.DateTimeNullableFilter<"GameEntry"> | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFilter<"GameEntry"> | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.StringNullableFilter<"GameEntry"> | string | null
+  freeIssueNote?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   score?: Prisma.IntFilter<"GameEntry"> | number
   answered?: Prisma.IntFilter<"GameEntry"> | number
   answers?: Prisma.JsonFilter<"GameEntry">
@@ -340,6 +364,9 @@ export type GameEntryOrderByWithRelationInput = {
   payerWallet?: Prisma.SortOrderInput | Prisma.SortOrder
   paidAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   paidAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  purchaseSource?: Prisma.SortOrder
+  freeIssuedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  freeIssueNote?: Prisma.SortOrderInput | Prisma.SortOrder
   score?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   answers?: Prisma.SortOrder
@@ -367,6 +394,9 @@ export type GameEntryWhereUniqueInput = Prisma.AtLeast<{
   payerWallet?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   paidAmount?: Prisma.FloatNullableFilter<"GameEntry"> | number | null
   paidAt?: Prisma.DateTimeNullableFilter<"GameEntry"> | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFilter<"GameEntry"> | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.StringNullableFilter<"GameEntry"> | string | null
+  freeIssueNote?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   score?: Prisma.IntFilter<"GameEntry"> | number
   answered?: Prisma.IntFilter<"GameEntry"> | number
   answers?: Prisma.JsonFilter<"GameEntry">
@@ -390,6 +420,9 @@ export type GameEntryOrderByWithAggregationInput = {
   payerWallet?: Prisma.SortOrderInput | Prisma.SortOrder
   paidAmount?: Prisma.SortOrderInput | Prisma.SortOrder
   paidAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  purchaseSource?: Prisma.SortOrder
+  freeIssuedById?: Prisma.SortOrderInput | Prisma.SortOrder
+  freeIssueNote?: Prisma.SortOrderInput | Prisma.SortOrder
   score?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   answers?: Prisma.SortOrder
@@ -419,6 +452,9 @@ export type GameEntryScalarWhereWithAggregatesInput = {
   payerWallet?: Prisma.StringNullableWithAggregatesFilter<"GameEntry"> | string | null
   paidAmount?: Prisma.FloatNullableWithAggregatesFilter<"GameEntry"> | number | null
   paidAt?: Prisma.DateTimeNullableWithAggregatesFilter<"GameEntry"> | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceWithAggregatesFilter<"GameEntry"> | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.StringNullableWithAggregatesFilter<"GameEntry"> | string | null
+  freeIssueNote?: Prisma.StringNullableWithAggregatesFilter<"GameEntry"> | string | null
   score?: Prisma.IntWithAggregatesFilter<"GameEntry"> | number
   answered?: Prisma.IntWithAggregatesFilter<"GameEntry"> | number
   answers?: Prisma.JsonWithAggregatesFilter<"GameEntry">
@@ -438,6 +474,9 @@ export type GameEntryCreateInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -461,6 +500,9 @@ export type GameEntryUncheckedCreateInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -480,6 +522,9 @@ export type GameEntryUpdateInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -503,6 +548,9 @@ export type GameEntryUncheckedUpdateInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -524,6 +572,9 @@ export type GameEntryCreateManyInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -543,6 +594,9 @@ export type GameEntryUpdateManyMutationInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -564,6 +618,9 @@ export type GameEntryUncheckedUpdateManyInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -600,6 +657,9 @@ export type GameEntryCountOrderByAggregateInput = {
   payerWallet?: Prisma.SortOrder
   paidAmount?: Prisma.SortOrder
   paidAt?: Prisma.SortOrder
+  purchaseSource?: Prisma.SortOrder
+  freeIssuedById?: Prisma.SortOrder
+  freeIssueNote?: Prisma.SortOrder
   score?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   answers?: Prisma.SortOrder
@@ -629,6 +689,9 @@ export type GameEntryMaxOrderByAggregateInput = {
   payerWallet?: Prisma.SortOrder
   paidAmount?: Prisma.SortOrder
   paidAt?: Prisma.SortOrder
+  purchaseSource?: Prisma.SortOrder
+  freeIssuedById?: Prisma.SortOrder
+  freeIssueNote?: Prisma.SortOrder
   score?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   rank?: Prisma.SortOrder
@@ -648,6 +711,9 @@ export type GameEntryMinOrderByAggregateInput = {
   payerWallet?: Prisma.SortOrder
   paidAmount?: Prisma.SortOrder
   paidAt?: Prisma.SortOrder
+  purchaseSource?: Prisma.SortOrder
+  freeIssuedById?: Prisma.SortOrder
+  freeIssueNote?: Prisma.SortOrder
   score?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   rank?: Prisma.SortOrder
@@ -759,12 +825,19 @@ export type NullableFloatFieldUpdateOperationsInput = {
   divide?: number
 }
 
+export type EnumTicketPurchaseSourceFieldUpdateOperationsInput = {
+  set?: $Enums.TicketPurchaseSource
+}
+
 export type GameEntryCreateWithoutUserInput = {
   id?: string
   txHash?: string | null
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -786,6 +859,9 @@ export type GameEntryUncheckedCreateWithoutUserInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -836,6 +912,9 @@ export type GameEntryScalarWhereInput = {
   payerWallet?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   paidAmount?: Prisma.FloatNullableFilter<"GameEntry"> | number | null
   paidAt?: Prisma.DateTimeNullableFilter<"GameEntry"> | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFilter<"GameEntry"> | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.StringNullableFilter<"GameEntry"> | string | null
+  freeIssueNote?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   score?: Prisma.IntFilter<"GameEntry"> | number
   answered?: Prisma.IntFilter<"GameEntry"> | number
   answers?: Prisma.JsonFilter<"GameEntry">
@@ -855,6 +934,9 @@ export type GameEntryCreateWithoutGameInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -876,6 +958,9 @@ export type GameEntryUncheckedCreateWithoutGameInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -922,6 +1007,9 @@ export type GameEntryCreateManyUserInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -941,6 +1029,9 @@ export type GameEntryUpdateWithoutUserInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -962,6 +1053,9 @@ export type GameEntryUncheckedUpdateWithoutUserInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -982,6 +1076,9 @@ export type GameEntryUncheckedUpdateManyWithoutUserInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1002,6 +1099,9 @@ export type GameEntryCreateManyGameInput = {
   payerWallet?: string | null
   paidAmount?: number | null
   paidAt?: Date | string | null
+  purchaseSource?: $Enums.TicketPurchaseSource
+  freeIssuedById?: string | null
+  freeIssueNote?: string | null
   score?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1021,6 +1121,9 @@ export type GameEntryUpdateWithoutGameInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1042,6 +1145,9 @@ export type GameEntryUncheckedUpdateWithoutGameInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1062,6 +1168,9 @@ export type GameEntryUncheckedUpdateManyWithoutGameInput = {
   payerWallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   paidAmount?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   paidAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  purchaseSource?: Prisma.EnumTicketPurchaseSourceFieldUpdateOperationsInput | $Enums.TicketPurchaseSource
+  freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
@@ -1085,6 +1194,9 @@ export type GameEntrySelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   payerWallet?: boolean
   paidAmount?: boolean
   paidAt?: boolean
+  purchaseSource?: boolean
+  freeIssuedById?: boolean
+  freeIssueNote?: boolean
   score?: boolean
   answered?: boolean
   answers?: boolean
@@ -1108,6 +1220,9 @@ export type GameEntrySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   payerWallet?: boolean
   paidAmount?: boolean
   paidAt?: boolean
+  purchaseSource?: boolean
+  freeIssuedById?: boolean
+  freeIssueNote?: boolean
   score?: boolean
   answered?: boolean
   answers?: boolean
@@ -1131,6 +1246,9 @@ export type GameEntrySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   payerWallet?: boolean
   paidAmount?: boolean
   paidAt?: boolean
+  purchaseSource?: boolean
+  freeIssuedById?: boolean
+  freeIssueNote?: boolean
   score?: boolean
   answered?: boolean
   answers?: boolean
@@ -1154,6 +1272,9 @@ export type GameEntrySelectScalar = {
   payerWallet?: boolean
   paidAmount?: boolean
   paidAt?: boolean
+  purchaseSource?: boolean
+  freeIssuedById?: boolean
+  freeIssueNote?: boolean
   score?: boolean
   answered?: boolean
   answers?: boolean
@@ -1167,7 +1288,7 @@ export type GameEntrySelectScalar = {
   updatedAt?: boolean
 }
 
-export type GameEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameId" | "userId" | "txHash" | "payerWallet" | "paidAmount" | "paidAt" | "score" | "answered" | "answers" | "rank" | "prize" | "claimedAt" | "merkleProof" | "merkleAmount" | "leftAt" | "createdAt" | "updatedAt", ExtArgs["result"]["gameEntry"]>
+export type GameEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameId" | "userId" | "txHash" | "payerWallet" | "paidAmount" | "paidAt" | "purchaseSource" | "freeIssuedById" | "freeIssueNote" | "score" | "answered" | "answers" | "rank" | "prize" | "claimedAt" | "merkleProof" | "merkleAmount" | "leftAt" | "createdAt" | "updatedAt", ExtArgs["result"]["gameEntry"]>
 export type GameEntryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   game?: boolean | Prisma.GameDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1195,6 +1316,9 @@ export type $GameEntryPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     payerWallet: string | null
     paidAmount: number | null
     paidAt: Date | null
+    purchaseSource: $Enums.TicketPurchaseSource
+    freeIssuedById: string | null
+    freeIssueNote: string | null
     score: number
     answered: number
     answers: runtime.JsonValue
@@ -1638,6 +1762,9 @@ export interface GameEntryFieldRefs {
   readonly payerWallet: Prisma.FieldRef<"GameEntry", 'String'>
   readonly paidAmount: Prisma.FieldRef<"GameEntry", 'Float'>
   readonly paidAt: Prisma.FieldRef<"GameEntry", 'DateTime'>
+  readonly purchaseSource: Prisma.FieldRef<"GameEntry", 'TicketPurchaseSource'>
+  readonly freeIssuedById: Prisma.FieldRef<"GameEntry", 'String'>
+  readonly freeIssueNote: Prisma.FieldRef<"GameEntry", 'String'>
   readonly score: Prisma.FieldRef<"GameEntry", 'Int'>
   readonly answered: Prisma.FieldRef<"GameEntry", 'Int'>
   readonly answers: Prisma.FieldRef<"GameEntry", 'Json'>

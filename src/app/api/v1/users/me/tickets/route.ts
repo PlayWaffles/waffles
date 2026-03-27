@@ -32,7 +32,13 @@ export const GET = withAuth(async (request: NextRequest, auth) => {
     return NextResponse.json(
       entries.map((entry) => ({
         id: entry.id,
-        status: entry.paidAt ? "PAID" : "PENDING",
+        status:
+          entry.purchaseSource === "FREE_ADMIN"
+            ? "FREE"
+            : entry.paidAt
+              ? "PAID"
+              : "PENDING",
+        purchaseSource: entry.purchaseSource,
         amountUSDC: entry.paidAmount ?? 0,
         gameId: entry.gameId,
         paidAt: entry.paidAt,

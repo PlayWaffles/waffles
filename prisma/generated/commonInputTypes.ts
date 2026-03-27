@@ -376,6 +376,13 @@ export type FloatNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
 }
 
+export type EnumTicketPurchaseSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.TicketPurchaseSource | Prisma.EnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTicketPurchaseSourceFilter<$PrismaModel> | $Enums.TicketPurchaseSource
+}
+
 export type JsonFilter<$PrismaModel = never> =
 | Prisma.PatchUndefined<
     Prisma.Either<Required<JsonFilterBase<$PrismaModel>>, Exclude<keyof Required<JsonFilterBase<$PrismaModel>>, 'path'>>,
@@ -438,6 +445,16 @@ export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _min?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _max?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+}
+
+export type EnumTicketPurchaseSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TicketPurchaseSource | Prisma.EnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTicketPurchaseSourceWithAggregatesFilter<$PrismaModel> | $Enums.TicketPurchaseSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTicketPurchaseSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTicketPurchaseSourceFilter<$PrismaModel>
 }
 
 export type JsonWithAggregatesFilter<$PrismaModel = never> =
@@ -847,6 +864,13 @@ export type NestedEnumDifficultyWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumDifficultyFilter<$PrismaModel>
 }
 
+export type NestedEnumTicketPurchaseSourceFilter<$PrismaModel = never> = {
+  equals?: $Enums.TicketPurchaseSource | Prisma.EnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTicketPurchaseSourceFilter<$PrismaModel> | $Enums.TicketPurchaseSource
+}
+
 export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   equals?: number | Prisma.FloatFieldRefInput<$PrismaModel> | null
   in?: number[] | Prisma.ListFloatFieldRefInput<$PrismaModel> | null
@@ -861,6 +885,16 @@ export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _min?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _max?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumTicketPurchaseSourceWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.TicketPurchaseSource | Prisma.EnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  in?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  notIn?: $Enums.TicketPurchaseSource[] | Prisma.ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumTicketPurchaseSourceWithAggregatesFilter<$PrismaModel> | $Enums.TicketPurchaseSource
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumTicketPurchaseSourceFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumTicketPurchaseSourceFilter<$PrismaModel>
 }
 
 export type NestedJsonFilter<$PrismaModel = never> =

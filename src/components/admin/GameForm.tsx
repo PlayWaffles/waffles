@@ -63,14 +63,8 @@ export function GameForm({
   const [description, setDescription] = useState(
     initialData?.description || ""
   );
-  const [tierPrice1, setTierPrice1] = useState(
-    initialData?.tierPrices?.[0]?.toString() || "5"
-  );
-  const [tierPrice2, setTierPrice2] = useState(
-    initialData?.tierPrices?.[1]?.toString() || "25"
-  );
-  const [tierPrice3, setTierPrice3] = useState(
-    initialData?.tierPrices?.[2]?.toString() || "50"
+  const [ticketPrice, setTicketPrice] = useState(
+    initialData?.tierPrices?.[0]?.toString() || "1"
   );
 
   const [roundDuration, setRoundDuration] = useState(
@@ -225,7 +219,7 @@ export function GameForm({
       { label: "Title", value: pendingFormData.get("title")?.toString() || "Untitled" },
       { label: "Theme", value: themeData ? `${themeData.icon} ${themeData.label}` : "—" },
       { label: "Starts", value: startsAt ? new Date(startsAt).toLocaleString() : "—" },
-      { label: "Min Ticket", value: `$${pendingFormData.get("tierPrice1")} USDC` },
+      { label: "Ticket Price", value: `$${pendingFormData.get("ticketPrice")} USDC` },
     ];
   };
 
@@ -527,70 +521,25 @@ export function GameForm({
             </div>
             <div>
               <h3 className="font-bold text-white">Pricing & Settings</h3>
-              <p className="text-sm text-white/50">Ticket tiers and game limits</p>
+              <p className="text-sm text-white/50">Single-ticket pricing and game limits</p>
             </div>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-            {/* Tier 1 */}
+            {/* Ticket Price */}
             <div>
-              <label htmlFor="tierPrice1" className="flex items-center gap-2 text-sm font-medium text-white/70 mb-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-linear-to-br from-orange-600 to-orange-800"></span>
-                Bronze
+              <label htmlFor="ticketPrice" className="block text-sm font-medium text-white/70 mb-2">
+                Ticket Price (USDC)
               </label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">$</span>
                 <input
                   type="number"
-                  id="tierPrice1"
-                  name="tierPrice1"
+                  id="ticketPrice"
+                  name="ticketPrice"
                   required
-                  value={tierPrice1}
-                  onChange={(e) => setTierPrice1(e.target.value)}
-                  min={0}
-                  step="0.01"
-                  className="w-full pl-7 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Tier 2 */}
-            <div>
-              <label htmlFor="tierPrice2" className="flex items-center gap-2 text-sm font-medium text-white/70 mb-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-linear-to-br from-gray-300 to-gray-500"></span>
-                Silver
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">$</span>
-                <input
-                  type="number"
-                  id="tierPrice2"
-                  name="tierPrice2"
-                  required
-                  value={tierPrice2}
-                  onChange={(e) => setTierPrice2(e.target.value)}
-                  min={0}
-                  step="0.01"
-                  className="w-full pl-7 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
-                />
-              </div>
-            </div>
-
-            {/* Tier 3 */}
-            <div>
-              <label htmlFor="tierPrice3" className="flex items-center gap-2 text-sm font-medium text-white/70 mb-2">
-                <span className="w-2.5 h-2.5 rounded-full bg-linear-to-br from-yellow-400 to-yellow-600"></span>
-                Gold
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">$</span>
-                <input
-                  type="number"
-                  id="tierPrice3"
-                  name="tierPrice3"
-                  required
-                  value={tierPrice3}
-                  onChange={(e) => setTierPrice3(e.target.value)}
+                  value={ticketPrice}
+                  onChange={(e) => setTicketPrice(e.target.value)}
                   min={0}
                   step="0.01"
                   className="w-full pl-7 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
@@ -598,7 +547,7 @@ export function GameForm({
               </div>
             </div>
             {/* Prize Pool Info (v5 - Dynamic) */}
-            <div className="col-span-1">
+            <div className="col-span-1 md:col-span-3">
               <label className="block text-sm font-medium text-white/70 mb-2">
                 Prize Pool
               </label>

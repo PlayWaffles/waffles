@@ -11,6 +11,7 @@ import {
 import { PurchaseView, type PurchaseStep } from "./PurchaseView";
 import { useUser } from "@/hooks/useUser";
 import { formatAddress } from "@/lib/address";
+import type { TicketPricingSnapshot } from "@/lib/tickets";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ interface BuyTicketModalProps {
   onchainId: `0x${string}` | null;
   theme: string;
   themeIcon?: string;
-  tierPrices: number[];
+  pricing: TicketPricingSnapshot;
   username?: string;
   userAvatar?: string;
   onPurchaseSuccess?: () => void;
@@ -32,7 +33,7 @@ export function BuyTicketModal({
   onchainId,
   theme,
   themeIcon,
-  tierPrices,
+  pricing,
   username = "Player",
   userAvatar,
   onPurchaseSuccess,
@@ -41,7 +42,6 @@ export function BuyTicketModal({
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { user } = useUser();
-  const [selectedTier, setSelectedTier] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
@@ -49,7 +49,7 @@ export function BuyTicketModal({
   const displayUsername =
     username !== "Player" ? username : user?.username || formatAddress(user?.wallet);
   const displayAvatar = userAvatar || user?.pfpUrl || undefined;
-  const selectedPrice = tierPrices[selectedTier] ?? 0;
+  const selectedPrice = pricing.currentPrice;
   const potentialPayout = Math.round(selectedPrice * 21.1);
 
   // Auto-connect wallet when modal opens
@@ -204,16 +204,13 @@ export function BuyTicketModal({
           <PurchaseView
             theme={theme}
             themeIcon={themeIcon}
-            tierPrices={tierPrices}
-            selectedTier={selectedTier}
-            onSelectTier={setSelectedTier}
+            currentPrice={pricing.currentPrice}
             potentialPayout={potentialPayout}
             isLoading={isLoading}
             isError={isError}
             step={step as PurchaseStep}
             buttonText={buttonText}
             isButtonDisabled={isButtonDisabled}
-            onchainId={onchainId}
             onPurchase={handlePurchase}
           />
         </div>

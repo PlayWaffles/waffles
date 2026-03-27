@@ -24,9 +24,7 @@ const gameSchema = z.object({
   // to ensure consistent timezone handling between local and production servers.
   startsAt: z.string().transform((str) => new Date(str)),
   endsAt: z.string().transform((str) => new Date(str)),
-  tierPrice1: z.coerce.number().min(0, "Tier price must be non-negative"),
-  tierPrice2: z.coerce.number().min(0, "Tier price must be non-negative"),
-  tierPrice3: z.coerce.number().min(0, "Tier price must be non-negative"),
+  ticketPrice: z.coerce.number().min(0, "Ticket price must be non-negative"),
   roundBreakSec: z.coerce
     .number()
     .min(5, "Duration must be at least 5 seconds"),
@@ -61,9 +59,7 @@ export async function createGameAction(
     coverUrl: formData.get("coverUrl"),
     startsAt: formData.get("startsAt"),
     endsAt: formData.get("endsAt"),
-    tierPrice1: formData.get("tierPrice1"),
-    tierPrice2: formData.get("tierPrice2"),
-    tierPrice3: formData.get("tierPrice3"),
+    ticketPrice: formData.get("ticketPrice"),
     roundBreakSec: formData.get("roundBreakSec"),
     maxPlayers: formData.get("maxPlayers"),
   };
@@ -91,7 +87,7 @@ export async function createGameAction(
         coverUrl: data.coverUrl,
         startsAt: data.startsAt,
         endsAt: data.endsAt,
-        tierPrices: [data.tierPrice1, data.tierPrice2, data.tierPrice3],
+        tierPrices: [data.ticketPrice],
         prizePool: 0,
         playerCount: 0,
         roundBreakSec: data.roundBreakSec,
@@ -106,7 +102,7 @@ export async function createGameAction(
     await initGameRoom(game.id, game.startsAt, game.endsAt);
 
     // 4. ON-CHAIN LAST (irreversible - only when everything else succeeded)
-    const txHash = await createGameOnChain(onchainId, data.tierPrice1);
+    const txHash = await createGameOnChain(onchainId, data.ticketPrice);
 
     // 5. CALCULATE GAME NUMBER & SEND NOTIFICATION
     // We count existing games to determine the number (e.g. #024)
@@ -169,6 +165,7 @@ export async function createGameAction(
         onchainId,
         txHash,
         gameNumber,
+        ticketPrice: data.ticketPrice,
       },
     });
 
@@ -223,9 +220,7 @@ export async function updateGameAction(
     coverUrl: formData.get("coverUrl"),
     startsAt: formData.get("startsAt"),
     endsAt: formData.get("endsAt"),
-    tierPrice1: formData.get("tierPrice1"),
-    tierPrice2: formData.get("tierPrice2"),
-    tierPrice3: formData.get("tierPrice3"),
+    ticketPrice: formData.get("ticketPrice"),
     roundBreakSec: formData.get("roundBreakSec"),
     maxPlayers: formData.get("maxPlayers"),
   };
@@ -237,10 +232,29 @@ export async function updateGameAction(
       error: validation.error.issues[0]?.message || "Invalid input",
     };
   }
-
   const data = validation.data;
 
   try {
+    const existingGame = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: {
+        tierPrices: true,
+      },
+    });
+
+    if (!existingGame) {
+      return { success: false, error: "Game not found" };
+    }
+
+    const existingPrice = existingGame.tierPrices[0] ?? 0;
+    if (data.ticketPrice < existingPrice) {
+      return {
+        success: false,
+        error:
+          "This edit would lower the on-chain minimum ticket price. Create a new game instead.",
+      };
+    }
+
     // 2. UPDATE DATABASE
     const game = await prisma.game.update({
       where: { id: gameId },
@@ -252,7 +266,7 @@ export async function updateGameAction(
         coverUrl: data.coverUrl,
         startsAt: data.startsAt,
         endsAt: data.endsAt,
-        tierPrices: [data.tierPrice1, data.tierPrice2, data.tierPrice3],
+        tierPrices: [data.ticketPrice],
         roundBreakSec: data.roundBreakSec,
         maxPlayers: data.maxPlayers,
       },

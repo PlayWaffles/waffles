@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { getTicketPricingSnapshot } from "@/lib/tickets";
 
 type Params = { gameId: string };
 
@@ -73,6 +74,7 @@ export async function GET(
     const gameWithPhase = {
       ...game,
       status: getGamePhase(game),
+      pricing: getTicketPricingSnapshot(game),
     };
 
     return NextResponse.json(gameWithPhase);

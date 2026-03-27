@@ -2,17 +2,17 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
-import { Prisma } from "@prisma";
+import { Prisma, TicketPurchaseSource } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser } from "@/lib/notifications";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
-import { env } from "@/lib/env";
 import { PAYMENT_TOKEN_DECIMALS, verifyTicketPurchase } from "@/lib/chain";
 import { parseUnits } from "viem";
 import { formatGameTime } from "@/lib/utils";
 import { getScore } from "@/lib/game/scoring";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
+import { getTicketPricingSnapshot, hasPlayableTicket } from "@/lib/tickets";
 
 export type PurchaseResult =
   | { success: true; entryId: string }
@@ -23,6 +23,31 @@ interface PurchaseInput {
   txHash: string;
   paidAmount: number;
   payerWallet: string;
+}
+
+function revalidateGamePaths() {
+  revalidatePath("/game");
+  revalidatePath("/(app)/(game)", "layout");
+}
+
+async function unlockReferralRewards(
+  tx: Prisma.TransactionClient,
+  userId: string,
+) {
+  const entryCount = await tx.gameEntry.count({
+    where: { userId },
+  });
+
+  if (entryCount === 1) {
+    await tx.referralReward.updateMany({
+      where: { inviteeId: userId, status: "PENDING" },
+      data: { status: "UNLOCKED", unlockedAt: new Date() },
+    });
+  }
+}
+
+function isSamePrice(a: number, b: number) {
+  return Math.abs(a - b) < 0.0001;
 }
 
 /**
@@ -61,8 +86,7 @@ export async function purchaseGameTicket(
 
     if (existing) {
       // Entry exists - revalidate and return success
-      revalidatePath("/game");
-      revalidatePath("/(app)/(game)", "layout");
+      revalidateGamePaths();
       return { success: true, entryId: existing.id };
     }
 
@@ -95,14 +119,14 @@ export async function purchaseGameTicket(
       };
     }
 
-    // Validate payment amount against allowed tiers
-    const isValidTier = game.tierPrices.some(
-      (price) => Math.abs(price - paidAmount) < 0.0001,
+    const pricingCandidates = (game.tierPrices ?? []).filter(
+      (price): price is number => typeof price === "number" && price > 0,
     );
-    if (!isValidTier) {
+
+    if (!pricingCandidates.some((price) => isSamePrice(price, paidAmount))) {
       return {
         success: false,
-        error: `Invalid payment tier. Allowed: ${game.tierPrices.join(", ")}`,
+        error: "Invalid payment amount",
         code: "INVALID_INPUT",
       };
     }
@@ -156,44 +180,144 @@ export async function purchaseGameTicket(
       verifiedAmount: verification.details?.amountFormatted,
     });
 
-    // Create entry and update game atomically
-    const entry = await prisma.$transaction(async (tx) => {
-      const newEntry = await tx.gameEntry.create({
-        data: {
-          gameId,
-          userId: user.id,
-          txHash,
-          payerWallet: payerWallet || null,
-          paidAmount,
-          paidAt: new Date(),
-        },
-      });
+    let entry:
+      | {
+          id: string;
+          paidAmount: number | null;
+          purchaseSource: TicketPurchaseSource;
+        }
+      | null = null;
+    let entryWasCreated = false;
+    let updatedPrizePool = game.prizePool;
+    let updatedPlayerCount = game.playerCount;
 
-      await tx.game.update({
-        where: { id: gameId },
-        data: {
-          playerCount: { increment: 1 },
-          prizePool: { increment: paidAmount },
-        },
-      });
+    for (let attempt = 0; attempt < 3; attempt++) {
+      try {
+        const transactionResult = await prisma.$transaction(
+          async (tx) => {
+            const existingEntry = await tx.gameEntry.findUnique({
+              where: { gameId_userId: { gameId, userId: user.id } },
+              select: { id: true, purchaseSource: true, paidAmount: true },
+            });
 
-      // Check if first game - unlock referral rewards
-      const entryCount = await tx.gameEntry.count({
-        where: { userId: user.id },
-      });
+            if (existingEntry) {
+              return {
+                entry: existingEntry,
+                prizePool: game.prizePool,
+                playerCount: game.playerCount,
+                wasCreated: false,
+              };
+            }
 
-      if (entryCount === 1) {
-        await tx.referralReward.updateMany({
-          where: { inviteeId: user.id, status: "PENDING" },
-          data: { status: "UNLOCKED", unlockedAt: new Date() },
-        });
+            const currentGame = await tx.game.findUnique({
+              where: { id: gameId },
+              select: {
+                id: true,
+                prizePool: true,
+                playerCount: true,
+                maxPlayers: true,
+                tierPrices: true,
+              },
+            });
+
+            if (!currentGame) {
+              throw new Error("Game not found");
+            }
+
+            if (currentGame.playerCount >= currentGame.maxPlayers) {
+              throw new Error("GAME_FULL");
+            }
+
+            const pricing = getTicketPricingSnapshot(currentGame);
+
+            if (!isSamePrice(pricing.currentPrice, paidAmount)) {
+              const error = new Error("PRICE_CHANGED");
+              error.name = "PRICE_CHANGED";
+              throw error;
+            }
+
+            const paidAt = new Date();
+            const newEntry = await tx.gameEntry.create({
+              data: {
+                gameId,
+                userId: user.id,
+                txHash,
+                payerWallet: payerWallet || null,
+                paidAmount,
+                paidAt,
+                purchaseSource: TicketPurchaseSource.PAID,
+              },
+              select: { id: true, paidAmount: true, purchaseSource: true },
+            });
+
+            const updatedGame = await tx.game.update({
+              where: { id: gameId },
+              data: {
+                playerCount: { increment: 1 },
+                prizePool: { increment: paidAmount },
+              },
+              select: { prizePool: true, playerCount: true },
+            });
+
+            await unlockReferralRewards(tx, user.id);
+
+            return {
+              entry: newEntry,
+              prizePool: updatedGame.prizePool,
+              playerCount: updatedGame.playerCount,
+              wasCreated: true,
+            };
+          },
+          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
+        );
+
+        entry = transactionResult.entry;
+        updatedPrizePool = transactionResult.prizePool;
+        updatedPlayerCount = transactionResult.playerCount;
+        entryWasCreated = transactionResult.wasCreated;
+        break;
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === "P2034" &&
+          attempt < 2
+        ) {
+          continue;
+        }
+
+        if (error instanceof Error && error.message === "PRICE_CHANGED") {
+          return {
+            success: false,
+            error: "Ticket price changed. Refresh and try again.",
+            code: "PRICE_CHANGED",
+          };
+        }
+
+        if (error instanceof Error && error.message === "GAME_FULL") {
+          return {
+            success: false,
+            error: "Game is full",
+            code: "GAME_FULL",
+          };
+        }
+
+        throw error;
       }
+    }
 
-      return newEntry;
-    });
+    if (!entry) {
+      return {
+        success: false,
+        error: "Purchase failed",
+        code: "INTERNAL_ERROR",
+      };
+    }
 
-    revalidatePath("/game");
-    revalidatePath("/(app)/(game)", "layout");
+    revalidateGamePaths();
+
+    if (!entryWasCreated) {
+      return { success: true, entryId: entry.id };
+    }
 
     // Async: Send notification (don't await)
     const timeStr = formatGameTime(game.startsAt);
@@ -214,8 +338,8 @@ export async function purchaseGameTicket(
     notifyTicketPurchased(gameId, {
       username: user.username || "Player",
       pfpUrl: user.pfpUrl || null,
-      prizePool: game.prizePool + paidAmount,
-      playerCount: game.playerCount + 1,
+      prizePool: updatedPrizePool,
+      playerCount: updatedPlayerCount,
     }).catch((err) =>
       console.error("[game-actions]", "partykit_notify_error", {
         gameId,
@@ -227,7 +351,7 @@ export async function purchaseGameTicket(
     // ALMOST SOLD OUT NOTIFICATION (90% Threshold)
     // =========================================================================
     const playerThreshold = Math.floor(game.maxPlayers * 0.9);
-    const newCount = game.playerCount + 1; // +1 because we just added this user
+    const newCount = updatedPlayerCount;
 
     // Fire-and-forget: don't block the purchase response
     if (newCount === playerThreshold) {
@@ -260,7 +384,8 @@ export async function purchaseGameTicket(
       gameId,
       entryId: entry.id,
       userId: user.id,
-      paidAmount,
+      paidAmount: entry.paidAmount,
+      purchaseSource: entry.purchaseSource,
     });
 
     return { success: true, entryId: entry.id };
@@ -348,8 +473,7 @@ export async function leaveGame(
       select: { leftAt: true },
     });
 
-    revalidatePath("/game");
-    revalidatePath("/(app)/(game)", "layout");
+    revalidateGamePaths();
 
     console.log("[game-actions]", "game_left", { gameId, userId: user.id });
 
@@ -429,6 +553,7 @@ export async function submitAnswer(
           answered: true,
           answers: true,
           paidAt: true,
+          purchaseSource: true,
           leftAt: true,
         },
       }),
@@ -454,11 +579,11 @@ export async function submitAnswer(
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
     }
 
-    if (!entry.paidAt) {
+    if (!hasPlayableTicket(entry)) {
       return {
         success: false,
-        error: "Payment required",
-        code: "PAYMENT_REQUIRED",
+        error: "Ticket required",
+        code: "TICKET_REQUIRED",
       };
     }
 

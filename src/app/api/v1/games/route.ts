@@ -4,6 +4,7 @@ import type { Prisma } from "@prisma";
 import { getGamePhase, type GamePhase } from "@/lib/types";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
+import { getTicketPricingSnapshot } from "@/lib/tickets";
 
 /**
  * GET /api/v1/games
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
     const gamesWithPhase = games.map((game) => ({
       ...game,
       status: getGamePhase(game),
+      pricing: getTicketPricingSnapshot(game),
     }));
 
     return NextResponse.json(gamesWithPhase);

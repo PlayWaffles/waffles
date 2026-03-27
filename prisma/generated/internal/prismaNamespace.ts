@@ -1495,6 +1495,9 @@ export const GameEntryScalarFieldEnum = {
   payerWallet: 'payerWallet',
   paidAmount: 'paidAmount',
   paidAt: 'paidAt',
+  purchaseSource: 'purchaseSource',
+  freeIssuedById: 'freeIssuedById',
+  freeIssueNote: 'freeIssueNote',
   score: 'score',
   answered: 'answered',
   answers: 'answers',
@@ -1787,6 +1790,20 @@ export type EnumDifficultyFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
  * Reference to a field of type 'Difficulty[]'
  */
 export type ListEnumDifficultyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'Difficulty[]'>
+    
+
+
+/**
+ * Reference to a field of type 'TicketPurchaseSource'
+ */
+export type EnumTicketPurchaseSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TicketPurchaseSource'>
+    
+
+
+/**
+ * Reference to a field of type 'TicketPurchaseSource[]'
+ */
+export type ListEnumTicketPurchaseSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TicketPurchaseSource[]'>
     
 
 

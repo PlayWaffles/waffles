@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
+import { hasPlayableTicket } from "@/lib/tickets";
 
 type Params = { gameId: string };
 
@@ -58,7 +59,7 @@ export const POST = withAuth<Params>(
             userId: auth.userId,
           },
         },
-        select: { id: true, paidAt: true },
+        select: { id: true, paidAt: true, purchaseSource: true },
       });
 
       if (!entry) {
@@ -68,9 +69,9 @@ export const POST = withAuth<Params>(
         );
       }
 
-      if (!entry.paidAt) {
+      if (!hasPlayableTicket(entry)) {
         return NextResponse.json<ApiError>(
-          { error: "Payment required to join", code: "PAYMENT_REQUIRED" },
+          { error: "Ticket required to join", code: "TICKET_REQUIRED" },
           { status: 403 }
         );
       }
