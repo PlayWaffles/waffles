@@ -95,6 +95,61 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       return;
     }
 
+    type InjectedProviderDebug = {
+      isMiniPay?: boolean;
+      isMetaMask?: boolean;
+      isCoinbaseWallet?: boolean;
+      isRabby?: boolean;
+      selectedAddress?: string;
+      chainId?: string;
+    };
+
+    const injectedEthereum = (
+      window as Window & {
+        ethereum?: {
+          providers?: InjectedProviderDebug[];
+        };
+      }
+    ).ethereum as (InjectedProviderDebug & {
+      providers?: InjectedProviderDebug[];
+    }) | undefined;
+
+    console.log("[wallet-debug]", {
+      stage: "runtime-wallets",
+      runtime,
+      wagmiConnectors: connectors.map((connector) => ({
+        id: connector.id,
+        name: connector.name,
+        type: connector.type,
+      })),
+      injectedWallet: injectedEthereum
+        ? {
+            isMiniPay: Boolean(injectedEthereum.isMiniPay),
+            isMetaMask: Boolean(injectedEthereum.isMetaMask),
+            isCoinbaseWallet: Boolean(injectedEthereum.isCoinbaseWallet),
+            isRabby: Boolean(injectedEthereum.isRabby),
+            selectedAddress: injectedEthereum.selectedAddress ?? null,
+            chainId: injectedEthereum.chainId ?? null,
+          }
+        : null,
+      injectedProviders:
+        injectedEthereum?.providers?.map((provider: InjectedProviderDebug, index: number) => ({
+          index,
+          isMiniPay: Boolean(provider.isMiniPay),
+          isMetaMask: Boolean(provider.isMetaMask),
+          isCoinbaseWallet: Boolean(provider.isCoinbaseWallet),
+          isRabby: Boolean(provider.isRabby),
+          selectedAddress: provider.selectedAddress ?? null,
+          chainId: provider.chainId ?? null,
+        })) ?? [],
+    });
+  }, [connectors, runtime]);
+
+  useEffect(() => {
+    if (!runtime || typeof window === "undefined") {
+      return;
+    }
+
     const hasSeen = onboardingKey
       ? localStorage.getItem(onboardingKey) === "1"
       : false;
