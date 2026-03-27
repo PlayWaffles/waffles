@@ -12,11 +12,12 @@ datasource db {
 // ==========================================
 
 model User {
-  id       String  @id @default(cuid())
-  fid      Int     @unique
-  username String? @db.VarChar(100)
-  pfpUrl   String? @db.VarChar(500)
-  wallet   String? @unique @db.VarChar(42)
+  id       String       @id @default(cuid())
+  platform UserPlatform
+  fid      Int?         @unique
+  username String?      @db.VarChar(100)
+  pfpUrl   String?      @db.VarChar(500)
+  wallet   String?      @unique @db.VarChar(42)
 
   // -- ADMIN --
   role     UserRole @default(USER)
@@ -36,6 +37,11 @@ model User {
   hasGameAccess   Boolean   @default(false)
   accessGrantedAt DateTime?
   accessGrantedBy String?
+
+  // -- STREAKS --
+  currentStreak Int       @default(0)
+  bestStreak    Int       @default(0)
+  lastLoginAt   DateTime?
 
   // -- BAN --
   isBanned Boolean   @default(false)
@@ -62,6 +68,11 @@ model User {
 enum UserRole {
   USER
   ADMIN
+}
+
+enum UserPlatform {
+  FARCASTER
+  MINIPAY
 }
 
 model ReferralReward {
@@ -188,6 +199,7 @@ model Game {
   onchainId String? @unique @db.VarChar(66)
 
   // -- INFO --
+  platform    UserPlatform
   title       String    @db.VarChar(100)
   description String?   @db.VarChar(1000)
   theme       GameTheme
@@ -226,6 +238,8 @@ model Game {
   updatedAt DateTime @updatedAt
 
   // -- INDEXES --
+  @@index([platform, startsAt])
+  @@index([platform, endsAt])
   @@index([startsAt])
   @@index([endsAt])
 }

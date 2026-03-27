@@ -17,6 +17,14 @@ export const UserRole = {
 export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 
 
+export const UserPlatform = {
+  FARCASTER: 'FARCASTER',
+  MINIPAY: 'MINIPAY'
+} as const
+
+export type UserPlatform = (typeof UserPlatform)[keyof typeof UserPlatform]
+
+
 export const RewardStatus = {
   PENDING: 'PENDING',
   UNLOCKED: 'UNLOCKED',

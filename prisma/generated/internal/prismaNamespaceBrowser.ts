@@ -83,6 +83,7 @@ export type TransactionIsolationLevel = (typeof TransactionIsolationLevel)[keyof
 
 export const UserScalarFieldEnum = {
   id: 'id',
+  platform: 'platform',
   fid: 'fid',
   username: 'username',
   pfpUrl: 'pfpUrl',
@@ -95,6 +96,9 @@ export const UserScalarFieldEnum = {
   hasGameAccess: 'hasGameAccess',
   accessGrantedAt: 'accessGrantedAt',
   accessGrantedBy: 'accessGrantedBy',
+  currentStreak: 'currentStreak',
+  bestStreak: 'bestStreak',
+  lastLoginAt: 'lastLoginAt',
   isBanned: 'isBanned',
   bannedAt: 'bannedAt',
   bannedBy: 'bannedBy',
@@ -161,6 +165,7 @@ export const GameScalarFieldEnum = {
   id: 'id',
   gameNumber: 'gameNumber',
   onchainId: 'onchainId',
+  platform: 'platform',
   title: 'title',
   description: 'description',
   theme: 'theme',
