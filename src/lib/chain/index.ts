@@ -24,7 +24,7 @@ export {
 // Merkle tree
 export {
   buildMerkleTree,
-  generateMerkleProof,
+  generateAllProofs,
   verifyMerkleProof,
   type Winner,
   type MerkleTreeResult,

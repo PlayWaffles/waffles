@@ -59,19 +59,3 @@ export function getSettlerWalletClient() {
   });
 }
 
-// ============================================================================
-// Contract Read Functions
-// ============================================================================
-
-/**
- * Read the current platform fee from the smart contract
- * @returns Platform fee in permyriad (e.g., 1000 = 10%)
- */
-export async function getPlatformFeeBps(): Promise<number> {
-  const fee = await publicClient.readContract({
-    address: WAFFLE_CONTRACT_ADDRESS,
-    abi: waffleGameAbi,
-    functionName: "platformFeePermyriad",
-  });
-  return Number(fee);
-}

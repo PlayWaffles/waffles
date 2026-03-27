@@ -78,11 +78,7 @@ export async function verifyTicketPurchase(
     // Layer 2: Event Log Verification
     // =========================================================================
 
-    // Find TicketPurchased event in logs
-    // Event signature: TicketPurchased(bytes32 indexed gameId, address indexed buyer, uint256 amount)
-    const TICKET_PURCHASED_TOPIC = "0x"; // Will be computed dynamically
-
-    // Look for logs from our contract that could be TicketPurchased events
+    // Look for TicketPurchased event logs from our contract
     const contractLogs = receipt.logs.filter(
       (log) =>
         log.address.toLowerCase() === WAFFLE_CONTRACT_ADDRESS.toLowerCase(),
@@ -145,8 +141,6 @@ export async function verifyTicketPurchase(
       };
     }
 
-    const eventArgs = matchingEvent;
-
     // =========================================================================
     // Layer 3: Contract State Verification (Reorg Protection)
     // =========================================================================
@@ -181,10 +175,10 @@ export async function verifyTicketPurchase(
     return {
       verified: true,
       details: {
-        gameId: eventArgs.gameId,
-        buyer: eventArgs.buyer,
-        amount: eventArgs.amount,
-        amountFormatted: formatUnits(eventArgs.amount, PAYMENT_TOKEN_DECIMALS),
+        gameId: matchingEvent.gameId,
+        buyer: matchingEvent.buyer,
+        amount: matchingEvent.amount,
+        amountFormatted: formatUnits(matchingEvent.amount, PAYMENT_TOKEN_DECIMALS),
       },
     };
   } catch (error) {

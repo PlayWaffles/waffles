@@ -217,6 +217,8 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
       rankedAt: true,
       onChainAt: true,
       prizePool: true,
+      merkleRoot: true,
+      onChainTxHash: true,
     },
   });
 
@@ -225,16 +227,12 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
     throw new Error(`Game ${gameId} must be ranked before publishing`);
   if (!game.onchainId) throw new Error(`Game ${gameId} has no on-chain ID`);
 
-  // Already published
+  // Already published — return cached result
   if (game.onChainAt) {
-    const existing = await prisma.game.findUnique({
-      where: { id: gameId },
-      select: { merkleRoot: true, onChainTxHash: true },
-    });
     return {
       success: true,
-      merkleRoot: existing!.merkleRoot!,
-      txHash: existing!.onChainTxHash!,
+      merkleRoot: game.merkleRoot!,
+      txHash: game.onChainTxHash!,
       winnersCount: await prisma.gameEntry.count({
         where: { gameId, prize: { gt: 0 } },
       }),

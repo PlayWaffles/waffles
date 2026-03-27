@@ -353,19 +353,24 @@ export async function getAuthFromRequest(
   }
 }
 
+const currentUserSelect = {
+  id: true,
+  platform: true,
+  username: true,
+  pfpUrl: true,
+  wallet: true,
+} as const;
+
 export async function getCurrentUser() {
   const auth = await getAuthFromRequest();
   if (!auth) return null;
 
   const user = await prisma.user.findUnique({
     where: { id: auth.userId },
+    select: currentUserSelect,
   });
 
-  if (!user) {
-    return null;
-  }
-
-  return user;
+  return user ?? null;
 }
 
 export async function requireCurrentUser() {
@@ -376,6 +381,7 @@ export async function requireCurrentUser() {
 
   const user = await prisma.user.findUnique({
     where: { id: auth.userId },
+    select: currentUserSelect,
   });
 
   if (!user) {

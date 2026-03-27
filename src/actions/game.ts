@@ -14,10 +14,6 @@ import { getScore } from "@/lib/game/scoring";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
 
-// ============================================================================
-// Types
-// ============================================================================
-
 export type PurchaseResult =
   | { success: true; entryId: string }
   | { success: false; error: string; code?: string };
@@ -28,10 +24,6 @@ interface PurchaseInput {
   paidAmount: number;
   payerWallet: string;
 }
-
-// ============================================================================
-// Server Action: Purchase Game Ticket
-// ============================================================================
 
 /**
  * Records a ticket purchase after on-chain transaction succeeds.
@@ -200,7 +192,6 @@ export async function purchaseGameTicket(
       return newEntry;
     });
 
-    // Revalidate cache - THE KEY FIX FOR STALE DATA
     revalidatePath("/game");
     revalidatePath("/(app)/(game)", "layout");
 
@@ -238,40 +229,31 @@ export async function purchaseGameTicket(
     const playerThreshold = Math.floor(game.maxPlayers * 0.9);
     const newCount = game.playerCount + 1; // +1 because we just added this user
 
-    // Only fire exactly when crossing the threshold (idempotent-ish)
+    // Fire-and-forget: don't block the purchase response
     if (newCount === playerThreshold) {
-      // Import dynamically to avoid circular deps
-      const { preGame, buildPayload } =
-        await import("@/lib/notifications/templates");
-      const { sendBatch } = await import("@/lib/notifications");
+      (async () => {
+        const { preGame, buildPayload } =
+          await import("@/lib/notifications/templates");
+        const { sendBatch } = await import("@/lib/notifications");
 
-      // Find users with game access who haven't bought a ticket yet
-      const eligibleUsers = await prisma.user.findMany({
-        where: {
-          hasGameAccess: true,
-          isBanned: false,
-          entries: {
-            none: { gameId }, // User has NOT entered this game
+        const eligibleUsers = await prisma.user.findMany({
+          where: {
+            hasGameAccess: true,
+            isBanned: false,
+            entries: { none: { gameId } },
           },
-        },
-        select: { id: true },
-        take: 500, // Limit blast radius
-      });
-
-      if (eligibleUsers.length > 0) {
-        const template = preGame.almostSoldOut(game.gameNumber || 0);
-        const payload = buildPayload(template, undefined, "pregame");
-
-        console.log("[game-actions]", "triggering_sold_out_notify", {
-          gameId,
-          threshold: playerThreshold,
-          recipients: eligibleUsers.length,
+          select: { id: true },
+          take: 500,
         });
 
-        sendBatch(payload, eligibleUsers.map((u) => u.id)).catch((err) =>
-          console.error("[game-actions]", "sold_out_notify_error", err),
-        );
-      }
+        if (eligibleUsers.length > 0) {
+          const template = preGame.almostSoldOut(game.gameNumber || 0);
+          const payload = buildPayload(template, undefined, "pregame");
+          await sendBatch(payload, eligibleUsers.map((u) => u.id));
+        }
+      })().catch((err) =>
+        console.error("[game-actions]", "sold_out_notify_error", err),
+      );
     }
 
     console.log("[game-actions]", "ticket_purchased", {
@@ -291,10 +273,6 @@ export async function purchaseGameTicket(
     return { success: false, error: "Purchase failed", code: "INTERNAL_ERROR" };
   }
 }
-
-// ============================================================================
-// Server Action: Leave Game
-// ============================================================================
 
 export type LeaveGameResult =
   | { success: true; leftAt: Date }
@@ -389,10 +367,6 @@ export async function leaveGame(
     };
   }
 }
-
-// ============================================================================
-// Server Action: Submit Answer
-// ============================================================================
 
 export type SubmitAnswerResult =
   | {

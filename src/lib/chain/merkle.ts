@@ -52,43 +52,6 @@ export function buildMerkleTree(winners: Winner[]): MerkleTreeResult {
 }
 
 /**
- * Generates a Merkle proof for a specific winner
- */
-export function generateMerkleProof(
-  winners: Winner[],
-  targetAddress: `0x${string}`
-): {
-  amount: bigint;
-  proof: `0x${string}`[];
-} | null {
-  if (winners.length === 0) return null;
-
-  // Find the target winner
-  const targetWinner = winners.find(
-    (w) => w.address.toLowerCase() === targetAddress.toLowerCase()
-  );
-
-  if (!targetWinner) return null;
-
-  // Build tree
-  const { tree } = buildMerkleTree(winners);
-
-  // Find the leaf and get proof
-  for (const [i, leaf] of tree.entries()) {
-    const [, leafAddress] = leaf;
-    if (leafAddress.toLowerCase() === targetAddress.toLowerCase()) {
-      const proof = tree.getProof(i) as `0x${string}`[];
-      return {
-        amount: targetWinner.amount,
-        proof,
-      };
-    }
-  }
-
-  return null;
-}
-
-/**
  * Generates Merkle proofs for all winners at once
  * Returns a map of address -> { amount, proof }
  */
@@ -134,20 +97,3 @@ export function verifyMerkleProof(
   );
 }
 
-/**
- * Dumps tree to JSON for storage/debugging
- */
-export function dumpTree(
-  tree: StandardMerkleTree<[bigint, string, bigint]>
-): string {
-  return JSON.stringify(tree.dump());
-}
-
-/**
- * Loads tree from JSON
- */
-export function loadTree(
-  json: string
-): StandardMerkleTree<[bigint, string, bigint]> {
-  return StandardMerkleTree.load(JSON.parse(json));
-}

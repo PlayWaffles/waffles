@@ -168,32 +168,3 @@ export async function redeemInviteCodeAction(
  * Server Action: Fetches the invite code for the logged-in user.
  * (Used on the /invite client page)
  */
-export type UserInviteData = {
-  code: string | null;
-};
-
-export async function getUserInviteDataAction(
-  fid: number
-): Promise<UserInviteData> {
-  const validation = z.number().int().positive().safeParse(fid);
-  if (!validation.success) {
-    console.warn("getUserInviteDataAction: Invalid FID", fid);
-    return { code: null };
-  }
-
-  try {
-    const user = await prisma.user.findUnique({
-      where: { fid },
-      select: { inviteCode: true },
-    });
-
-    if (!user) {
-      return { code: null };
-    }
-
-    return { code: user.inviteCode };
-  } catch (err) {
-    console.error("[GET_USER_INVITE_DATA_ERROR]", err);
-    return { code: null };
-  }
-}

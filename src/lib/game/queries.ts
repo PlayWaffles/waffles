@@ -51,38 +51,30 @@ export const getCurrentOrNextGame = cache(
   async (platform: UserPlatform): Promise<GameQueryResult> => {
     const now = new Date();
 
-    // First try to get current live or upcoming game
-    const activeGame = await prisma.game.findFirst({
-      where: {
-        platform,
-        OR: [
-          { startsAt: { lte: now }, endsAt: { gt: now } }, // Live
-          { startsAt: { gt: now } }, // Scheduled
-        ],
-      },
-      orderBy: [{ startsAt: "asc" }],
-      include: gameInclude,
-    });
+    // Fire both queries in parallel — prefer active game, fall back to ended
+    const [activeGame, endedGame] = await Promise.all([
+      prisma.game.findFirst({
+        where: {
+          platform,
+          OR: [
+            { startsAt: { lte: now }, endsAt: { gt: now } }, // Live
+            { startsAt: { gt: now } }, // Scheduled
+          ],
+        },
+        orderBy: [{ startsAt: "asc" }],
+        include: gameInclude,
+      }),
+      prisma.game.findFirst({
+        where: { platform, endsAt: { lte: now } },
+        orderBy: [{ endsAt: "desc" }],
+        include: gameInclude,
+      }),
+    ]);
 
-    if (activeGame) {
-      const { _count, ...gameData } = activeGame;
-      return {
-        game: { ...gameData, questionCount: _count.questions },
-      };
-    }
-
-    // Fallback: get most recent ended game
-    const endedGame = await prisma.game.findFirst({
-      where: { platform, endsAt: { lte: now } },
-      orderBy: [{ endsAt: "desc" }],
-      include: gameInclude,
-    });
-
-    if (endedGame) {
-      const { _count, ...gameData } = endedGame;
-      return {
-        game: { ...gameData, questionCount: _count.questions },
-      };
+    const result = activeGame ?? endedGame;
+    if (result) {
+      const { _count, ...gameData } = result;
+      return { game: { ...gameData, questionCount: _count.questions } };
     }
 
     return { game: null };

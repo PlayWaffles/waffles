@@ -123,7 +123,6 @@ export async function createGameAction(
     const template = (await import("@/lib/notifications/templates")).preGame
       .gameOpen;
     const { sendBatch } = await import("@/lib/notifications");
-    const { env } = await import("@/lib/env");
     const { buildPayload } = await import("@/lib/notifications/templates");
 
     const usersToNotify = await prisma.user.findMany({
