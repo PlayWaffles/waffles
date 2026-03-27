@@ -400,6 +400,115 @@ export async function purchaseGameTicket(
   }
 }
 
+export type FreeTicketResult =
+  | { success: true; entryId: string }
+  | { success: false; error: string; code?: string };
+
+/**
+ * Claims a free ticket for a game. No on-chain transaction.
+ * Free tickets grant game access but are not eligible for prizes.
+ */
+export async function claimFreeTicket(
+  gameId: string,
+): Promise<FreeTicketResult> {
+  if (!gameId) {
+    return { success: false, error: "Missing game ID", code: "INVALID_INPUT" };
+  }
+
+  try {
+    const { user } = await requireCurrentUser();
+
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: {
+        id: true,
+        platform: true,
+        startsAt: true,
+        endsAt: true,
+        playerCount: true,
+        maxPlayers: true,
+        gameNumber: true,
+      },
+    });
+
+    if (!game) {
+      return { success: false, error: "Game not found", code: "NOT_FOUND" };
+    }
+
+    if (game.platform !== user.platform) {
+      return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
+    }
+
+    if (new Date() >= game.endsAt) {
+      return { success: false, error: "Game has ended", code: "GAME_ENDED" };
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const existing = await tx.gameEntry.findUnique({
+        where: { gameId_userId: { gameId, userId: user.id } },
+        select: { id: true },
+      });
+
+      if (existing) {
+        return { entryId: existing.id, wasCreated: false, playerCount: game.playerCount };
+      }
+
+      const currentGame = await tx.game.findUnique({
+        where: { id: gameId },
+        select: { playerCount: true, maxPlayers: true },
+      });
+
+      if (!currentGame || currentGame.playerCount >= currentGame.maxPlayers) {
+        throw new Error("GAME_FULL");
+      }
+
+      const entry = await tx.gameEntry.create({
+        data: {
+          gameId,
+          userId: user.id,
+          paidAmount: 0,
+          purchaseSource: TicketPurchaseSource.FREE_PLAYER,
+        },
+        select: { id: true },
+      });
+
+      const updated = await tx.game.update({
+        where: { id: gameId },
+        data: { playerCount: { increment: 1 } },
+        select: { playerCount: true },
+      });
+
+      await unlockReferralRewards(tx, user.id);
+
+      return { entryId: entry.id, wasCreated: true, playerCount: updated.playerCount };
+    });
+
+    revalidateGamePaths();
+
+    if (result.wasCreated) {
+      notifyTicketPurchased(gameId, {
+        username: user.username || "Player",
+        pfpUrl: user.pfpUrl || null,
+        prizePool: 0,
+        playerCount: result.playerCount,
+      }).catch((err) =>
+        console.error("[game-actions]", "free_ticket_partykit_error", err),
+      );
+    }
+
+    return { success: true, entryId: result.entryId };
+  } catch (error) {
+    if (error instanceof Error && error.message === "GAME_FULL") {
+      return { success: false, error: "Game is full", code: "GAME_FULL" };
+    }
+    console.error("[game-actions]", "free_ticket_error", {
+      gameId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { success: false, error: "Failed to claim ticket", code: "INTERNAL_ERROR" };
+  }
+}
+
 export type LeaveGameResult =
   | { success: true; leftAt: Date }
   | { success: false; error: string; code?: string };

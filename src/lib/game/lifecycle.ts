@@ -132,7 +132,9 @@ export async function rankGame(gameId: string): Promise<RankResult> {
     userId: e.userId,
     score: e.score,
     paidAmount:
-      e.purchaseSource === "FREE_ADMIN" ? 0 : e.paidAt ? (e.paidAmount ?? 0) : 0,
+      e.purchaseSource === "FREE_ADMIN" || e.purchaseSource === "FREE_PLAYER"
+        ? 0
+        : e.paidAt ? (e.paidAmount ?? 0) : 0,
     username: e.user.username ?? undefined,
   }));
 

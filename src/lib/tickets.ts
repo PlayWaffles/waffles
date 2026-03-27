@@ -36,5 +36,9 @@ export function getTicketPricingSnapshot(
 
 export function hasPlayableTicket(entry: TicketEntryLike | null | undefined): boolean {
   if (!entry) return false;
-  return Boolean(entry.paidAt || entry.purchaseSource === "FREE_ADMIN");
+  return Boolean(
+    entry.paidAt ||
+    entry.purchaseSource === "FREE_ADMIN" ||
+    entry.purchaseSource === "FREE_PLAYER",
+  );
 }

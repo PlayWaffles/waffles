@@ -388,6 +388,7 @@ enum TicketPurchaseSource {
   PAID
   DISCOUNTED
   FREE_ADMIN
+  FREE_PLAYER
 }
 
 // ==========================================

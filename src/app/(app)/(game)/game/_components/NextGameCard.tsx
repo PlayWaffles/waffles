@@ -126,7 +126,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         : hasTicket
           ? { text: "YOU'RE IN!", disabled: true, href: null }
           : {
-              text: `BUY WAFFLE - $${game.pricing.currentPrice.toFixed(2)}`,
+              text: "GET TICKET",
               disabled: false,
               href: null,
             };
