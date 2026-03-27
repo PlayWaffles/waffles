@@ -9,8 +9,7 @@
 import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { env } from "@/lib/env";
-import { waffleGameAbi } from "./abi";
-import { chain, WAFFLE_CONTRACT_ADDRESS } from "./config";
+import { chain } from "./config";
 
 // ============================================================================
 // Public Client (Read-only)
@@ -58,4 +57,3 @@ export function getSettlerWalletClient() {
     transport: http(),
   });
 }
-

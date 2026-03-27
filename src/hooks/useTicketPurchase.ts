@@ -13,13 +13,14 @@ import { waffleGameAbi } from "@/lib/chain/abi";
 import { ERC20_ABI } from "@/lib/constants";
 import { purchaseGameTicket } from "@/actions/game";
 import {
-  PAYMENT_TOKEN_ADDRESS,
   PAYMENT_TOKEN_DECIMALS,
-  WAFFLE_CONTRACT_ADDRESS,
+  getPaymentTokenAddress,
+  getWaffleContractAddress,
 } from "@/lib/chain";
 import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
 import { useCorrectChain } from "./useCorrectChain";
 import { useUser } from "./useUser";
+import type { ChainPlatform } from "@/lib/chain/platform";
 
 // ==========================================
 // TYPES
@@ -46,6 +47,7 @@ export interface TicketPurchaseState {
 
 export function useTicketPurchase(
   gameId: string,
+  platform: ChainPlatform,
   onchainId: `0x${string}` | null,
   price: number,
   onSuccess?: () => void,
@@ -73,10 +75,12 @@ export function useTicketPurchase(
     [price],
   );
 
-  const tokenAddress = PAYMENT_TOKEN_ADDRESS;
+  const tokenAddress = getPaymentTokenAddress(platform);
+  const contractAddress = getWaffleContractAddress(platform);
   const { data: allowance } = useTokenAllowance(
     address as `0x${string}`,
     tokenAddress,
+    platform,
   );
 
   const needsApproval = useMemo(() => {
@@ -100,16 +104,13 @@ export function useTicketPurchase(
         data: encodeFunctionData({
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [
-            WAFFLE_CONTRACT_ADDRESS,
-            parseUnits("5000", PAYMENT_TOKEN_DECIMALS),
-          ],
+          args: [contractAddress, parseUnits("5000", PAYMENT_TOKEN_DECIMALS)],
         }),
       });
     }
 
     callList.push({
-      to: WAFFLE_CONTRACT_ADDRESS,
+      to: contractAddress,
       data: encodeFunctionData({
         abi: waffleGameAbi,
         functionName: "buyTicket",
@@ -118,7 +119,7 @@ export function useTicketPurchase(
     });
 
     return callList;
-  }, [onchainId, priceInUnits, needsApproval, tokenAddress]);
+  }, [contractAddress, onchainId, priceInUnits, needsApproval, tokenAddress]);
 
   // ==========================================
   // WAGMI SEND CALLS

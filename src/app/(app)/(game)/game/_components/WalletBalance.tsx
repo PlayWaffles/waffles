@@ -3,11 +3,17 @@
 import { useAccount, useChainId, useConnect } from "wagmi";
 import { useGetTokenBalance } from "@coinbase/onchainkit/wallet";
 import { motion, useAnimation } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { springs } from "@/lib/animations";
-import { PAYMENT_TOKEN_ADDRESS, PAYMENT_TOKEN_DECIMALS, chain } from "@/lib/chain";
+import {
+  getPaymentTokenAddress,
+  PAYMENT_TOKEN_DECIMALS,
+  chain,
+} from "@/lib/chain";
 import { useCorrectChain } from "@/hooks/useCorrectChain";
+import { getAppRuntime, runtimeToPlatform } from "@/lib/client/runtime";
+import type { ChainPlatform } from "@/lib/chain/platform";
 
 // Animated Wallet Icon with coin drop effect
 function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
@@ -62,6 +68,7 @@ export function WalletBalance() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain();
+  const [platform, setPlatform] = useState<ChainPlatform>("FARCASTER");
 
   // Auto-connect with the injected wallet when available
   useEffect(() => {
@@ -81,9 +88,31 @@ export function WalletBalance() {
     }
   }, [isConnected, isOnCorrectChain, ensureCorrectChain]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((runtime) => {
+        if (!cancelled) {
+          setPlatform(runtimeToPlatform(runtime));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setPlatform("FARCASTER");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const tokenAddress = getPaymentTokenAddress(platform);
+
   // Fetch balance using the TARGET chain
   const { roundedBalance } = useGetTokenBalance(address as `0x${string}`, {
-    address: PAYMENT_TOKEN_ADDRESS as `0x${string}`,
+    address: tokenAddress as `0x${string}`,
     decimals: PAYMENT_TOKEN_DECIMALS,
     name: "USDC",
     symbol: "USDC",

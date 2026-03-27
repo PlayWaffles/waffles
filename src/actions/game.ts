@@ -152,6 +152,7 @@ export async function purchaseGameTicket(
     }
 
     const verification = await verifyTicketPurchase({
+      platform: game.platform,
       txHash: txHash as `0x${string}`,
       expectedGameId: game.onchainId as `0x${string}`,
       expectedBuyer: payerWallet as `0x${string}`,

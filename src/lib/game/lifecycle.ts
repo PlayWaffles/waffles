@@ -23,7 +23,7 @@ import {
   WINNERS_COUNT,
   type PlayerEntry,
 } from "./prizeDistribution";
-import { PAYMENT_TOKEN_DECIMALS, WAFFLE_CONTRACT_ADDRESS } from "../chain";
+import { PAYMENT_TOKEN_DECIMALS, getWaffleContractAddress } from "../chain";
 
 // ============================================================================
 // Types
@@ -216,6 +216,7 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
     select: {
       id: true,
       onchainId: true,
+      platform: true,
       rankedAt: true,
       onChainAt: true,
       prizePool: true,
@@ -242,6 +243,7 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
   }
 
   const onchainId = game.onchainId as `0x${string}`;
+  const contractAddress = getWaffleContractAddress(game.platform);
 
   // Get winners with wallets
   const rankedEntries = await prisma.gameEntry.findMany({
@@ -277,7 +279,7 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
   const walletClient = getSettlerWalletClient();
   const txHash = await walletClient.writeContract(
     withBuilderCodeDataSuffix({
-      address: WAFFLE_CONTRACT_ADDRESS,
+      address: contractAddress,
       abi: waffleGameAbi,
       functionName: "submitResults",
       args: [onchainId, merkleRoot],

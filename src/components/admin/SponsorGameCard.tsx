@@ -17,31 +17,35 @@ import {
     useApproveToken,
     useTokenAllowance
 } from "@/hooks/waffleContractHooks";
-import { PAYMENT_TOKEN_DECIMALS, PAYMENT_TOKEN_ADDRESS } from "@/lib/chain";
+import { PAYMENT_TOKEN_DECIMALS, getPaymentTokenAddress } from "@/lib/chain";
 import { parseUnits, formatUnits } from "viem";
+import type { ChainPlatform } from "@/lib/chain/platform";
 
 interface SponsorGameCardProps {
     gameId: string;
     onchainId: `0x${string}`;
     gameTitle: string;
+    platform: ChainPlatform;
 }
 
-export function SponsorGameCard({ gameId, onchainId, gameTitle }: SponsorGameCardProps) {
+export function SponsorGameCard({ gameId, onchainId, gameTitle, platform }: SponsorGameCardProps) {
     const [amount, setAmount] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
+    const tokenAddress = getPaymentTokenAddress(platform);
 
     // Wallet connection
     const { address, isConnected } = useAccount();
     const { connect } = useConnect();
 
     // Contract hooks
-    const { sponsorPrizePool, hash, isPending: isSponsorPending, isConfirming, isSuccess, error } = useSponsorPrizePool();
-    const { data: totalPrizePool, refetch: refetchPrizePool } = useGetTotalPrizePool(onchainId);
-    const { data: balance } = useTokenBalance(address);
-    const { approve, isPending: isApprovePending, isSuccess: approveSuccess } = useApproveToken();
+    const { sponsorPrizePool, hash, isPending: isSponsorPending, isConfirming, isSuccess, error } = useSponsorPrizePool(platform);
+    const { data: totalPrizePool, refetch: refetchPrizePool } = useGetTotalPrizePool(onchainId, platform);
+    const { data: balance } = useTokenBalance(address, tokenAddress);
+    const { approve, isPending: isApprovePending, isSuccess: approveSuccess } = useApproveToken(platform);
     const { data: allowance, refetch: refetchAllowance } = useTokenAllowance(
         address || "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        PAYMENT_TOKEN_ADDRESS
+        tokenAddress,
+        platform,
     );
 
     const isPending = isSponsorPending || isApprovePending || isConfirming;

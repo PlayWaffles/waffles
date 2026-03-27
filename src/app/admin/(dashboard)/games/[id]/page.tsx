@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getGamePhase } from "@/lib/types";
 import { SponsorGameCard } from "@/components/admin/SponsorGameCard";
+import { formatAdminGameLabel } from "@/lib/game/labels";
 
 // ============================================
 // HELPER COMPONENTS
@@ -121,6 +122,7 @@ export default async function GameDetailPage({
         select: {
             id: true,
             onchainId: true,
+            platform: true,
             title: true,
             description: true,
             theme: true,
@@ -187,7 +189,9 @@ export default async function GameDetailPage({
                         <span>Games</span>
                     </Link>
                     <span className="text-white/20">/</span>
-                    <span className="text-white/60 text-sm truncate max-w-[200px]">{game.title}</span>
+                    <span className="text-white/60 text-sm truncate max-w-[280px]">
+                        {formatAdminGameLabel(game.title, game.platform)}
+                    </span>
                 </div>
                 <div className="flex items-center gap-2">
                     <Link
@@ -216,7 +220,7 @@ export default async function GameDetailPage({
                     <div className="space-y-4">
                         <StatusBadge phase={phase} />
                         <h1 className="text-3xl sm:text-4xl font-bold text-white font-display tracking-tight">
-                            {game.title}
+                            {formatAdminGameLabel(game.title, game.platform)}
                         </h1>
                         {game.description && (
                             <p className="text-white/50 text-sm max-w-lg leading-relaxed">
@@ -284,6 +288,7 @@ export default async function GameDetailPage({
                     gameId={game.id}
                     onchainId={game.onchainId as `0x${string}`}
                     gameTitle={game.title}
+                    platform={game.platform}
                 />
             )}
 

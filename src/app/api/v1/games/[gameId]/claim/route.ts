@@ -146,6 +146,7 @@ export const POST = withAuth<Params>(
       // =========================================================================
       const verification = await verifyClaim({
         txHash: txHash as `0x${string}`,
+        platform: game.platform,
         expectedGameId: game.onchainId as `0x${string}`,
         expectedClaimer: wallet as `0x${string}`,
       });

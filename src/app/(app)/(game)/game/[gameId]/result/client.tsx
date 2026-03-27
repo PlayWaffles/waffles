@@ -21,11 +21,12 @@ import { Spinner } from "@/components/ui/spinner";
 import confetti from "canvas-confetti";
 import { WINNERS_COUNT } from "@/lib/game/prizeDistribution";
 import { CLAIM_DELAY_MS } from "@/lib/constants";
-import { WAFFLE_CONTRACT_ADDRESS } from "@/lib/chain";
+import { getWaffleContractAddress } from "@/lib/chain";
 import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
 import { useUser } from "@/hooks/useUser";
 import { shareTextOrCopy } from "@/lib/share";
 import { authenticatedFetch } from "@/lib/client/runtime";
+import type { ChainPlatform } from "@/lib/chain/platform";
 
 // ==========================================
 // TYPES
@@ -70,6 +71,7 @@ interface ResultGame {
   id: string;
   gameNumber: number;
   onchainId: string | null;
+  platform: ChainPlatform;
   title: string;
   theme: string;
   startsAt: Date;
@@ -215,6 +217,7 @@ export default function ResultPageClient({
 
   // Get onchainId
   const onchainId = game?.onchainId;
+  const contractAddress = game ? getWaffleContractAddress(game.platform) : null;
 
   // User score from RealtimeProvider entry
   const userScore = useMemo(() => {
@@ -522,7 +525,7 @@ export default function ResultPageClient({
       sendCalls({
         calls: [
           {
-            to: WAFFLE_CONTRACT_ADDRESS,
+            to: contractAddress!,
             data: encodeFunctionData({
               abi: waffleGameAbi,
               functionName: "claimPrize",
@@ -544,6 +547,7 @@ export default function ResultPageClient({
     }
   }, [
     onchainId,
+    contractAddress,
     address,
     gameId,
     sendCalls,

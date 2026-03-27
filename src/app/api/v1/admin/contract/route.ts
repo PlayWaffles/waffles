@@ -6,8 +6,9 @@ import { env } from "@/lib/env";
 import {
   chain,
   PAYMENT_TOKEN_DECIMALS,
-  WAFFLE_CONTRACT_ADDRESS,
+  getWaffleContractAddress,
 } from "@/lib/chain";
+import { assertChainPlatform } from "@/lib/chain/platform";
 
 /**
  * Admin Contract Management API
@@ -58,6 +59,12 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    const searchParams = request.nextUrl.searchParams;
+    const platform = assertChainPlatform(
+      searchParams.get("platform") ?? "FARCASTER",
+    );
+    const contractAddress = getWaffleContractAddress(platform);
+
     // Fetch contract state in parallel
     const [
       tokenAddress,
@@ -67,27 +74,27 @@ export async function GET(request: NextRequest) {
       isPaused,
     ] = await Promise.all([
       publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "paymentToken",
       }) as Promise<`0x${string}`>,
       publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "platformFeePermyriad",
       }) as Promise<number>,
       publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "accumulatedFees",
       }) as Promise<bigint>,
       publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "activeGameCount",
       }) as Promise<bigint>,
       publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "paused",
       }) as Promise<boolean>,
@@ -99,7 +106,7 @@ export async function GET(request: NextRequest) {
     // let balance = null;
 
     const state: ContractState = {
-      address: WAFFLE_CONTRACT_ADDRESS,
+      address: contractAddress,
       chain: chain.name,
       chainId: chain.id,
       token: {

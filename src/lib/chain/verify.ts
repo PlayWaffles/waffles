@@ -10,7 +10,11 @@
 import { formatUnits } from "viem";
 import { publicClient } from "./client";
 import { waffleGameAbi } from "./abi";
-import { PAYMENT_TOKEN_DECIMALS, WAFFLE_CONTRACT_ADDRESS } from "./config";
+import {
+  PAYMENT_TOKEN_DECIMALS,
+  getWaffleContractAddress,
+} from "./config";
+import { type ChainPlatform } from "./platform";
 
 // ============================================================================
 // Types
@@ -28,6 +32,7 @@ export interface VerifyTicketPurchaseResult {
 }
 
 export interface VerifyTicketPurchaseInput {
+  platform: ChainPlatform;
   txHash: `0x${string}`;
   expectedGameId: `0x${string}`;
   expectedBuyer: `0x${string}`;
@@ -49,7 +54,8 @@ export interface VerifyTicketPurchaseInput {
 export async function verifyTicketPurchase(
   input: VerifyTicketPurchaseInput,
 ): Promise<VerifyTicketPurchaseResult> {
-  const { txHash, expectedGameId, expectedBuyer, minimumAmount } = input;
+  const { platform, txHash, expectedGameId, expectedBuyer, minimumAmount } = input;
+  const contractAddress = getWaffleContractAddress(platform);
 
   try {
     // =========================================================================
@@ -80,8 +86,7 @@ export async function verifyTicketPurchase(
 
     // Look for TicketPurchased event logs from our contract
     const contractLogs = receipt.logs.filter(
-      (log) =>
-        log.address.toLowerCase() === WAFFLE_CONTRACT_ADDRESS.toLowerCase(),
+      (log) => log.address.toLowerCase() === contractAddress.toLowerCase(),
     );
 
     if (contractLogs.length === 0) {
@@ -148,7 +153,7 @@ export async function verifyTicketPurchase(
     let hasTicket: boolean;
     try {
       hasTicket = (await publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "hasTicket",
         args: [expectedGameId, expectedBuyer],
@@ -233,6 +238,7 @@ export interface VerifyClaimResult {
 }
 
 export interface VerifyClaimInput {
+  platform: ChainPlatform;
   txHash: `0x${string}`;
   expectedGameId: `0x${string}`;
   expectedClaimer: `0x${string}`;
@@ -249,7 +255,8 @@ export interface VerifyClaimInput {
 export async function verifyClaim(
   input: VerifyClaimInput,
 ): Promise<VerifyClaimResult> {
-  const { txHash, expectedGameId, expectedClaimer } = input;
+  const { platform, txHash, expectedGameId, expectedClaimer } = input;
+  const contractAddress = getWaffleContractAddress(platform);
 
   try {
     // =========================================================================
@@ -279,8 +286,7 @@ export async function verifyClaim(
 
     // Look for logs from our contract
     const contractLogs = receipt.logs.filter(
-      (log) =>
-        log.address.toLowerCase() === WAFFLE_CONTRACT_ADDRESS.toLowerCase(),
+      (log) => log.address.toLowerCase() === contractAddress.toLowerCase(),
     );
 
     if (contractLogs.length === 0) {
@@ -336,7 +342,7 @@ export async function verifyClaim(
     let hasClaimed: boolean;
     try {
       hasClaimed = (await publicClient.readContract({
-        address: WAFFLE_CONTRACT_ADDRESS,
+        address: contractAddress,
         abi: waffleGameAbi,
         functionName: "hasClaimed",
         args: [expectedGameId, expectedClaimer],

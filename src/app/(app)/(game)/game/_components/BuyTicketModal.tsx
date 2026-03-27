@@ -12,11 +12,13 @@ import { PurchaseView, type PurchaseStep } from "./PurchaseView";
 import { useUser } from "@/hooks/useUser";
 import { formatAddress } from "@/lib/address";
 import type { TicketPricingSnapshot } from "@/lib/tickets";
+import type { ChainPlatform } from "@/lib/chain/platform";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
   onClose: () => void;
   gameId: string;
+  platform: ChainPlatform;
   onchainId: `0x${string}` | null;
   theme: string;
   themeIcon?: string;
@@ -30,6 +32,7 @@ export function BuyTicketModal({
   isOpen,
   onClose,
   gameId,
+  platform,
   onchainId,
   theme,
   themeIcon,
@@ -70,7 +73,13 @@ export function BuyTicketModal({
     hasTicket,
     purchase,
     reset,
-  } = useTicketPurchase(gameId, onchainId, selectedPrice, onPurchaseSuccess);
+  } = useTicketPurchase(
+    gameId,
+    platform,
+    onchainId,
+    selectedPrice,
+    onPurchaseSuccess,
+  );
 
   // Redirect to success page ONLY on fresh purchase success
   useEffect(() => {
