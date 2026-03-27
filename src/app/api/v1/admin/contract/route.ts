@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import { createPublicClient, http, formatUnits } from "viem";
+import { formatUnits } from "viem";
 import { waffleGameAbi } from "@/lib/chain/abi";
 import { env } from "@/lib/env";
 import {
-  chain,
   PAYMENT_TOKEN_DECIMALS,
+  getPlatformChain,
   getWaffleContractAddress,
 } from "@/lib/chain";
+import { getPublicClient } from "@/lib/chain/client";
 import { assertChainPlatform } from "@/lib/chain/platform";
 
 /**
@@ -17,11 +18,6 @@ import { assertChainPlatform } from "@/lib/chain/platform";
  * Write operations (like setPaymentToken, withdrawFees) require the cold wallet
  * and should be done directly via the contract or a multisig.
  */
-
-const publicClient = createPublicClient({
-  chain: chain,
-  transport: http(),
-});
 
 // Auth check using existing session system
 async function isAuthorized(): Promise<boolean> {
@@ -63,7 +59,9 @@ export async function GET(request: NextRequest) {
     const platform = assertChainPlatform(
       searchParams.get("platform") ?? "FARCASTER",
     );
+    const chain = getPlatformChain(platform);
     const contractAddress = getWaffleContractAddress(platform);
+    const publicClient = getPublicClient(platform);
 
     // Fetch contract state in parallel
     const [

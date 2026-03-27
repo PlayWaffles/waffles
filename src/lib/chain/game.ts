@@ -6,7 +6,7 @@
 
 import { parseUnits } from "viem";
 
-import { publicClient, getOperatorWalletClient } from "./client";
+import { getPublicClient, getOperatorWalletClient } from "./client";
 import { waffleGameAbi } from "./abi";
 import { withBuilderCodeDataSuffix } from "./builderCode";
 import {
@@ -55,7 +55,7 @@ export async function createGameOnChain(
   onchainId: `0x${string}`,
   minTicketPriceUSDC: number,
 ): Promise<`0x${string}`> {
-  const walletClient = getOperatorWalletClient();
+  const walletClient = getOperatorWalletClient(platform);
   const contractAddress = getWaffleContractAddress(platform);
   const minimumTicketPrice = parseUnits(
     minTicketPriceUSDC.toString(),
@@ -84,7 +84,7 @@ export async function closeSalesOnChain(
   platform: ChainPlatform,
   onchainId: `0x${string}`,
 ): Promise<`0x${string}`> {
-  const walletClient = getOperatorWalletClient();
+  const walletClient = getOperatorWalletClient(platform);
   const contractAddress = getWaffleContractAddress(platform);
 
   const hash = await walletClient.writeContract(
@@ -113,6 +113,7 @@ export async function getOnChainGame(
   onchainId: `0x${string}`,
 ): Promise<OnChainGame | null> {
   try {
+    const publicClient = getPublicClient(platform);
     const contractAddress = getWaffleContractAddress(platform);
     const game = (await publicClient.readContract({
       address: contractAddress,
@@ -141,6 +142,7 @@ export async function hasTicketOnChain(
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
 ): Promise<boolean> {
+  const publicClient = getPublicClient(platform);
   const contractAddress = getWaffleContractAddress(platform);
   const hasTicket = await publicClient.readContract({
     address: contractAddress,
@@ -160,6 +162,7 @@ export async function hasClaimedOnChain(
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
 ): Promise<boolean> {
+  const publicClient = getPublicClient(platform);
   const contractAddress = getWaffleContractAddress(platform);
   const hasClaimed = await publicClient.readContract({
     address: contractAddress,

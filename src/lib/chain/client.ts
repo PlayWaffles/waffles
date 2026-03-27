@@ -9,16 +9,26 @@
 import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { env } from "@/lib/env";
-import { chain } from "./config";
+import { getPlatformChain } from "./config";
+import type { ChainPlatform } from "./platform";
 
 // ============================================================================
 // Public Client (Read-only)
 // ============================================================================
 
-export const publicClient = createPublicClient({
-  chain,
-  transport: http(),
-});
+const publicClientCache = new Map<ChainPlatform, ReturnType<typeof createPublicClient>>();
+
+export function getPublicClient(platform: ChainPlatform) {
+  let client = publicClientCache.get(platform);
+  if (!client) {
+    client = createPublicClient({
+      chain: getPlatformChain(platform),
+      transport: http(),
+    });
+    publicClientCache.set(platform, client);
+  }
+  return client;
+}
 
 // ============================================================================
 // Role-based Wallet Clients
@@ -28,15 +38,14 @@ export const publicClient = createPublicClient({
  * Get the operator wallet client for game creation and sales closure.
  * @throws Error if OPERATOR_PRIVATE_KEY is not set
  */
-export function getOperatorWalletClient() {
+export function getOperatorWalletClient(platform: ChainPlatform) {
   const privateKey = env.operatorPrivateKey;
   if (!privateKey) {
     throw new Error("OPERATOR_PRIVATE_KEY environment variable not set");
   }
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
   return createWalletClient({
-    account,
-    chain,
+    account: privateKeyToAccount(privateKey as `0x${string}`),
+    chain: getPlatformChain(platform),
     transport: http(),
   });
 }
@@ -45,15 +54,14 @@ export function getOperatorWalletClient() {
  * Get the settler wallet client for result submission.
  * @throws Error if SETTLER_PRIVATE_KEY is not set
  */
-export function getSettlerWalletClient() {
+export function getSettlerWalletClient(platform: ChainPlatform) {
   const privateKey = env.settlerPrivateKey;
   if (!privateKey) {
     throw new Error("SETTLER_PRIVATE_KEY environment variable not set");
   }
-  const account = privateKeyToAccount(privateKey as `0x${string}`);
   return createWalletClient({
-    account,
-    chain,
+    account: privateKeyToAccount(privateKey as `0x${string}`),
+    chain: getPlatformChain(platform),
     transport: http(),
   });
 }

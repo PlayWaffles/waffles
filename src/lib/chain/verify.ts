@@ -8,7 +8,7 @@
  */
 
 import { formatUnits } from "viem";
-import { publicClient } from "./client";
+import { getPublicClient } from "./client";
 import { waffleGameAbi } from "./abi";
 import {
   PAYMENT_TOKEN_DECIMALS,
@@ -56,6 +56,7 @@ export async function verifyTicketPurchase(
 ): Promise<VerifyTicketPurchaseResult> {
   const { platform, txHash, expectedGameId, expectedBuyer, minimumAmount } = input;
   const contractAddress = getWaffleContractAddress(platform);
+  const publicClient = getPublicClient(platform);
 
   try {
     // =========================================================================
@@ -204,13 +205,15 @@ export async function verifyTicketPurchase(
  * Useful for ensuring finality before verification.
  */
 export async function waitForTransaction(
+  platform: ChainPlatform,
   txHash: `0x${string}`,
   confirmations: number = 1,
 ): Promise<{
   success: boolean;
-  receipt?: Awaited<ReturnType<typeof publicClient.getTransactionReceipt>>;
+  receipt?: Awaited<ReturnType<ReturnType<typeof getPublicClient>["getTransactionReceipt"]>>;
 }> {
   try {
+    const publicClient = getPublicClient(platform);
     const receipt = await publicClient.waitForTransactionReceipt({
       hash: txHash,
       confirmations,
@@ -257,6 +260,7 @@ export async function verifyClaim(
 ): Promise<VerifyClaimResult> {
   const { platform, txHash, expectedGameId, expectedClaimer } = input;
   const contractAddress = getWaffleContractAddress(platform);
+  const publicClient = getPublicClient(platform);
 
   try {
     // =========================================================================

@@ -309,37 +309,6 @@ export function GameForm({
           <input type="hidden" name="platform" value={platform} />
         </section>
 
-        {/* 2. Defaults */}
-        <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="p-2.5 rounded-xl bg-[#FFC931]/15">
-              <SparklesIcon className="h-5 w-5 text-[#FFC931]" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white">Game Defaults</h3>
-              <p className="text-sm text-white/50">These are fixed for every new game.</p>
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-3">
-            {[
-              { label: "Theme", value: "Movies" },
-              { label: "Cover", value: "Movie logo cover" },
-              { label: "Title", value: "Auto: Waffles#00" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="rounded-2xl border border-white/10 bg-white/5 p-4"
-              >
-                <p className="text-xs uppercase tracking-[0.18em] text-white/40">
-                  {item.label}
-                </p>
-                <p className="mt-2 font-medium text-white">{item.value}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* 3. Schedule - World Class UX */}
         <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
           <div className="flex items-center gap-3 mb-5">

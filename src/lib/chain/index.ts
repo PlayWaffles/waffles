@@ -1,10 +1,12 @@
 // Clients
-export { publicClient, getOperatorWalletClient, getSettlerWalletClient } from "./client";
+export { getPublicClient, getOperatorWalletClient, getSettlerWalletClient } from "./client";
 
 export {
-  chain,
+  farcasterChain,
+  miniPayChain,
   PAYMENT_TOKEN_DECIMALS,
   getPaymentTokenAddress,
+  getPlatformChain,
   getWaffleContractAddress,
 } from "./config";
 // Game operations

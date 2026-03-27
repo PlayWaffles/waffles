@@ -54,7 +54,7 @@ export function useTicketPurchase(
 ) {
   const router = useRouter();
   const { address, isConnected } = useAccount();
-  const { ensureCorrectChain } = useCorrectChain();
+  const { ensureCorrectChain } = useCorrectChain(platform);
   const { user } = useUser();
   const [state, setState] = useState<TicketPurchaseState>({ step: "idle" });
 

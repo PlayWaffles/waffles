@@ -4,13 +4,13 @@ import { QueryClient } from "@tanstack/react-query";
 import { createConfig, createStorage, cookieStorage, http } from "wagmi";
 import { coinbaseWallet, injected } from "wagmi/connectors";
 
-import { chain } from "@/lib/chain";
+import { farcasterChain, miniPayChain } from "@/lib/chain";
 import { env } from "@/lib/env";
 
 const appName = "Waffles";
 
 export const wagmiConfig = createConfig({
-  chains: [chain],
+  chains: [farcasterChain, miniPayChain],
   connectors: [
     injected(),
     coinbaseWallet({
@@ -23,7 +23,8 @@ export const wagmiConfig = createConfig({
   }),
   ssr: true,
   transports: {
-    [chain.id]: http(chain.rpcUrls.default.http[0]),
+    [farcasterChain.id]: http(farcasterChain.rpcUrls.default.http[0]),
+    [miniPayChain.id]: http(miniPayChain.rpcUrls.default.http[0]),
   },
 });
 

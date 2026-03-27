@@ -1,6 +1,6 @@
 "use client";
 
-import { useAccount, useChainId, useConnect } from "wagmi";
+import { useAccount, useConnect } from "wagmi";
 import { useGetTokenBalance } from "@coinbase/onchainkit/wallet";
 import { motion, useAnimation } from "framer-motion";
 import { useEffect, useRef } from "react";
@@ -8,8 +8,8 @@ import { useEffect, useRef } from "react";
 import { springs } from "@/lib/animations";
 import {
   getPaymentTokenAddress,
+  getPlatformChain,
   PAYMENT_TOKEN_DECIMALS,
-  chain,
 } from "@/lib/chain";
 import { useCorrectChain } from "@/hooks/useCorrectChain";
 import { isMiniPayRuntime } from "@/lib/client/runtime";
@@ -66,7 +66,8 @@ function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
 export function WalletBalance() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
-  const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain();
+  const platform = isMiniPayRuntime() ? "MINIPAY" : "FARCASTER";
+  const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain(platform);
 
   // Auto-connect with the injected wallet when available
   useEffect(() => {
@@ -86,7 +87,8 @@ export function WalletBalance() {
     }
   }, [isConnected, isOnCorrectChain, ensureCorrectChain]);
 
-  const tokenAddress = getPaymentTokenAddress(isMiniPayRuntime() ? "MINIPAY" : "FARCASTER");
+  const tokenAddress = getPaymentTokenAddress(platform);
+  const chain = getPlatformChain(platform);
 
   // Fetch balance using the TARGET chain
   const { roundedBalance } = useGetTokenBalance(address as `0x${string}`, {
