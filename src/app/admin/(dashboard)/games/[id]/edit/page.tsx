@@ -10,6 +10,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
         where: { id },
         select: {
             id: true,
+            platform: true,
             title: true,
             description: true,
             theme: true,
@@ -29,6 +30,7 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
 
     // Transform to form data shape
     const formData = {
+        platform: game.platform,
         title: game.title,
         description: game.description,
         theme: game.theme,

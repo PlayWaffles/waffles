@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
+import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import {
     UsersIcon,
     TrophyIcon,
@@ -9,54 +10,54 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getGamePhase } from "@/lib/types";
+import { buildPlatformWhere } from "@/lib/admin-utils";
 
-async function getStats() {
+async function getStats(platform?: string) {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const pf = buildPlatformWhere(platform);
+
+    const gpf = pf.platform ? { game: pf } : {};
 
     const [
         totalUsers,
         activeUsers,
         totalGames,
-        // Count live games using time-based phase
-        liveGamesRaw,
-        // Use gameEntry instead of ticket
+        liveGames,
         totalEntries,
         paidEntries,
         recentUsers,
-        recentEntries
+        recentEntries,
+        revenueResult,
     ] = await Promise.all([
-        prisma.user.count(),
-        prisma.user.count({ where: { hasGameAccess: true } }),
-        prisma.game.count(),
-        prisma.game.findMany({
-            where: { startsAt: { lte: now }, endsAt: { gt: now } },
-            select: { id: true },
+        prisma.user.count({ where: pf }),
+        prisma.user.count({ where: { ...pf, lastLoginAt: { not: null } } }),
+        prisma.game.count({ where: pf }),
+        prisma.game.count({
+            where: { ...pf, startsAt: { lte: now }, endsAt: { gt: now } },
         }),
-        prisma.gameEntry.count(),
-        prisma.gameEntry.count({ where: { paidAt: { not: null } } }),
-        // Fetch recent data for charts
+        prisma.gameEntry.count({ where: gpf }),
+        prisma.gameEntry.count({ where: { paidAt: { not: null }, ...gpf } }),
         prisma.user.findMany({
-            where: { createdAt: { gte: sevenDaysAgo } },
+            where: { ...pf, createdAt: { gte: sevenDaysAgo } },
             select: { createdAt: true },
         }),
         prisma.gameEntry.findMany({
             where: {
-                paidAt: { not: null, gte: sevenDaysAgo }
+                paidAt: { not: null, gte: sevenDaysAgo },
+                ...gpf,
             },
             select: {
                 paidAt: true,
                 paidAmount: true,
             },
         }),
+        prisma.game.aggregate({
+            where: pf,
+            _sum: { prizePool: true },
+        }),
     ]);
 
-    // Calculate total revenue from games' prizePool
-    const revenueResult = await prisma.game.aggregate({
-        _sum: { prizePool: true },
-    });
-
-    // Process chart data
     const dates = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
         return d.toISOString().split('T')[0];
@@ -78,7 +79,7 @@ async function getStats() {
         totalUsers,
         activeUsers,
         totalGames,
-        liveGames: liveGamesRaw.length,
+        liveGames,
         totalTickets: totalEntries,
         paidTickets: paidEntries,
         totalRevenue: revenueResult._sum.prizePool || 0,
@@ -87,13 +88,17 @@ async function getStats() {
     };
 }
 
-async function getRecentActivity() {
+async function getRecentActivity(platform?: string) {
+    const pf = buildPlatformWhere(platform);
+
     const [games, users] = await Promise.all([
         prisma.game.findMany({
+            where: pf,
             take: 3,
             orderBy: { createdAt: "desc" },
             select: {
                 id: true,
+                platform: true,
                 title: true,
                 startsAt: true,
                 endsAt: true,
@@ -101,25 +106,43 @@ async function getRecentActivity() {
             },
         }),
         prisma.user.findMany({
+            where: pf,
             take: 3,
             orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                username: true,
+                wallet: true,
+                platform: true,
+                createdAt: true,
+            },
         }),
     ]);
 
     return { games, users };
 }
 
-export default async function AdminDashboard() {
-    const stats = await getStats();
-    const activity = await getRecentActivity();
+export default async function AdminDashboard({
+    searchParams,
+}: {
+    searchParams: Promise<{ platform?: string }>;
+}) {
+    const { platform } = await searchParams;
+    const [stats, activity] = await Promise.all([
+        getStats(platform),
+        getRecentActivity(platform),
+    ]);
 
     return (
         <div className="space-y-8">
-            <div>
-                <h1 className="text-2xl font-bold text-white font-body">Dashboard</h1>
-                <p className="text-white/60 mt-1 font-display">
-                    Overview of your Waffles trivia platform
-                </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-2xl font-bold text-white font-body">Dashboard</h1>
+                    <p className="text-white/60 mt-1 font-display">
+                        Overview of your Waffles trivia platform
+                    </p>
+                </div>
+                <PlatformFilter />
             </div>
 
             {/* Stats Grid */}
@@ -127,9 +150,8 @@ export default async function AdminDashboard() {
                 <StatsCard
                     title="Total Users"
                     value={stats.totalUsers.toLocaleString()}
-                    subtitle={`${stats.activeUsers} active`}
+                    subtitle={`${stats.activeUsers} signed in`}
                     icon={<UsersIcon className="h-6 w-6 text-[#00CFF2]" />}
-                    trend={{ value: "12%", isPositive: true }}
                     glowVariant="cyan"
                 />
                 <StatsCard
@@ -144,7 +166,6 @@ export default async function AdminDashboard() {
                     value={`$${stats.totalRevenue.toLocaleString()}`}
                     subtitle="USDC"
                     icon={<BanknotesIcon className="h-6 w-6 text-[#FFC931]" />}
-                    trend={{ value: "5%", isPositive: true }}
                     glowVariant="gold"
                 />
                 <StatsCard
@@ -215,7 +236,17 @@ export default async function AdminDashboard() {
                                         </div>
                                         <div>
                                             <p className="font-medium text-white">{user.username || "Anonymous"}</p>
-                                            <p className="text-xs text-white/50">@{user.username}</p>
+                                            <div className="mt-1 flex items-center gap-2">
+                                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] ${user.platform === "MINIPAY"
+                                                    ? "bg-[#14B985]/15 text-[#14B985]"
+                                                    : "bg-[#1B8FF5]/15 text-[#72C3FF]"
+                                                    }`}>
+                                                    {user.platform}
+                                                </span>
+                                                <span className="text-xs text-white/50">
+                                                    {user.username ? `@${user.username}` : user.wallet || "No handle"}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
                                     <span className="text-xs text-white/50">

@@ -4,11 +4,12 @@ import { GameFilters } from "@/components/admin/GameFilters";
 import { GameRow } from "@/components/admin/GameRow";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { getGamePhase, type GamePhase } from "@/lib/types";
+import { UserPlatform } from "@prisma";
 
 // Phase filtering using time-based logic
 const VALID_PHASES: GamePhase[] = ["SCHEDULED", "LIVE", "ENDED"];
 
-async function getGames(searchParams: { search?: string; status?: string }) {
+async function getGames(searchParams: { search?: string; status?: string; platform?: string }) {
     const where: Record<string, unknown> = {};
     const now = new Date();
 
@@ -17,6 +18,13 @@ async function getGames(searchParams: { search?: string; status?: string }) {
             contains: searchParams.search,
             mode: "insensitive",
         };
+    }
+
+    if (
+        searchParams.platform &&
+        Object.values(UserPlatform).includes(searchParams.platform as UserPlatform)
+    ) {
+        where.platform = searchParams.platform;
     }
 
     // Filter by phase using time-based logic
@@ -37,6 +45,7 @@ async function getGames(searchParams: { search?: string; status?: string }) {
         orderBy: [{ startsAt: "desc" }],
         select: {
             id: true,
+            platform: true,
             title: true,
             theme: true,
             startsAt: true,
@@ -58,7 +67,7 @@ async function getGames(searchParams: { search?: string; status?: string }) {
 export default async function GamesListPage({
     searchParams,
 }: {
-    searchParams: Promise<{ search?: string; status?: string }>;
+    searchParams: Promise<{ search?: string; status?: string; platform?: string }>;
 }) {
     const resolvedParams = await searchParams;
     const games = await getGames(resolvedParams);

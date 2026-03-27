@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { UserFilters } from "@/components/admin/UserFilters";
+import { UserPlatform } from "@prisma";
 
 async function getUsers(searchParams: { page?: string; status?: string; q?: string; role?: string }) {
     const page = parseInt(searchParams.page || "1");
@@ -11,13 +12,9 @@ async function getUsers(searchParams: { page?: string; status?: string; q?: stri
 
     // Handle status filter by converting to boolean queries
     if (searchParams.status === 'ACTIVE') {
-        where.hasGameAccess = true;
         where.isBanned = false;
     } else if (searchParams.status === 'BANNED') {
         where.isBanned = true;
-    } else if (searchParams.status === 'NO_ACCESS') {
-        where.hasGameAccess = false;
-        where.isBanned = false;
     }
 
     if (searchParams.role) {
@@ -41,10 +38,10 @@ async function getUsers(searchParams: { page?: string; status?: string; q?: stri
             orderBy: { createdAt: "desc" },
             select: {
                 id: true,
+                platform: true,
                 fid: true,
                 username: true,
                 wallet: true,
-                hasGameAccess: true,
                 isBanned: true,
                 role: true,
                 inviteQuota: true,
@@ -64,21 +61,28 @@ async function getUsers(searchParams: { page?: string; status?: string; q?: stri
     return { users, total, page, pageSize };
 }
 
-function UserStatusBadge({ hasGameAccess, isBanned }: { hasGameAccess: boolean; isBanned: boolean }) {
-    let status = 'NO_ACCESS';
-    let colorClass = 'bg-white/10 text-white/60';
-
-    if (isBanned) {
-        status = 'BANNED';
-        colorClass = 'bg-red-500/20 text-red-400';
-    } else if (hasGameAccess) {
-        status = 'ACTIVE';
-        colorClass = 'bg-[#14B985]/20 text-[#14B985]';
-    }
+function UserStatusBadge({ isBanned }: { isBanned: boolean }) {
+    const status = isBanned ? "BANNED" : "ACTIVE";
+    const colorClass = isBanned
+        ? "bg-red-500/20 text-red-400"
+        : "bg-[#14B985]/20 text-[#14B985]";
 
     return (
         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${colorClass}`}>
             {status}
+        </span>
+    );
+}
+
+function PlatformBadge({ platform }: { platform: UserPlatform }) {
+    const styles =
+        platform === "MINIPAY"
+            ? "bg-[#14B985]/15 text-[#14B985]"
+            : "bg-[#1B8FF5]/15 text-[#72C3FF]";
+
+    return (
+        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] ${styles}`}>
+            {platform}
         </span>
     );
 }
@@ -118,6 +122,9 @@ export default async function UsersListPage({
                                 Status
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-medium text-white/50 uppercase font-display">
+                                Platform
+                            </th>
+                            <th className="px-6 py-4 text-left text-xs font-medium text-white/50 uppercase font-display">
                                 Role
                             </th>
                             <th className="px-6 py-4 text-left text-xs font-medium text-white/50 uppercase font-display">
@@ -143,12 +150,17 @@ export default async function UsersListPage({
                                             <div className="font-medium text-white">
                                                 {user.username || "Anonymous"}
                                             </div>
-                                            <div className="text-sm text-white/50">@{user.username}</div>
+                                            <div className="text-sm text-white/50">
+                                                {user.username ? `@${user.username}` : user.wallet || "No handle"}
+                                            </div>
                                         </div>
                                     </div>
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap">
-                                    <UserStatusBadge hasGameAccess={user.hasGameAccess} isBanned={user.isBanned} />
+                                    <UserStatusBadge isBanned={user.isBanned} />
+                                </td>
+                                <td className="px-6 py-4 whitespace-nowrap">
+                                    <PlatformBadge platform={user.platform} />
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm">
                                     <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${user.role === "ADMIN"
@@ -177,7 +189,7 @@ export default async function UsersListPage({
                         ))}
                         {users.length === 0 && (
                             <tr>
-                                <td colSpan={6} className="px-6 py-16 text-center">
+                                <td colSpan={7} className="px-6 py-16 text-center">
                                     <div className="flex flex-col items-center">
                                         <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mb-4">
                                             <span className="text-3xl">👤</span>

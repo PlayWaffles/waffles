@@ -16,7 +16,7 @@ async function getUser(id: string) {
                     id: true,
                     fid: true,
                     username: true,
-                    hasGameAccess: true,
+                    isBanned: true,
                     pfpUrl: true,
                     createdAt: true,
                 },
@@ -120,10 +120,8 @@ export default async function UserDetailsPage({
                             <div className="absolute -bottom-2 -right-2 bg-[#0E0E0E] p-1.5 rounded-full">
                                 {user.isBanned ? (
                                     <div className="w-4 h-4 rounded-full bg-red-500" />
-                                ) : user.hasGameAccess ? (
-                                    <div className="w-4 h-4 rounded-full bg-[#14B985] shadow-[0_0_10px_#14B985]" />
                                 ) : (
-                                    <div className="w-4 h-4 rounded-full bg-[#FFC931]" />
+                                    <div className="w-4 h-4 rounded-full bg-[#14B985] shadow-[0_0_10px_#14B985]" />
                                 )}
                             </div>
                         </div>
@@ -151,9 +149,9 @@ export default async function UserDetailsPage({
                     <div className="flex items-center gap-3">
                         <div className="text-right hidden md:block mr-4">
                             <div className="text-sm text-white/40 font-medium">Status</div>
-                            <div className={`text-lg font-bold ${user.isBanned ? 'text-red-400' : user.hasGameAccess ? 'text-[#14B985]' : 'text-[#FFC931]'
+                            <div className={`text-lg font-bold ${user.isBanned ? 'text-red-400' : 'text-[#14B985]'
                                 }`}>
-                                {user.isBanned ? 'BANNED' : user.hasGameAccess ? 'ACTIVE PLAYER' : 'NO ACCESS'}
+                                {user.isBanned ? 'BANNED' : 'ACTIVE'}
                             </div>
                         </div>
                     </div>
@@ -332,9 +330,9 @@ export default async function UserDetailsPage({
                                                 </span>
                                             </div>
                                             <div className="flex items-center gap-2">
-                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${referral.hasGameAccess ? 'text-[#14B985]' : 'text-white/30'
+                                                <span className={`text-[10px] font-bold uppercase tracking-wider ${referral.isBanned ? 'text-red-400' : 'text-[#14B985]'
                                                     }`}>
-                                                    {referral.hasGameAccess ? 'Active' : 'No Access'}
+                                                    {referral.isBanned ? 'Banned' : 'Active'}
                                                 </span>
                                                 <span className="text-[10px] text-white/20">•</span>
                                                 <span className="text-[10px] text-white/40">

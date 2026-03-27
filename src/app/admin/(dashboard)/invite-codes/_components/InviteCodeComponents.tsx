@@ -344,7 +344,7 @@ export function CodeRow({
         usedAt: Date | null;
         createdAt: Date;
         note: string | null;
-        usedBy: { username: string | null; fid: number } | null;
+        usedBy: { username: string | null; fid: number | null } | null;
     };
     index: number;
 }) {
