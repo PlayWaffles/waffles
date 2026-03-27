@@ -7,7 +7,7 @@
  * 3. Contract state verification (hasTicket)
  */
 
-import { formatUnits } from "viem";
+import { decodeEventLog, formatUnits } from "viem";
 import { getPublicClient } from "./client";
 import { waffleGameAbi } from "./abi";
 import {
@@ -23,12 +23,20 @@ import { type ChainPlatform } from "./platform";
 export interface VerifyTicketPurchaseResult {
   verified: boolean;
   error?: string;
-  details?: {
-    gameId: `0x${string}`;
-    buyer: `0x${string}`;
-    amount: bigint;
-    amountFormatted: string;
-  };
+  details?: TicketPurchaseDetails;
+}
+
+export interface TicketPurchaseDetails {
+  gameId: `0x${string}`;
+  buyer: `0x${string}`;
+  amount: bigint;
+  amountFormatted: string;
+}
+
+export interface InspectTicketPurchaseResult {
+  found: boolean;
+  error?: string;
+  details?: TicketPurchaseDetails;
 }
 
 export interface VerifyTicketPurchaseInput {
@@ -69,99 +77,26 @@ export async function verifyTicketPurchase(
   });
 
   try {
-    // =========================================================================
-    // Layer 1: Transaction Receipt Verification
-    // =========================================================================
-
-    let receipt;
-    try {
-      receipt = await publicClient.getTransactionReceipt({ hash: txHash });
-    } catch (err) {
-      // Transaction not found or pending
+    const inspected = await inspectTicketPurchase({ platform, txHash });
+    if (!inspected.found || !inspected.details) {
       return {
         verified: false,
-        error: "Transaction not found. It may still be pending.",
+        error: inspected.error || "TicketPurchased event not found.",
       };
     }
 
-    if (receipt.status !== "success") {
-      console.error("[verify-ticket-purchase]", {
-        stage: "receipt-failed",
-        platform,
-        txHash,
-        receiptStatus: receipt.status,
-      });
-      return {
-        verified: false,
-        error: "Transaction reverted on-chain. Funds were not transferred.",
-      };
-    }
-
-    // =========================================================================
-    // Layer 2: Event Log Verification
-    // =========================================================================
-
-    // Look for TicketPurchased event logs from our contract
-    const contractLogs = receipt.logs.filter(
-      (log) => log.address.toLowerCase() === contractAddress.toLowerCase(),
-    );
-
-    if (contractLogs.length === 0) {
-      console.error("[verify-ticket-purchase]", {
-        stage: "no-contract-logs",
-        platform,
-        txHash,
-        contractAddress,
-        logCount: receipt.logs.length,
-      });
-      return {
-        verified: false,
-        error: "No events from WaffleGame contract found.",
-      };
-    }
-
-    // Parse event data manually - TicketPurchased has:
-    // topics[0] = event signature
-    // topics[1] = gameId (indexed)
-    // topics[2] = buyer (indexed)
-    // data = amount (not indexed)
-    let matchingEvent: {
-      gameId: `0x${string}`;
-      buyer: `0x${string}`;
-      amount: bigint;
-    } | null = null;
-
-    for (const log of contractLogs) {
-      if (log.topics.length >= 3) {
-        // topics[1] is gameId (bytes32, already padded)
-        const logGameId = log.topics[1] as `0x${string}`;
-        // topics[2] is buyer address (padded to 32 bytes, need to extract last 20 bytes)
-        const buyerPadded = log.topics[2] as `0x${string}`;
-        const logBuyer = `0x${buyerPadded.slice(-40)}` as `0x${string}`;
-        // data is amount (uint256)
-        const logAmount = log.data ? BigInt(log.data) : BigInt(0);
-
-        if (
-          logGameId.toLowerCase() === expectedGameId.toLowerCase() &&
-          logBuyer.toLowerCase() === expectedBuyer.toLowerCase()
-        ) {
-          matchingEvent = {
-            gameId: logGameId,
-            buyer: logBuyer,
-            amount: logAmount,
-          };
-          break;
-        }
-      }
-    }
-
-    if (!matchingEvent) {
+    if (
+      inspected.details.gameId.toLowerCase() !== expectedGameId.toLowerCase() ||
+      inspected.details.buyer.toLowerCase() !== expectedBuyer.toLowerCase()
+    ) {
       console.error("[verify-ticket-purchase]", {
         stage: "no-matching-event",
         platform,
         txHash,
         expectedGameId,
         expectedBuyer,
+        actualGameId: inspected.details.gameId,
+        actualBuyer: inspected.details.buyer,
       });
       return {
         verified: false,
@@ -170,59 +105,17 @@ export async function verifyTicketPurchase(
     }
 
     // Verify minimum payment amount
-    if (matchingEvent.amount < minimumAmount) {
+    if (inspected.details.amount < minimumAmount) {
       console.error("[verify-ticket-purchase]", {
         stage: "amount-too-low",
         platform,
         txHash,
-        matchingAmount: matchingEvent.amount.toString(),
+        matchingAmount: inspected.details.amount.toString(),
         minimumAmount: minimumAmount.toString(),
       });
       return {
         verified: false,
-        error: `Payment amount (${formatUnits(matchingEvent.amount, PAYMENT_TOKEN_DECIMALS)}) is less than minimum required.`,
-      };
-    }
-
-    // =========================================================================
-    // Layer 3: Contract State Verification (Reorg Protection)
-    // =========================================================================
-
-    let hasTicket: boolean;
-    try {
-      hasTicket = (await publicClient.readContract({
-        address: contractAddress,
-        abi: waffleGameAbi,
-        functionName: "hasTicket",
-        args: [expectedGameId, expectedBuyer],
-      })) as boolean;
-    } catch (err) {
-      console.error("[verify-ticket-purchase]", {
-        stage: "has-ticket-read-failed",
-        platform,
-        txHash,
-        expectedGameId,
-        expectedBuyer,
-        error: err instanceof Error ? err.message : "Unknown error",
-      });
-      return {
-        verified: false,
-        error: "Failed to verify ticket on contract. Please try again.",
-      };
-    }
-
-    if (!hasTicket) {
-      console.error("[verify-ticket-purchase]", {
-        stage: "has-ticket-false",
-        platform,
-        txHash,
-        expectedGameId,
-        expectedBuyer,
-      });
-      return {
-        verified: false,
-        error:
-          "Ticket not recorded on-chain. Possible chain reorganization - please wait and try again.",
+        error: `Payment amount (${formatUnits(inspected.details.amount, PAYMENT_TOKEN_DECIMALS)}) is less than minimum required.`,
       };
     }
 
@@ -232,12 +125,7 @@ export async function verifyTicketPurchase(
 
     return {
       verified: true,
-      details: {
-        gameId: matchingEvent.gameId,
-        buyer: matchingEvent.buyer,
-        amount: matchingEvent.amount,
-        amountFormatted: formatUnits(matchingEvent.amount, PAYMENT_TOKEN_DECIMALS),
-      },
+      details: inspected.details,
     };
   } catch (error) {
     console.error("[verify-ticket-purchase]", {
@@ -251,6 +139,121 @@ export async function verifyTicketPurchase(
       error: `Verification error: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
+}
+
+export async function inspectTicketPurchase(input: {
+  platform: ChainPlatform;
+  txHash: `0x${string}`;
+}): Promise<InspectTicketPurchaseResult> {
+  const { platform, txHash } = input;
+  const contractAddress = getWaffleContractAddress(platform);
+  const publicClient = getPublicClient(platform);
+
+  let receipt;
+  try {
+    receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+  } catch {
+    return {
+      found: false,
+      error: "Transaction not found on this platform. It may still be pending.",
+    };
+  }
+
+  if (receipt.status !== "success") {
+    console.error("[inspect-ticket-purchase]", {
+      stage: "receipt-failed",
+      platform,
+      txHash,
+      receiptStatus: receipt.status,
+    });
+    return {
+      found: false,
+      error: "Transaction reverted on-chain. Funds were not transferred.",
+    };
+  }
+
+  const contractLogs = receipt.logs.filter(
+    (log) => log.address.toLowerCase() === contractAddress.toLowerCase(),
+  );
+
+  if (contractLogs.length === 0) {
+    return {
+      found: false,
+      error: "No events from the WaffleGame contract were found for this transaction.",
+    };
+  }
+
+  let purchase: TicketPurchaseDetails | null = null;
+
+  for (const log of contractLogs) {
+    try {
+      const decoded = decodeEventLog({
+        abi: waffleGameAbi,
+        data: log.data,
+        topics: log.topics,
+        eventName: "TicketPurchased",
+      });
+
+      if (!decoded.args) continue;
+      const args = decoded.args as unknown as {
+        gameId: `0x${string}`;
+        buyer: `0x${string}`;
+        amount: bigint;
+      };
+
+      purchase = {
+        gameId: args.gameId,
+        buyer: args.buyer,
+        amount: args.amount,
+        amountFormatted: formatUnits(args.amount, PAYMENT_TOKEN_DECIMALS),
+      };
+      break;
+    } catch {
+      continue;
+    }
+  }
+
+  if (!purchase) {
+    return {
+      found: false,
+      error: "TicketPurchased event not found for this transaction.",
+    };
+  }
+
+  try {
+    const hasTicket = (await publicClient.readContract({
+      address: contractAddress,
+      abi: waffleGameAbi,
+      functionName: "hasTicket",
+      args: [purchase.gameId, purchase.buyer],
+    })) as boolean;
+
+    if (!hasTicket) {
+      return {
+        found: false,
+        error:
+          "TicketPurchased was emitted, but the ticket is not currently recorded on-chain.",
+      };
+    }
+  } catch (err) {
+    console.error("[inspect-ticket-purchase]", {
+      stage: "has-ticket-read-failed",
+      platform,
+      txHash,
+      gameId: purchase.gameId,
+      buyer: purchase.buyer,
+      error: err instanceof Error ? err.message : "Unknown error",
+    });
+    return {
+      found: false,
+      error: "Failed to confirm ticket ownership on-chain.",
+    };
+  }
+
+  return {
+    found: true,
+    details: purchase,
+  };
 }
 
 // ============================================================================

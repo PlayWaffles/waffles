@@ -164,6 +164,15 @@ export const transactional = {
     title: "🧇 Ticket Secured!",
     body: `Game starts ${timeStr}. Don't miss it!`,
   }),
+
+  /** Auto-recovery confirmation when a missing paid ticket is restored */
+  ticketRecovered: (count: number): NotificationTemplate => ({
+    title: count === 1 ? "Ticket Restored! 🧇" : "Tickets Restored! 🧇",
+    body:
+      count === 1
+        ? "We found your recent purchase failed and we gave you a ticket automatically."
+        : `We found ${count} recent purchases and we gave you tickets automatically.`,
+  }),
 };
 
 // ==========================================

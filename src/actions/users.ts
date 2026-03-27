@@ -6,7 +6,9 @@ import { revalidatePath } from "next/cache";
 import { syncUserSchema } from "@/lib/schemas";
 import { Prisma, UserPlatform } from "@prisma";
 import { generateInviteCode } from "@/lib/utils";
-import { normalizeAddress } from "@/lib/auth";
+import { normalizeAddress, requireCurrentUser } from "@/lib/auth";
+import { recoverRecentPurchasesForUser } from "@/lib/game/recovery";
+import { sendToUser } from "@/lib/notifications";
 
 const MAX_RETRIES = 10;
 
@@ -22,6 +24,10 @@ type SyncedUser = {
 
 export type SyncUserResult =
   | { success: true; user: SyncedUser }
+  | { success: false; error: string };
+
+export type SyncFarcasterWalletResult =
+  | { success: true; wallet: string; recovered: number }
   | { success: false; error: string };
 
 /**
@@ -61,7 +67,7 @@ export async function upsertUser(
           username,
           pfpUrl,
           fid: platform === "FARCASTER" ? fid ?? null : null,
-          wallet: platform === "MINIPAY" ? normalizedWallet : null,
+          wallet: normalizedWallet,
         },
         select: {
           platform: true,
@@ -81,7 +87,7 @@ export async function upsertUser(
               fid: platform === "FARCASTER" ? fid ?? undefined : undefined,
               username,
               pfpUrl,
-              wallet: platform === "MINIPAY" ? normalizedWallet ?? undefined : undefined,
+              wallet: normalizedWallet ?? undefined,
               inviteCode: generateInviteCode(),
             } as Prisma.UserCreateInput,
             select: {
@@ -114,6 +120,73 @@ export async function upsertUser(
     return {
       success: false,
       error: err instanceof Error ? err.message : "User sync failed",
+    };
+  }
+}
+
+export async function syncFarcasterWalletAndRecover(
+  wallet: string,
+): Promise<SyncFarcasterWalletResult> {
+  const normalizedWallet = normalizeAddress(wallet);
+  if (!normalizedWallet) {
+    return { success: false, error: "Invalid wallet address" };
+  }
+
+  try {
+    const user = await requireCurrentUser();
+    if (user.user.platform !== UserPlatform.FARCASTER) {
+      return { success: false, error: "Only Farcaster users can use this sync" };
+    }
+
+    const conflict = await prisma.user.findUnique({
+      where: { wallet: normalizedWallet },
+      select: { id: true },
+    });
+
+    if (conflict && conflict.id !== user.user.id) {
+      return {
+        success: false,
+        error: "This wallet is already linked to another user",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: user.user.id },
+      data: { wallet: normalizedWallet },
+    });
+
+    const recovery = await recoverRecentPurchasesForUser({
+      userId: user.user.id,
+      platform: UserPlatform.FARCASTER,
+      wallet: normalizedWallet,
+    });
+
+    if (recovery.recovered > 0) {
+      void import("@/lib/notifications/templates").then(
+        ({ transactional, buildPayload }) => {
+          const payload = buildPayload(
+            transactional.ticketRecovered(recovery.recovered),
+          );
+          sendToUser(user.user.id, payload).catch((error) =>
+            console.error("syncFarcasterWalletAndRecover notification error:", error),
+          );
+        },
+      );
+    }
+
+    revalidatePath("/game");
+    revalidatePath("/(app)/(game)", "layout");
+
+    return {
+      success: true,
+      wallet: normalizedWallet,
+      recovered: recovery.recovered,
+    };
+  } catch (err) {
+    console.error("syncFarcasterWalletAndRecover Error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Wallet sync failed",
     };
   }
 }

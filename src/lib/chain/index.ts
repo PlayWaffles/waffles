@@ -34,9 +34,12 @@ export {
 
 // Payment verification
 export {
+  inspectTicketPurchase,
   verifyTicketPurchase,
   verifyClaim,
   waitForTransaction,
+  type InspectTicketPurchaseResult,
+  type TicketPurchaseDetails,
   type VerifyTicketPurchaseResult,
   type VerifyTicketPurchaseInput,
   type VerifyClaimResult,

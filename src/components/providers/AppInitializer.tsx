@@ -5,6 +5,7 @@ import {
   useEffect,
   useCallback,
   useMemo,
+  useRef,
   type ReactNode,
 } from "react";
 import sdk from "@farcaster/miniapp-sdk";
@@ -13,6 +14,7 @@ import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
 import { OnboardingOverlay } from "../OnboardingOverlay";
 import { WaffleButton } from "../buttons/WaffleButton";
+import { syncFarcasterWalletAndRecover } from "@/actions/users";
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
 import {
@@ -43,6 +45,8 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
+  const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
+  const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const onboardingKey = useMemo(() => {
     if (!runtime) return null;
     return runtime === "farcaster"
@@ -258,6 +262,47 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     }
     setShowOnboarding(false);
   }, [authenticateWallet, connectWallet, onboardingKey, refetch, runtime]);
+
+  useEffect(() => {
+    if (
+      runtime !== "farcaster" ||
+      !user ||
+      !address ||
+      isSyncingFarcasterWallet
+    ) {
+      return;
+    }
+
+    const attemptKey = `${user.id}:${address.toLowerCase()}`;
+    if (farcasterRecoveryAttemptRef.current === attemptKey) {
+      return;
+    }
+
+    let cancelled = false;
+    farcasterRecoveryAttemptRef.current = attemptKey;
+    setIsSyncingFarcasterWallet(true);
+
+    syncFarcasterWalletAndRecover(address)
+      .then((result) => {
+        if (!cancelled && result.success) {
+          refetch().catch(console.error);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error("Farcaster wallet sync failed:", error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsSyncingFarcasterWallet(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [address, isSyncingFarcasterWallet, refetch, runtime, user]);
 
   if (!runtime) {
     return null;

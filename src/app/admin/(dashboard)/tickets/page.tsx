@@ -3,7 +3,34 @@ import Link from "next/link";
 import { TicketIcon, CheckCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { GameFilter } from "./_components/GameFilter";
 import { IssueFreeTicketCard } from "./_components/IssueFreeTicketCard";
+import { TicketReconciliationCard } from "./_components/TicketReconciliationCard";
+import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { TicketPurchaseSource } from "@prisma";
+import { formatUnits, parseAbiItem } from "viem";
+import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import type { ChainPlatform } from "@/lib/chain/platform";
+
+const CHAIN_SCAN_WINDOW = BigInt(1_000_000);
+const MAX_UNRESOLVED_PURCHASES = 50;
+const LOG_BLOCK_CHUNK = BigInt(10_000);
+const ticketPurchasedEvent = parseAbiItem(
+    "event TicketPurchased(bytes32 indexed gameId, address indexed buyer, uint256 amount)",
+);
+
+type OnchainMismatchRow = {
+    platform: ChainPlatform;
+    txHash: string;
+    gameOnchainId: string;
+    buyer: string;
+    amountFormatted: string;
+    blockNumber: bigint;
+    gameId?: string;
+    gameTitle?: string;
+    userId?: string;
+    username?: string | null;
+    status: "MISSING_IN_DB" | "USER_NOT_FOUND" | "GAME_NOT_FOUND" | "ENTRY_EXISTS";
+    note: string;
+};
 
 // ============================================
 // DATA FETCHING
@@ -104,6 +131,240 @@ async function getStats() {
     };
 }
 
+async function getRecentOnchainMismatches(): Promise<OnchainMismatchRow[]> {
+    const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY"];
+    const allRows = await Promise.all(platforms.map((platform) => getPlatformMismatches(platform)));
+
+    return allRows
+        .flat()
+        .sort((a, b) => Number(b.blockNumber - a.blockNumber))
+        .slice(0, MAX_UNRESOLVED_PURCHASES);
+}
+
+async function getPlatformMismatches(platform: ChainPlatform): Promise<OnchainMismatchRow[]> {
+    const publicClient = getPublicClient(platform);
+    const contractAddress = getWaffleContractAddress(platform);
+    const latestBlock = await publicClient.getBlockNumber();
+    const fromBlock = latestBlock > CHAIN_SCAN_WINDOW ? latestBlock - CHAIN_SCAN_WINDOW : BigInt(0);
+    const logs = await getTicketPurchasedLogs({
+        platform,
+        address: contractAddress,
+        fromBlock,
+        toBlock: latestBlock,
+    });
+
+    if (logs.length === 0) {
+        return [];
+    }
+
+    const purchases = logs
+        .map((log) => {
+            const args = log.args as unknown as {
+                gameId: `0x${string}`;
+                buyer: `0x${string}`;
+                amount: bigint;
+            };
+
+            if (!log.transactionHash) {
+                return null;
+            }
+
+            return {
+                platform,
+                txHash: log.transactionHash,
+                gameOnchainId: args.gameId,
+                buyer: args.buyer.toLowerCase(),
+                amountFormatted: formatUnits(args.amount, PAYMENT_TOKEN_DECIMALS),
+                blockNumber: log.blockNumber ?? BigInt(0),
+            };
+        })
+        .filter((purchase): purchase is NonNullable<typeof purchase> => Boolean(purchase));
+
+    if (purchases.length === 0) {
+        return [];
+    }
+
+    const uniqueOnchainIds = [...new Set(purchases.map((purchase) => purchase.gameOnchainId.toLowerCase()))];
+    const uniqueWallets = [...new Set(purchases.map((purchase) => purchase.buyer.toLowerCase()))];
+    const uniqueTxHashes = [...new Set(purchases.map((purchase) => purchase.txHash.toLowerCase()))];
+
+    const [games, users, entriesByTxHash] = await Promise.all([
+        prisma.game.findMany({
+            where: {
+                platform,
+                OR: uniqueOnchainIds.map((onchainId) => ({
+                    onchainId: { equals: onchainId, mode: "insensitive" },
+                })),
+            },
+            select: {
+                id: true,
+                title: true,
+                onchainId: true,
+            },
+        }),
+        prisma.user.findMany({
+            where: {
+                platform,
+                OR: uniqueWallets.map((wallet) => ({
+                    wallet: { equals: wallet, mode: "insensitive" },
+                })),
+            },
+            select: {
+                id: true,
+                username: true,
+                wallet: true,
+            },
+        }),
+        prisma.gameEntry.findMany({
+            where: {
+                txHash: {
+                    in: uniqueTxHashes,
+                },
+            },
+            select: {
+                id: true,
+                txHash: true,
+            },
+        }),
+    ]);
+
+    const gameByOnchainId = new Map(
+        games
+            .filter((game) => game.onchainId)
+            .map((game) => [game.onchainId!.toLowerCase(), game]),
+    );
+    const userByWallet = new Map(
+        users
+            .filter((user) => user.wallet)
+            .map((user) => [user.wallet!.toLowerCase(), user]),
+    );
+    const entryByTxHash = new Set(
+        entriesByTxHash
+            .map((entry) => entry.txHash?.toLowerCase())
+            .filter((txHash): txHash is string => Boolean(txHash)),
+    );
+
+    const candidatePairs = purchases
+        .map((purchase) => {
+            const game = gameByOnchainId.get(purchase.gameOnchainId.toLowerCase());
+            const user = userByWallet.get(purchase.buyer);
+
+            if (!game || !user) return null;
+
+            return {
+                key: `${game.id}:${user.id}`,
+                gameId: game.id,
+                userId: user.id,
+            };
+        })
+        .filter((pair): pair is NonNullable<typeof pair> => Boolean(pair));
+
+    const existingEntries = candidatePairs.length
+        ? await prisma.gameEntry.findMany({
+            where: {
+                OR: [...new Map(candidatePairs.map((pair) => [pair.key, pair])).values()].map((pair) => ({
+                    gameId: pair.gameId,
+                    userId: pair.userId,
+                })),
+            },
+            select: {
+                id: true,
+                gameId: true,
+                userId: true,
+                purchaseSource: true,
+            },
+        })
+        : [];
+
+    const entryByGameUser = new Map(
+        existingEntries.map((entry) => [`${entry.gameId}:${entry.userId}`, entry]),
+    );
+
+    return purchases
+        .filter((purchase) => !entryByTxHash.has(purchase.txHash.toLowerCase()))
+        .map((purchase) => {
+            const game = gameByOnchainId.get(purchase.gameOnchainId.toLowerCase());
+            const user = userByWallet.get(purchase.buyer);
+            const existingEntry =
+                game && user ? entryByGameUser.get(`${game.id}:${user.id}`) : undefined;
+
+            if (!game) {
+                return {
+                    ...purchase,
+                    status: "GAME_NOT_FOUND" as const,
+                    note: "No matching game found in the DB for this onchain gameId.",
+                };
+            }
+
+            if (!user) {
+                return {
+                    ...purchase,
+                    gameId: game.id,
+                    gameTitle: game.title,
+                    status: "USER_NOT_FOUND" as const,
+                    note: "Wallet is not linked to any user on this platform yet.",
+                };
+            }
+
+            if (existingEntry) {
+                return {
+                    ...purchase,
+                    gameId: game.id,
+                    gameTitle: game.title,
+                    userId: user.id,
+                    username: user.username,
+                    status: "ENTRY_EXISTS" as const,
+                    note:
+                        existingEntry.purchaseSource === TicketPurchaseSource.PAID
+                            ? "User already has a paid entry; txHash is missing or different."
+                            : "User already has a non-paid entry for this game and needs review.",
+                };
+            }
+
+            return {
+                ...purchase,
+                gameId: game.id,
+                gameTitle: game.title,
+                userId: user.id,
+                username: user.username,
+                status: "MISSING_IN_DB" as const,
+                note: "Paid onchain and safe to recover into the DB.",
+            };
+        });
+}
+
+async function getTicketPurchasedLogs({
+    platform,
+    address,
+    fromBlock,
+    toBlock,
+}: {
+    platform: ChainPlatform;
+    address: `0x${string}`;
+    fromBlock: bigint;
+    toBlock: bigint;
+}) {
+    const publicClient = getPublicClient(platform);
+    const logs = [];
+
+    for (let start = fromBlock; start <= toBlock; start += LOG_BLOCK_CHUNK) {
+        const end = start + LOG_BLOCK_CHUNK - BigInt(1) < toBlock
+            ? start + LOG_BLOCK_CHUNK - BigInt(1)
+            : toBlock;
+
+        const batch = await publicClient.getLogs({
+            address,
+            event: ticketPurchasedEvent,
+            fromBlock: start,
+            toBlock: end,
+        });
+
+        logs.push(...batch);
+    }
+
+    return logs;
+}
+
 // ============================================
 // PAGE
 // ============================================
@@ -114,8 +375,11 @@ export default async function TicketsPage({
     searchParams: Promise<{ page?: string; status?: string; game?: string; q?: string }>;
 }) {
     const resolvedParams = await searchParams;
-    const { entries, total, page, pageSize } = await getTickets(resolvedParams);
-    const stats = await getStats();
+    const [{ entries, total, page, pageSize }, stats, onchainMismatches] = await Promise.all([
+        getTickets(resolvedParams),
+        getStats(),
+        getRecentOnchainMismatches(),
+    ]);
     const totalPages = Math.ceil(total / pageSize);
 
     return (
@@ -131,6 +395,121 @@ export default async function TicketsPage({
             </div>
 
             <IssueFreeTicketCard games={stats.games} />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="mb-4 flex flex-col gap-1">
+                    <h2 className="text-lg font-bold text-white font-display">
+                        Recent Onchain Purchases Missing From DB
+                    </h2>
+                    <p className="text-sm text-white/60">
+                        Crawls recent TicketPurchased events on both supported chains and highlights unresolved purchases.
+                    </p>
+                </div>
+
+                {onchainMismatches.length === 0 ? (
+                    <p className="text-sm text-white/50">
+                        No unresolved recent onchain purchases found.
+                    </p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="border-b border-white/10">
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Platform
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Buyer
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Game
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Amount
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Tx
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {onchainMismatches.map((row) => (
+                                    <tr key={row.txHash} className="border-b border-white/5 align-top">
+                                        <td className="px-4 py-4 text-sm text-white">
+                                            {row.platform}
+                                        </td>
+                                        <td className="px-4 py-4 text-sm text-white">
+                                            <div className="space-y-1">
+                                                {row.userId ? (
+                                                    <Link href={`/admin/users/${row.userId}`} className="font-medium hover:text-[#FFC931]">
+                                                        {row.username || row.buyer}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="font-medium">{row.buyer}</span>
+                                                )}
+                                                <p className="font-mono text-xs text-white/40">{row.buyer}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4 text-sm text-white">
+                                            <div className="space-y-1">
+                                                {row.gameId ? (
+                                                    <Link href={`/admin/games/${row.gameId}`} className="font-medium hover:text-[#FFC931]">
+                                                        {row.gameTitle || row.gameOnchainId}
+                                                    </Link>
+                                                ) : (
+                                                    <span className="font-medium">{row.gameOnchainId}</span>
+                                                )}
+                                                <p className="font-mono text-xs text-white/40">{row.gameOnchainId}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4 text-sm font-mono text-[#14B985]">
+                                            ${Number(row.amountFormatted).toFixed(2)}
+                                        </td>
+                                        <td className="px-4 py-4 text-sm">
+                                            <div className="space-y-1">
+                                                <span
+                                                    className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                        row.status === "MISSING_IN_DB"
+                                                            ? "bg-[#14B985]/15 text-[#14B985]"
+                                                            : row.status === "ENTRY_EXISTS"
+                                                                ? "bg-[#FFC931]/15 text-[#FFC931]"
+                                                                : "bg-red-500/15 text-red-300"
+                                                    }`}
+                                                >
+                                                    {row.status === "MISSING_IN_DB"
+                                                        ? "Recoverable"
+                                                        : row.status === "ENTRY_EXISTS"
+                                                            ? "Needs Review"
+                                                            : "Blocked"}
+                                                </span>
+                                                <p className="max-w-[260px] text-xs text-white/50">{row.note}</p>
+                                            </div>
+                                        </td>
+                                        <td className="px-4 py-4 text-sm">
+                                            <span className="font-mono text-xs text-white/50">
+                                                {row.txHash.slice(0, 10)}...{row.txHash.slice(-6)}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 py-4 text-sm">
+                                            {row.status === "MISSING_IN_DB" ? (
+                                                <RecoverPaidTicketButton txHash={row.txHash} />
+                                            ) : (
+                                                <span className="text-xs text-white/40">Review</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
+            <TicketReconciliationCard />
 
             {/* Stats */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

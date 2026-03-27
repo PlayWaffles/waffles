@@ -4,12 +4,19 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
-import { TicketPurchaseSource } from "@prisma";
+import { Prisma, TicketPurchaseSource } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser } from "@/lib/notifications";
 import { formatGameTime } from "@/lib/utils";
+import { inspectTicketPurchase } from "@/lib/chain";
+import type { ChainPlatform } from "@/lib/chain/platform";
+import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 
 export type IssueFreeTicketResult =
+  | { success: true; entryId: string; message: string }
+  | { success: false; error: string };
+
+export type ReconcilePaidTicketResult =
   | { success: true; entryId: string; message: string }
   | { success: false; error: string };
 
@@ -18,6 +25,28 @@ const issueFreeTicketSchema = z.object({
   userQuery: z.string().min(1, "User is required"),
   note: z.string().max(255, "Note must be 255 characters or fewer").optional(),
 });
+
+const reconcilePaidTicketSchema = z.object({
+  txHash: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Enter a valid transaction hash"),
+});
+
+async function unlockReferralRewards(
+  tx: Prisma.TransactionClient,
+  userId: string,
+) {
+  const entryCount = await tx.gameEntry.count({
+    where: { userId },
+  });
+
+  if (entryCount === 1) {
+    await tx.referralReward.updateMany({
+      where: { inviteeId: userId, status: "PENDING" },
+      data: { status: "UNLOCKED", unlockedAt: new Date() },
+    });
+  }
+}
 
 export async function issueFreeTicketAction(
   _prevState: IssueFreeTicketResult | null,
@@ -182,5 +211,237 @@ export async function issueFreeTicketAction(
     success: true,
     entryId: result.entryId,
     message: "Free ticket issued successfully",
+  };
+}
+
+export async function reconcilePaidTicketAction(
+  _prevState: ReconcilePaidTicketResult | null,
+  formData: FormData,
+): Promise<ReconcilePaidTicketResult> {
+  const auth = await requireAdminSession();
+  if (!auth.authenticated || !auth.session) {
+    return { success: false, error: "Unauthorized" };
+  }
+  const session = auth.session;
+
+  const parsed = reconcilePaidTicketSchema.safeParse({
+    txHash: formData.get("txHash")?.toString().trim(),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  const txHash = parsed.data.txHash;
+  const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY"];
+
+  let inspected:
+    | {
+        platform: ChainPlatform;
+        gameId: `0x${string}`;
+        buyer: `0x${string}`;
+        amount: bigint;
+        amountFormatted: string;
+      }
+    | null = null;
+
+  for (const platform of platforms) {
+    const result = await inspectTicketPurchase({
+      platform,
+      txHash: txHash as `0x${string}`,
+    });
+
+    if (result.found && result.details) {
+      inspected = {
+        platform,
+        ...result.details,
+      };
+      break;
+    }
+  }
+
+  if (!inspected) {
+    return {
+      success: false,
+      error:
+        "No valid TicketPurchased event was found for this txHash on the supported platforms.",
+    };
+  }
+
+  const existingByTxHash = await prisma.gameEntry.findUnique({
+    where: { txHash },
+    select: { id: true, gameId: true, userId: true },
+  });
+
+  if (existingByTxHash) {
+    return {
+      success: true,
+      entryId: existingByTxHash.id,
+      message: "This purchase is already synced in the database.",
+    };
+  }
+
+  const game = await prisma.game.findFirst({
+    where: {
+      platform: inspected.platform,
+      onchainId: { equals: inspected.gameId, mode: "insensitive" },
+    },
+    select: {
+      id: true,
+      title: true,
+      startsAt: true,
+      endsAt: true,
+      rankedAt: true,
+      onChainAt: true,
+      playerCount: true,
+      prizePool: true,
+    },
+  });
+
+  if (!game) {
+    return {
+      success: false,
+      error: "This on-chain purchase does not map to any game in the database.",
+    };
+  }
+
+  if (game.rankedAt || game.onChainAt) {
+    return {
+      success: false,
+      error:
+        "This game has already been settled. Recover the ticket manually with extra care instead of using auto-reconcile.",
+    };
+  }
+
+  const user = await prisma.user.findFirst({
+    where: {
+      platform: inspected.platform,
+      wallet: { equals: inspected.buyer, mode: "insensitive" },
+    },
+    select: {
+      id: true,
+      username: true,
+      pfpUrl: true,
+      hasGameAccess: true,
+      isBanned: true,
+    },
+  });
+
+  if (!user) {
+    return {
+      success: false,
+      error:
+        "No user with that wallet exists on this platform yet. Create or sync the user first, then retry.",
+    };
+  }
+
+  const existingEntry = await prisma.gameEntry.findUnique({
+    where: { gameId_userId: { gameId: game.id, userId: user.id } },
+    select: { id: true, purchaseSource: true },
+  });
+
+  if (existingEntry) {
+    return {
+      success: false,
+      error:
+        existingEntry.purchaseSource === TicketPurchaseSource.PAID
+          ? "This user already has a paid entry for the game."
+          : "This user already has an entry for the game. Resolve that existing entry before reconciling this purchase.",
+    };
+  }
+
+  const paidAmount = Number(inspected.amountFormatted);
+  if (!Number.isFinite(paidAmount) || paidAmount <= 0) {
+    return {
+      success: false,
+      error: "Unable to derive a valid ticket amount from the on-chain purchase.",
+    };
+  }
+
+  const result = await prisma.$transaction(async (tx) => {
+    const entry = await tx.gameEntry.create({
+      data: {
+        gameId: game.id,
+        userId: user.id,
+        txHash,
+        payerWallet: inspected.buyer,
+        paidAmount,
+        paidAt: new Date(),
+        purchaseSource: TicketPurchaseSource.PAID,
+      },
+      select: { id: true },
+    });
+
+    const updatedGame = await tx.game.update({
+      where: { id: game.id },
+      data: {
+        playerCount: { increment: 1 },
+        prizePool: { increment: paidAmount },
+      },
+      select: {
+        playerCount: true,
+        prizePool: true,
+      },
+    });
+
+    await unlockReferralRewards(tx, user.id);
+
+    return {
+      entryId: entry.id,
+      playerCount: updatedGame.playerCount,
+      prizePool: updatedGame.prizePool,
+    };
+  });
+
+  await logAdminAction({
+    adminId: session.userId,
+    action: AdminAction.MANUAL_TICKET_CREATE,
+    entityType: EntityType.TICKET,
+    entityId: result.entryId,
+    details: {
+      source: "onchain_reconcile",
+      txHash,
+      gameId: game.id,
+      userId: user.id,
+      wallet: inspected.buyer,
+      platform: inspected.platform,
+      paidAmount,
+    },
+  });
+
+  revalidatePath("/admin/tickets");
+  revalidatePath(`/admin/games/${game.id}`);
+  revalidatePath("/game");
+  revalidatePath("/(app)/(game)", "layout");
+
+  notifyTicketPurchased(game.id, {
+    username: user.username || "Player",
+    pfpUrl: user.pfpUrl || null,
+    prizePool: result.prizePool,
+    playerCount: result.playerCount,
+  }).catch((error) =>
+    console.error("[admin-tickets] reconcile_paid_ticket_partykit_failed", error),
+  );
+
+  if (user.hasGameAccess && !user.isBanned) {
+    void import("@/lib/notifications/templates").then(
+      ({ transactional, buildPayload }) => {
+        const payload = buildPayload(
+          transactional.ticketSecured(formatGameTime(game.startsAt)),
+        );
+        sendToUser(user.id, payload).catch((error) =>
+          console.error("[admin-tickets] reconcile_paid_ticket_notify_failed", error),
+        );
+      },
+    );
+  }
+
+  return {
+    success: true,
+    entryId: result.entryId,
+    message: `Recovered paid ticket for ${user.username || inspected.buyer} on ${game.title}.`,
   };
 }
