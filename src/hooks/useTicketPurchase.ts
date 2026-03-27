@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useAccount, useSendCalls, useCallsStatus } from "wagmi";
+import { useAccount, useWriteContract } from "wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { parseUnits, encodeFunctionData } from "viem";
 
 import { useRealtime } from "@/components/providers/RealtimeProvider";
@@ -17,10 +18,10 @@ import {
   getPaymentTokenAddress,
   getWaffleContractAddress,
 } from "@/lib/chain";
-import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
 import { useCorrectChain } from "./useCorrectChain";
 import { useUser } from "./useUser";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import { wagmiConfig } from "@/lib/wagmi/config";
 
 // ==========================================
 // TYPES
@@ -88,58 +89,7 @@ export function useTicketPurchase(
     return (allowance as bigint) < priceInUnits;
   }, [allowance, priceInUnits]);
 
-  // ==========================================
-  // BUILD TRANSACTION CALLS
-  // ==========================================
-  const calls = useMemo(() => {
-    if (!tokenAddress || !onchainId) {
-      return [];
-    }
-
-    const callList: Array<{ to: `0x${string}`; data: `0x${string}` }> = [];
-
-    if (needsApproval) {
-      callList.push({
-        to: tokenAddress,
-        data: encodeFunctionData({
-          abi: ERC20_ABI,
-          functionName: "approve",
-          args: [contractAddress, parseUnits("5000", PAYMENT_TOKEN_DECIMALS)],
-        }),
-      });
-    }
-
-    callList.push({
-      to: contractAddress,
-      data: encodeFunctionData({
-        abi: waffleGameAbi,
-        functionName: "buyTicket",
-        args: [onchainId, priceInUnits],
-      }),
-    });
-
-    return callList;
-  }, [contractAddress, onchainId, priceInUnits, needsApproval, tokenAddress]);
-
-  // ==========================================
-  // WAGMI SEND CALLS
-  // ==========================================
-  const {
-    sendCalls,
-    data: callsId,
-    isPending: isSending,
-    error: sendError,
-    reset: resetSendCalls,
-  } = useSendCalls();
-
-  const { data: callsStatus } = useCallsStatus({
-    id: callsId?.id ?? "",
-    query: {
-      enabled: !!callsId?.id,
-      refetchInterval: (data) =>
-        data.state.data?.status === "success" ? false : 1000,
-    },
-  });
+  const { writeContractAsync } = useWriteContract();
 
   // ==========================================
   // SYNC WITH BACKEND (with retries)
@@ -237,70 +187,6 @@ export function useTicketPurchase(
   );
 
   // ==========================================
-  // EFFECTS
-  // ==========================================
-  useEffect(() => {
-    if (isSending && state.step !== "pending") {
-      setState({ step: "pending" });
-    }
-  }, [isSending, state.step]);
-
-  useEffect(() => {
-    if (sendError) {
-      console.error("[ticket-purchase]", {
-        stage: "send-error",
-        platform,
-        gameId,
-        onchainId,
-        address,
-        error: sendError.message,
-      });
-
-      const msg = sendError.message.includes("rejected")
-        ? "Transaction rejected"
-        : sendError.message.includes("insufficient")
-          ? "Insufficient funds"
-          : "Transaction failed";
-      setState({ step: "error", error: msg });
-      notify.error(msg);
-    }
-  }, [sendError]);
-
-  useEffect(() => {
-    if (!callsStatus) return;
-
-    console.log("[ticket-purchase]", {
-      stage: "calls-status",
-      platform,
-      gameId,
-      onchainId,
-      address,
-      status: callsStatus.status,
-      receipts: callsStatus.receipts?.length ?? 0,
-    });
-
-    if (callsStatus.status === "pending" && state.step === "pending") {
-      setState({ step: "confirming" });
-    }
-
-    if (callsStatus.status === "failure") {
-      setState({ step: "error", error: "Transaction failed on-chain" });
-      notify.error("Transaction failed. Check your balance.");
-    }
-
-    if (callsStatus.status === "success") {
-      const txHash =
-        callsStatus.receipts?.[callsStatus.receipts.length - 1]
-          ?.transactionHash;
-      setState({ step: "syncing", txHash });
-      if (txHash) {
-        syncWithBackend(txHash);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [callsStatus]);
-
-  // ==========================================
   // PURCHASE ACTION
   // ==========================================
   const purchase = useCallback(async () => {
@@ -320,12 +206,6 @@ export function useTicketPurchase(
       return;
     }
 
-    if (calls.length === 0) {
-      notify.error("Not ready. Please wait...");
-      return;
-    }
-
-    resetSendCalls();
     setState({ step: "pending" });
 
     try {
@@ -343,29 +223,86 @@ export function useTicketPurchase(
         priceInUnits: priceInUnits.toString(),
         allowance: typeof allowance === "bigint" ? allowance.toString() : null,
         needsApproval,
-        callCount: calls.length,
       });
 
-      sendCalls({
-        calls,
-        capabilities: builderCodeSendCallsCapability
-          ? {
-              atomicBatch: { supported: true },
-              ...builderCodeSendCallsCapability,
-            }
-          : { atomicBatch: { supported: true } },
+      if (needsApproval) {
+        const approvalHash = await writeContractAsync({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "approve",
+          args: [contractAddress, parseUnits("5000", PAYMENT_TOKEN_DECIMALS)],
+        });
+
+        console.log("[ticket-purchase]", {
+          stage: "approval-submitted",
+          platform,
+          gameId,
+          onchainId,
+          address,
+          txHash: approvalHash,
+        });
+
+        setState({ step: "confirming", txHash: approvalHash });
+
+        await waitForTransactionReceipt(wagmiConfig, {
+          hash: approvalHash,
+          confirmations: 1,
+        });
+
+        console.log("[ticket-purchase]", {
+          stage: "approval-confirmed",
+          platform,
+          gameId,
+          onchainId,
+          address,
+          txHash: approvalHash,
+        });
+      }
+
+      const purchaseHash = await writeContractAsync({
+        address: contractAddress,
+        abi: waffleGameAbi,
+        functionName: "buyTicket",
+        args: [onchainId, priceInUnits],
       });
+
+      console.log("[ticket-purchase]", {
+        stage: "purchase-submitted",
+        platform,
+        gameId,
+        onchainId,
+        address,
+        txHash: purchaseHash,
+      });
+
+      setState({ step: "confirming", txHash: purchaseHash });
+
+      await waitForTransactionReceipt(wagmiConfig, {
+        hash: purchaseHash,
+        confirmations: 1,
+      });
+
+      setState({ step: "syncing", txHash: purchaseHash });
+      await syncWithBackend(purchaseHash);
     } catch (err) {
+      const message = err instanceof Error ? err.message : "Transaction failed";
       console.error("[ticket-purchase]", {
         stage: "purchase-exception",
         platform,
         gameId,
         onchainId,
         address,
-        error: err instanceof Error ? err.message : "Transaction failed",
+        error: message,
       });
-      setState({ step: "error", error: "Transaction failed" });
-      notify.error("Transaction failed");
+
+      const msg = message.includes("rejected")
+        ? "Transaction rejected"
+        : message.includes("insufficient")
+          ? "Insufficient funds"
+          : "Transaction failed";
+
+      setState({ step: "error", error: msg });
+      notify.error(msg);
     }
   }, [
     allowance,
@@ -373,23 +310,21 @@ export function useTicketPurchase(
     isConnected,
     onchainId,
     hasTicket,
-    calls,
     contractAddress,
-    sendCalls,
     ensureCorrectChain,
     gameId,
     needsApproval,
     platform,
     price,
     priceInUnits,
-    resetSendCalls,
+    syncWithBackend,
     tokenAddress,
+    writeContractAsync,
   ]);
 
   const reset = useCallback(() => {
-    resetSendCalls();
     setState({ step: "idle" });
-  }, [resetSendCalls]);
+  }, []);
 
   // ==========================================
   // RETURN
