@@ -9,23 +9,29 @@ import { env } from "@/lib/env";
 
 const appName = "Waffles";
 
-export const wagmiConfig = createConfig({
-  chains: [farcasterChain, miniPayChain],
-  connectors: [
-    injected(),
-    coinbaseWallet({
-      appName,
-      preference: "all",
+function createWafflesWagmiConfig(includeInjected: boolean) {
+  return createConfig({
+    chains: [farcasterChain, miniPayChain],
+    connectors: [
+      ...(includeInjected ? [injected()] : []),
+      coinbaseWallet({
+        appName,
+        preference: "all",
+      }),
+    ],
+    storage: createStorage({
+      storage: cookieStorage,
     }),
-  ],
-  storage: createStorage({
-    storage: cookieStorage,
-  }),
-  ssr: true,
-  transports: {
-    [farcasterChain.id]: http(farcasterChain.rpcUrls.default.http[0]),
-    [miniPayChain.id]: http(miniPayChain.rpcUrls.default.http[0]),
-  },
-});
+    ssr: true,
+    transports: {
+      [farcasterChain.id]: http(farcasterChain.rpcUrls.default.http[0]),
+      [miniPayChain.id]: http(miniPayChain.rpcUrls.default.http[0]),
+    },
+  });
+}
+
+export const wagmiConfig = createWafflesWagmiConfig(true);
+export const farcasterWagmiConfig = createWafflesWagmiConfig(false);
+export const miniPayWagmiConfig = wagmiConfig;
 
 export const wagmiQueryClient = new QueryClient();

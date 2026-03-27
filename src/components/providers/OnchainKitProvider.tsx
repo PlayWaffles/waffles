@@ -6,7 +6,12 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { env } from "@/lib/env";
 import { getPlatformChain } from "@/lib/chain";
-import { wagmiConfig, wagmiQueryClient } from "@/lib/wagmi/config";
+import {
+  farcasterWagmiConfig,
+  miniPayWagmiConfig,
+  wagmiConfig,
+  wagmiQueryClient,
+} from "@/lib/wagmi/config";
 import { getAppRuntime, type AppRuntime } from "@/lib/client/runtime";
 
 interface Props {
@@ -37,9 +42,15 @@ export function OnchainKitProvider({ children }: Props) {
   }, []);
 
   const chain = getPlatformChain(runtime === "minipay" ? "MINIPAY" : "FARCASTER");
+  const activeWagmiConfig =
+    runtime === "farcaster"
+      ? farcasterWagmiConfig
+      : runtime === "minipay"
+        ? miniPayWagmiConfig
+        : wagmiConfig;
 
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={activeWagmiConfig}>
       <QueryClientProvider client={wagmiQueryClient}>
         <OnchainKitProviderComponent
           apiKey={env.nextPublicOnchainkitApiKey}
