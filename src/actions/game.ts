@@ -59,6 +59,14 @@ export async function purchaseGameTicket(
 ): Promise<PurchaseResult> {
   const { gameId, txHash, paidAmount, payerWallet } = input;
 
+  console.log("[game-actions]", {
+    stage: "purchase-start",
+    gameId,
+    txHash,
+    paidAmount,
+    payerWallet,
+  });
+
   // Validate input
   if (!gameId || !txHash) {
     return {
@@ -111,6 +119,16 @@ export async function purchaseGameTicket(
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 
+    console.log("[game-actions]", {
+      stage: "purchase-game-loaded",
+      gameId,
+      platform: game.platform,
+      onchainId: game.onchainId,
+      tierPrices: game.tierPrices,
+      playerCount: game.playerCount,
+      maxPlayers: game.maxPlayers,
+    });
+
     if (game.platform !== user.platform) {
       return {
         success: false,
@@ -157,6 +175,24 @@ export async function purchaseGameTicket(
       expectedGameId: game.onchainId as `0x${string}`,
       expectedBuyer: payerWallet as `0x${string}`,
       minimumAmount: parseUnits(paidAmount.toString(), PAYMENT_TOKEN_DECIMALS),
+    });
+
+    console.log("[game-actions]", {
+      stage: "purchase-verification-result",
+      gameId,
+      txHash,
+      platform: game.platform,
+      expectedBuyer: payerWallet,
+      verified: verification.verified,
+      error: verification.error,
+      details: verification.details
+        ? {
+            gameId: verification.details.gameId,
+            buyer: verification.details.buyer,
+            amount: verification.details.amount.toString(),
+            amountFormatted: verification.details.amountFormatted,
+          }
+        : null,
     });
 
     if (!verification.verified) {

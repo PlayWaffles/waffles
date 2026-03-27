@@ -58,6 +58,16 @@ export async function verifyTicketPurchase(
   const contractAddress = getWaffleContractAddress(platform);
   const publicClient = getPublicClient(platform);
 
+  console.log("[verify-ticket-purchase]", {
+    stage: "start",
+    platform,
+    txHash,
+    expectedGameId,
+    expectedBuyer,
+    minimumAmount: minimumAmount.toString(),
+    contractAddress,
+  });
+
   try {
     // =========================================================================
     // Layer 1: Transaction Receipt Verification
@@ -75,6 +85,12 @@ export async function verifyTicketPurchase(
     }
 
     if (receipt.status !== "success") {
+      console.error("[verify-ticket-purchase]", {
+        stage: "receipt-failed",
+        platform,
+        txHash,
+        receiptStatus: receipt.status,
+      });
       return {
         verified: false,
         error: "Transaction reverted on-chain. Funds were not transferred.",
@@ -91,6 +107,13 @@ export async function verifyTicketPurchase(
     );
 
     if (contractLogs.length === 0) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "no-contract-logs",
+        platform,
+        txHash,
+        contractAddress,
+        logCount: receipt.logs.length,
+      });
       return {
         verified: false,
         error: "No events from WaffleGame contract found.",
@@ -133,6 +156,13 @@ export async function verifyTicketPurchase(
     }
 
     if (!matchingEvent) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "no-matching-event",
+        platform,
+        txHash,
+        expectedGameId,
+        expectedBuyer,
+      });
       return {
         verified: false,
         error: "TicketPurchased event does not match expected game/buyer.",
@@ -141,6 +171,13 @@ export async function verifyTicketPurchase(
 
     // Verify minimum payment amount
     if (matchingEvent.amount < minimumAmount) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "amount-too-low",
+        platform,
+        txHash,
+        matchingAmount: matchingEvent.amount.toString(),
+        minimumAmount: minimumAmount.toString(),
+      });
       return {
         verified: false,
         error: `Payment amount (${formatUnits(matchingEvent.amount, PAYMENT_TOKEN_DECIMALS)}) is less than minimum required.`,
@@ -160,6 +197,14 @@ export async function verifyTicketPurchase(
         args: [expectedGameId, expectedBuyer],
       })) as boolean;
     } catch (err) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "has-ticket-read-failed",
+        platform,
+        txHash,
+        expectedGameId,
+        expectedBuyer,
+        error: err instanceof Error ? err.message : "Unknown error",
+      });
       return {
         verified: false,
         error: "Failed to verify ticket on contract. Please try again.",
@@ -167,6 +212,13 @@ export async function verifyTicketPurchase(
     }
 
     if (!hasTicket) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "has-ticket-false",
+        platform,
+        txHash,
+        expectedGameId,
+        expectedBuyer,
+      });
       return {
         verified: false,
         error:
@@ -188,7 +240,12 @@ export async function verifyTicketPurchase(
       },
     };
   } catch (error) {
-    console.error("[verifyTicketPurchase] Unexpected error:", error);
+    console.error("[verify-ticket-purchase]", {
+      stage: "unexpected-error",
+      platform,
+      txHash,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     return {
       verified: false,
       error: `Verification error: ${error instanceof Error ? error.message : "Unknown error"}`,

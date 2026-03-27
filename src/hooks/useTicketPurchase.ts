@@ -153,6 +153,17 @@ export function useTicketPurchase(
 
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
+          console.log("[ticket-purchase]", {
+            stage: "sync-start",
+            platform,
+            gameId,
+            txHash,
+            paidAmount: price,
+            payerWallet: address,
+            userId: user.id,
+            attempt: attempt + 1,
+          });
+
           const result = await purchaseGameTicket({
             gameId,
             txHash,
@@ -180,8 +191,25 @@ export function useTicketPurchase(
           }
 
           lastError = result.error || "Sync failed";
+          console.error("[ticket-purchase]", {
+            stage: "sync-result-error",
+            platform,
+            gameId,
+            txHash,
+            code: result.code,
+            error: result.error,
+            attempt: attempt + 1,
+          });
         } catch (err) {
           lastError = err instanceof Error ? err.message : "Sync failed";
+          console.error("[ticket-purchase]", {
+            stage: "sync-exception",
+            platform,
+            gameId,
+            txHash,
+            error: lastError,
+            attempt: attempt + 1,
+          });
         }
 
         // Wait before retry (exponential backoff: 1s, 2s, 4s, 8s, 16s)
@@ -219,6 +247,15 @@ export function useTicketPurchase(
 
   useEffect(() => {
     if (sendError) {
+      console.error("[ticket-purchase]", {
+        stage: "send-error",
+        platform,
+        gameId,
+        onchainId,
+        address,
+        error: sendError.message,
+      });
+
       const msg = sendError.message.includes("rejected")
         ? "Transaction rejected"
         : sendError.message.includes("insufficient")
@@ -231,6 +268,16 @@ export function useTicketPurchase(
 
   useEffect(() => {
     if (!callsStatus) return;
+
+    console.log("[ticket-purchase]", {
+      stage: "calls-status",
+      platform,
+      gameId,
+      onchainId,
+      address,
+      status: callsStatus.status,
+      receipts: callsStatus.receipts?.length ?? 0,
+    });
 
     if (callsStatus.status === "pending" && state.step === "pending") {
       setState({ step: "confirming" });
@@ -284,6 +331,21 @@ export function useTicketPurchase(
     try {
       await ensureCorrectChain();
 
+      console.log("[ticket-purchase]", {
+        stage: "before-send",
+        platform,
+        gameId,
+        onchainId,
+        address,
+        tokenAddress,
+        contractAddress,
+        price,
+        priceInUnits: priceInUnits.toString(),
+        allowance: typeof allowance === "bigint" ? allowance.toString() : null,
+        needsApproval,
+        callCount: calls.length,
+      });
+
       sendCalls({
         calls,
         capabilities: builderCodeSendCallsCapability
@@ -294,18 +356,34 @@ export function useTicketPurchase(
           : { atomicBatch: { supported: true } },
       });
     } catch (err) {
+      console.error("[ticket-purchase]", {
+        stage: "purchase-exception",
+        platform,
+        gameId,
+        onchainId,
+        address,
+        error: err instanceof Error ? err.message : "Transaction failed",
+      });
       setState({ step: "error", error: "Transaction failed" });
       notify.error("Transaction failed");
     }
   }, [
+    allowance,
     address,
     isConnected,
     onchainId,
     hasTicket,
     calls,
+    contractAddress,
     sendCalls,
     ensureCorrectChain,
+    gameId,
+    needsApproval,
+    platform,
+    price,
+    priceInUnits,
     resetSendCalls,
+    tokenAddress,
   ]);
 
   const reset = useCallback(() => {
