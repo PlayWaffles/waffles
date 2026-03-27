@@ -1,6 +1,7 @@
 export { DateRangePicker } from "./DateRangePicker";
 export { getDateRangeFromParam, DATE_PRESETS } from "./dateUtils";
 export { KPICard } from "./KPICard";
+export { MetricTooltip } from "./MetricTooltip";
 export { RevenueChart } from "./RevenueChart";
 export { UserGrowthChart } from "./UserGrowthChart";
 export { GamePerformanceTable } from "./GamePerformanceTable";

@@ -4,7 +4,6 @@ import { useAccount, useChainId, useConnect } from "wagmi";
 import { useGetTokenBalance } from "@coinbase/onchainkit/wallet";
 import { motion, useAnimation } from "framer-motion";
 import { useEffect, useRef } from "react";
-import { farcasterFrame } from "@farcaster/miniapp-wagmi-connector";
 
 import { springs } from "@/lib/animations";
 import { PAYMENT_TOKEN_ADDRESS, PAYMENT_TOKEN_DECIMALS, chain } from "@/lib/chain";
@@ -61,17 +60,17 @@ function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
 
 export function WalletBalance() {
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { connect, connectors } = useConnect();
   const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain();
 
-  // Auto-connect with Farcaster connector if not connected
+  // Auto-connect with the injected wallet when available
   useEffect(() => {
-    if (!isConnected) {
+    if (!isConnected && connectors.length > 0) {
       connect({
-        connector: farcasterFrame(),
+        connector: connectors.find((item) => item.id === "injected") || connectors[0],
       });
     }
-  }, [isConnected, connect]);
+  }, [isConnected, connect, connectors]);
 
   // Auto-switch to correct chain when wallet is connected
   useEffect(() => {

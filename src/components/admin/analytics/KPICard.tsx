@@ -2,11 +2,13 @@
 
 import { ArrowUpIcon, ArrowDownIcon } from "@heroicons/react/24/solid";
 import { ReactNode } from "react";
+import { MetricTooltip } from "./MetricTooltip";
 
 interface KPICardProps {
     title: string;
     value: string | number;
     icon: ReactNode;
+    tooltip?: string;
     change?: {
         value: number;
         isPositive: boolean;
@@ -20,6 +22,7 @@ export function KPICard({
     title,
     value,
     icon,
+    tooltip,
     change,
     sparklineData,
     subtitle,
@@ -40,19 +43,28 @@ export function KPICard({
     };
 
     return (
-        <div className={`${gradientClasses[glowVariant]} rounded-2xl border border-white/10 p-5 relative overflow-hidden group hover:border-white/20 transition-colors`}>
-            {/* Background glow effect */}
-            <div
-                className="absolute -top-20 -right-20 w-40 h-40 rounded-full opacity-10 blur-3xl transition-opacity group-hover:opacity-20"
-                style={{ backgroundColor: accentColors[glowVariant] }}
-            />
+        <div className="relative overflow-visible">
+            <div className={`${gradientClasses[glowVariant]} rounded-2xl border border-white/10 p-5 relative group hover:border-white/20 transition-colors`}>
+                {/* Clipped visual layer */}
+                <div
+                    className="pointer-events-none absolute inset-0 overflow-hidden rounded-2xl"
+                    aria-hidden="true"
+                >
+                    <div
+                        className="absolute -top-20 -right-20 h-40 w-40 rounded-full opacity-10 blur-3xl transition-opacity group-hover:opacity-20"
+                        style={{ backgroundColor: accentColors[glowVariant] }}
+                    />
+                </div>
 
-            <div className="relative z-10">
+                <div className="relative z-10">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-3">
-                    <span className="text-sm font-medium text-white/50 font-display uppercase tracking-wider">
-                        {title}
-                    </span>
+                    <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-white/50 font-display uppercase tracking-wider">
+                            {title}
+                        </span>
+                        {tooltip ? <MetricTooltip content={tooltip} /> : null}
+                    </div>
                     <div className="p-2 rounded-xl bg-white/5">
                         {icon}
                     </div>
@@ -89,6 +101,7 @@ export function KPICard({
                         <span className="text-xs text-white/40">{subtitle}</span>
                     )}
                 </div>
+            </div>
             </div>
         </div>
     );

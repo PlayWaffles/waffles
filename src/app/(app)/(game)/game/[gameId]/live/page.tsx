@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { RealtimeProvider } from "@/components/providers/RealtimeProvider";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 import LiveGameScreen from "./LiveGameScreen";
 
 export const dynamic = "force-dynamic";
@@ -39,9 +40,9 @@ export interface LiveGameData {
 // DATA FETCHING
 // ==========================================
 
-const getGame = cache(async (gameId: string) => {
-  const game = await prisma.game.findUnique({
-    where: { id: gameId },
+const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+  const game = await prisma.game.findFirst({
+    where: { id: gameId, platform },
     select: {
       id: true,
       gameNumber: true,
@@ -100,8 +101,9 @@ export default async function LiveGamePage({
   params: Promise<{ gameId: string }>;
 }) {
   const { gameId } = await params;
+  const platform = await resolveRuntimePlatform();
 
-  const game = await getGame(gameId);
+  const game = await getGame(gameId, platform);
 
   // If game doesn't exist or is not live, redirect to game hub
   if (!game) {

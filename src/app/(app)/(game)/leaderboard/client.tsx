@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -11,6 +10,7 @@ import { Top3 } from "./_components/Top3";
 import { Row } from "./_components/Row";
 import { WaffleLoader } from "@/components/ui/WaffleLoader";
 import { LeaderboardEntry } from "@/lib/types";
+import { useUser } from "@/hooks/useUser";
 
 // ============================================
 // TYPES
@@ -39,8 +39,8 @@ export default function LeaderboardClient() {
   const activeTab: LeaderboardTabKey = tab === "allTime" ? "allTime" : "current";
 
   // ── User Context ──────────────────────────────
-  const { context } = useMiniKit();
-  const userFid = context?.user?.fid ?? null;
+  const { user } = useUser();
+  const currentUserId = user?.id ?? null;
 
   // ── State ─────────────────────────────────────
   const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
@@ -204,7 +204,7 @@ export default function LeaderboardClient() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Top3 entries={top3} currentUserId={userFid} />
+              <Top3 entries={top3} currentUserId={currentUserId} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -215,7 +215,7 @@ export default function LeaderboardClient() {
             <Row
               key={`${activeTab}-${entry.rank}-${entry.id}`}
               entry={entry}
-              isCurrentUser={userFid != null && entry.fid === userFid}
+              isCurrentUser={currentUserId != null && entry.userId === currentUserId}
             />
           ))}
         </div>

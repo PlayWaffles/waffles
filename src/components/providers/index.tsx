@@ -3,6 +3,7 @@
 import { OnchainKitProvider } from "./OnchainKitProvider";
 import { SoundProvider } from "./SoundProvider";
 import GlobalToaster from "../ui/Toaster";
+import { StreakModal } from "../StreakModal";
 import { AppInitializer } from "./AppInitializer";
 import { SplashProvider } from "./SplashProvider";
 
@@ -24,6 +25,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AppInitializer>
           <SoundProvider>
             {children}
+            <StreakModal />
             <GlobalToaster />
           </SoundProvider>
         </AppInitializer>

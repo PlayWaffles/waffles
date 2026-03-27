@@ -1,9 +1,9 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { cache } from "react";
-import { minikitConfig } from "@minikit-config";
 import { env } from "@/lib/env";
 import { buildJoinedOGUrl } from "@/lib/og";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 import { TicketSuccessClient } from "./client";
 
 interface SuccessPageProps {
@@ -12,9 +12,9 @@ interface SuccessPageProps {
 }
 
 // Cache game data fetch
-const getGameInfo = cache(async (gameId: string) => {
-    const game = await prisma.game.findUnique({
-        where: { id: gameId },
+const getGameInfo = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+    const game = await prisma.game.findFirst({
+        where: { id: gameId, platform },
         select: {
             id: true,
             title: true,
@@ -34,9 +34,10 @@ export async function generateMetadata({
 }: SuccessPageProps): Promise<Metadata> {
     const { gameId } = await params;
     const sParams = await searchParams;
+    const platform = await resolveRuntimePlatform();
 
     // Get game info
-    const game = await getGameInfo(gameId);
+    const game = await getGameInfo(gameId, platform);
     if (!game) {
         return { title: "Game Not Found" };
     }
@@ -66,22 +67,6 @@ export async function generateMetadata({
             description: `Theme: ${game.theme} | Current Prize Pool: $${game.prizePool.toLocaleString()}`,
             images: imageUrl ? [imageUrl] : [],
         },
-        other: {
-            "fc:frame": JSON.stringify({
-                version: minikitConfig.miniapp.version,
-                imageUrl: imageUrl || minikitConfig.miniapp.heroImageUrl,
-                button: {
-                    title: "Play Waffles 🔥",
-                    action: {
-                        name: "Play Waffles",
-                        type: "launch_frame",
-                        url: `${env.rootUrl}/game`,
-                        splashImageUrl: minikitConfig.miniapp.splashImageUrl,
-                        splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
-                    },
-                },
-            }),
-        },
     };
 }
 
@@ -91,8 +76,9 @@ export default async function TicketSuccessPage({
 }: SuccessPageProps) {
     const { gameId } = await params;
     const sParams = await searchParams;
+    const platform = await resolveRuntimePlatform();
 
-    const game = await getGameInfo(gameId);
+    const game = await getGameInfo(gameId, platform);
     if (!game) {
         throw new Error("Game not found");
     }

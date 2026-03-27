@@ -4,8 +4,6 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useSendCalls, useCallsStatus } from "wagmi";
 import { parseUnits, encodeFunctionData } from "viem";
-import sdk from "@farcaster/miniapp-sdk";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useTokenAllowance } from "./waffleContractHooks";
@@ -21,6 +19,7 @@ import {
 } from "@/lib/chain";
 import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
 import { useCorrectChain } from "./useCorrectChain";
+import { useUser } from "./useUser";
 
 // ==========================================
 // TYPES
@@ -52,13 +51,10 @@ export function useTicketPurchase(
   onSuccess?: () => void,
 ) {
   const router = useRouter();
-  const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
   const { ensureCorrectChain } = useCorrectChain();
+  const { user } = useUser();
   const [state, setState] = useState<TicketPurchaseState>({ step: "idle" });
-
-  // Get user's fid from MiniKit context
-  const fid = context?.user?.fid;
 
   // ==========================================
   // BACKEND ENTRY (Source of Truth)
@@ -169,7 +165,7 @@ export function useTicketPurchase(
   // ==========================================
   const syncWithBackend = useCallback(
     async (txHash: string) => {
-      if (!address || !fid) return;
+      if (!address || !user?.id) return;
 
       const MAX_RETRIES = 5;
       let lastError: string = "Sync failed";
@@ -178,7 +174,6 @@ export function useTicketPurchase(
         try {
           const result = await purchaseGameTicket({
             gameId,
-            fid,
             txHash,
             paidAmount: price,
             payerWallet: address,
@@ -190,7 +185,6 @@ export function useTicketPurchase(
             setState({ step: "success", txHash });
             playSound("purchase");
             notify.success("Ticket purchased! 🎉");
-            sdk.haptics.impactOccurred("medium").catch(() => {});
             refetchEntry();
             router.refresh();
             onSuccess?.();
@@ -231,7 +225,7 @@ export function useTicketPurchase(
         `pending-purchase-${gameId}`,
         JSON.stringify({
           txHash,
-          fid,
+          userId: user.id,
           wallet: address,
           price,
           timestamp: Date.now(),
@@ -241,7 +235,7 @@ export function useTicketPurchase(
       notify.error("Sync failed. Your purchase will be verified shortly.");
       setState({ step: "error", error: lastError, txHash });
     },
-    [address, fid, gameId, price, refetchEntry, router, onSuccess],
+    [address, user?.id, gameId, price, refetchEntry, router, onSuccess],
   );
 
   // ==========================================

@@ -1,9 +1,11 @@
 "use client";
 
 import { OnchainKitProvider as OnchainKitProviderComponent } from "@coinbase/onchainkit";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { WagmiProvider } from "wagmi";
 import { env } from "@/lib/env";
-import { minikitConfig } from "@minikit-config";
 import { chain } from "@/lib/chain";
+import { wagmiConfig, wagmiQueryClient } from "@/lib/wagmi/config";
 
 interface Props {
   children: React.ReactNode;
@@ -11,27 +13,24 @@ interface Props {
 
 export function OnchainKitProvider({ children }: Props) {
   return (
-    <OnchainKitProviderComponent
-      apiKey={env.nextPublicOnchainkitApiKey}
-      chain={chain}
-      config={{
-        appearance: {
-          mode: "dark",
-        },
-        wallet: {
-          display: "modal",
-          supportedWallets: {
-            frame: true,
-          }
-        },
-      }}
-      miniKit={{
-        enabled: true,
-        autoConnect: true,
-        notificationProxyUrl: minikitConfig.miniapp.webhookUrl,
-      }}
-    >
-      {children}
-    </OnchainKitProviderComponent>
+    <WagmiProvider config={wagmiConfig}>
+      <QueryClientProvider client={wagmiQueryClient}>
+        <OnchainKitProviderComponent
+          apiKey={env.nextPublicOnchainkitApiKey}
+          chain={chain}
+          config={{
+            appearance: {
+              mode: "dark",
+            },
+            wallet: {
+              display: "modal",
+              termsUrl: `${env.rootUrl}/terms`,
+            },
+          }}
+        >
+          {children}
+        </OnchainKitProviderComponent>
+      </QueryClientProvider>
+    </WagmiProvider>
   );
 }

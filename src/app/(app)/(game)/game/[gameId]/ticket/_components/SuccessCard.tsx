@@ -4,7 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 import { useCallback } from "react";
 import { env } from "@/lib/env";
-import { useComposeCast } from "@coinbase/onchainkit/minikit";
+import { shareTextOrCopy } from "@/lib/share";
 
 // Simplified ticket type for client-side usage
 interface TicketInfo {
@@ -16,43 +16,27 @@ export const SuccessCard = ({
   theme,
   coverUrl,
   prizePool,
-  fid,
   gameId,
   ticket,
 }: {
   theme: string;
   prizePool: number;
   coverUrl: string;
-  fid: number;
   gameId: string;
   ticket: TicketInfo;
 }) => {
-  const { composeCastAsync } = useComposeCast();
-
   const shareTicket = useCallback(async () => {
     if (!ticket) return;
     try {
-      // Build frame URL with params - this page has fc:frame metadata
-      const frameParams = new URLSearchParams();
-      frameParams.set("username", `Player #${fid}`);
-      frameParams.set("prizePool", prizePool.toString());
-      frameParams.set("theme", theme);
-      const frameUrl = `${env.rootUrl}/share/joined?${frameParams.toString()}`;
-
-      const result = await composeCastAsync({
-        text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
-        embeds: [frameUrl],
+      await shareTextOrCopy({
+        title: "Waffles",
+        text: `I just joined the next Waffles game! Theme: ${theme}. Prize Pool: $${prizePool.toLocaleString()}.`,
+        url: `${env.rootUrl}/game/${gameId}`,
       });
-
-      if (result?.cast) {
-        console.log("Cast created successfully:", result.cast.hash);
-      } else {
-        console.log("User cancelled the cast");
-      }
     } catch (error) {
       console.error("Error sharing cast:", error);
     }
-  }, [composeCastAsync, fid, theme, prizePool, ticket]);
+  }, [theme, prizePool, ticket, gameId]);
 
   return (
     <div className="flex-1 flex flex-col items-center gap-3 justify-center overflow-y-auto pt-1">

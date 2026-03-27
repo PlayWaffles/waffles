@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
 // TYPES
@@ -23,7 +23,7 @@ export interface ProfileStats {
 // ==========================================
 
 async function fetchStats(url: string): Promise<ProfileStats | null> {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await authenticatedFetch(url, { cache: "no-store" });
 
   if (res.status === 404) {
     return null;
@@ -45,11 +45,8 @@ async function fetchStats(url: string): Promise<ProfileStats | null> {
  * Uses public /api/v1/users/[fid]/stats endpoint.
  */
 export function useProfileStats() {
-  const { context } = useMiniKit();
-  const fid = context?.user?.fid;
-
   const { data, error, isLoading, mutate } = useSWR<ProfileStats | null>(
-    fid ? `/api/v1/users/${fid}/stats` : null,
+    "/api/v1/users/me/stats",
     fetchStats,
     {
       revalidateOnFocus: false,

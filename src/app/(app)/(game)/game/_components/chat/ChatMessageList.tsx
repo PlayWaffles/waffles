@@ -11,9 +11,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChatComment } from "./ChatComment";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import type { ChatItem } from "@shared/protocol";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { springs } from "@/lib/animations";
 import { playSound } from "@/lib/sounds";
+import { useUser } from "@/hooks/useUser";
 
 // ==========================================
 // TYPES
@@ -70,8 +70,8 @@ export const ChatMessageList = forwardRef<
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [showNewMessages, setShowNewMessages] = useState(false);
 
-  const { context: miniKitContext } = useMiniKit();
-  const username = miniKitContext?.user?.username ?? "Player";
+  const { user } = useUser();
+  const username = user?.username ?? "Player";
 
   const { messages: storeMessages } = useRealtime().state;
   const comments = storeMessages.map((m) => mapMessageToComment(m, username));

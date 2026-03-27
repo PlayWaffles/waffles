@@ -1,9 +1,8 @@
 /**
- * AccessGuard - Game access control component
+ * AccessGuard - Lightweight game route protection.
  *
- * Checks if user has game access and redirects to /redeem if not.
- * This is a standalone component that doesn't require WebSocket or game data.
- * Used at the layout level to protect all game routes.
+ * Invite-code gating is no longer part of the live app flow, so this guard
+ * only blocks banned users from entering the game shell.
  */
 
 "use client";
@@ -21,20 +20,18 @@ export function AccessGuard({ children }: AccessGuardProps) {
   const router = useRouter();
   const { user, isLoading } = useUser();
 
-  // Redirect if user doesn't have game access
+  // Redirect only when a known user has been banned.
   useEffect(() => {
-    if (!isLoading && (!user || !user.hasGameAccess || user.isBanned)) {
-      router.replace("/redeem");
+    if (!isLoading && user?.isBanned) {
+      router.replace("/");
     }
   }, [user, isLoading, router]);
 
-  // Show loader while checking access
   if (isLoading) {
     return <WaffleLoader />;
   }
 
-  // Don't render children if access denied (redirect will happen)
-  if (!user || !user.hasGameAccess || user.isBanned) {
+  if (user?.isBanned) {
     return null;
   }
 

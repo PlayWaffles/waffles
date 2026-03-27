@@ -11,21 +11,22 @@ import { BottomNav } from "@/components/BottomNav";
 import { playSound } from "@/lib/sounds";
 import { notify } from "@/components/ui/Toaster";
 import { env } from "@/lib/env";
-import sdk from "@farcaster/miniapp-sdk";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { useSendCalls, useCallsStatus, useAccount } from "wagmi";
-import { useMiniKit, useComposeCast } from "@coinbase/onchainkit/minikit";
 import { encodeFunctionData } from "viem";
 
 import { waffleGameAbi } from "@/lib/chain/abi";
 import { Spinner } from "@/components/ui/spinner";
 import confetti from "canvas-confetti";
-import { Game } from "@prisma";
 import { WINNERS_COUNT } from "@/lib/game/prizeDistribution";
 import { CLAIM_DELAY_MS } from "@/lib/constants";
 import { WAFFLE_CONTRACT_ADDRESS } from "@/lib/chain";
 import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
+import { useUser } from "@/hooks/useUser";
+import { getDisplayName } from "@/lib/address";
+import { shareTextOrCopy } from "@/lib/share";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
 // TYPES
@@ -59,24 +60,36 @@ type Top3Entry = {
   score: number;
   rank: number | null;
   user: {
-    fid: number;
+    fid: number | null;
+    wallet?: string | null;
     username: string | null;
     pfpUrl: string | null;
   } | null;
 };
 
+interface ResultGame {
+  id: string;
+  gameNumber: number;
+  onchainId: string | null;
+  title: string;
+  theme: string;
+  startsAt: Date;
+  endsAt: Date;
+  prizePool: number;
+  playerCount: number;
+}
+
 export default function ResultPageClient({
   gamePromise,
   top3Promise,
 }: {
-  gamePromise: Promise<Game | null>;
+  gamePromise: Promise<ResultGame | null>;
   top3Promise: Promise<Top3Entry[]>;
 }) {
   const game = use(gamePromise);
   const top3Entries = use(top3Promise);
   const { address } = useAccount();
-  const { context } = useMiniKit();
-  const { composeCastAsync } = useComposeCast();
+  const { user } = useUser();
   const gameId = game?.id;
   const gameNumber = game?.gameNumber ?? 0;
 
@@ -89,14 +102,13 @@ export default function ResultPageClient({
 
   // Fetch entry data for this specific game (independent of global context)
   const fetchEntry = useCallback(async () => {
-    const fid = context?.user?.fid;
-    if (!gameId || !fid) {
+    if (!gameId || !user?.id) {
       setEntryLoading(false);
       return;
     }
 
     try {
-      const res = await fetch(`/api/v1/games/${gameId}/entry?fid=${fid}`);
+      const res = await authenticatedFetch(`/api/v1/games/${gameId}/entry`);
       if (res.ok) {
         const data = await res.json();
         setEntry(data);
@@ -110,7 +122,7 @@ export default function ResultPageClient({
     } finally {
       setEntryLoading(false);
     }
-  }, [gameId, context?.user?.fid]);
+  }, [gameId, user?.id]);
 
   // Initial fetch on mount
   useEffect(() => {
@@ -138,7 +150,7 @@ export default function ResultPageClient({
       console.log("[Claim Recovery] Found pending claim, attempting sync:", pending);
 
       // Attempt recovery
-      sdk.quickAuth.fetch(`/api/v1/games/${gameId}/claim`, {
+      authenticatedFetch(`/api/v1/games/${gameId}/claim`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ txHash: pending.txHash, wallet: pending.wallet }),
@@ -285,49 +297,31 @@ export default function ResultPageClient({
   // ==========================================
 
   const handleShareScore = useCallback(async () => {
-    if (!context?.user || !userScore || !gameId) return;
+    if (!userScore || !gameId) return;
 
     try {
       const hasPrize = userScore.prize > 0;
-      const username = context.user.username ?? "Player";
-      const pfpUrl = context.user.pfpUrl || "";
-
-      // Build share params for the result page URL
-      // The page's generateMetadata will use these to build the correct OG image
-      const shareParams = new URLSearchParams({
-        username,
-        score: userScore.score.toString(),
-        rank: userScore.rank.toString(),
-        ...(hasPrize && { prizeAmount: userScore.prize.toString() }),
-        ...(pfpUrl && { pfpUrl }),
-      });
-
-      // Embed the result page URL (NOT the OG image URL)
-      // Farcaster will fetch OG metadata from this page, which includes fc:frame with button
-      const embedUrl = `${env.rootUrl}/game/${gameId}/result?${shareParams.toString()}`;
-
       const shareText = hasPrize
-        ? `Just won $${userScore.prize.toLocaleString()} on Waffles! 🧇🏆`
-        : `Just scored ${userScore.score.toLocaleString()} points on Waffles #${String(gameNumber).padStart(3, "0")}! 🧇`;
+        ? `Just won $${userScore.prize.toLocaleString()} on Waffles!`
+        : `Just scored ${userScore.score.toLocaleString()} points on Waffles #${String(gameNumber).padStart(3, "0")}!`;
 
-      const result = await composeCastAsync({
+      const result = await shareTextOrCopy({
+        title: "Waffles",
         text: shareText,
-        embeds: [embedUrl],
+        url: `${env.rootUrl}/game/${gameId}/result`,
       });
 
-      if (result?.cast) {
-        console.log("[Share] Cast created:", result.cast.hash);
+      if (result.shared || result.copied) {
         playSound("purchase");
-        notify.success("Shared to Farcaster! 🎉");
-        sdk.haptics.impactOccurred("light").catch(() => { });
+        notify.success(result.shared ? "Shared!" : "Result link copied!");
       } else {
-        console.log("[Share] User cancelled");
+        notify.info("Share cancelled");
       }
     } catch (error) {
       console.error("[Share] Error:", error);
       notify.error("Failed to share");
     }
-  }, [composeCastAsync, context?.user, userScore, gameId, gameNumber]);
+  }, [userScore, gameId, gameNumber]);
 
   // ==========================================
   // CLAIM LOGIC
@@ -375,7 +369,7 @@ export default function ResultPageClient({
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        const response = await sdk.quickAuth.fetch(
+        const response = await fetch(
           `/api/v1/games/${gameId}/claim`,
           {
             method: "POST",
@@ -391,7 +385,6 @@ export default function ResultPageClient({
           refetchEntry();
           playSound("purchase");
           notify.success("Prize claimed! 🎉");
-          sdk.haptics.impactOccurred("medium").catch(() => { });
           return;
         }
 
@@ -440,7 +433,6 @@ export default function ResultPageClient({
     refetchEntry();
     playSound("purchase");
     notify.success("Prize claimed! Syncing with server...");
-    sdk.haptics.impactOccurred("medium").catch(() => { });
   }, [gameId, address, refetchEntry]);
 
   // Handle calls status
@@ -498,10 +490,7 @@ export default function ResultPageClient({
     try {
       // 1. Fetch merkle proof
       console.log("[Claim] Fetching merkle proof...");
-      const fid = context?.user?.fid;
-      const proofRes = await fetch(
-        `/api/v1/games/${gameId}/merkle-proof?fid=${fid}`
-      );
+      const proofRes = await authenticatedFetch(`/api/v1/games/${gameId}/merkle-proof`);
 
       if (!proofRes.ok) {
         const errorData = await proofRes.json();
@@ -609,7 +598,7 @@ export default function ResultPageClient({
     );
   }
 
-  if (!context?.user || !userScore) {
+  if (!user || !userScore) {
     return (
       <>
         <div className="flex flex-col text-white items-center justify-center min-h-full">
@@ -666,8 +655,8 @@ export default function ResultPageClient({
           prize={userScore.prize}
           score={userScore.score}
           rank={userScore.rank}
-          pfpUrl={context.user.pfpUrl ?? ""}
-          username={context.user.username ?? "Player"}
+          pfpUrl={user.pfpUrl ?? ""}
+          username={user.username ?? "Player"}
         />
         <div className="flex flex-col justify-center items-center gap-3 w-[361px] mt-5">
           {/* Percentile row */}

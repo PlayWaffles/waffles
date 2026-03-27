@@ -4,7 +4,6 @@ import { Dispatch, SetStateAction, useCallback, useEffect, useState, useRef } fr
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { cn } from "@/lib/utils";
 import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
@@ -62,7 +61,6 @@ export default function LeaveGameDrawer({
   gameId,
 }: LeaveGameDrawerProps) {
   const router = useRouter();
-  const { context } = useMiniKit();
   const [isLeaving, setIsLeaving] = useState(false);
   const prevOpen = useRef(false);
 
@@ -95,15 +93,14 @@ export default function LeaveGameDrawer({
   }, [open, setIsLeaveGameDrawerOpen]);
 
   const handleLeaveGame = useCallback(async () => {
-    const fid = context?.user?.fid;
-    if (!gameId || !fid) {
-      notify.error("Failed to leave game: Missing game or user info.");
+    if (!gameId) {
+      notify.error("Failed to leave game: Missing game info.");
       return;
     }
 
     setIsLeaving(true);
     try {
-      const result = await leaveGame({ gameId, fid });
+      const result = await leaveGame({ gameId });
 
       if (!result.success) {
         throw new Error(result.error || "Failed to leave game");
@@ -119,7 +116,7 @@ export default function LeaveGameDrawer({
     } finally {
       setIsLeaving(false);
     }
-  }, [gameId, context?.user?.fid, setIsLeaveGameDrawerOpen, router]);
+  }, [gameId, setIsLeaveGameDrawerOpen, router]);
 
   return (
     <AnimatePresence>

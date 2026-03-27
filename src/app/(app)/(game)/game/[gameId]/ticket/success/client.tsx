@@ -6,7 +6,6 @@ import { useCallback, useEffect, useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { env } from "@/lib/env";
-import { useComposeCast, useOpenUrl, useMiniKit } from "@coinbase/onchainkit/minikit";
 import { GameSummaryCard } from "../_components/GameSummary";
 import { BottomNav } from "@/components/BottomNav";
 import confetti from "canvas-confetti";
@@ -15,6 +14,9 @@ import {
     getGoogleCalendarUrl,
     downloadICS
 } from "@/lib/calendar";
+import { shareTextOrCopy } from "@/lib/share";
+import { useUser } from "@/hooks/useUser";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 interface TicketSuccessClientProps {
     gameId: string;
@@ -35,13 +37,11 @@ export function TicketSuccessClient({
     endsAt,
     ticketCode,
 }: TicketSuccessClientProps) {
-    const { composeCastAsync } = useComposeCast();
-    const openUrl = useOpenUrl();
-    const { context } = useMiniKit();
+    const { user } = useUser();
     const [showCalendarOptions, setShowCalendarOptions] = useState(false);
     const hasCelebrated = useRef(false);
     const [userInfo, setUserInfo] = useState<{
-        fid: number;
+        fid: number | null;
         username: string | null;
         pfpUrl: string | null;
     } | null>(null);
@@ -85,12 +85,9 @@ export function TicketSuccessClient({
 
     // Fetch user info on mount
     useEffect(() => {
-        const fid = context?.user?.fid;
-        if (!fid) return;
-
         async function fetchUser() {
             try {
-                const res = await fetch(`/api/v1/users/${fid}`);
+                const res = await authenticatedFetch(`/api/v1/users/me`);
                 if (res.ok) {
                     setUserInfo(await res.json());
                 }
@@ -99,7 +96,7 @@ export function TicketSuccessClient({
             }
         }
         fetchUser();
-    }, [context?.user?.fid]);
+    }, [user?.id]);
 
     // Create calendar event
     const calendarEvent = createGameCalendarEvent(
@@ -113,10 +110,9 @@ export function TicketSuccessClient({
     // Calendar handlers
     const handleAddToGoogle = useCallback(() => {
         const url = getGoogleCalendarUrl(calendarEvent);
-        // Use MiniKit hook to open in external browser
-        openUrl(url);
+        window.open(url, "_blank", "noopener,noreferrer");
         setShowCalendarOptions(false);
-    }, [calendarEvent, openUrl]);
+    }, [calendarEvent]);
 
     const handleAddToApple = useCallback(() => {
         downloadICS(calendarEvent);
@@ -125,31 +121,19 @@ export function TicketSuccessClient({
 
     const shareTicket = useCallback(async () => {
         try {
-            // Build frame URL with params - this page has fc:frame metadata
-            const frameParams = new URLSearchParams();
-            frameParams.set("username", userInfo?.username || `Player #${userInfo?.fid || ""}`);
-            if (userInfo?.pfpUrl) {
-                frameParams.set("pfpUrl", userInfo.pfpUrl);
-            }
-            if (ticketCode) {
-                frameParams.set("ticketCode", ticketCode);
-            }
-            const frameUrl = `${env.rootUrl}/game/${gameId}/ticket/success?${frameParams.toString()}`;
-
-            const result = await composeCastAsync({
-                text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
-                embeds: [frameUrl],
+            const result = await shareTextOrCopy({
+                title: "Waffles",
+                text: `I just joined the next Waffles game! Theme: ${theme}. Prize Pool: $${prizePool.toLocaleString()}.`,
+                url: `${env.rootUrl}/game/${gameId}`,
             });
 
-            if (result?.cast) {
-                console.log("Cast created successfully:", result.cast.hash);
-            } else {
-                console.log("User cancelled the cast");
+            if (!result.shared && !result.copied) {
+                console.log("User cancelled the share action");
             }
         } catch (error) {
             console.error("Error sharing cast:", error);
         }
-    }, [composeCastAsync, userInfo, theme, prizePool, ticketCode, gameId]);
+    }, [theme, prizePool, ticketCode, gameId]);
 
     return (
         <>

@@ -43,20 +43,23 @@ export function GameRow({ game }: { game: any }) {
           <div className="text-xs text-white/50 capitalize mt-0.5 bg-white/5 inline-block px-2 py-0.5 rounded-lg">
             {game.theme.toLowerCase()}
           </div>
+          <div className="ml-2 text-xs text-white/50 uppercase mt-0.5 bg-white/5 inline-block px-2 py-0.5 rounded-lg">
+            {game.platform}
+          </div>
         </Link>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <GameStatusBadge status={game.status} />
+        <GameStatusBadge status={game.phase} />
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-white/50">
         {new Date(game.startsAt).toLocaleString()}
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm">
         <div className="font-medium text-[#00CFF2]">
-          {game._count.players} players
+          {game.playerCount} players
         </div>
         <div className="text-xs text-white/40">
-          {game._count.tickets} tickets
+          {game._count.entries} entries
         </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-[#FB72FF]">

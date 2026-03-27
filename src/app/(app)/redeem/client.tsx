@@ -6,10 +6,8 @@ import Image from "next/image";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 
 import { useUser } from "@/hooks/useUser";
-import { useMiniKit, useAddFrame } from "@coinbase/onchainkit/minikit";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
 import { redeemInviteCodeAction, type ValidateReferralResult } from "@/actions/invite";
-import { saveNotificationTokenAction } from "@/actions/notifications";
 import {
   shakeX,
   triggerShake,
@@ -39,10 +37,6 @@ export default function InvitePageClient() {
   const searchParams = useSearchParams();
   const { user, refetch } = useUser();
 
-  // MiniKit for notifications
-  const { context } = useMiniKit();
-  const addFrame = useAddFrame();
-
   // Form state
   const [code, setCode] = useState("");
   const [status, setStatus] = useState<Status>("idle");
@@ -65,7 +59,7 @@ export default function InvitePageClient() {
 
   // Get initial code from URL
   const initialCode = searchParams.get("code") || searchParams.get("ref") || "";
-  const fid = user?.fid;
+  const userId = user?.id;
 
   // ============================================
   // EFFECTS
@@ -80,12 +74,12 @@ export default function InvitePageClient() {
 
   // Auto-validate URL code on mount
   useEffect(() => {
-    if (initialCode.length === CODE_LENGTH && fid && !hasAutoValidated.current) {
+    if (initialCode.length === CODE_LENGTH && userId && !hasAutoValidated.current) {
       hasAutoValidated.current = true;
       handleSubmit(initialCode.toUpperCase());
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialCode, fid]);
+  }, [initialCode, userId]);
 
   // Handle server action result
   useEffect(() => {
@@ -103,30 +97,7 @@ export default function InvitePageClient() {
         transition: { duration: 0.5 },
       });
 
-      // Prompt for notification enable, then refetch and redirect
       (async () => {
-        // Only prompt if notifications not already enabled
-        const isAlreadyAdded = context?.client?.added;
-
-        if (!isAlreadyAdded) {
-          try {
-            // Ask user to add the mini app / enable notifications
-            const notificationResult = await addFrame();
-            if (notificationResult && context?.client.clientFid && fid) {
-              // Save notification token to database
-              await saveNotificationTokenAction(
-                fid,
-                context.client.clientFid,
-                notificationResult
-              );
-            }
-          } catch (err) {
-            // User may decline - that's ok, continue to game
-            console.log("User declined notifications or error:", err);
-          }
-        }
-
-        // Refetch user data and redirect to game
         await refetch();
         router.replace("/game");
       })();
@@ -142,7 +113,7 @@ export default function InvitePageClient() {
         transition: { duration: 0.3 },
       });
     }
-  }, [result, refetch, router, inputControls, keyControls, addFrame, context?.client.clientFid, fid]);
+  }, [result, refetch, router, inputControls, keyControls]);
 
   // ============================================
   // HANDLERS
@@ -160,7 +131,7 @@ export default function InvitePageClient() {
     }
 
     // Validate user is identified
-    if (!fid) {
+    if (!userId) {
       setError("User not identified");
       setStatus("failed");
       return;
@@ -178,12 +149,12 @@ export default function InvitePageClient() {
 
     const formData = new FormData();
     formData.append("inviteCode", submitCode);
-    formData.append("userFid", String(fid));
+    formData.append("userId", userId);
 
     startTransition(() => {
       submitAction(formData);
     });
-  }, [code, fid, inputControls, buttonControls, submitAction]);
+  }, [code, userId, inputControls, buttonControls, submitAction]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -201,7 +172,7 @@ export default function InvitePageClient() {
     }
 
     // Auto-submit when code is complete
-    if (newCode.length === CODE_LENGTH && fid) {
+    if (newCode.length === CODE_LENGTH && userId) {
       setTimeout(() => handleSubmit(newCode), 300);
     }
   };

@@ -26,23 +26,26 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import usePartySocket from "partysocket/react";
-import sdk from "@farcaster/miniapp-sdk";
 import { env } from "@/lib/env";
 import type { Message, ChatItem, Entrant } from "@shared/protocol";
-import type { GameEntry } from "@prisma";
 import { useUser } from "@/hooks/useUser";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
 // TYPES
 // ==========================================
 
 
-export type GameEntryData = Pick<
-  GameEntry,
-  "id" | "score" | "answered" | "paidAt" | "rank" | "prize" | "claimedAt"
-> & {
+export interface GameEntryData {
+  id: string;
+  score: number;
+  answered: number;
+  paidAt: Date | null;
+  rank: number | null;
+  prize: number | null;
+  claimedAt: Date | null;
   answeredQuestionIds: string[];
-};
+}
 
 // ==========================================
 // STATE
@@ -339,7 +342,7 @@ export function RealtimeProvider({
     // Async query function - fetches auth token before connection
     query: async () => {
       try {
-        const res = await sdk.quickAuth.fetch("/api/v1/auth/party-token");
+        const res = await authenticatedFetch("/api/v1/auth/party-token");
         if (res.ok) {
           const data = await res.json();
           return { token: data.token || "" };
@@ -362,12 +365,12 @@ export function RealtimeProvider({
 
   // Fetch User Entry
   const fetchEntry = useCallback(async () => {
-    if (!gameId || !user?.fid) return;
+    if (!gameId || !user?.id) return;
 
     dispatch({ type: "SET_LOADING_ENTRY", payload: true });
 
     try {
-      const res = await fetch(`/api/v1/games/${gameId}/entry?fid=${user.fid}`);
+      const res = await authenticatedFetch(`/api/v1/games/${gameId}/entry`);
       if (res.ok) {
         const data = await res.json();
         dispatch({
@@ -392,7 +395,7 @@ export function RealtimeProvider({
       console.error("Failed to fetch entry", err);
       dispatch({ type: "SET_LOADING_ENTRY", payload: false });
     }
-  }, [gameId, user?.fid]);
+  }, [gameId, user?.id]);
 
   // Auto-fetch entry on mount/change
   useEffect(() => {

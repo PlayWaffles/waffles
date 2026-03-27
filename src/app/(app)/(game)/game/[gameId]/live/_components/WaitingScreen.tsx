@@ -12,7 +12,6 @@ import { useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import sdk from "@farcaster/miniapp-sdk";
 import { useTimer } from "@/hooks/useTimer";
 import { GameChat } from "../../../_components/chat/GameChat";
 import { LiveEventFeed } from "../../../_components/LiveEventFeed";
@@ -49,7 +48,8 @@ interface WaitingScreenProps {
 interface LeaderboardEntry {
   rank: number;
   userId: string;
-  fid: number;
+  fid: number | null;
+  wallet?: string | null;
   username: string | null;
   pfpUrl: string | null;
   score: number;
@@ -83,7 +83,7 @@ export default function WaitingScreen({
   // Fetch leaderboard data
   const fetchLeaderboard = useCallback(async () => {
     try {
-      const res = await sdk.quickAuth.fetch(
+      const res = await fetch(
         `/api/v1/games/${gameId}/leaderboard?limit=${MAX_LEADERBOARD}`
       );
       if (res.ok) {

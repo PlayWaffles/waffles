@@ -4,7 +4,7 @@ import { useActionState, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MediaPicker } from "@/components/admin/MediaPicker";
 import { TemplateActionResult } from "@/actions/admin/question-templates";
-import { GameTheme, Difficulty } from "@prisma";
+import type { Difficulty, GameTheme } from "@/types/game";
 
 interface QuestionTemplateFormProps {
     action: (

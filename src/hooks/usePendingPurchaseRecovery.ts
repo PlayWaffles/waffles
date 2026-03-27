@@ -12,14 +12,14 @@ import { purchaseGameTicket } from "@/actions/game";
  */
 export function usePendingPurchaseRecovery(
   gameId: string,
-  fid: number | undefined,
+  userId: string | undefined,
   wallet: string | undefined,
   onRecovered?: () => void,
 ) {
   const hasChecked = useRef(false);
 
   useEffect(() => {
-    if (hasChecked.current || !fid || !wallet) return;
+    if (hasChecked.current || !userId || !wallet) return;
     hasChecked.current = true;
 
     const key = `pending-purchase-${gameId}`;
@@ -37,7 +37,7 @@ export function usePendingPurchaseRecovery(
       }
 
       // Verify it's for the same user
-      if (pending.fid !== fid) {
+      if (pending.userId !== userId) {
         localStorage.removeItem(key);
         return;
       }
@@ -50,7 +50,6 @@ export function usePendingPurchaseRecovery(
       // Attempt recovery
       purchaseGameTicket({
         gameId,
-        fid: pending.fid,
         txHash: pending.txHash,
         paidAmount: pending.price,
         payerWallet: pending.wallet,
@@ -71,5 +70,5 @@ export function usePendingPurchaseRecovery(
     } catch {
       localStorage.removeItem(key);
     }
-  }, [gameId, fid, wallet, onRecovered]);
+  }, [gameId, userId, wallet, onRecovered]);
 }

@@ -67,7 +67,6 @@ export function UserFilters() {
                 >
                     <option value="" className="bg-[#0a0a0b]">All Statuses</option>
                     <option value="ACTIVE" className="bg-[#0a0a0b]">Active</option>
-                    <option value="NO_ACCESS" className="bg-[#0a0a0b]">No Access</option>
                     <option value="BANNED" className="bg-[#0a0a0b]">Banned</option>
                 </select>
             </div>

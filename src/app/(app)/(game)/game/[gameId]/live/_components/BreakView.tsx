@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import sdk from "@farcaster/miniapp-sdk";
 import CircularProgress from "./CircularProgress";
 import { LiveEventFeed } from "../../../_components/LiveEventFeed";
 import { GameChat } from "../../../_components/chat/GameChat";
@@ -25,7 +24,8 @@ interface BreakViewProps {
 interface LeaderboardEntry {
   rank: number;
   userId: string;
-  fid: number;
+  fid: number | null;
+  wallet?: string | null;
   username: string | null;
   pfpUrl: string | null;
   score: number;
@@ -56,7 +56,7 @@ export default function BreakView({
   useEffect(() => {
     async function fetchLeaderboard() {
       try {
-        const res = await sdk.quickAuth.fetch(
+        const res = await fetch(
           `/api/v1/games/${gameId}/leaderboard?limit=${MAX_LEADERBOARD_ENTRIES}`
         );
         if (res.ok) {
@@ -196,7 +196,7 @@ export default function BreakView({
 
                   {/* Username */}
                   <span className="text-base sm:text-lg md:text-[20px] text-white truncate flex-1">
-                    {entry.username || `User ${entry.fid}`}
+                    {entry.username || entry.wallet || "Player"}
                   </span>
 
                   {/* Score */}

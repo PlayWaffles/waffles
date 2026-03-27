@@ -2,9 +2,8 @@ import { cache } from "react";
 import { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import ResultPageClient from "./client";
-import { minikitConfig } from "@minikit-config";
-import { env } from "@/lib/env";
 import { buildPrizeOGUrl, buildScoreOGUrl } from "@/lib/og";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 interface ResultPageProps {
   params: Promise<{ gameId: string }>;
@@ -12,16 +11,16 @@ interface ResultPageProps {
 }
 
 // Fetch game info
-const getGame = cache(async (gameId: string) => {
-  return prisma.game.findUnique({
-    where: { id: gameId },
+const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+  return prisma.game.findFirst({
+    where: { id: gameId, platform },
   });
 });
 
 // Fetch top 3 entries for leaderboard display
-const getTop3Entries = cache(async (gameId: string) => {
+const getTop3Entries = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   return prisma.gameEntry.findMany({
-    where: { gameId, paidAt: { not: null } },
+    where: { gameId, paidAt: { not: null }, game: { platform } },
     orderBy: { score: "desc" },
     take: 3,
     select: {
@@ -34,16 +33,16 @@ const getTop3Entries = cache(async (gameId: string) => {
   });
 });
 
-// Generate metadata for Farcaster frame previews
 export async function generateMetadata({
   params,
   searchParams,
 }: ResultPageProps): Promise<Metadata> {
   const { gameId } = await params;
   const sParams = await searchParams;
+  const platform = await resolveRuntimePlatform();
 
   // Get game info
-  const game = await getGame(gameId);
+  const game = await getGame(gameId, platform);
   if (!game) {
     return { title: "Game Not Found" };
   }
@@ -88,22 +87,6 @@ export async function generateMetadata({
       description,
       images: imageUrl ? [imageUrl] : [],
     },
-    other: {
-      "fc:frame": JSON.stringify({
-        version: minikitConfig.miniapp.version,
-        imageUrl: imageUrl || minikitConfig.miniapp.heroImageUrl,
-        button: {
-          title: "Join the next game ➡️🔥",
-          action: {
-            name: "Play Waffles",
-            type: "launch_frame",
-            url: `${env.rootUrl}/game`,
-            splashImageUrl: minikitConfig.miniapp.splashImageUrl,
-            splashBackgroundColor: minikitConfig.miniapp.splashBackgroundColor,
-          },
-        },
-      }),
-    },
   };
 }
 
@@ -111,12 +94,12 @@ export default async function ResultPage({
   params,
 }: ResultPageProps) {
   const { gameId } = await params;
+  const platform = await resolveRuntimePlatform();
 
   // Fetch data server-side in parallel
-  const gamePromise = getGame(gameId);
-  const top3Promise = getTop3Entries(gameId);
+  const gamePromise = getGame(gameId, platform);
+  const top3Promise = getTop3Entries(gameId, platform);
 
   // User-specific data (their result, rank) is fetched client-side with auth
   return <ResultPageClient gamePromise={gamePromise} top3Promise={top3Promise} />;
 }
-

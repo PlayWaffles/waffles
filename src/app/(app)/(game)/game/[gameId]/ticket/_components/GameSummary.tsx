@@ -1,8 +1,9 @@
 "use client";
 
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { useUser } from "@/hooks/useUser";
+import { formatAddress } from "@/lib/address";
 
 export function GameSummaryCard({
   theme,
@@ -13,9 +14,9 @@ export function GameSummaryCard({
   prizePool: number;
   coverUrl: string;
 }) {
-  const { context: miniKitContext } = useMiniKit();
-  const username = miniKitContext?.user?.username;
-  const avatarUrl = miniKitContext?.user?.pfpUrl;
+  const { user } = useUser();
+  const username = user?.username || formatAddress(user?.wallet);
+  const avatarUrl = user?.pfpUrl;
 
   return (
     <motion.div

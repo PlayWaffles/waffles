@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 
 interface Top3Props {
   entries: LeaderboardEntry[];
-  currentUserId?: number | null; // This is the user's FID
+  currentUserId?: string | null;
 }
 
 const cardStyles = [
@@ -49,9 +49,8 @@ export function Top3({ entries, currentUserId }: Top3Props) {
       }
     >
       {topEntries.map((entry, i) => {
-        // BUG FIX: Compare currentUserId (FID) to entry.fid, not entry.id
         const isCurrentUser =
-          currentUserId != null && entry.fid === currentUserId;
+          currentUserId != null && entry.userId === currentUserId;
         const styles = cardStyles[i] ?? cardStyles[cardStyles.length - 1];
 
         const formattedPoints = entry.prize.toLocaleString(undefined, {

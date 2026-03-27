@@ -3,14 +3,14 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect } from "wagmi";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-import { farcasterFrame } from "@farcaster/miniapp-wagmi-connector";
 
 import {
   useTicketPurchase,
   getPurchaseButtonText,
 } from "@/hooks/useTicketPurchase";
 import { PurchaseView, type PurchaseStep } from "./PurchaseView";
+import { useUser } from "@/hooks/useUser";
+import { formatAddress } from "@/lib/address";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
@@ -38,28 +38,28 @@ export function BuyTicketModal({
   onPurchaseSuccess,
 }: BuyTicketModalProps) {
   const router = useRouter();
-  const { context } = useMiniKit();
   const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
+  const { connect, connectors } = useConnect();
+  const { user } = useUser();
   const [selectedTier, setSelectedTier] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   // Derived display values
   const displayUsername =
-    username !== "Player" ? username : context?.user?.username || "Player";
-  const displayAvatar = userAvatar || context?.user?.pfpUrl;
+    username !== "Player" ? username : user?.username || formatAddress(user?.wallet);
+  const displayAvatar = userAvatar || user?.pfpUrl || undefined;
   const selectedPrice = tierPrices[selectedTier] ?? 0;
   const potentialPayout = Math.round(selectedPrice * 21.1);
 
-  // Auto-connect wallet when modal opens (Farcaster MiniApp pattern)
+  // Auto-connect wallet when modal opens
   useEffect(() => {
-    if (isOpen && !isConnected) {
+    if (isOpen && !isConnected && connectors.length > 0) {
       connect({
-        connector: farcasterFrame(),
+        connector: connectors.find((item) => item.id === "injected") || connectors[0],
       });
     }
-  }, [isOpen, isConnected, connect]);
+  }, [isOpen, isConnected, connect, connectors]);
 
   // Use the ticket purchase hook
   const {
@@ -116,7 +116,7 @@ export function BuyTicketModal({
   const isPurchased = hasTicket || isSuccess;
   const isWalletReady = isConnected && !!address;
   const buttonText = !isWalletReady ? "Connecting wallet..." : getPurchaseButtonText(step, selectedPrice);
-  // Note: Don't check balance here - Farcaster wallet handles insufficient balance automatically
+  // Note: Balance checks happen inside the wallet flow.
   const isButtonDisabled = isLoading || !onchainId || isPurchased || !isWalletReady;
 
   // Handle purchase button click

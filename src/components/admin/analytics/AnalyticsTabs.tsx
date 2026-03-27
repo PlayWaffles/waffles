@@ -1,12 +1,12 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { ChartBarIcon, TrophyIcon, ChatBubbleLeftRightIcon } from "@heroicons/react/24/outline";
+import { ChartBarIcon, BoltIcon, BanknotesIcon } from "@heroicons/react/24/outline";
 
 const TABS = [
     { id: "overview", label: "Overview", icon: ChartBarIcon },
-    { id: "games", label: "Games", icon: TrophyIcon },
-    { id: "players", label: "Players", icon: ChatBubbleLeftRightIcon },
+    { id: "games", label: "Gameplay", icon: BoltIcon },
+    { id: "players", label: "Revenue & Retention", icon: BanknotesIcon },
 ] as const;
 
 export type AnalyticsTab = (typeof TABS)[number]["id"];

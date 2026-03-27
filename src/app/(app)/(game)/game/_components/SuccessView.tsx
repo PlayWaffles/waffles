@@ -2,13 +2,12 @@
 
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
-import { useComposeCast } from "@coinbase/onchainkit/minikit";
-import { env } from "@/lib/env";
 import { notify } from "@/components/ui/Toaster";
+import { env } from "@/lib/env";
+import { shareTextOrCopy } from "@/lib/share";
 
 interface SuccessViewProps {
     gameId: string;
-    fid: number;
     displayUsername: string;
     displayAvatar?: string;
     prizePool: number;
@@ -19,7 +18,6 @@ interface SuccessViewProps {
 
 export function SuccessView({
     gameId,
-    fid,
     displayUsername,
     displayAvatar,
     prizePool,
@@ -32,29 +30,20 @@ export function SuccessView({
     const [showButtons, setShowButtons] = useState(false);
     const [isSharing, setIsSharing] = useState(false);
 
-    const { composeCastAsync } = useComposeCast();
-
     // Share handler
     const handleShare = useCallback(async () => {
         if (isSharing) return;
         setIsSharing(true);
 
         try {
-            // Build frame URL pointing to ticket success page which has fc:frame metadata
-            const frameParams = new URLSearchParams();
-            frameParams.set("username", displayUsername);
-            if (displayAvatar) {
-                frameParams.set("pfpUrl", displayAvatar);
-            }
-            const frameUrl = `${env.rootUrl}/game/${gameId}/ticket/success?${frameParams.toString()}`;
-
-            const result = await composeCastAsync({
-                text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
-                embeds: [frameUrl],
+            const result = await shareTextOrCopy({
+                title: "Waffles",
+                text: `I just joined the next Waffles game! Theme: ${theme}. Prize Pool: $${prizePool.toLocaleString()}.`,
+                url: `${env.rootUrl}/game/${gameId}`,
             });
 
-            if (result?.cast) {
-                notify.success("Shared to Farcaster! 🎉");
+            if (result.shared || result.copied) {
+                notify.success(result.shared ? "Shared!" : "Invite link copied!");
             }
         } catch (error) {
             console.error("Share error:", error);
@@ -62,7 +51,7 @@ export function SuccessView({
         } finally {
             setIsSharing(false);
         }
-    }, [composeCastAsync, displayUsername, displayAvatar, theme, prizePool, isSharing, gameId]);
+    }, [theme, prizePool, isSharing, gameId]);
 
     // Staggered entrance animations
     useEffect(() => {

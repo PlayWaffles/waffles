@@ -9,7 +9,7 @@ import { env } from "@/lib/env";
 export const metadata: Metadata = {
   title: "Waffles",
   description: "Pattern-matching tournaments built for everyone.",
-  keywords: ["waffles", "games", "farcaster", "social", "tournaments", "fun"],
+  keywords: ["waffles", "games", "minipay", "celo", "tournaments", "fun"],
   openGraph: {
     title: "Waffles",
     description: "Play daily social games",

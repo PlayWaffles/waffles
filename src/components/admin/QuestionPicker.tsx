@@ -13,7 +13,7 @@ import {
     CheckIcon,
     CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import { GameTheme, Difficulty } from "@prisma";
+import type { Difficulty, GameTheme } from "@/types/game";
 
 interface QuestionPickerProps {
     gameId: string;

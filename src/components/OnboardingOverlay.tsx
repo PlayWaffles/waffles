@@ -8,6 +8,7 @@ import confetti from "canvas-confetti";
 
 interface OnboardingOverlayProps {
   onComplete: () => void;
+  errorMessage?: string | null;
 }
 
 interface Slide {
@@ -121,7 +122,10 @@ function ProgressDots({ total, current }: { total: number; current: number }) {
 // ============================================
 // MAIN OVERLAY
 // ============================================
-export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
+export function OnboardingOverlay({
+  onComplete,
+  errorMessage = null,
+}: OnboardingOverlayProps) {
   const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
   const [direction, setDirection] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -277,6 +281,11 @@ export function OnboardingOverlay({ onComplete }: OnboardingOverlayProps) {
                     "Next"
                   )}
                 </WaffleButton>
+                {errorMessage ? (
+                  <p className="max-w-sm text-center text-sm text-red-300">
+                    {errorMessage}
+                  </p>
+                ) : null}
               </div>
             </div>
           </motion.div>

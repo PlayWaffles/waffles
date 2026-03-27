@@ -4,133 +4,294 @@ import {
   useState,
   useEffect,
   useCallback,
-  useRef,
+  useMemo,
   type ReactNode,
 } from "react";
-import { useMiniKit, useAddFrame } from "@coinbase/onchainkit/minikit";
-import { useAccount } from "wagmi";
-import { upsertUser } from "@/actions/users";
-import { saveNotificationTokenAction } from "@/actions/notifications";
+import sdk from "@farcaster/miniapp-sdk";
+import { useRouter } from "next/navigation";
+import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
+
 import { OnboardingOverlay } from "../OnboardingOverlay";
+import { WaffleButton } from "../buttons/WaffleButton";
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
+import {
+  authenticatedFetch,
+  getAppRuntime,
+  isMiniPayRuntime,
+  runtimeToPlatform,
+  setRuntimePlatformCookie,
+  type AppRuntime,
+} from "@/lib/client/runtime";
 
-/**
- * AppInitializer - Handles user initialization and app-wide setup.
- *
- * Key timing issue: When opened from Farcaster, MiniKit context (FID)
- * loads asynchronously. We must call setMiniAppReady() for Farcaster to
- * dismiss its loading screen, AND we must not leave a blank screen if
- * the context is slow or never arrives.
- */
+function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
+  return userId
+    ? `waffles:onboarded:${runtime}:${userId}`
+    : `waffles:onboarded:${runtime}`;
+}
+
 export function AppInitializer({ children }: { children: ReactNode }) {
-  const { address } = useAccount();
-  const { context, setMiniAppReady } = useMiniKit();
-  const addFrame = useAddFrame();
+  const router = useRouter();
+  const { address, isConnected } = useAccount();
+  const { connectAsync, connectors, isPending: isConnecting } = useConnect();
+  const { disconnect } = useDisconnect();
+  const { signMessageAsync } = useSignMessage();
   const { hideSplash } = useSplash();
+  const { user, isLoading, isUnauthenticated, refetch } = useUser();
 
-  const fid = context?.user?.fid;
-  const username = context?.user?.username;
-  const pfpUrl = context?.user?.pfpUrl;
+  const [authState, setAuthState] = useState<"idle" | "authenticating" | "error">("idle");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [runtime, setRuntime] = useState<AppRuntime | null>(null);
+  const onboardingKey = useMemo(() => {
+    if (!runtime) return null;
+    return runtime === "farcaster"
+      ? getOnboardingKey(runtime, user?.id)
+      : getOnboardingKey(runtime);
+  }, [runtime, user?.id]);
 
-  const { user, isLoading, error, refetch } = useUser();
-  const hasPromptedAddFrameRef = useRef(false);
-  const hasSignaledReadyRef = useRef(false);
-
-  // Whether we've given up waiting for MiniKit context to provide FID
-  const [contextTimedOut, setContextTimedOut] = useState(false);
-
-  // Signal ready to Farcaster as soon as we know user status.
   useEffect(() => {
-    if (hasSignaledReadyRef.current) return;
+    let mounted = true;
 
-    // Happy path: FID arrived, user fetch completed
-    if (!isLoading) {
-      hasSignaledReadyRef.current = true;
-      setMiniAppReady();
+    async function initializeRuntime() {
+      const nextRuntime = await getAppRuntime();
+      if (!mounted) return;
+
+      setRuntime(nextRuntime);
+
+      if (nextRuntime === "farcaster") {
+        try {
+          await sdk.actions.ready();
+        } catch (error) {
+          console.warn("Farcaster ready() failed:", error);
+        }
+      }
+
       hideSplash();
+    }
+
+    initializeRuntime().catch((error) => {
+      console.error("App runtime initialization failed:", error);
+      setRuntime(isMiniPayRuntime() ? "minipay" : "browser");
+      hideSplash();
+    });
+
+    return () => {
+      mounted = false;
+    };
+  }, [hideSplash]);
+
+  useEffect(() => {
+    if (!runtime) return;
+
+    const changed = setRuntimePlatformCookie(runtimeToPlatform(runtime));
+    if (changed) {
+      router.refresh();
+    }
+  }, [router, runtime]);
+
+  useEffect(() => {
+    if (!runtime || typeof window === "undefined") {
       return;
     }
 
-    // Fallback: after 3s, signal ready regardless.
-    // Without this, Farcaster shows its own loading screen forever,
-    // and after our splash dismisses the user sees a blank screen.
-    const timeout = setTimeout(() => {
-      if (!hasSignaledReadyRef.current) {
-        hasSignaledReadyRef.current = true;
-        setMiniAppReady();
-        hideSplash();
-        setContextTimedOut(true);
-      }
-    }, 3000);
+    const hasSeen = onboardingKey
+      ? localStorage.getItem(onboardingKey) === "1"
+      : false;
 
-    return () => clearTimeout(timeout);
-  }, [isLoading, setMiniAppReady, hideSplash]);
-
-  // If FID arrives after timeout, clear timeout state so normal flow resumes
-  useEffect(() => {
-    if (contextTimedOut && fid) {
-      setContextTimedOut(false);
+    if (runtime === "farcaster") {
+      setShowOnboarding(Boolean(user) && !hasSeen);
+      return;
     }
-  }, [contextTimedOut, fid]);
 
-  // Prompt to add miniapp on first visit (once per session)
-  useEffect(() => {
-    if (hasPromptedAddFrameRef.current) return;
-    if (isLoading || !user) return;
-    if (!fid) return;
-    if (context?.client?.added) return;
+    setShowOnboarding(!hasSeen);
+  }, [onboardingKey, runtime, user]);
 
-    hasPromptedAddFrameRef.current = true;
+  const authenticateWallet = useCallback(async (walletAddress: string) => {
+    if (!walletAddress) return;
 
-    (async () => {
-      try {
-        const result = await addFrame();
-        if (result && context?.client.clientFid) {
-          await saveNotificationTokenAction(
-            fid,
-            context.client.clientFid,
-            result
-          );
-        }
-      } catch (err) {
-        console.log("User declined addFrame:", err);
+    setAuthState("authenticating");
+    setAuthError(null);
+
+    try {
+      const nonceRes = await authenticatedFetch(
+        `/api/v1/auth/nonce?address=${encodeURIComponent(walletAddress)}`,
+      );
+      if (!nonceRes.ok) {
+        throw new Error("Failed to start wallet authentication");
       }
-    })();
-  }, [isLoading, user, fid, context?.client?.added, context?.client?.clientFid, addFrame]);
 
-  // Create user after onboarding
+      const { message } = await nonceRes.json();
+      const signature = await signMessageAsync({ message });
+      const verifyRes = await authenticatedFetch("/api/v1/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address: walletAddress, signature }),
+      });
+
+      if (!verifyRes.ok) {
+        throw new Error("Wallet signature verification failed");
+      }
+
+      await refetch();
+      setAuthState("idle");
+    } catch (error) {
+      console.error("Wallet auth failed:", error);
+      setAuthState("error");
+      setAuthError(
+        error instanceof Error ? error.message : "Wallet authentication failed",
+      );
+      throw error;
+    }
+  }, [refetch, signMessageAsync]);
+
+  const connectWallet = useCallback(async () => {
+    if (address && isConnected) {
+      return address;
+    }
+
+    const connector =
+      connectors.find((item) => item.id === "injected") || connectors[0];
+    if (!connector) {
+      throw new Error("No wallet connector available");
+    }
+
+    setAuthError(null);
+    const connection = await connectAsync({ connector });
+    const nextAddress = connection.accounts[0];
+
+    if (!nextAddress) {
+      throw new Error("Wallet address unavailable");
+    }
+
+    return nextAddress;
+  }, [address, connectAsync, connectors, isConnected]);
+
+  useEffect(() => {
+    if (runtime !== "minipay" && runtime !== "browser") {
+      return;
+    }
+
+    if (showOnboarding) {
+      return;
+    }
+
+    if (!isConnected || !address || !isUnauthenticated || authState !== "idle") {
+      return;
+    }
+
+    authenticateWallet(address).catch(console.error);
+  }, [
+    address,
+    authState,
+    authenticateWallet,
+    isConnected,
+    isUnauthenticated,
+    runtime,
+    showOnboarding,
+  ]);
+
   const handleOnboardingComplete = useCallback(async () => {
-    if (!fid) throw new Error("Missing FID");
+    if (runtime !== "farcaster") {
+      const walletAddress = await connectWallet();
+      await authenticateWallet(walletAddress);
+      await refetch();
+    }
 
-    const result = await upsertUser({ fid, username, pfpUrl, wallet: address });
-    if (!result.success)
-      throw new Error(result.error || "Failed to create user");
+    if (typeof window !== "undefined" && onboardingKey) {
+      localStorage.setItem(onboardingKey, "1");
+    }
+    setShowOnboarding(false);
+  }, [authenticateWallet, connectWallet, onboardingKey, refetch, runtime]);
 
-    await refetch();
-  }, [fid, username, pfpUrl, address, refetch]);
-
-  // Still waiting for MiniKit context AND haven't timed out — splash covers this
-  if (isLoading && !contextTimedOut) return null;
-
-  // Context timed out or no FID — show onboarding so user isn't stuck on blank
-  if (!fid) {
-    return <OnboardingOverlay onComplete={handleOnboardingComplete} />;
+  if (!runtime) {
+    return null;
   }
 
-  // FID available but still fetching user
-  if (isLoading) return null;
+  if (runtime === "farcaster") {
+    if (isLoading) {
+      return null;
+    }
 
-  // Error fetching user — show onboarding rather than hanging
-  if (error && !user) {
-    return <OnboardingOverlay onComplete={handleOnboardingComplete} />;
+    if (!user) {
+      return (
+        <div className="fixed inset-0 z-80 flex items-center justify-center app-background px-4">
+          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/70 p-6 text-center">
+            <h2 className="font-body text-3xl text-white">Authentication needed</h2>
+            <p className="mt-3 font-display text-sm text-white/60">
+              Open Waffles inside Farcaster to continue with your Farcaster profile.
+            </p>
+            <WaffleButton
+              className="mt-6 w-full"
+              onClick={() => refetch().catch(console.error)}
+            >
+              Retry
+            </WaffleButton>
+          </div>
+        </div>
+      );
+    }
+
+    if (showOnboarding) {
+      return (
+        <OnboardingOverlay
+          onComplete={handleOnboardingComplete}
+          errorMessage={authError}
+        />
+      );
+    }
+
+    return <>{children}</>;
   }
 
-  // New user → show onboarding
+  if (showOnboarding) {
+    return (
+      <OnboardingOverlay
+        onComplete={handleOnboardingComplete}
+        errorMessage={authError}
+      />
+    );
+  }
+
+  if (authState === "authenticating" || isLoading) {
+    return null;
+  }
+
   if (!user) {
-    return <OnboardingOverlay onComplete={handleOnboardingComplete} />;
+    return (
+      <div className="fixed inset-0 z-80 flex items-center justify-center app-background px-4">
+        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/70 p-6 text-center">
+          <h2 className="font-body text-3xl text-white">Authentication needed</h2>
+          <p className="mt-3 font-display text-sm text-white/60">
+            Sign the wallet message to continue into the MiniPay app.
+          </p>
+          <WaffleButton
+            className="mt-6 w-full"
+            onClick={async () => {
+              try {
+                const walletAddress = await connectWallet();
+                await authenticateWallet(walletAddress);
+              } catch (error) {
+                console.error(error);
+              }
+            }}
+            disabled={isConnecting}
+          >
+            {isConnecting ? "Connecting..." : "Retry Sign-In"}
+          </WaffleButton>
+          <button
+            className="mt-3 text-sm text-white/60 underline"
+            onClick={() => disconnect()}
+          >
+            Disconnect wallet
+          </button>
+          {authError ? (
+            <p className="mt-3 text-sm text-red-300">{authError}</p>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
-  // User exists → show app
   return <>{children}</>;
 }

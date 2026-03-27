@@ -1,8 +1,6 @@
 "use client";
 
 import {
-    grantGameAccessAction,
-    revokeGameAccessAction,
     banUserAction,
     unbanUserAction,
     adjustInviteQuotaAction,
@@ -15,7 +13,6 @@ interface UserActionsProps {
         id: string;
         username: string | null;
         inviteQuota: number;
-        hasGameAccess: boolean;
         isBanned: boolean;
         role: string;
     };
@@ -49,34 +46,6 @@ export function UserActions({ user }: UserActionsProps) {
             setSuccess(null);
             setError(null);
         }, 3000);
-    };
-
-    const handleGrantAccess = async () => {
-        if (!confirm(`Grant game access to @${user.username || 'this user'}?\n\nThey will be able to play games immediately.`)) return;
-
-        setLoading('grant');
-        const result = await grantGameAccessAction(user.id);
-        setLoading(null);
-
-        if (result.success) {
-            showMessage('success', 'Game access granted!');
-        } else {
-            showMessage('error', result.error);
-        }
-    };
-
-    const handleRevokeAccess = async () => {
-        if (!confirm(`Revoke game access from @${user.username || 'this user'}?\n\n⚠️ They will lose access to all games.`)) return;
-
-        setLoading('revoke');
-        const result = await revokeGameAccessAction(user.id);
-        setLoading(null);
-
-        if (result.success) {
-            showMessage('success', 'Game access revoked');
-        } else {
-            showMessage('error', result.error);
-        }
     };
 
     const handleBan = async () => {
@@ -167,30 +136,9 @@ export function UserActions({ user }: UserActionsProps) {
             )}
 
             <div className="space-y-4">
-                {/* Access Control */}
                 <div>
-                    <p className="text-sm font-medium text-white/50 mb-3">Access Control</p>
+                    <p className="text-sm font-medium text-white/50 mb-3">Account Moderation</p>
                     <div className="flex flex-wrap gap-2">
-                        {user.hasGameAccess ? (
-                            <button
-                                onClick={handleRevokeAccess}
-                                disabled={isLoading}
-                                className="px-3 py-1.5 bg-orange-500/20 disabled:opacity-40 text-orange-400 text-sm rounded-xl hover:bg-orange-500/30 border border-orange-500/30 transition-colors font-medium flex items-center gap-2"
-                            >
-                                {loading === 'revoke' && <Spinner />}
-                                Revoke Access
-                            </button>
-                        ) : (
-                            <button
-                                onClick={handleGrantAccess}
-                                disabled={isLoading}
-                                className="px-3 py-1.5 bg-[#14B985]/20 disabled:opacity-40 text-[#14B985] text-sm rounded-xl hover:bg-[#14B985]/30 border border-[#14B985]/30 transition-colors font-medium flex items-center gap-2"
-                            >
-                                {loading === 'grant' && <Spinner />}
-                                Grant Access
-                            </button>
-                        )}
-
                         {user.isBanned ? (
                             <button
                                 onClick={handleUnban}
@@ -211,6 +159,9 @@ export function UserActions({ user }: UserActionsProps) {
                             </button>
                         )}
                     </div>
+                    <p className="mt-3 text-xs text-white/35">
+                        Game access is no longer invite-gated. Use bans only when you need to block a user entirely.
+                    </p>
                 </div>
 
                 {/* Invite Quota */}

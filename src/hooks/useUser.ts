@@ -1,39 +1,36 @@
 "use client";
 
 import useSWR from "swr";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
-
-import type { User } from "@prisma";
+import { authenticatedFetch } from "@/lib/client/runtime";
+import type { UserPlatform } from "@prisma";
 
 // ==========================================
-// TYPES - Derived from Prisma
+// TYPES
 // ==========================================
 
-export type UserData = Pick<
-  User,
-  | "id"
-  | "fid"
-  | "username"
-  | "pfpUrl"
-  | "wallet"
-  | "inviteQuota"
-  | "inviteCode"
-  | "hasGameAccess"
-  | "isBanned"
-  | "createdAt"
-> & {
+export interface UserData {
+  id: string;
+  platform: UserPlatform;
+  fid: number | null;
+  username: string | null;
+  pfpUrl: string | null;
+  wallet: string | null;
+  inviteQuota: number;
+  inviteCode: string;
+  hasGameAccess: boolean;
+  isBanned: boolean;
+  createdAt: Date;
   invitesCount: number;
-};
+}
 
 // ==========================================
 // FETCHER
 // ==========================================
 
 async function fetchUser(url: string): Promise<UserData | null> {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await authenticatedFetch(url, { cache: "no-store" });
 
-  // 404 = user not in DB yet (expected for new users)
-  if (res.status === 404) {
+  if (res.status === 401 || res.status === 404) {
     return null;
   }
 
@@ -58,11 +55,8 @@ async function fetchUser(url: string): Promise<UserData | null> {
  * - SWR is fetching user data
  */
 export function useUser() {
-  const { context } = useMiniKit();
-  const fid = context?.user?.fid;
-
   const { data, error, isLoading: swrLoading, mutate } = useSWR<UserData | null>(
-    fid ? `/api/v1/users/${fid}` : null,
+    "/api/v1/users/me",
     fetchUser,
     {
       revalidateOnFocus: false,
@@ -71,14 +65,11 @@ export function useUser() {
     }
   );
 
-  // Waiting for MiniKit context (no FID yet) = loading
-  // SWR actively fetching = loading
-  const isLoading = !fid || swrLoading;
-
   return {
     user: data ?? null,
-    isLoading,
+    isLoading: swrLoading,
     error: error ? "Failed to load user" : null,
+    isUnauthenticated: !swrLoading && !data && !error,
     refetch: mutate,
   };
 }

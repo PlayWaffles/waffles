@@ -1,9 +1,8 @@
-import { minikitConfig } from "@minikit-config";
 import InvitePageClient from "./client";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: minikitConfig.miniapp.name,
+  title: "Invite Access | Waffles",
   description: "Enter your invite code to access the game.",
 };
 

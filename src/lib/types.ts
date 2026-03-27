@@ -4,7 +4,9 @@
 
 export interface LeaderboardEntry {
   id: string | number;
-  fid: number;
+  userId?: string | number;
+  fid?: number | null;
+  wallet?: string | null;
   rank: number;
   username: string | null;
   prize: number; // USDC prize amount

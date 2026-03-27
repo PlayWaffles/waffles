@@ -11,10 +11,11 @@
  */
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
 import { useTimer } from "@/hooks/useTimer";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { playSound, stopAllAudio } from "@/lib/sounds";
+import { useUser } from "@/hooks/useUser";
+import { authenticatedFetch } from "@/lib/client/runtime";
 import type {
   LiveGameData,
   LiveGameQuestion,
@@ -69,8 +70,7 @@ export interface UseLiveGameReturn {
 
 export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
   const { dispatch } = useRealtime();
-  const { context } = useMiniKit();
-  const fid = context?.user?.fid;
+  const { user } = useUser();
 
   // ==========================================
   // ALL HOOKS DECLARED UNCONDITIONALLY HERE
@@ -86,11 +86,11 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
   // Track if initial entry fetch is complete (determines when we can pick starting phase)
   const [entryLoaded, setEntryLoaded] = useState(false);
 
-  // Fetch entry from server (public endpoint with fid)
+  // Fetch entry from server using the authenticated session
   const refetchEntry = useCallback(async () => {
-    if (!fid) return;
+    if (!user?.id) return;
     try {
-      const res = await fetch(`/api/v1/games/${game.id}/entry?fid=${fid}`);
+      const res = await authenticatedFetch(`/api/v1/games/${game.id}/entry`);
       if (res.ok) {
         const data = await res.json();
         setEntry({
@@ -102,7 +102,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     } catch (err) {
       console.error("[useLiveGame] Failed to fetch entry:", err);
     }
-  }, [game.id, fid]);
+  }, [game.id, user?.id]);
 
   // Initial fetch - marks entryLoaded when complete
   useEffect(() => {
@@ -272,7 +272,6 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
         const timeMs = currentQuestion.durationSec * 1000;
         await submitAnswerToServer(
           game.id,
-          fid!,
           currentQuestion.id,
           -1,
           timeMs,
@@ -371,7 +370,6 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       // Submit to server
       await submitAnswerToServer(
         game.id,
-        fid!,
         currentQuestion.id,
         selectedIndex,
         timeMs,
@@ -435,7 +433,6 @@ interface SubmitResult {
 
 async function submitAnswerToServer(
   gameId: string,
-  fid: number,
   questionId: string,
   selectedIndex: number,
   timeMs: number,
@@ -448,7 +445,6 @@ async function submitAnswerToServer(
     try {
       const result = await submitAnswer({
         gameId,
-        fid,
         questionId,
         selectedIndex,
         timeTakenMs: timeMs,

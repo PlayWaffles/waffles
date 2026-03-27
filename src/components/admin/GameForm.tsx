@@ -31,6 +31,7 @@ interface GameFormProps {
     formData: FormData
   ) => Promise<GameActionResult>;
   initialData?: {
+    platform: string;
     title: string;
     description?: string | null;
     theme: string;
@@ -55,6 +56,7 @@ export function GameForm({
   );
 
   // Form state
+  const [platform, setPlatform] = useState(initialData?.platform || "FARCASTER");
   const [selectedTheme, setSelectedTheme] = useState(initialData?.theme || "");
   const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || "");
   const [title, setTitle] = useState(initialData?.title || "");
@@ -173,6 +175,7 @@ export function GameForm({
 
     setValidationError(null);
     const formData = new FormData(e.currentTarget);
+    formData.set("platform", platform);
 
     // CRITICAL: Convert datetime-local values to UTC ISO strings
     // This fixes timezone inconsistency between local and production servers
@@ -304,6 +307,22 @@ export function GameForm({
           </div>
 
           <div className="space-y-4">
+            <div>
+              <label htmlFor="platform" className="block text-sm font-medium text-white/70 mb-2">
+                Platform <span className="text-red-400">*</span>
+              </label>
+              <select
+                id="platform"
+                name="platform"
+                value={platform}
+                onChange={(e) => setPlatform(e.target.value)}
+                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
+              >
+                <option value="FARCASTER" className="bg-[#0a0a0b]">Farcaster</option>
+                <option value="MINIPAY" className="bg-[#0a0a0b]">MiniPay</option>
+              </select>
+            </div>
+
             <div>
               <label htmlFor="title" className="block text-sm font-medium text-white/70 mb-2">
                 Game Title <span className="text-red-400">*</span>

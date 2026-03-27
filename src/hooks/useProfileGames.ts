@@ -1,7 +1,7 @@
 "use client";
 
 import useSWR from "swr";
-import { useMiniKit } from "@coinbase/onchainkit/minikit";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
 // TYPES
@@ -35,7 +35,7 @@ export interface ProfileGame {
 // ==========================================
 
 async function fetchGames(url: string): Promise<ProfileGame[]> {
-  const res = await fetch(url, { cache: "no-store" });
+  const res = await authenticatedFetch(url, { cache: "no-store" });
 
   if (res.status === 404) {
     return [];
@@ -59,11 +59,8 @@ async function fetchGames(url: string): Promise<ProfileGame[]> {
  * @param limit - Optional limit for number of games (client-side slicing)
  */
 export function useProfileGames(limit?: number) {
-  const { context } = useMiniKit();
-  const fid = context?.user?.fid;
-
   const { data, error, isLoading, mutate } = useSWR<ProfileGame[]>(
-    fid ? `/api/v1/users/${fid}/games` : null,
+    "/api/v1/users/me/games",
     fetchGames,
     {
       revalidateOnFocus: false,

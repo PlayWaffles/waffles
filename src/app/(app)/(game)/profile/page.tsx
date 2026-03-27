@@ -15,6 +15,7 @@ import { InviteDrawer } from "./_components/InviteFriendsDrawer";
 import GameHistory from "./games/_components/GameHistory";
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { formatAddress } from "@/lib/address";
 
 // ==========================================
 // COMPONENT
@@ -57,7 +58,7 @@ export default function ProfilePage() {
     );
   }
 
-  const safeUsername = user.username || "Player";
+  const safeUsername = user.username || formatAddress(user.wallet);
   const safeAvatarUrl = user.pfpUrl || "/images/avatars/a.png";
   const showReferralButton = user.inviteQuota !== null && user.inviteQuota > 0;
 
@@ -167,7 +168,7 @@ export default function ProfilePage() {
               currentStreak: stats?.currentStreak ?? 0,
               bestRank: stats?.bestRank ?? null,
             }}
-            fid={user.fid}
+            fid={user.fid ?? 0}
           />
         </motion.div>
 
