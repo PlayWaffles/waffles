@@ -3,7 +3,7 @@
 import { useAccount, useConnect } from "wagmi";
 import { useGetTokenBalance } from "@coinbase/onchainkit/wallet";
 import { motion, useAnimation } from "framer-motion";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { springs } from "@/lib/animations";
 import {
@@ -12,7 +12,11 @@ import {
   PAYMENT_TOKEN_DECIMALS,
 } from "@/lib/chain";
 import { useCorrectChain } from "@/hooks/useCorrectChain";
-import { isMiniPayRuntime } from "@/lib/client/runtime";
+import {
+  getAppRuntime,
+  isMiniPayRuntime,
+  type AppRuntime,
+} from "@/lib/client/runtime";
 
 // Animated Wallet Icon with coin drop effect
 function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
@@ -68,15 +72,32 @@ export function WalletBalance() {
   const { connect, connectors } = useConnect();
   const platform = isMiniPayRuntime() ? "MINIPAY" : "FARCASTER";
   const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain(platform);
+  const [runtime, setRuntime] = useState<AppRuntime>("browser");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((nextRuntime) => {
+        if (!cancelled) setRuntime(nextRuntime);
+      })
+      .catch(() => {
+        if (!cancelled) setRuntime("browser");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Auto-connect with the injected wallet when available
   useEffect(() => {
-    if (!isConnected && connectors.length > 0) {
+    if (runtime !== "farcaster" && !isConnected && connectors.length > 0) {
       connect({
         connector: connectors.find((item) => item.id === "injected") || connectors[0],
       });
     }
-  }, [isConnected, connect, connectors]);
+  }, [runtime, isConnected, connect, connectors]);
 
   // Auto-switch to correct chain when wallet is connected
   useEffect(() => {

@@ -17,6 +17,7 @@ import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
 import type { TicketPricingSnapshot } from "@/lib/tickets";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import { getAppRuntime, type AppRuntime } from "@/lib/client/runtime";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
@@ -56,6 +57,7 @@ export function BuyTicketModal({
   const [freeStep, setFreeStep] = useState<PurchaseStep>("idle");
   const [freeLoading, setFreeLoading] = useState(false);
   const [freeError, setFreeError] = useState(false);
+  const [runtime, setRuntime] = useState<AppRuntime>("browser");
 
   // Derived display values
   const displayUsername =
@@ -64,14 +66,36 @@ export function BuyTicketModal({
   const selectedPrice = pricing.currentPrice;
   const potentialPayout = Math.round(selectedPrice * 21.1);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((nextRuntime) => {
+        if (!cancelled) setRuntime(nextRuntime);
+      })
+      .catch(() => {
+        if (!cancelled) setRuntime("browser");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   // Auto-connect wallet when modal opens (only needed for paid tier)
   useEffect(() => {
-    if (isOpen && !isConnected && connectors.length > 0 && selectedTier === "paid") {
+    if (
+      runtime !== "farcaster" &&
+      isOpen &&
+      !isConnected &&
+      connectors.length > 0 &&
+      selectedTier === "paid"
+    ) {
       connect({
         connector: connectors.find((item) => item.id === "injected") || connectors[0],
       });
     }
-  }, [isOpen, isConnected, connect, connectors, selectedTier]);
+  }, [runtime, isOpen, isConnected, connect, connectors, selectedTier]);
 
   // Use the ticket purchase hook (for paid tier)
   const {
@@ -175,7 +199,9 @@ export function BuyTicketModal({
         ? "TRY AGAIN"
         : "PLAY FOR FREE"
     : !isWalletReady
-      ? "Connecting wallet..."
+      ? runtime === "farcaster"
+        ? "Wallet unavailable"
+        : "Connecting wallet..."
       : getPurchaseButtonText(paidStep, selectedPrice);
 
   const isButtonDisabled = isFree
