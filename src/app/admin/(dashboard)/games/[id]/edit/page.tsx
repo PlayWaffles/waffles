@@ -11,10 +11,6 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
         select: {
             id: true,
             platform: true,
-            title: true,
-            description: true,
-            theme: true,
-            coverUrl: true,
             startsAt: true,
             endsAt: true,
             tierPrices: true,
@@ -31,10 +27,6 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
     // Transform to form data shape
     const formData = {
         platform: game.platform,
-        title: game.title,
-        description: game.description,
-        theme: game.theme,
-        coverUrl: game.coverUrl,
         startsAt: game.startsAt,
         endsAt: game.endsAt,
         tierPrices: game.tierPrices,
@@ -54,7 +46,9 @@ export default async function EditGamePage({ params }: { params: Promise<{ id: s
                 </Link>
                 <div>
                     <h1 className="text-2xl font-bold text-white font-display">Edit Game</h1>
-                    <p className="text-white/60 mt-1">Update game details for <span className="text-[#FFC931]">{game.title}</span></p>
+                    <p className="text-white/60 mt-1">
+                        Update timing, platform, and limits for this game
+                    </p>
                 </div>
             </div>
 

@@ -5,8 +5,6 @@ import Link from "next/link";
 import {
   CalendarIcon,
   CurrencyDollarIcon,
-  PuzzlePieceIcon,
-  PhotoIcon,
   SparklesIcon,
   ClockIcon,
   UserGroupIcon,
@@ -21,9 +19,7 @@ import {
   useMemo,
   useTransition,
 } from "react";
-import { MediaPicker } from "@/components/admin/MediaPicker";
 import { ConfirmationModal } from "@/components/admin/ConfirmationModal";
-import { THEMES } from "@/lib/constants";
 
 interface GameFormProps {
   action: (
@@ -32,10 +28,6 @@ interface GameFormProps {
   ) => Promise<GameActionResult>;
   initialData?: {
     platform: string;
-    title: string;
-    description?: string | null;
-    theme: string;
-    coverUrl?: string | null;
     startsAt: Date;
     endsAt: Date;
     tierPrices: number[];
@@ -57,12 +49,7 @@ export function GameForm({
 
   // Form state
   const [platform, setPlatform] = useState(initialData?.platform || "FARCASTER");
-  const [selectedTheme, setSelectedTheme] = useState(initialData?.theme || "");
-  const [coverUrl, setCoverUrl] = useState(initialData?.coverUrl || "");
-  const [title, setTitle] = useState(initialData?.title || "");
-  const [description, setDescription] = useState(
-    initialData?.description || ""
-  );
+  const [createOnMultiplePlatforms, setCreateOnMultiplePlatforms] = useState(false);
   const [ticketPrice, setTicketPrice] = useState(
     initialData?.tierPrices?.[0]?.toString() || "1"
   );
@@ -74,8 +61,9 @@ export function GameForm({
     initialData?.maxPlayers?.toString() || "100"
   );
   const [startsAt, setStartsAt] = useState(() => {
-    if (!initialData?.startsAt) return "";
-    const d = new Date(initialData.startsAt);
+    const d = initialData?.startsAt
+      ? new Date(initialData.startsAt)
+      : new Date(Date.now() + 2 * 60 * 1000);
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
@@ -96,11 +84,6 @@ export function GameForm({
   const [showSuccess, setShowSuccess] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const [isPending, startTransition] = useTransition();
-
-  const currentTheme = useMemo(
-    () => THEMES.find((t) => t.id === selectedTheme),
-    [selectedTheme]
-  );
 
   // Calculate end time from start + duration
   // IMPORTANT: Keep in local datetime-local format (YYYY-MM-DDTHH:mm)
@@ -146,18 +129,6 @@ export function GameForm({
     e.preventDefault();
 
     // Validation
-    if (!selectedTheme) {
-      setValidationError("Please select a theme");
-      return;
-    }
-    if (!title.trim()) {
-      setValidationError("Please enter a game title");
-      return;
-    }
-    if (!coverUrl) {
-      setValidationError("Please add a cover image");
-      return;
-    }
     if (!startsAt) {
       setValidationError("Please set a start time");
       return;
@@ -170,6 +141,10 @@ export function GameForm({
     setValidationError(null);
     const formData = new FormData(e.currentTarget);
     formData.set("platform", platform);
+    formData.set(
+      "createOnMultiplePlatforms",
+      createOnMultiplePlatforms ? "true" : "false"
+    );
 
     // CRITICAL: Convert datetime-local values to UTC ISO strings
     // This fixes timezone inconsistency between local and production servers
@@ -214,10 +189,17 @@ export function GameForm({
   // Get preview items for confirmation
   const getPreviewItems = () => {
     if (!pendingFormData) return [];
-    const themeData = THEMES.find((t) => t.id === pendingFormData.get("theme"));
+    const platformValue = pendingFormData.get("platform");
+    const isMultiPlatform = pendingFormData.get("createOnMultiplePlatforms") === "true";
+    const platformLabel = isMultiPlatform
+      ? "Farcaster + MiniPay"
+      : platformValue === "MINIPAY"
+        ? "MiniPay"
+        : "Farcaster";
     return [
-      { label: "Title", value: pendingFormData.get("title")?.toString() || "Untitled" },
-      { label: "Theme", value: themeData ? `${themeData.icon} ${themeData.label}` : "—" },
+      { label: "Platform", value: platformLabel },
+      { label: "Title", value: "Waffles#00" },
+      { label: "Theme", value: "Movies" },
       { label: "Starts", value: startsAt ? new Date(startsAt).toLocaleString() : "—" },
       { label: "Ticket Price", value: `$${pendingFormData.get("ticketPrice")} USDC` },
     ];
@@ -249,117 +231,112 @@ export function GameForm({
           </div>
         )}
 
-        {/* 1. Theme Selection */}
+        {/* 1. Platform Selection */}
+        <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
+          <div className="flex items-center gap-3 mb-5">
+            <div className="p-2.5 rounded-xl bg-[#14B985]/15">
+              <CalendarIcon className="h-5 w-5 text-[#14B985]" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white">Choose Platform</h3>
+              <p className="text-sm text-white/50">Pick where this game will run.</p>
+            </div>
+          </div>
+
+          {!isEdit && (
+            <div className="mb-4 rounded-2xl border border-[#14B985]/20 bg-[#14B985]/10 p-4">
+              <label className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={createOnMultiplePlatforms}
+                  onChange={(e) => setCreateOnMultiplePlatforms(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-[#14B985] focus:ring-[#14B985]/50"
+                />
+                <span>
+                  <span className="block font-medium text-white">
+                    Create on both platforms
+                  </span>
+                  <span className="mt-1 block text-sm text-white/55">
+                    This creates separate Farcaster and MiniPay game records linked under one launch group.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {[
+              {
+                value: "FARCASTER",
+                label: "Farcaster",
+                description: "Use the Farcaster audience and flow.",
+              },
+              {
+                value: "MINIPAY",
+                label: "MiniPay",
+                description: "Use the MiniPay audience and flow.",
+              },
+            ].map((option) => {
+              const isSelected = platform === option.value;
+
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPlatform(option.value)}
+                  disabled={!isEdit && createOnMultiplePlatforms}
+                  className={`rounded-2xl border p-4 text-left transition-all ${
+                    isSelected
+                      ? "border-[#FFC931] bg-[#FFC931]/10"
+                      : "border-white/10 bg-white/5 hover:border-white/20 hover:bg-white/10"
+                  } ${!isEdit && createOnMultiplePlatforms ? "cursor-not-allowed opacity-60" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-white">{option.label}</div>
+                      <p className="mt-1 text-sm text-white/55">{option.description}</p>
+                    </div>
+                    {isSelected && (
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#FFC931]">
+                        <CheckIcon className="h-3.5 w-3.5 text-black" />
+                      </div>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          <input type="hidden" name="platform" value={platform} />
+        </section>
+
+        {/* 2. Defaults */}
         <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2.5 rounded-xl bg-[#FFC931]/15">
               <SparklesIcon className="h-5 w-5 text-[#FFC931]" />
             </div>
             <div>
-              <h3 className="font-bold text-white">Choose Theme</h3>
-              <p className="text-sm text-white/50">What&apos;s this game about?</p>
+              <h3 className="font-bold text-white">Game Defaults</h3>
+              <p className="text-sm text-white/50">These are fixed for every new game.</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-            {THEMES.map((theme) => (
-              <button
-                key={theme.id}
-                type="button"
-                onClick={() => {
-                  setSelectedTheme(theme.id);
-                  setValidationError(null);
-                }}
-                className={`relative group p-4 rounded-xl border-2 transition-all text-center ${selectedTheme === theme.id
-                  ? "border-[#FFC931] bg-[#FFC931]/10"
-                  : "border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20"
-                  }`}
+          <div className="grid gap-3 sm:grid-cols-3">
+            {[
+              { label: "Theme", value: "Movies" },
+              { label: "Cover", value: "Movie logo cover" },
+              { label: "Title", value: "Auto: Waffles#00" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4"
               >
-                {selectedTheme === theme.id && (
-                  <div className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-[#FFC931] flex items-center justify-center">
-                    <CheckIcon className="h-3 w-3 text-black" />
-                  </div>
-                )}
-                <div className="text-2xl mb-1">{theme.icon}</div>
-                <div className="text-xs font-medium text-white">{theme.label}</div>
-              </button>
+                <p className="text-xs uppercase tracking-[0.18em] text-white/40">
+                  {item.label}
+                </p>
+                <p className="mt-2 font-medium text-white">{item.value}</p>
+              </div>
             ))}
-          </div>
-          <input type="hidden" name="theme" value={selectedTheme} />
-        </section>
-
-        {/* 2. Basic Info */}
-        <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="p-2.5 rounded-xl bg-[#00CFF2]/15">
-              <PuzzlePieceIcon className="h-5 w-5 text-[#00CFF2]" />
-            </div>
-            <div>
-              <h3 className="font-bold text-white">Basic Info</h3>
-              <p className="text-sm text-white/50">Name and description</p>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="platform" className="block text-sm font-medium text-white/70 mb-2">
-                Platform <span className="text-red-400">*</span>
-              </label>
-              <select
-                id="platform"
-                name="platform"
-                value={platform}
-                onChange={(e) => setPlatform(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
-              >
-                <option value="FARCASTER" className="bg-[#0a0a0b]">Farcaster</option>
-                <option value="MINIPAY" className="bg-[#0a0a0b]">MiniPay</option>
-              </select>
-            </div>
-
-            <div>
-              <label htmlFor="title" className="block text-sm font-medium text-white/70 mb-2">
-                Game Title <span className="text-red-400">*</span>
-              </label>
-              <input
-                type="text"
-                id="title"
-                name="title"
-                required
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
-                placeholder="Friday Night Football Trivia"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="description" className="block text-sm font-medium text-white/70 mb-2">
-                Description <span className="text-white/30">(optional)</span>
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                rows={2}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all resize-none"
-                placeholder="Brief description..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-white/70 mb-2">
-                Cover Image <span className="text-red-400">*</span>
-              </label>
-              <MediaPicker
-                label=""
-                name="coverUrl"
-                accept="image"
-                onSelect={setCoverUrl}
-                selectedUrl={coverUrl}
-              />
-            </div>
           </div>
         </section>
 

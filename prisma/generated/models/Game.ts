@@ -53,6 +53,7 @@ export type GameMinAggregateOutputType = {
   description: string | null
   theme: $Enums.GameTheme | null
   coverUrl: string | null
+  launchGroupId: string | null
   startsAt: Date | null
   endsAt: Date | null
   prizePool: number | null
@@ -76,6 +77,7 @@ export type GameMaxAggregateOutputType = {
   description: string | null
   theme: $Enums.GameTheme | null
   coverUrl: string | null
+  launchGroupId: string | null
   startsAt: Date | null
   endsAt: Date | null
   prizePool: number | null
@@ -99,6 +101,7 @@ export type GameCountAggregateOutputType = {
   description: number
   theme: number
   coverUrl: number
+  launchGroupId: number
   startsAt: number
   endsAt: number
   tierPrices: number
@@ -143,6 +146,7 @@ export type GameMinAggregateInputType = {
   description?: true
   theme?: true
   coverUrl?: true
+  launchGroupId?: true
   startsAt?: true
   endsAt?: true
   prizePool?: true
@@ -166,6 +170,7 @@ export type GameMaxAggregateInputType = {
   description?: true
   theme?: true
   coverUrl?: true
+  launchGroupId?: true
   startsAt?: true
   endsAt?: true
   prizePool?: true
@@ -189,6 +194,7 @@ export type GameCountAggregateInputType = {
   description?: true
   theme?: true
   coverUrl?: true
+  launchGroupId?: true
   startsAt?: true
   endsAt?: true
   tierPrices?: true
@@ -300,6 +306,7 @@ export type GameGroupByOutputType = {
   description: string | null
   theme: $Enums.GameTheme
   coverUrl: string | null
+  launchGroupId: string | null
   startsAt: Date
   endsAt: Date
   tierPrices: number[]
@@ -347,6 +354,7 @@ export type GameWhereInput = {
   description?: Prisma.StringNullableFilter<"Game"> | string | null
   theme?: Prisma.EnumGameThemeFilter<"Game"> | $Enums.GameTheme
   coverUrl?: Prisma.StringNullableFilter<"Game"> | string | null
+  launchGroupId?: Prisma.StringNullableFilter<"Game"> | string | null
   startsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   endsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   tierPrices?: Prisma.FloatNullableListFilter<"Game">
@@ -374,6 +382,7 @@ export type GameOrderByWithRelationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  launchGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   tierPrices?: Prisma.SortOrder
@@ -396,6 +405,7 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   gameNumber?: number
   onchainId?: string
+  launchGroupId_platform?: Prisma.GameLaunchGroupIdPlatformCompoundUniqueInput
   AND?: Prisma.GameWhereInput | Prisma.GameWhereInput[]
   OR?: Prisma.GameWhereInput[]
   NOT?: Prisma.GameWhereInput | Prisma.GameWhereInput[]
@@ -404,6 +414,7 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   description?: Prisma.StringNullableFilter<"Game"> | string | null
   theme?: Prisma.EnumGameThemeFilter<"Game"> | $Enums.GameTheme
   coverUrl?: Prisma.StringNullableFilter<"Game"> | string | null
+  launchGroupId?: Prisma.StringNullableFilter<"Game"> | string | null
   startsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   endsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   tierPrices?: Prisma.FloatNullableListFilter<"Game">
@@ -420,7 +431,7 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   questions?: Prisma.QuestionListRelationFilter
   entries?: Prisma.GameEntryListRelationFilter
   chats?: Prisma.ChatListRelationFilter
-}, "id" | "gameNumber" | "onchainId">
+}, "id" | "gameNumber" | "onchainId" | "launchGroupId_platform">
 
 export type GameOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -431,6 +442,7 @@ export type GameOrderByWithAggregationInput = {
   description?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrderInput | Prisma.SortOrder
+  launchGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   tierPrices?: Prisma.SortOrder
@@ -463,6 +475,7 @@ export type GameScalarWhereWithAggregatesInput = {
   description?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
   theme?: Prisma.EnumGameThemeWithAggregatesFilter<"Game"> | $Enums.GameTheme
   coverUrl?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
+  launchGroupId?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
   startsAt?: Prisma.DateTimeWithAggregatesFilter<"Game"> | Date | string
   endsAt?: Prisma.DateTimeWithAggregatesFilter<"Game"> | Date | string
   tierPrices?: Prisma.FloatNullableListFilter<"Game">
@@ -487,6 +500,7 @@ export type GameCreateInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -514,6 +528,7 @@ export type GameUncheckedCreateInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -540,6 +555,7 @@ export type GameUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -567,6 +583,7 @@ export type GameUncheckedUpdateInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -594,6 +611,7 @@ export type GameCreateManyInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -617,6 +635,7 @@ export type GameUpdateManyMutationInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -641,6 +660,7 @@ export type GameUncheckedUpdateManyInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -664,6 +684,11 @@ export type FloatNullableListFilter<$PrismaModel = never> = {
   isEmpty?: boolean
 }
 
+export type GameLaunchGroupIdPlatformCompoundUniqueInput = {
+  launchGroupId: string
+  platform: $Enums.UserPlatform
+}
+
 export type GameCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   gameNumber?: Prisma.SortOrder
@@ -673,6 +698,7 @@ export type GameCountOrderByAggregateInput = {
   description?: Prisma.SortOrder
   theme?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrder
+  launchGroupId?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   tierPrices?: Prisma.SortOrder
@@ -706,6 +732,7 @@ export type GameMaxOrderByAggregateInput = {
   description?: Prisma.SortOrder
   theme?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrder
+  launchGroupId?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
@@ -729,6 +756,7 @@ export type GameMinOrderByAggregateInput = {
   description?: Prisma.SortOrder
   theme?: Prisma.SortOrder
   coverUrl?: Prisma.SortOrder
+  launchGroupId?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
@@ -829,6 +857,7 @@ export type GameCreateWithoutQuestionsInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -855,6 +884,7 @@ export type GameUncheckedCreateWithoutQuestionsInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -896,6 +926,7 @@ export type GameUpdateWithoutQuestionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -922,6 +953,7 @@ export type GameUncheckedUpdateWithoutQuestionsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -948,6 +980,7 @@ export type GameCreateWithoutEntriesInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -974,6 +1007,7 @@ export type GameUncheckedCreateWithoutEntriesInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -1015,6 +1049,7 @@ export type GameUpdateWithoutEntriesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -1041,6 +1076,7 @@ export type GameUncheckedUpdateWithoutEntriesInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -1067,6 +1103,7 @@ export type GameCreateWithoutChatsInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -1093,6 +1130,7 @@ export type GameUncheckedCreateWithoutChatsInput = {
   description?: string | null
   theme: $Enums.GameTheme
   coverUrl?: string | null
+  launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
@@ -1134,6 +1172,7 @@ export type GameUpdateWithoutChatsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -1160,6 +1199,7 @@ export type GameUncheckedUpdateWithoutChatsInput = {
   description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
   coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
@@ -1235,6 +1275,7 @@ export type GameSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   description?: boolean
   theme?: boolean
   coverUrl?: boolean
+  launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
   tierPrices?: boolean
@@ -1263,6 +1304,7 @@ export type GameSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   description?: boolean
   theme?: boolean
   coverUrl?: boolean
+  launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
   tierPrices?: boolean
@@ -1287,6 +1329,7 @@ export type GameSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   description?: boolean
   theme?: boolean
   coverUrl?: boolean
+  launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
   tierPrices?: boolean
@@ -1311,6 +1354,7 @@ export type GameSelectScalar = {
   description?: boolean
   theme?: boolean
   coverUrl?: boolean
+  launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
   tierPrices?: boolean
@@ -1326,7 +1370,7 @@ export type GameSelectScalar = {
   updatedAt?: boolean
 }
 
-export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "title" | "description" | "theme" | "coverUrl" | "startsAt" | "endsAt" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
+export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
 export type GameInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | Prisma.Game$questionsArgs<ExtArgs>
   entries?: boolean | Prisma.Game$entriesArgs<ExtArgs>
@@ -1352,6 +1396,7 @@ export type $GamePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     description: string | null
     theme: $Enums.GameTheme
     coverUrl: string | null
+    launchGroupId: string | null
     startsAt: Date
     endsAt: Date
     tierPrices: number[]
@@ -1799,6 +1844,7 @@ export interface GameFieldRefs {
   readonly description: Prisma.FieldRef<"Game", 'String'>
   readonly theme: Prisma.FieldRef<"Game", 'GameTheme'>
   readonly coverUrl: Prisma.FieldRef<"Game", 'String'>
+  readonly launchGroupId: Prisma.FieldRef<"Game", 'String'>
   readonly startsAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly endsAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly tierPrices: Prisma.FieldRef<"Game", 'Float[]'>

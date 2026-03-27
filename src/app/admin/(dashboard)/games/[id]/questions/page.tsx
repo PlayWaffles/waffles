@@ -4,6 +4,7 @@ import { QuestionsManager } from "@/components/admin/QuestionsManager";
 import { QuestionImport } from "@/components/admin/QuestionImport";
 import { notFound } from "next/navigation";
 import { ChevronLeftIcon, DocumentTextIcon, ArrowUpTrayIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { formatAdminGameLabel } from "@/lib/game/labels";
 
 export default async function GameQuestionsPage({
     params,
@@ -59,7 +60,7 @@ export default async function GameQuestionsPage({
                 <div className="flex-1">
                     <h1 className="text-xl font-bold text-white font-display">Questions</h1>
                     <p className="text-sm text-white/50">
-                        {game.title} • <span className="text-[#FFC931]">{totalQuestions}</span> questions
+                        {formatAdminGameLabel(game.title, game.platform)} • <span className="text-[#FFC931]">{totalQuestions}</span> questions
                     </p>
                 </div>
             </div>
@@ -99,6 +100,5 @@ export default async function GameQuestionsPage({
         </div>
     );
 }
-
 
 

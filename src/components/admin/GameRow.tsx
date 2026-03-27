@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { GameActions } from "@/components/admin/GameActions";
 import type { GamePhase } from "@/lib/types";
+import { formatAdminGameLabel } from "@/lib/game/labels";
 
 interface GameRowProps {
   id: string;
@@ -54,13 +55,10 @@ export function GameRow({ game }: { game: GameRowProps }) {
       <td className="px-6 py-4 whitespace-nowrap">
         <Link href={`/admin/games/${game.id}`} className="block group">
           <div className="font-medium text-white text-base group-hover:text-[#FFC931] transition-colors">
-            {game.title}
+            {formatAdminGameLabel(game.title, game.platform)}
           </div>
           <div className="text-xs text-white/50 capitalize mt-0.5 bg-white/5 inline-block px-2 py-0.5 rounded-lg">
             {game.theme.toLowerCase()}
-          </div>
-          <div className="ml-2 text-xs text-white/50 uppercase mt-0.5 bg-white/5 inline-block px-2 py-0.5 rounded-lg">
-            {game.platform}
           </div>
         </Link>
       </td>

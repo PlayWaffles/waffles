@@ -19,7 +19,9 @@ export default function CreateGamePage() {
           </Link>
           <div>
             <h1 className="text-2xl font-bold text-white font-display">Create Game</h1>
-            <p className="text-sm text-white/50">Set up a new trivia game</p>
+            <p className="text-sm text-white/50">
+              Launch a movie game with auto-selected questions
+            </p>
           </div>
         </div>
       </div>

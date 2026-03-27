@@ -11,6 +11,7 @@ import { useUser } from "@/hooks/useUser";
 import { useTimer } from "@/hooks/useTimer";
 import { springs } from "@/lib/animations";
 import type { GameWithQuestionCount } from "@/lib/game";
+import { formatGameLabel } from "@/lib/game/labels";
 
 import { BuyTicketModal } from "./BuyTicketModal";
 
@@ -30,6 +31,7 @@ interface NextGameCardProps {
 export function NextGameCard({ game }: NextGameCardProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const gameLabel = formatGameLabel(game.gameNumber);
 
   // Get real-time state from context (entry, stats, players)
   const {
@@ -145,7 +147,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={springs.gentle}
         whileHover={{ scale: 1.01 }}
-        className="relative w-full max-w-[361px] mx-auto rounded-2xl overflow-hidden flex flex-col"
+        className="relative w-full max-w-90.25 mx-auto rounded-2xl overflow-hidden flex flex-col"
         style={{
           background: "rgba(21, 21, 25, 0.5)",
           boxShadow: "0px 5px 5.2px 8px rgba(12, 12, 14, 0.5)",
@@ -175,7 +177,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
               />
             </motion.div>
             <span className="font-body text-white uppercase text-[26px] leading-[92%] tracking-[-0.03em]">
-              WAFFLES #{(game.gameNumber ?? 0).toString().padStart(3, "0")}
+              {gameLabel}
             </span>
           </div>
         </motion.div>
@@ -326,6 +328,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         gameId={game.id}
+        platform={game.platform}
         onchainId={(game.onchainId as `0x${string}`) ?? null}
         theme={game.theme ?? ""}
         themeIcon={game.coverUrl ?? undefined}

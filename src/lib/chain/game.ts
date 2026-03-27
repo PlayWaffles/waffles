@@ -9,7 +9,11 @@ import { parseUnits } from "viem";
 import { publicClient, getOperatorWalletClient } from "./client";
 import { waffleGameAbi } from "./abi";
 import { withBuilderCodeDataSuffix } from "./builderCode";
-import { PAYMENT_TOKEN_DECIMALS, WAFFLE_CONTRACT_ADDRESS } from "./config";
+import {
+  PAYMENT_TOKEN_DECIMALS,
+  getWaffleContractAddress,
+} from "./config";
+import { type ChainPlatform } from "./platform";
 
 // ============================================================================
 // Types (v5 Contract)
@@ -47,10 +51,12 @@ export function generateOnchainGameId(): `0x${string}` {
  * @returns Transaction hash
  */
 export async function createGameOnChain(
+  platform: ChainPlatform,
   onchainId: `0x${string}`,
   minTicketPriceUSDC: number,
 ): Promise<`0x${string}`> {
   const walletClient = getOperatorWalletClient();
+  const contractAddress = getWaffleContractAddress(platform);
   const minimumTicketPrice = parseUnits(
     minTicketPriceUSDC.toString(),
     PAYMENT_TOKEN_DECIMALS,
@@ -58,7 +64,7 @@ export async function createGameOnChain(
 
   const hash = await walletClient.writeContract(
     withBuilderCodeDataSuffix({
-      address: WAFFLE_CONTRACT_ADDRESS,
+      address: contractAddress,
       abi: waffleGameAbi,
       functionName: "createGame",
       args: [onchainId, minimumTicketPrice],
@@ -75,13 +81,15 @@ export async function createGameOnChain(
  * @returns Transaction hash
  */
 export async function closeSalesOnChain(
+  platform: ChainPlatform,
   onchainId: `0x${string}`,
 ): Promise<`0x${string}`> {
   const walletClient = getOperatorWalletClient();
+  const contractAddress = getWaffleContractAddress(platform);
 
   const hash = await walletClient.writeContract(
     withBuilderCodeDataSuffix({
-      address: WAFFLE_CONTRACT_ADDRESS,
+      address: contractAddress,
       abi: waffleGameAbi,
       functionName: "closeSales",
       args: [onchainId],
@@ -101,11 +109,13 @@ export async function closeSalesOnChain(
  * @returns null if game doesn't exist on-chain
  */
 export async function getOnChainGame(
+  platform: ChainPlatform,
   onchainId: `0x${string}`,
 ): Promise<OnChainGame | null> {
   try {
+    const contractAddress = getWaffleContractAddress(platform);
     const game = (await publicClient.readContract({
-      address: WAFFLE_CONTRACT_ADDRESS,
+      address: contractAddress,
       abi: waffleGameAbi,
       functionName: "getGame",
       args: [onchainId],
@@ -127,11 +137,13 @@ export async function getOnChainGame(
  * Check if a player has a ticket on-chain
  */
 export async function hasTicketOnChain(
+  platform: ChainPlatform,
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
 ): Promise<boolean> {
+  const contractAddress = getWaffleContractAddress(platform);
   const hasTicket = await publicClient.readContract({
-    address: WAFFLE_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: waffleGameAbi,
     functionName: "hasTicket",
     args: [onchainId, playerAddress],
@@ -144,11 +156,13 @@ export async function hasTicketOnChain(
  * Check if a player has claimed their prize on-chain
  */
 export async function hasClaimedOnChain(
+  platform: ChainPlatform,
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
 ): Promise<boolean> {
+  const contractAddress = getWaffleContractAddress(platform);
   const hasClaimed = await publicClient.readContract({
-    address: WAFFLE_CONTRACT_ADDRESS,
+    address: contractAddress,
     abi: waffleGameAbi,
     functionName: "hasClaimed",
     args: [onchainId, playerAddress],

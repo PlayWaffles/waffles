@@ -46,7 +46,23 @@ const envSchema = z.object({
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/)
     .optional(),
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
   NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY: z
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/)
     .optional(),
@@ -93,8 +109,16 @@ const getEnv = () => {
     NEXT_PUBLIC_BASE_BUILDER_CODE: process.env.NEXT_PUBLIC_BASE_BUILDER_CODE,
     NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS:
       process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
+    NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER:
+      process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER,
+    NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY:
+      process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY,
     NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS:
       process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS,
+    NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER:
+      process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER,
+    NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY:
+      process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY,
     NEXT_PUBLIC_BLOCK_EXPLORER_URL:
       process.env.NEXT_PUBLIC_BLOCK_EXPLORER_URL,
     NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE:
@@ -145,7 +169,15 @@ const getEnv = () => {
         nextPublicBaseBuilderCode: undefined,
         nextPublicWaffleContractAddress:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicWaffleContractAddressFarcaster:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicWaffleContractAddressMiniPay:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
         nextPublicPaymentTokenAddress:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicPaymentTokenAddressFarcaster:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicPaymentTokenAddressMiniPay:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
         nextPublicBlockExplorerUrl: "https://celo-sepolia.blockscout.com",
         nextPublicLeaderboardPageSize: 25,
@@ -197,7 +229,19 @@ const getEnv = () => {
     nextPublicBaseBuilderCode: data.NEXT_PUBLIC_BASE_BUILDER_CODE,
     nextPublicWaffleContractAddress: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
       "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicWaffleContractAddressFarcaster: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER ||
+      data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicWaffleContractAddressMiniPay: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY ||
+      data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
     nextPublicPaymentTokenAddress: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicPaymentTokenAddressFarcaster: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER ||
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicPaymentTokenAddressMiniPay: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY ||
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
       "0x0000000000000000000000000000000000000000") as `0x${string}`,
     nextPublicBlockExplorerUrl:
       data.NEXT_PUBLIC_BLOCK_EXPLORER_URL ||

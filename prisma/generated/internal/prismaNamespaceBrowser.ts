@@ -170,6 +170,7 @@ export const GameScalarFieldEnum = {
   description: 'description',
   theme: 'theme',
   coverUrl: 'coverUrl',
+  launchGroupId: 'launchGroupId',
   startsAt: 'startsAt',
   endsAt: 'endsAt',
   tierPrices: 'tierPrices',

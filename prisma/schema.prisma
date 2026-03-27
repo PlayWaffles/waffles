@@ -204,6 +204,7 @@ model Game {
   description String?   @db.VarChar(1000)
   theme       GameTheme
   coverUrl    String?   @db.VarChar(255)
+  launchGroupId String? @db.VarChar(36)
 
   // -- TIMING (source of truth for game phase) --
   startsAt DateTime
@@ -238,6 +239,7 @@ model Game {
   updatedAt DateTime @updatedAt
 
   // -- INDEXES --
+  @@unique([launchGroupId, platform])
   @@index([platform, startsAt])
   @@index([platform, endsAt])
   @@index([startsAt])

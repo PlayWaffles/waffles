@@ -8,6 +8,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
 import { GameTheme, UserPlatform } from "@prisma";
+import { recalculateGameRounds } from "@/lib/game/rounds";
+import { formatGameLabel } from "@/lib/game/labels";
 
 // ==========================================
 // SCHEMA
@@ -15,10 +17,9 @@ import { GameTheme, UserPlatform } from "@prisma";
 
 const gameSchema = z.object({
   platform: z.enum(UserPlatform),
-  title: z.string().min(3, "Title must be at least 3 characters"),
-  description: z.string().optional(),
-  theme: z.enum(GameTheme),
-  coverUrl: z.string().min(1, "Cover URL is required"),
+  createOnMultiplePlatforms: z
+    .union([z.literal("true"), z.literal("false"), z.undefined()])
+    .transform((value) => value === "true"),
   // NOTE: startsAt and endsAt should be ISO 8601 strings (with timezone/UTC).
   // The client converts datetime-local values to ISO format before submission
   // to ensure consistent timezone handling between local and production servers.
@@ -34,6 +35,71 @@ const gameSchema = z.object({
 export type GameActionResult =
   | { success: true; gameId?: string }
   | { success: false; error: string };
+
+const DEFAULT_GAME_THEME = GameTheme.MOVIES;
+const DEFAULT_GAME_COVER_URL = "/images/movies-cover.png";
+const AUTO_QUESTION_COUNT = 9;
+
+async function getAutoQuestionTemplates() {
+  const templates = await prisma.questionTemplate.findMany({
+    where: { theme: DEFAULT_GAME_THEME },
+    orderBy: [
+      { usageCount: "asc" },
+      { updatedAt: "asc" },
+      { createdAt: "asc" },
+    ],
+    take: AUTO_QUESTION_COUNT,
+  });
+
+  if (templates.length < AUTO_QUESTION_COUNT) {
+    throw new Error(
+      `Need at least ${AUTO_QUESTION_COUNT} movie question templates before creating a game.`,
+    );
+  }
+
+  return templates;
+}
+
+async function assignAutoQuestionsToGame(
+  gameId: string,
+  templates: {
+    id: string;
+    content: string;
+    options: string[];
+    correctIndex: number;
+    durationSec: number;
+    mediaUrl: string | null;
+    soundUrl: string | null;
+  }[],
+) {
+  await prisma.$transaction(async (tx) => {
+    await tx.question.createMany({
+      data: templates.map((template, index) => ({
+        gameId,
+        content: template.content,
+        options: template.options,
+        correctIndex: template.correctIndex,
+        durationSec: template.durationSec,
+        mediaUrl: template.mediaUrl,
+        soundUrl: template.soundUrl,
+        roundIndex: 1,
+        orderInRound: index,
+        templateId: template.id,
+      })),
+    });
+
+    await Promise.all(
+      templates.map((template) =>
+        tx.questionTemplate.update({
+          where: { id: template.id },
+          data: { usageCount: { increment: 1 } },
+        }),
+      ),
+    );
+  });
+
+  await recalculateGameRounds(gameId);
+}
 
 // ==========================================
 // CREATE GAME
@@ -53,10 +119,8 @@ export async function createGameAction(
   // 1. VALIDATE INPUT
   const rawData = {
     platform: formData.get("platform"),
-    title: formData.get("title"),
-    description: formData.get("description"),
-    theme: formData.get("theme"),
-    coverUrl: formData.get("coverUrl"),
+    createOnMultiplePlatforms:
+      formData.get("createOnMultiplePlatforms") ?? "false",
     startsAt: formData.get("startsAt"),
     endsAt: formData.get("endsAt"),
     ticketPrice: formData.get("ticketPrice"),
@@ -73,128 +137,154 @@ export async function createGameAction(
   }
 
   const data = validation.data;
-  const onchainId = generateOnchainGameId();
-  let gameId: string | null = null;
+  const platforms = data.createOnMultiplePlatforms
+    ? [UserPlatform.FARCASTER, UserPlatform.MINIPAY]
+    : [data.platform];
+  const launchGroupId = crypto.randomUUID();
+  const selectedTemplates = await getAutoQuestionTemplates();
+  const createdGames: { id: string; platform: UserPlatform; title: string }[] = [];
+  const failures: string[] = [];
 
-  try {
-    // 2. DATABASE FIRST (easily reversible)
-    const game = await prisma.game.create({
-      data: {
-        title: data.title,
-        platform: data.platform,
-        description: data.description || null,
-        theme: data.theme,
-        coverUrl: data.coverUrl,
-        startsAt: data.startsAt,
-        endsAt: data.endsAt,
-        tierPrices: [data.ticketPrice],
-        prizePool: 0,
-        playerCount: 0,
-        roundBreakSec: data.roundBreakSec,
-        maxPlayers: data.maxPlayers,
-        onchainId,
-      },
-    });
-    gameId = game.id;
+  for (const platform of platforms) {
+    const onchainId = generateOnchainGameId();
+    let gameId: string | null = null;
 
-    // 3. PARTYKIT INIT (reversible - throws on failure)
-    const { initGameRoom } = await import("@/lib/partykit");
-    await initGameRoom(game.id, game.startsAt, game.endsAt);
+    try {
+      const game = await prisma.game.create({
+        data: {
+          title: "Waffles",
+          platform,
+          description: null,
+          theme: DEFAULT_GAME_THEME,
+          coverUrl: DEFAULT_GAME_COVER_URL,
+          startsAt: data.startsAt,
+          endsAt: data.endsAt,
+          tierPrices: [data.ticketPrice],
+          prizePool: 0,
+          playerCount: 0,
+          roundBreakSec: data.roundBreakSec,
+          maxPlayers: data.maxPlayers,
+          onchainId,
+          launchGroupId,
+        },
+      });
+      gameId = game.id;
 
-    // 4. ON-CHAIN LAST (irreversible - only when everything else succeeded)
-    const txHash = await createGameOnChain(onchainId, data.ticketPrice);
+      const title = formatGameLabel(game.gameNumber);
+      await prisma.game.update({
+        where: { id: game.id },
+        data: { title },
+      });
 
-    // 5. CALCULATE GAME NUMBER & SEND NOTIFICATION
-    // We count existing games to determine the number (e.g. #024)
-    const gamesCount = await prisma.game.count();
-    const gameNumber = gamesCount; // Since we just created one, count includes it
+      const { initGameRoom } = await import("@/lib/partykit");
+      await initGameRoom(game.id, game.startsAt, game.endsAt);
 
-    // Update game with number (best effort)
-    await prisma.game.update({
-      where: { id: game.id },
-      data: { gameNumber },
-    });
+      await assignAutoQuestionsToGame(game.id, selectedTemplates);
 
-    // Send "Game Open" notification to all users (fire-and-forget)
-    const template = (await import("@/lib/notifications/templates")).preGame
-      .gameOpen;
-    const { sendBatch } = await import("@/lib/notifications");
-    const { buildPayload } = await import("@/lib/notifications/templates");
+      const txHash = await createGameOnChain(platform, onchainId, data.ticketPrice);
 
-    const usersToNotify = await prisma.user.findMany({
-      where: {
-        hasGameAccess: true,
-        isBanned: false,
-        platform: data.platform,
-      },
-      select: { id: true },
-    });
+      const template = (await import("@/lib/notifications/templates")).preGame
+        .gameOpen;
+      const { sendBatch } = await import("@/lib/notifications");
+      const { buildPayload } = await import("@/lib/notifications/templates");
 
-    if (usersToNotify.length > 0) {
-      const payload = buildPayload(template(gameNumber), undefined, "pregame");
-      sendBatch(payload, usersToNotify.map((u) => u.id)).catch(
-        (err) => {
+      const usersToNotify = await prisma.user.findMany({
+        where: {
+          hasGameAccess: true,
+          isBanned: false,
+          platform,
+        },
+        select: { id: true },
+      });
+
+      if (usersToNotify.length > 0) {
+        const payload = buildPayload(
+          template(game.gameNumber),
+          undefined,
+          "pregame",
+        );
+        sendBatch(payload, usersToNotify.map((user) => user.id)).catch((err) => {
           console.error("[admin-games] notification_failed", {
             gameId: game.id,
             error: err instanceof Error ? err.message : String(err),
           });
-        },
-      );
-    }
+        });
+      }
 
-    console.log("[admin-games]", "game_created", {
-      gameId: game.id,
-      title: game.title,
-      theme: data.theme,
-      onchainId,
-      txHash,
-      gameNumber,
-      notifiedUsers: usersToNotify.length,
-    });
-
-    // 6. LOG AND CLEANUP
-    await logAdminAction({
-      adminId,
-      action: AdminAction.CREATE_GAME,
-      entityType: EntityType.GAME,
-      entityId: game.id,
-      details: {
-        title: game.title,
-        platform: data.platform,
-        theme: data.theme,
+      console.log("[admin-games]", "game_created", {
+        gameId: game.id,
+        title,
+        theme: DEFAULT_GAME_THEME,
         onchainId,
         txHash,
-        gameNumber,
-        ticketPrice: data.ticketPrice,
-      },
-    });
+        gameNumber: game.gameNumber,
+        platform,
+        launchGroupId,
+        notifiedUsers: usersToNotify.length,
+      });
 
-    revalidatePath("/admin/games");
-  } catch (error) {
-    // ROLLBACK: Delete DB record if we created one
-    if (gameId) {
-      await prisma.game.delete({ where: { id: gameId } }).catch((e) => {
-        console.error("[admin-games]", "rollback_failed", {
-          gameId,
-          error: e instanceof Error ? e.message : String(e),
+      await logAdminAction({
+        adminId,
+        action: AdminAction.CREATE_GAME,
+        entityType: EntityType.GAME,
+        entityId: game.id,
+        details: {
+          title,
+          platform,
+          theme: DEFAULT_GAME_THEME,
+          onchainId,
+          txHash,
+          gameNumber: game.gameNumber,
+          ticketPrice: data.ticketPrice,
+          launchGroupId,
+          autoQuestionCount: AUTO_QUESTION_COUNT,
+        },
+      });
+
+      createdGames.push({ id: game.id, platform, title });
+    } catch (error) {
+      if (gameId) {
+        await prisma.game.delete({ where: { id: gameId } }).catch((cleanupError) => {
+          console.error("[admin-games]", "rollback_failed", {
+            gameId,
+            error:
+              cleanupError instanceof Error
+                ? cleanupError.message
+                : String(cleanupError),
+          });
         });
+      }
+
+      failures.push(
+        `${platform}: ${error instanceof Error ? error.message : "Failed to create game"}`,
+      );
+
+      console.error("[admin-games]", "game_create_failed", {
+        error: error instanceof Error ? error.message : String(error),
+        gameId,
+        platform,
+        launchGroupId,
       });
     }
-    // Note: On-chain cannot be rolled back, but we do on-chain LAST so this shouldn't happen
+  }
 
-    console.error("[admin-games]", "game_create_failed", {
-      error: error instanceof Error ? error.message : String(error),
-      gameId,
-    });
+  revalidatePath("/admin/games");
 
+  if (!createdGames.length) {
     return {
       success: false,
-      error: error instanceof Error ? error.message : "Failed to create game",
+      error: failures[0] || "Failed to create game",
     };
   }
 
-  // Redirect outside try/catch (Next.js redirect throws internally)
-  redirect(`/admin/games/${gameId}/questions`);
+  if (failures.length > 0) {
+    return {
+      success: false,
+      error: `Created ${createdGames.length} game(s), but some platforms failed: ${failures.join(" | ")}`,
+    };
+  }
+
+  redirect("/admin/games");
 }
 
 // ==========================================
@@ -214,10 +304,7 @@ export async function updateGameAction(
   // 1. VALIDATE INPUT
   const rawData = {
     platform: formData.get("platform"),
-    title: formData.get("title"),
-    description: formData.get("description"),
-    theme: formData.get("theme"),
-    coverUrl: formData.get("coverUrl"),
+    createOnMultiplePlatforms: "false",
     startsAt: formData.get("startsAt"),
     endsAt: formData.get("endsAt"),
     ticketPrice: formData.get("ticketPrice"),
@@ -259,11 +346,10 @@ export async function updateGameAction(
     const game = await prisma.game.update({
       where: { id: gameId },
       data: {
-        title: data.title,
         platform: data.platform,
-        description: data.description || null,
-        theme: data.theme,
-        coverUrl: data.coverUrl,
+        description: null,
+        theme: DEFAULT_GAME_THEME,
+        coverUrl: DEFAULT_GAME_COVER_URL,
         startsAt: data.startsAt,
         endsAt: data.endsAt,
         tierPrices: [data.ticketPrice],
@@ -322,6 +408,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
     select: {
       id: true,
       onchainId: true,
+      platform: true,
       title: true,
       _count: { select: { entries: true } },
     },
@@ -362,6 +449,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
         const { getOnChainGame, closeSalesOnChain } =
           await import("@/lib/chain");
         const onChainGame = await getOnChainGame(
+          game.platform,
           game.onchainId as `0x${string}`,
         );
 
@@ -373,6 +461,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
 
         if (needsClosing) {
           const txHash = await closeSalesOnChain(
+            game.platform,
             game.onchainId as `0x${string}`,
           );
           console.log("[admin-games] onchain_sales_closed", { gameId, txHash });
