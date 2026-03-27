@@ -11,6 +11,7 @@ import {
 import Link from "next/link";
 import { getGamePhase } from "@/lib/types";
 import { buildPlatformWhere } from "@/lib/admin-utils";
+import { getDisplayName } from "@/lib/address";
 
 async function getStats(platform?: string) {
     const now = new Date();
@@ -235,7 +236,7 @@ export default async function AdminDashboard({
                                             {user.username?.[0] || "U"}
                                         </div>
                                         <div>
-                                            <p className="font-medium text-white">{user.username || "Anonymous"}</p>
+                                            <p className="font-medium text-white">{getDisplayName({ username: user.username, wallet: user.wallet })}</p>
                                             <div className="mt-1 flex items-center gap-2">
                                                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] ${user.platform === "MINIPAY"
                                                     ? "bg-[#14B985]/15 text-[#14B985]"

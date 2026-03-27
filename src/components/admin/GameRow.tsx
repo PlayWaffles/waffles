@@ -3,6 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { GameActions } from "@/components/admin/GameActions";
+import type { GamePhase } from "@/lib/types";
+
+interface GameRowProps {
+  id: string;
+  platform: string;
+  title: string;
+  theme: string;
+  startsAt: Date;
+  endsAt: Date;
+  playerCount: number;
+  prizePool: number;
+  tierPrices: unknown;
+  maxPlayers: number | null;
+  phase: GamePhase;
+  _count: { questions: number; entries: number };
+}
 
 function GameStatusBadge({ status }: { status: string }) {
   const colors = {
@@ -26,7 +42,7 @@ function GameStatusBadge({ status }: { status: string }) {
   );
 }
 
-export function GameRow({ game }: { game: any }) {
+export function GameRow({ game }: { game: GameRowProps }) {
   const [isActionsOpen, setIsActionsOpen] = useState(false);
 
   return (
@@ -66,7 +82,7 @@ export function GameRow({ game }: { game: any }) {
         {game._count.questions} questions
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm relative">
-        <GameActions game={game} onOpenChange={setIsActionsOpen} />
+        <GameActions game={{ ...game, status: game.phase }} onOpenChange={setIsActionsOpen} />
       </td>
     </tr>
   );

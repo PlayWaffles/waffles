@@ -42,6 +42,7 @@ async function getGames(searchParams: { search?: string; status?: string; platfo
 
     return prisma.game.findMany({
         where,
+        take: 100,
         orderBy: [{ startsAt: "desc" }],
         select: {
             id: true,

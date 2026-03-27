@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { UserFilters } from "@/components/admin/UserFilters";
 import { UserPlatform } from "@prisma";
+import { getDisplayName } from "@/lib/address";
 
 async function getUsers(searchParams: { page?: string; status?: string; q?: string; role?: string }) {
     const page = parseInt(searchParams.page || "1");
@@ -148,7 +149,7 @@ export default async function UsersListPage({
                                         </div>
                                         <div>
                                             <div className="font-medium text-white">
-                                                {user.username || "Anonymous"}
+                                                {getDisplayName({ username: user.username, wallet: user.wallet })}
                                             </div>
                                             <div className="text-sm text-white/50">
                                                 {user.username ? `@${user.username}` : user.wallet || "No handle"}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import useSWR from "swr";
 import { authenticatedFetch } from "@/lib/client/runtime";
 
@@ -52,12 +53,7 @@ async function fetchGames(url: string): Promise<ProfileGame[]> {
 // HOOK
 // ==========================================
 
-/**
- * Fetch user's game history with SWR caching.
- * Uses public /api/v1/users/[fid]/games endpoint.
- *
- * @param limit - Optional limit for number of games (client-side slicing)
- */
+/** Fetch user's game history with SWR caching. */
 export function useProfileGames(limit?: number) {
   const { data, error, isLoading, mutate } = useSWR<ProfileGame[]>(
     "/api/v1/users/me/games",
@@ -69,9 +65,9 @@ export function useProfileGames(limit?: number) {
     }
   );
 
-  // Filter games that have ended
-  const endedGames = (data ?? []).filter(
-    (g) => new Date(g.game.endsAt).getTime() < Date.now()
+  const endedGames = useMemo(
+    () => (data ?? []).filter((g) => new Date(g.game.endsAt).getTime() < Date.now()),
+    [data],
   );
 
   const limitedGames = limit ? endedGames.slice(0, limit) : endedGames;

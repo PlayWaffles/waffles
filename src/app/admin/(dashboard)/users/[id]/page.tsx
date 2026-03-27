@@ -3,6 +3,7 @@ import Link from "next/link";
 import { UserActions } from "@/components/admin/UserActions";
 import { notFound } from "next/navigation";
 import Image from "next/image";
+import { getDisplayName } from "@/lib/address";
 
 // ==========================================
 // DATA FETCHING
@@ -129,7 +130,7 @@ export default async function UserDetailsPage({
                         <div>
                             <div className="flex items-center gap-3 mb-1">
                                 <h1 className="text-3xl font-bold text-white font-display tracking-tight">
-                                    {user.username || "Anonymous"}
+                                    {getDisplayName({ username: user.username, wallet: user.wallet })}
                                 </h1>
                                 <span className={`px-2.5 py-0.5 rounded-lg text-xs font-bold tracking-wider uppercase border ${user.role === 'ADMIN'
                                     ? 'bg-[#FB72FF]/10 text-[#FB72FF] border-[#FB72FF]/20'

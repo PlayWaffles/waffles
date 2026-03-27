@@ -79,8 +79,6 @@ export function useTicketPurchase(
     tokenAddress,
   );
 
-  // console.log("[DEBUG] Token allowance:", allowance);
-
   const needsApproval = useMemo(() => {
     if (!allowance) return true;
     return (allowance as bigint) < priceInUnits;
@@ -90,25 +88,13 @@ export function useTicketPurchase(
   // BUILD TRANSACTION CALLS
   // ==========================================
   const calls = useMemo(() => {
-    // console.log("[DEBUG] Building calls:", {
-    //   tokenAddress,
-    //   onchainId,
-    //   needsApproval,
-    //   priceInUnits: priceInUnits?.toString(),
-    // });
-
     if (!tokenAddress || !onchainId) {
-      // console.log("[DEBUG] Cannot build calls - missing:", {
-      //   tokenAddress,
-      //   onchainId,
-      // });
       return [];
     }
 
     const callList: Array<{ to: `0x${string}`; data: `0x${string}` }> = [];
 
     if (needsApproval) {
-      // console.log("[DEBUG] Adding approval call");
       callList.push({
         to: tokenAddress,
         data: encodeFunctionData({
@@ -122,11 +108,6 @@ export function useTicketPurchase(
       });
     }
 
-    // console.log("[DEBUG] Adding buyTicket call:", {
-    //   contract: WAFFLE_CONTRACT_ADDRESS,
-    //   onchainId,
-    //   amount: priceInUnits?.toString(),
-    // });
     callList.push({
       to: WAFFLE_CONTRACT_ADDRESS,
       data: encodeFunctionData({
@@ -136,7 +117,6 @@ export function useTicketPurchase(
       }),
     });
 
-    // console.log("[DEBUG] Built calls:", callList.length, "calls");
     return callList;
   }, [onchainId, priceInUnits, needsApproval, tokenAddress]);
 
@@ -193,10 +173,6 @@ export function useTicketPurchase(
 
           // Verification failure - don't retry, show error
           if (result.code === "VERIFICATION_FAILED") {
-            // console.error(
-            //   "[useTicketPurchase] Verification failed:",
-            //   result.error,
-            // );
             notify.error(result.error || "Payment verification failed");
             setState({ step: "error", error: result.error });
             return;
@@ -204,10 +180,6 @@ export function useTicketPurchase(
 
           lastError = result.error || "Sync failed";
         } catch (err) {
-          // console.error(
-          //   `[useTicketPurchase] Sync attempt ${attempt + 1} failed:`,
-          //   err,
-          // );
           lastError = err instanceof Error ? err.message : "Sync failed";
         }
 
@@ -217,10 +189,7 @@ export function useTicketPurchase(
         }
       }
 
-      // All retries failed - save for recovery on page load
-      // console.error(
-      //   "[useTicketPurchase] All sync retries failed, saving for recovery",
-      // );
+      // All retries failed — save for recovery on next page load
       localStorage.setItem(
         `pending-purchase-${gameId}`,
         JSON.stringify({
@@ -260,36 +229,24 @@ export function useTicketPurchase(
   }, [sendError]);
 
   useEffect(() => {
-    // console.log("[DEBUG] callsStatus changed:", {
-    //   status: callsStatus?.status,
-    //   receipts: callsStatus?.receipts?.length,
-    //   callsId: callsId?.id,
-    // });
-
     if (!callsStatus) return;
 
     if (callsStatus.status === "pending" && state.step === "pending") {
-      // console.log("[DEBUG] Status: confirming");
       setState({ step: "confirming" });
     }
 
     if (callsStatus.status === "failure") {
-      // console.log("[DEBUG] Status: failure", callsStatus);
       setState({ step: "error", error: "Transaction failed on-chain" });
       notify.error("Transaction failed. Check your balance.");
     }
 
     if (callsStatus.status === "success") {
-      // console.log("[DEBUG] Status: success, receipts:", callsStatus.receipts);
       const txHash =
         callsStatus.receipts?.[callsStatus.receipts.length - 1]
           ?.transactionHash;
-      // console.log("[DEBUG] Extracted txHash:", txHash);
       setState({ step: "syncing", txHash });
       if (txHash) {
         syncWithBackend(txHash);
-      } else {
-        // console.error("[DEBUG] No txHash found in receipts!");
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -316,27 +273,16 @@ export function useTicketPurchase(
     }
 
     if (calls.length === 0) {
-      // console.log("[DEBUG] No calls built, cannot proceed");
       notify.error("Not ready. Please wait...");
       return;
     }
-
-    // console.log("[DEBUG] Starting purchase:", {
-    //   callsCount: calls.length,
-    //   address,
-    //   onchainId,
-    //   price,
-    // });
 
     resetSendCalls();
     setState({ step: "pending" });
 
     try {
-      // Switch to correct chain if needed (e.g., Base Sepolia in test mode)
-      // console.log("[DEBUG] Ensuring correct chain...");
       await ensureCorrectChain();
 
-      // console.log("[DEBUG] Calling sendCalls...");
       sendCalls({
         calls,
         capabilities: builderCodeSendCallsCapability
@@ -346,9 +292,7 @@ export function useTicketPurchase(
             }
           : { atomicBatch: { supported: true } },
       });
-      // console.log("[DEBUG] sendCalls returned");
     } catch (err) {
-      // console.error("[DEBUG] sendCalls threw error:", err);
       setState({ step: "error", error: "Transaction failed" });
       notify.error("Transaction failed");
     }

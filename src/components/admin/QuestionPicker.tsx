@@ -14,6 +14,7 @@ import {
     CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import type { Difficulty, GameTheme } from "@/types/game";
+import { THEME_LABELS, DIFFICULTY_STYLES } from "@/types/game";
 
 interface QuestionPickerProps {
     gameId: string;
@@ -21,21 +22,6 @@ interface QuestionPickerProps {
     isOpen: boolean;
     onClose: () => void;
 }
-
-const THEME_LABELS: Record<GameTheme, string> = {
-    FOOTBALL: "⚽ Football",
-    MOVIES: "🎬 Movies",
-    ANIME: "🎌 Anime",
-    POLITICS: "🏛️ Politics",
-    CRYPTO: "₿ Crypto",
-    GENERAL: "🌐 General",
-};
-
-const DIFFICULTY_STYLES: Record<Difficulty, { bg: string; text: string }> = {
-    EASY: { bg: "bg-green-500/20", text: "text-green-400" },
-    MEDIUM: { bg: "bg-yellow-500/20", text: "text-yellow-400" },
-    HARD: { bg: "bg-red-500/20", text: "text-red-400" },
-};
 
 export function QuestionPicker({
     gameId,
@@ -162,9 +148,9 @@ export function QuestionPicker({
                         className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm"
                     >
                         <option value="" className="bg-[#0a0a0b]">All Themes</option>
-                        {Object.entries(THEME_LABELS).map(([value, label]) => (
+                        {Object.entries(THEME_LABELS).map(([value, { emoji, label }]) => (
                             <option key={value} value={value} className="bg-[#0a0a0b]">
-                                {label}
+                                {emoji} {label}
                             </option>
                         ))}
                     </select>
