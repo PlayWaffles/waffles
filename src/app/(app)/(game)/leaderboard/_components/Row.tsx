@@ -1,7 +1,7 @@
 "use client";
 
 import { LeaderboardEntry } from "@/lib/types";
-import { UsdcIcon } from "@/components/icons";
+import { UsdcIcon, FlashIcon } from "@/components/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -9,10 +9,12 @@ import { motion } from "framer-motion";
 interface RowProps {
   entry: LeaderboardEntry;
   isCurrentUser?: boolean;
+  showScore?: boolean;
 }
 
-export function Row({ entry, isCurrentUser = false }: RowProps) {
-  const formattedPoints = entry.prize.toLocaleString(undefined, {
+export function Row({ entry, isCurrentUser = false, showScore = false }: RowProps) {
+  const hasScore = showScore && entry.score != null;
+  const formattedPrize = entry.prize.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -61,15 +63,20 @@ export function Row({ entry, isCurrentUser = false }: RowProps) {
           <div className="text-sm leading-tight truncate">{entry.username}</div>
         </div>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <motion.div
-          whileHover={{ rotate: 360 }}
-          transition={{ duration: 0.5 }}
-        >
+      <div className="flex items-center gap-3 shrink-0">
+        {hasScore && (
+          <div className="flex items-center gap-1">
+            <FlashIcon className="h-4 w-4" />
+            <span className="font-display font-medium text-sm tracking-tight text-white/70">
+              {entry.score!.toLocaleString()}
+            </span>
+          </div>
+        )}
+        <div className="flex items-center gap-1">
           <UsdcIcon className="h-4 w-4" />
-        </motion.div>
-        <div className="font-display font-medium text-base tracking-tight">
-          {formattedPoints}
+          <span className="font-display font-medium text-base tracking-tight">
+            {formattedPrize}
+          </span>
         </div>
       </div>
     </motion.div>

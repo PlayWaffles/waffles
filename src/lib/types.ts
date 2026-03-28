@@ -10,6 +10,7 @@ export interface LeaderboardEntry {
   rank: number;
   username: string | null;
   prize: number; // USDC prize amount
+  score?: number; // Points scored in the game
   pfpUrl: string | null;
 }
 

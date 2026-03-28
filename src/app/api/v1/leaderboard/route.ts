@@ -22,6 +22,7 @@ interface LeaderboardEntry {
   rank: number;
   username: string | null;
   prize: number;
+  score?: number;
   pfpUrl: string | null;
 }
 
@@ -229,6 +230,7 @@ async function handleGame(
     rank: page * PAGE_SIZE + i + 1,
     username: p.user.username,
     prize: p.prize ?? 0,
+    score: p.score,
     pfpUrl: p.user.pfpUrl,
   }));
 

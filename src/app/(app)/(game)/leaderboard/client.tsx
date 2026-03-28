@@ -204,7 +204,7 @@ export default function LeaderboardClient() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <Top3 entries={top3} currentUserId={currentUserId} />
+              <Top3 entries={top3} currentUserId={currentUserId} showScore={activeTab === "current"} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -216,6 +216,7 @@ export default function LeaderboardClient() {
               key={`${activeTab}-${entry.rank}-${entry.id}`}
               entry={entry}
               isCurrentUser={currentUserId != null && entry.userId === currentUserId}
+              showScore={activeTab === "current"}
             />
           ))}
         </div>

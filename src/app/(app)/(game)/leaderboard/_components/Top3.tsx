@@ -1,6 +1,6 @@
 "use client";
 
-import { TrophyIcon, UsdcIcon } from "@/components/icons";
+import { TrophyIcon, UsdcIcon, FlashIcon } from "@/components/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { LeaderboardEntry } from "@/lib/types";
@@ -9,6 +9,7 @@ import { motion } from "framer-motion";
 interface Top3Props {
   entries: LeaderboardEntry[];
   currentUserId?: string | null;
+  showScore?: boolean;
 }
 
 const cardStyles = [
@@ -29,7 +30,7 @@ const cardStyles = [
   },
 ];
 
-export function Top3({ entries, currentUserId }: Top3Props) {
+export function Top3({ entries, currentUserId, showScore = false }: Top3Props) {
   const topEntries = entries?.slice(0, 3) ?? [];
 
   if (topEntries.length === 0) return null;
@@ -53,7 +54,8 @@ export function Top3({ entries, currentUserId }: Top3Props) {
           currentUserId != null && entry.userId === currentUserId;
         const styles = cardStyles[i] ?? cardStyles[cardStyles.length - 1];
 
-        const formattedPoints = entry.prize.toLocaleString(undefined, {
+        const hasScore = showScore && entry.score != null;
+        const formattedPrize = entry.prize.toLocaleString(undefined, {
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
         });
@@ -143,11 +145,25 @@ export function Top3({ entries, currentUserId }: Top3Props) {
               </span>
             </div>
 
-            <div className="mt-auto flex items-center gap-[calc(var(--pad)*0.5)] relative z-10">
-              <motion.div
-                whileHover={{ rotate: 360 }}
-                transition={{ duration: 0.5 }}
-              >
+            <div className="mt-auto flex flex-col gap-[calc(var(--pad)*0.3)] relative z-10">
+              {hasScore && (
+                <div className="flex items-center gap-[calc(var(--pad)*0.4)]">
+                  <FlashIcon
+                    className="shrink-0"
+                    style={{
+                      width: "clamp(12px, 2.4vw, 16px)",
+                      height: "clamp(12px, 2.4vw, 16px)",
+                    }}
+                  />
+                  <span
+                    className="font-display font-medium tracking-tight leading-[1.1] text-white/70"
+                    style={{ fontSize: "clamp(0.7rem, 2.2vw, 0.85rem)" }}
+                  >
+                    {entry.score!.toLocaleString()}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-[calc(var(--pad)*0.4)]">
                 <UsdcIcon
                   className="shrink-0"
                   style={{
@@ -155,13 +171,13 @@ export function Top3({ entries, currentUserId }: Top3Props) {
                     height: "clamp(14px, 2.8vw, 20px)",
                   }}
                 />
-              </motion.div>
-              <span
-                className="font-display font-medium tracking-tight leading-[1.1]"
-                style={{ fontSize: "clamp(0.85rem, 2.6vw, 1rem)" }}
-              >
-                {formattedPoints}
-              </span>
+                <span
+                  className="font-display font-medium tracking-tight leading-[1.1]"
+                  style={{ fontSize: "clamp(0.85rem, 2.6vw, 1rem)" }}
+                >
+                  {formattedPrize}
+                </span>
+              </div>
             </div>
           </motion.article>
         );
