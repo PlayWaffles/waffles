@@ -81,6 +81,7 @@ async function claimFreeTicketForUser(
       platform: true,
       startsAt: true,
       endsAt: true,
+      prizePool: true,
       playerCount: true,
       maxPlayers: true,
       gameNumber: true,
@@ -146,7 +147,7 @@ async function claimFreeTicketForUser(
       notifyTicketPurchased(gameId, {
         username: getDisplayName(user),
         pfpUrl: user.pfpUrl || null,
-        prizePool: 0,
+        prizePool: game.prizePool,
         playerCount: result.playerCount,
       }).catch((err) =>
         console.error("[game-actions]", "free_ticket_partykit_error", err),
