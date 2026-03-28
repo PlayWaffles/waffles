@@ -1,21 +1,26 @@
 /**
  * Game Layout
  *
- * Pure structural layout - no data fetching, no providers.
- * - GameHeader renders based on pathname only
- * - Each page handles its own RealtimeProvider and data fetching
+ * Shared game layout.
  */
 
 import { GameHeader } from "./game/_components/GameHeader";
+import { getCurrentOrNextGame } from "@/lib/game";
+import { formatGameLabel } from "@/lib/game/labels";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
-export default function GameLayout({
+export default async function GameLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const platform = await resolveRuntimePlatform();
+  const { game } = await getCurrentOrNextGame(platform);
+  const headerTitle = game ? formatGameLabel(game.gameNumber) : null;
+
   return (
     <>
-      <GameHeader />
+      <GameHeader title={headerTitle} />
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {children}
       </div>

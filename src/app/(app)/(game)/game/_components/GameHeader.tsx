@@ -11,7 +11,7 @@ import { motion } from "framer-motion";
 import { springs } from "@/lib/animations";
 import { useSounds } from "@/components/providers/SoundProvider";
 
-export function GameHeader() {
+export function GameHeader({ title }: { title?: string | null }) {
   const pathname = usePathname();
   const params = useParams();
   const { isMuted, toggleMute, playBgMusic, stopBgMusic, isBgPlaying } = useSounds();
@@ -119,7 +119,7 @@ export function GameHeader() {
                 />
               </motion.div>
               <span className="font-body text-[22px] leading-[92%] tracking-[-0.03em] text-white">
-                WAFFLES
+                {title || "WAFFLES"}
               </span>
             </Link>
           </motion.div>
