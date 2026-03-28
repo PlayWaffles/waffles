@@ -1,7 +1,7 @@
 "use client";
 import { LeaveGameIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import LeaveGameDrawer from "./LeaveGameDrawer";
 import { usePathname, useParams } from "next/navigation";
 import Image from "next/image";
@@ -9,10 +9,12 @@ import Link from "next/link";
 import { WalletBalance } from "./WalletBalance";
 import { motion } from "framer-motion";
 import { springs } from "@/lib/animations";
+import { useSounds } from "@/components/providers/SoundProvider";
 
 export function GameHeader() {
   const pathname = usePathname();
   const params = useParams();
+  const { isMuted, toggleMute, playBgMusic, stopBgMusic, isBgPlaying } = useSounds();
 
   // Extract gameId from route params (cleaner than regex)
   const gameId = params.gameId ? (params.gameId as string) : null;
@@ -21,6 +23,18 @@ export function GameHeader() {
 
   // Detect if we are on the /live route
   const isLiveRoute = pathname?.includes("/live");
+
+  // Detect if we're in game-related sections (game, leaderboard, profile)
+  const isGameSection = pathname?.startsWith("/game") ||
+    pathname?.startsWith("/leaderboard") ||
+    pathname?.startsWith("/profile");
+
+  // Start BG music when in game sections, stop when leaving
+  useEffect(() => {
+    if (isGameSection && !isMuted) {
+      playBgMusic();
+    }
+  }, [isGameSection, isMuted, playBgMusic]);
 
   return (
     <>
@@ -111,39 +125,42 @@ export function GameHeader() {
           </motion.div>
         )}
 
-        {isLiveRoute ? (
-          /* Leave Game button with interactions */
-          <motion.button
-            onClick={() => setIsLeaveGameDrawerOpen(true)}
-            className="flex items-center bg-white/10 rounded-full px-[12px] py-[6px] w-[130.9916px] h-[28px] transition-colors font-body"
-            whileHover={{
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-              scale: 1.05,
-              x: 3
-            }}
-            whileTap={{ scale: 0.95 }}
-            transition={springs.snappy}
-          >
-            {/* Icon with wiggle on hover */}
-            <motion.div
-              whileHover={{ rotate: [0, -10, 10, -5, 5, 0] }}
-              transition={{ duration: 0.4 }}
+        <div className="flex items-center gap-2">
+          <MuteButton isMuted={isMuted} onToggle={toggleMute} />
+          {isLiveRoute ? (
+            /* Leave Game button with interactions */
+            <motion.button
+              onClick={() => setIsLeaveGameDrawerOpen(true)}
+              className="flex items-center bg-white/10 rounded-full px-[12px] py-[6px] w-[130.9916px] h-[28px] transition-colors font-body"
+              whileHover={{
+                backgroundColor: "rgba(255, 255, 255, 0.2)",
+                scale: 1.05,
+                x: 3
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={springs.snappy}
             >
-              <LeaveGameIcon className="w-[15px] h-[15px] mr-2" />
+              {/* Icon with wiggle on hover */}
+              <motion.div
+                whileHover={{ rotate: [0, -10, 10, -5, 5, 0] }}
+                transition={{ duration: 0.4 }}
+              >
+                <LeaveGameIcon className="w-[15px] h-[15px] mr-2" />
+              </motion.div>
+              <span className="text-[16px] leading-[100%] text-center text-white">
+                leave game
+              </span>
+            </motion.button>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={springs.gentle}
+            >
+              <WalletBalance />
             </motion.div>
-            <span className="text-[16px] leading-[100%] text-center text-white">
-              leave game
-            </span>
-          </motion.button>
-        ) : (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={springs.gentle}
-          >
-            <WalletBalance />
-          </motion.div>
-        )}
+          )}
+        </div>
       </header>
 
       <LeaveGameDrawer
@@ -152,5 +169,32 @@ export function GameHeader() {
         gameId={gameId!}
       />
     </>
+  );
+}
+
+function MuteButton({ isMuted, onToggle }: { isMuted: boolean; onToggle: () => void }) {
+  return (
+    <motion.button
+      onClick={onToggle}
+      className="flex items-center justify-center w-[28px] h-[28px] rounded-full bg-white/10"
+      whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.2)", scale: 1.1 }}
+      whileTap={{ scale: 0.9 }}
+      transition={springs.snappy}
+      aria-label={isMuted ? "Unmute" : "Mute"}
+    >
+      {isMuted ? (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 5L6 9H2v6h4l5 4V5z" />
+          <line x1="23" y1="9" x2="17" y2="15" />
+          <line x1="17" y1="9" x2="23" y2="15" />
+        </svg>
+      ) : (
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M11 5L6 9H2v6h4l5 4V5z" />
+          <path d="M19.07 4.93a10 10 0 010 14.14" />
+          <path d="M15.54 8.46a5 5 0 010 7.07" />
+        </svg>
+      )}
+    </motion.button>
   );
 }

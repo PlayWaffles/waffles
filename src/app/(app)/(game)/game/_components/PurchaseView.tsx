@@ -299,7 +299,7 @@ export function PurchaseView({
           className="text-red-400 text-sm text-center"
           style={{ animation: "shake 0.5s ease-in-out" }}
         >
-          Transaction failed. Please try again.
+          Something went wrong. Please try again.
         </p>
       )}
 

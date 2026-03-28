@@ -62,45 +62,43 @@ export type FreeTicketResult =
   | { success: true; entryId: string }
   | { success: false; error: string; code?: string };
 
-/**
- * Claims a free ticket for a game. No on-chain transaction.
- * Free tickets grant game access but are not eligible for prizes.
- */
-export async function claimFreeTicket(
+type ClaimFreeTicketUser = {
+  id: string;
+  platform: string;
+  username: string | null;
+  pfpUrl: string | null;
+};
+
+async function claimFreeTicketForUser(
+  user: ClaimFreeTicketUser,
   gameId: string,
 ): Promise<FreeTicketResult> {
-  if (!gameId) {
-    return { success: false, error: "Missing game ID", code: "INVALID_INPUT" };
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: {
+      id: true,
+      platform: true,
+      startsAt: true,
+      endsAt: true,
+      playerCount: true,
+      maxPlayers: true,
+      gameNumber: true,
+    },
+  });
+
+  if (!game) {
+    return { success: false, error: "Game not found", code: "NOT_FOUND" };
+  }
+
+  if (game.platform !== user.platform) {
+    return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
+  }
+
+  if (new Date() >= game.endsAt) {
+    return { success: false, error: "Game has ended", code: "GAME_ENDED" };
   }
 
   try {
-    const { user } = await requireCurrentUser();
-
-    const game = await prisma.game.findUnique({
-      where: { id: gameId },
-      select: {
-        id: true,
-        platform: true,
-        startsAt: true,
-        endsAt: true,
-        playerCount: true,
-        maxPlayers: true,
-        gameNumber: true,
-      },
-    });
-
-    if (!game) {
-      return { success: false, error: "Game not found", code: "NOT_FOUND" };
-    }
-
-    if (game.platform !== user.platform) {
-      return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
-    }
-
-    if (new Date() >= game.endsAt) {
-      return { success: false, error: "Game has ended", code: "GAME_ENDED" };
-    }
-
     const result = await prisma.$transaction(async (tx) => {
       const existing = await tx.gameEntry.findUnique({
         where: { gameId_userId: { gameId, userId: user.id } },
@@ -159,8 +157,60 @@ export async function claimFreeTicket(
     if (error instanceof Error && error.message === "GAME_FULL") {
       return { success: false, error: "Game is full", code: "GAME_FULL" };
     }
+    throw error;
+  }
+}
+
+/**
+ * Claims a free ticket for a game. No on-chain transaction.
+ * Free tickets grant game access but are not eligible for prizes.
+ */
+export async function claimFreeTicket(
+  gameId: string,
+): Promise<FreeTicketResult> {
+  if (!gameId) {
+    return { success: false, error: "Missing game ID", code: "INVALID_INPUT" };
+  }
+
+  try {
+    const { user } = await requireCurrentUser();
+    return claimFreeTicketForUser(user, gameId);
+  } catch (error) {
+    if (error instanceof Error && error.message === "GAME_FULL") {
+      return { success: false, error: "Game is full", code: "GAME_FULL" };
+    }
     console.error("[game-actions]", "free_ticket_error", {
       gameId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return { success: false, error: "Failed to claim ticket", code: "INTERNAL_ERROR" };
+  }
+}
+
+export async function claimFreeTicketForAuthenticatedUser(
+  userId: string,
+  gameId: string,
+): Promise<FreeTicketResult> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      platform: true,
+      username: true,
+      pfpUrl: true,
+    },
+  });
+
+  if (!user) {
+    return { success: false, error: "User not found", code: "NOT_FOUND" };
+  }
+
+  try {
+    return await claimFreeTicketForUser(user, gameId);
+  } catch (error) {
+    console.error("[game-actions]", "free_ticket_error", {
+      gameId,
+      userId,
       error: error instanceof Error ? error.message : String(error),
     });
     return { success: false, error: "Failed to claim ticket", code: "INTERNAL_ERROR" };

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation, AnimatePresence } from "framer-motion";
 
 import { WaffleButton } from "@/components/buttons/WaffleButton";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
@@ -15,18 +15,11 @@ import { formatGameLabel } from "@/lib/game/labels";
 
 import { BuyTicketModal } from "./BuyTicketModal";
 
-// ==========================================
-// TYPES
-// ==========================================
+const pad = (n: number) => String(n).padStart(2, "0");
 
 interface NextGameCardProps {
-  /** Game data from server component */
   game: GameWithQuestionCount;
 }
-
-// ==========================================
-// COMPONENT
-// ==========================================
 
 export function NextGameCard({ game }: NextGameCardProps) {
   const router = useRouter();
@@ -52,6 +45,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const prizePool = storePrizePool ?? game.prizePool ?? 0;
   const playerCount = storePlayerCount ?? game.playerCount ?? 0;
   const spotsTotal = game.maxPlayers ?? 500;
+  const fillPercent = Math.min(100, (playerCount / spotsTotal) * 100);
 
   const now = Date.now();
   const hasEnded = now >= game.endsAt.getTime();
@@ -82,7 +76,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
       prizeControls.start({
         scale: [1, 1.2, 1],
         color: ["#FFFFFF", "#F5BB1B", "#FFFFFF"],
-        transition: { duration: 0.4, ease: "easeOut" as const },
+        transition: { duration: 0.4, ease: "easeOut" },
       });
       prevPrizePool.current = prizePool;
     }
@@ -92,17 +86,15 @@ export function NextGameCard({ game }: NextGameCardProps) {
     if (prevSpotsTaken.current !== playerCount) {
       spotsControls.start({
         scale: [1, 1.15, 1],
-        transition: { duration: 0.3, ease: "easeOut" as const },
+        transition: { duration: 0.3, ease: "easeOut" },
       });
       prevSpotsTaken.current = playerCount;
     }
   }, [playerCount, spotsControls]);
 
-  // Format countdown
-  const pad = (n: number) => String(n).padStart(2, "0");
-  const countdownDisplay = `${pad(Math.floor(countdown / 3600))}H ${pad(
-    Math.floor((countdown % 3600) / 60)
-  )}M ${pad(countdown % 60)}S`;
+  const hours = pad(Math.floor(countdown / 3600));
+  const minutes = pad(Math.floor((countdown % 3600) / 60));
+  const seconds = pad(countdown % 60);
 
   // Button config - show loading while checking entry to prevent flash
   const buttonConfig = isLoadingEntry
@@ -140,31 +132,41 @@ export function NextGameCard({ game }: NextGameCardProps) {
     }
   };
 
+  const themeLabel = game.theme
+    ? game.theme.charAt(0) + game.theme.slice(1).toLowerCase()
+    : null;
+
+  const statusColor = isLive ? "#FC1919" : "#F5BB1B";
+  const visibleEntrants = entrants.slice(0, 4);
+
   return (
     <>
       <motion.div
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={springs.gentle}
-        whileHover={{ scale: 1.01 }}
         className="relative w-full max-w-90.25 mx-auto rounded-2xl overflow-hidden flex flex-col"
         style={{
-          background: "rgba(21, 21, 25, 0.5)",
-          boxShadow: "0px 5px 5.2px 8px rgba(12, 12, 14, 0.5)",
+          background:
+            "linear-gradient(180deg, rgba(30, 30, 34, 0.7) 0%, rgba(18, 18, 22, 0.85) 100%)",
+          border: "1px solid rgba(255, 255, 255, 0.06)",
+          boxShadow:
+            "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04)",
         }}
       >
-        {/* Header */}
+        {/* Header — Game number + live badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1, ...springs.bouncy }}
-          className="relative flex flex-col justify-center items-center shrink-0 z-10 w-full h-[52px]"
+          className="relative flex items-center justify-between shrink-0 z-10 w-full px-4 h-[48px]"
           style={{
-            background: "rgba(27, 27, 29, 0.8)",
-            backdropFilter: "blur(12px)",
+            background:
+              "linear-gradient(90deg, rgba(245, 187, 27, 0.06) 0%, rgba(27, 27, 29, 0.8) 50%, rgba(245, 187, 27, 0.06) 100%)",
+            borderBottom: "1px solid rgba(255, 255, 255, 0.04)",
           }}
         >
-          <div className="flex flex-row justify-center items-center gap-3 h-[30px]">
+          <div className="flex items-center gap-2.5">
             <motion.div
               animate={{ rotate: [0, -5, 5, -3, 3, 0] }}
               transition={{ delay: 0.5, duration: 0.5 }}
@@ -172,13 +174,92 @@ export function NextGameCard({ game }: NextGameCardProps) {
               <Image
                 src="/images/icons/game-controller.png"
                 alt="controller"
-                width={30}
-                height={30}
+                width={26}
+                height={26}
               />
             </motion.div>
-            <span className="font-body text-white uppercase text-[26px] leading-[92%] tracking-[-0.03em]">
+            <span className="font-body text-white uppercase text-xl leading-none tracking-[0.02em]">
               {gameLabel}
             </span>
+          </div>
+
+          {/* Status pill */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.3, ...springs.bouncy }}
+            className="flex items-center gap-1.5 rounded-full px-2.5 py-1"
+            style={{
+              background: `color-mix(in srgb, ${statusColor} 12%, transparent)`,
+              border: `1px solid color-mix(in srgb, ${statusColor} 18%, transparent)`,
+            }}
+          >
+            <span className="relative flex h-1.5 w-1.5">
+              <span
+                className="absolute inline-flex h-full w-full animate-ping rounded-full opacity-60"
+                style={{ backgroundColor: statusColor }}
+              />
+              <span
+                className="relative inline-flex h-1.5 w-1.5 rounded-full"
+                style={{ backgroundColor: statusColor }}
+              />
+            </span>
+            <span
+              className="font-display text-[10px] uppercase tracking-[0.15em]"
+              style={{ color: statusColor }}
+            >
+              {hasEnded ? "Ended" : isLive ? "Live" : "Upcoming"}
+            </span>
+          </motion.div>
+        </motion.div>
+
+        {/* Theme banner */}
+        {themeLabel && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.15 }}
+            className="flex items-center justify-center gap-2 py-2 px-4"
+            style={{
+              background:
+                "linear-gradient(90deg, transparent 0%, rgba(255, 201, 49, 0.04) 50%, transparent 100%)",
+            }}
+          >
+            {game.coverUrl && (
+              <Image
+                src={game.coverUrl}
+                alt=""
+                width={18}
+                height={18}
+                className="rounded-sm opacity-70"
+              />
+            )}
+            <span className="font-display text-xs text-white/40 uppercase tracking-[0.12em]">
+              {themeLabel}
+            </span>
+          </motion.div>
+        )}
+
+        {/* Countdown section */}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, ...springs.gentle }}
+          className="flex flex-col items-center z-10 shrink-0 w-full px-4 pt-3 pb-2"
+        >
+          <span className="font-display text-[10px] uppercase tracking-[0.18em] text-white/35 mb-2">
+            {hasEnded
+              ? "Game has ended"
+              : isLive
+                ? "Ends in"
+                : "Starts in"}
+          </span>
+          <div className="flex items-center gap-2">
+            <CountdownUnit value={hours} label="HRS" />
+            <span className="font-body text-white/20 text-lg mt-[-12px]">:</span>
+            <CountdownUnit value={minutes} label="MIN" />
+            <span className="font-body text-white/20 text-lg mt-[-12px]">:</span>
+            <CountdownUnit value={seconds} label="SEC" />
           </div>
         </motion.div>
 
@@ -186,19 +267,21 @@ export function NextGameCard({ game }: NextGameCardProps) {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="relative flex flex-row items-start z-10 shrink-0 px-2.5 pt-3 gap-3"
+          transition={{ delay: 0.25 }}
+          className="relative flex flex-row items-stretch z-10 shrink-0 mx-4 mb-3 gap-2.5"
         >
           <StatBlock
             icon="/images/illustrations/spots.svg"
-            iconSize={{ w: 55.12, h: 40 }}
-            label="Spots"
-            value={`${playerCount}/${spotsTotal}`}
+            iconSize={{ w: 40, h: 30 }}
+            label="Players"
+            value={`${playerCount}`}
+            subValue={`/ ${spotsTotal} spots`}
             animateControls={spotsControls}
+            fillPercent={fillPercent}
           />
           <StatBlock
             icon="/images/illustrations/money-stack.svg"
-            iconSize={{ w: 38.32, h: 40 }}
+            iconSize={{ w: 30, h: 30 }}
             label="Prize pool"
             value={`$${prizePool.toLocaleString()}`}
             animateControls={prizeControls}
@@ -209,8 +292,8 @@ export function NextGameCard({ game }: NextGameCardProps) {
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4, ...springs.bouncy }}
-          className="relative flex justify-center items-center px-4 py-2 z-10 shrink-0"
+          transition={{ delay: 0.35, ...springs.bouncy }}
+          className="relative flex justify-center items-center px-4 pb-1 z-10 shrink-0"
         >
           <WaffleButton
             disabled={buttonConfig.disabled}
@@ -220,97 +303,57 @@ export function NextGameCard({ game }: NextGameCardProps) {
           </WaffleButton>
         </motion.div>
 
-        {/* Countdown */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5, ...springs.gentle }}
-          className="flex flex-col justify-center items-center z-10 shrink-0 w-full pt-2 gap-1.5"
-        >
-          <motion.div
-            animate={{
-              boxShadow: [
-                "0 0 0px rgba(245, 187, 27, 0)",
-                "0 0 15px rgba(245, 187, 27, 0.4)",
-                "0 0 0px rgba(245, 187, 27, 0)",
-              ],
-            }}
-            transition={{
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut" as const,
-            }}
-            className="flex flex-row justify-center items-center px-5 py-2.5 min-w-[158px] h-[44px] border-2 border-[#F5BB1B] rounded-full"
-          >
-            <motion.span
-              key={countdown}
-              initial={{ scale: 1.1, opacity: 0.7 }}
-              animate={{ scale: 1, opacity: 1 }}
-              className="font-body text-center text-[#F5BB1B] text-lg"
-            >
-              {countdownDisplay}
-            </motion.span>
-          </motion.div>
-          <span className="font-display text-center text-white/50 text-xs">
-            {hasEnded
-              ? "Game has ended"
-              : isLive
-                ? "Until game ends"
-                : "Until game starts"}
-          </span>
-        </motion.div>
-
-        {/* Player Avatars Row - matches Figma design */}
+        {/* Player Avatars Row */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="flex flex-row justify-center items-center w-full px-4 pb-4 mt-4 gap-1.5"
-          style={{ minHeight: "25px" }}
+          transition={{ delay: 0.5 }}
+          className="flex flex-row justify-center items-center w-full px-4 pb-4 pt-2.5 gap-2 min-h-7"
         >
           {/* Avatar Stack */}
-          {entrants.length > 0 && (
-            <div className="flex flex-row items-center">
-              {entrants.slice(0, 4).map((player, index) => (
-                <motion.div
-                  key={player.username}
-                  initial={{ opacity: 0, scale: 0, x: -10 }}
-                  animate={{ opacity: 1, scale: 1, x: 0 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 400,
-                    damping: 20,
-                    delay: 0.7 + index * 0.08,
-                  }}
-                  className="box-border w-[25px] h-[25px] rounded-full border-2 border-white overflow-hidden bg-[#F0F3F4] shrink-0"
-                  style={{
-                    marginLeft: index > 0 ? "-10px" : "0",
-                    zIndex: 4 - index,
-                  }}
-                >
-                  {player.pfpUrl ? (
-                    <Image
-                      src={player.pfpUrl}
-                      alt=""
-                      width={25}
-                      height={25}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-linear-to-br from-[#F5BB1B] to-[#FF6B35]" />
-                  )}
-                </motion.div>
-              ))}
-            </div>
-          )}
+          <AnimatePresence>
+            {visibleEntrants.length > 0 && (
+              <div className="flex flex-row items-center">
+                {visibleEntrants.map((player, index) => (
+                  <motion.div
+                    key={player.username}
+                    initial={{ opacity: 0, scale: 0, x: -10 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 20,
+                      delay: 0.5 + index * 0.08,
+                    }}
+                    className="box-border w-[26px] h-[26px] rounded-full border-[1.5px] border-white/80 overflow-hidden bg-[#2A2A2E] shrink-0"
+                    style={{
+                      marginLeft: index > 0 ? "-8px" : "0",
+                      zIndex: 4 - index,
+                    }}
+                  >
+                    {player.pfpUrl ? (
+                      <Image
+                        src={player.pfpUrl}
+                        alt=""
+                        width={26}
+                        height={26}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-linear-to-br from-[#F5BB1B] to-[#FF6B35]" />
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </AnimatePresence>
 
           {/* Text */}
           <motion.span
             initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.9 }}
-            className="font-display font-medium text-sm text-center tracking-[-0.03em] text-[#99A0AE]"
-            style={{ lineHeight: "130%" }}
+            transition={{ delay: 0.7 }}
+            className="font-display text-[13px] text-center text-white/35"
           >
             {playerCount === 0
               ? "Be the first to join!"
@@ -318,11 +361,13 @@ export function NextGameCard({ game }: NextGameCardProps) {
                 ? "1 player has joined"
                 : `and ${Math.max(
                   0,
-                  playerCount - entrants.slice(0, 4).length
-                )} others have joined the game`}
+                  playerCount - visibleEntrants.length
+                )} others have joined`}
           </motion.span>
         </motion.div>
       </motion.div>
+
+
 
       <BuyTicketModal
         isOpen={isModalOpen}
@@ -343,40 +388,101 @@ export function NextGameCard({ game }: NextGameCardProps) {
   );
 }
 
-// ==========================================
-// STAT BLOCK
-// ==========================================
+function CountdownUnit({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center gap-0.5">
+      <motion.div
+        className="flex items-center justify-center w-[52px] h-[44px] rounded-lg font-body text-[24px] text-[#F5BB1B] tabular-nums"
+        style={{
+          background:
+            "linear-gradient(180deg, rgba(245, 187, 27, 0.1) 0%, rgba(245, 187, 27, 0.04) 100%)",
+          border: "1px solid rgba(245, 187, 27, 0.15)",
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={value}
+            initial={{ y: -8, opacity: 0, filter: "blur(2px)" }}
+            animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+            exit={{ y: 8, opacity: 0, filter: "blur(2px)" }}
+            transition={{ duration: 0.25 }}
+          >
+            {value}
+          </motion.span>
+        </AnimatePresence>
+      </motion.div>
+      <span className="font-display text-[9px] uppercase tracking-[0.15em] text-white/25">
+        {label}
+      </span>
+    </div>
+  );
+}
 
 function StatBlock({
   icon,
   iconSize,
   label,
   value,
+  subValue,
   animateControls,
+  fillPercent,
 }: {
   icon: string;
   iconSize: { w: number; h: number };
   label: string;
   value: string;
+  subValue?: string;
   animateControls?: ReturnType<typeof useAnimation>;
+  fillPercent?: number;
 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.05, y: -3 }}
-      className="flex flex-col justify-center items-center flex-1 h-[85px]"
+      whileHover={{ scale: 1.03, y: -2 }}
+      transition={springs.gentle}
+      className="relative flex flex-col items-center justify-center flex-1 py-3 px-3 rounded-xl overflow-hidden"
+      style={{
+        background:
+          "linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%)",
+        border: "1px solid rgba(255, 255, 255, 0.06)",
+      }}
     >
-      <Image src={icon} alt={label} width={iconSize.w} height={iconSize.h} />
-      <span className="font-display text-center text-[#99A0AE] text-base">
+      {/* Fill bar for spots */}
+      {fillPercent !== undefined && (
+        <motion.div
+          className="absolute bottom-0 left-0 right-0"
+          initial={{ height: 0 }}
+          animate={{ height: `${fillPercent}%` }}
+          transition={{ delay: 0.4, duration: 0.8, ease: "easeOut" }}
+          style={{
+            background:
+              "linear-gradient(180deg, rgba(245, 187, 27, 0.08) 0%, rgba(245, 187, 27, 0.02) 100%)",
+          }}
+        />
+      )}
+
+      <Image
+        src={icon}
+        alt={label}
+        width={iconSize.w}
+        height={iconSize.h}
+        className="relative z-10"
+      />
+      <span className="relative z-10 font-display text-center text-white/40 text-[11px] uppercase tracking-[0.08em] mt-1">
         {label}
       </span>
-      <motion.span
-        animate={animateControls}
-        className="font-body text-white text-2xl"
-      >
-        {value}
-      </motion.span>
+      <div className="relative z-10 flex items-baseline gap-1">
+        <motion.span
+          animate={animateControls}
+          className="font-body text-white text-xl leading-tight"
+        >
+          {value}
+        </motion.span>
+        {subValue && (
+          <span className="font-display text-white/25 text-xs">{subValue}</span>
+        )}
+      </div>
     </motion.div>
   );
 }

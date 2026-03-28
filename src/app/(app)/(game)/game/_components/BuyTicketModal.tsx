@@ -12,12 +12,11 @@ import { PurchaseView, type PurchaseStep, type TicketTier } from "./PurchaseView
 import { useUser } from "@/hooks/useUser";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { formatAddress } from "@/lib/address";
-import { claimFreeTicket } from "@/actions/game";
 import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
 import type { TicketPricingSnapshot } from "@/lib/tickets";
 import type { ChainPlatform } from "@/lib/chain/platform";
-import { getAppRuntime, type AppRuntime } from "@/lib/client/runtime";
+import { authenticatedFetch, getAppRuntime, type AppRuntime } from "@/lib/client/runtime";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
@@ -162,7 +161,13 @@ export function BuyTicketModal({
     setFreeError(false);
     setFreeStep("syncing");
     try {
-      const result = await claimFreeTicket(gameId);
+      const response = await authenticatedFetch(`/api/v1/games/${gameId}/free-ticket`, {
+        method: "POST",
+      });
+      const result = (await response.json()) as
+        | { success: true; entryId: string }
+        | { success: false; error: string; code?: string };
+
       if (result.success) {
         setFreeStep("idle");
         playSound("purchase");

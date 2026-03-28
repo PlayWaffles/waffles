@@ -19,35 +19,46 @@ interface Slide {
 
 const slides: Slide[] = [
   {
-    icon: "/images/illustrations/waffle-ticket.png",
-    title: "Buy a Waffle",
+    icon: "/images/illustrations/movie-clapper.png",
+    title: "Guess the Scene",
     description: (
       <>
-        Buy your ticket, play the game, and share in
+        Watch movie clips and guess the film.
         <br />
-        the prize pool with other winners
+        The faster you answer, the more points you score.
       </>
     ),
   },
   {
-    icon: "/images/illustrations/money-bag.png",
-    title: "Win Big",
+    icon: "/images/illustrations/two-tickets.png",
+    title: "Free or Paid",
     description: (
       <>
-        The faster you recognize the scenes, the
+        Play for free just for fun, or grab a $1
         <br />
-        bigger your rewards
+        ticket to compete for the prize pool.
       </>
     ),
   },
   {
-    icon: "/images/illustrations/crown.png",
-    title: "Take Your Crown",
+    icon: "/images/illustrations/treasure-chest.png",
+    title: "Win Real Prizes",
     description: (
       <>
-        Recognize the scenes, climb the
+        Top scorers split the pot. The faster and
         <br />
-        leaderboard. EZ
+        more accurate you are, the bigger your share.
+      </>
+    ),
+  },
+  {
+    icon: "/images/illustrations/play-live.png",
+    title: "Play Live",
+    description: (
+      <>
+        Games run on a live timer. Chat, cheer,
+        <br />
+        and compete with others in real-time.
       </>
     ),
   },

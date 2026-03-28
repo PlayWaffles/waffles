@@ -96,7 +96,11 @@ export async function issueFreeTicketAction(
   }
 
   const normalizedQuery = userQuery.trim();
-  const maybeFid = Number.parseInt(normalizedQuery, 10);
+  const normalizedUsername =
+    normalizedQuery.startsWith("@") && normalizedQuery.length > 1
+      ? normalizedQuery.slice(1)
+      : normalizedQuery;
+  const maybeFid = Number.parseInt(normalizedUsername, 10);
 
   const user = await prisma.user.findFirst({
     where: {
@@ -104,7 +108,7 @@ export async function issueFreeTicketAction(
       OR: [
         { id: normalizedQuery },
         { wallet: { equals: normalizedQuery, mode: "insensitive" } },
-        { username: { equals: normalizedQuery, mode: "insensitive" } },
+        { username: { equals: normalizedUsername, mode: "insensitive" } },
         ...(!Number.isNaN(maybeFid) ? [{ fid: maybeFid }] : []),
       ],
     },

@@ -97,6 +97,7 @@ class SoundManager {
   private _initialized: boolean = false;
   private _bgAudio: HTMLAudioElement | null = null;
   private _bgPlaying: boolean = false;
+  private _bgWanted: boolean = false;
 
   constructor() {
     // Defer initialization to first access (client-side only)
@@ -128,19 +129,10 @@ class SoundManager {
    */
   play(name: SoundName): void {
     this.init();
-
-    console.log("[Sound] play called", { name, isMuted: this._isMuted });
-
-    if (this._isMuted) {
-      console.log("[Sound] Skipping sound - muted");
-      return;
-    }
+    if (this._isMuted) return;
 
     const audio = getAudio(name);
-    if (!audio) {
-      console.warn("[Sound] No audio element for:", name);
-      return;
-    }
+    if (!audio) return;
 
     // Reset to start if already playing
     audio.currentTime = 0;
@@ -159,11 +151,7 @@ class SoundManager {
     // Play with error handling (browsers may block autoplay)
     audio
       .play()
-      .then(() => {
-        console.log("[Sound] Playing:", name);
-      })
-      .catch((err) => {
-        console.warn("[Sound] Play failed:", name, err.message);
+      .catch(() => {
         activeAudioSet.delete(audio);
       });
   }
@@ -207,10 +195,15 @@ class SoundManager {
   }
 
   /**
-   * Toggle mute state
+   * Toggle mute state — also pauses/resumes background music
    */
   toggleMute(): boolean {
     this.isMuted = !this.isMuted;
+    if (this._isMuted) {
+      this._bgAudio?.pause();
+    } else if (this._bgWanted) {
+      this.playBgMusic();
+    }
     return this.isMuted;
   }
 
@@ -250,51 +243,31 @@ class SoundManager {
    */
   playBgMusic(): void {
     this.init();
+    this._bgWanted = true;
 
-    console.log("[Sound] playBgMusic called", {
-      isMuted: this._isMuted,
-      hasAudio: !!this._bgAudio,
-      isPlaying: this._bgPlaying,
-    });
-
-    if (this._isMuted) {
-      console.log("[Sound] Skipping BG music - muted");
-      return;
-    }
+    if (this._isMuted) return;
 
     if (typeof window === "undefined") return;
 
     if (!this._bgAudio) {
-      console.log("[Sound] Creating new BG audio element");
       this._bgAudio = new Audio(BG_TRACK);
       this._bgAudio.loop = true;
       this._bgAudio.preload = "auto";
-
-      // Log errors for debugging
-      this._bgAudio.onerror = (e) => {
-        console.error("[Sound] BG audio error:", e);
+      this._bgAudio.onerror = () => {
         this._bgAudio = null;
       };
     }
 
-    if (!this._bgAudio) {
-      console.error("[Sound] BG audio element is null");
-      return;
-    }
+    if (!this._bgAudio) return;
 
-    this._bgAudio.volume = this._volume * 0.4; // Lower volume for BG
+    this._bgAudio.volume = this._volume * 0.4;
 
     this._bgAudio
       .play()
       .then(() => {
-        console.log("[Sound] BG music started successfully");
         this._bgPlaying = true;
       })
-      .catch((err) => {
-        console.warn("[Sound] BG music play failed:", err.message);
-        console.log(
-          "[Sound] This is usually due to browser autoplay policy - needs user interaction first",
-        );
+      .catch(() => {
         this._bgPlaying = false;
       });
   }
@@ -303,6 +276,7 @@ class SoundManager {
    * Stop background music
    */
   stopBgMusic(): void {
+    this._bgWanted = false;
     if (this._bgAudio) {
       this._bgAudio.pause();
       this._bgAudio.currentTime = 0;

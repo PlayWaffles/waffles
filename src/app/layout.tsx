@@ -58,14 +58,23 @@ export default function RootLayout({
         <link
           rel="preload"
           as="image"
-          href="/images/illustrations/waffle-ticket.png"
+          href="/images/illustrations/movie-clapper.png"
         />
         <link
           rel="preload"
           as="image"
-          href="/images/illustrations/money-bag.png"
+          href="/images/illustrations/two-tickets.png"
         />
-        <link rel="preload" as="image" href="/images/illustrations/crown.png" />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/illustrations/treasure-chest.png"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/images/illustrations/play-live.png"
+        />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}

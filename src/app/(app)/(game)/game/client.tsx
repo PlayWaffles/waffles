@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -21,7 +20,7 @@ import { LiveEventFeed } from "./_components/LiveEventFeed";
 import { NextGameCard } from "./_components/NextGameCard";
 import { CheerOverlay } from "./_components/CheerOverlay";
 import { HowToPlayModal, HOW_TO_PLAY_STEPS } from "./_components/HowToPlayModal";
-import { useSounds } from "@/components/providers/SoundProvider";
+
 
 // ==========================================
 // TYPES
@@ -42,9 +41,6 @@ export function GameHub({ game }: GameHubProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-
-  // Background music
-  const { playBgMusic, stopBgMusic } = useSounds();
 
   // User context for recovery
   const { address } = useAccount();
@@ -78,15 +74,6 @@ export function GameHub({ game }: GameHubProps) {
     refetchEntry, // Callback when recovered
   );
 
-  // Background music control
-  useEffect(() => {
-    if (hasActiveGame) {
-      playBgMusic();
-    } else {
-      stopBgMusic();
-    }
-    return () => stopBgMusic();
-  }, [hasActiveGame, playBgMusic, stopBgMusic]);
 
   // ==========================================
   // RENDER: Empty State
