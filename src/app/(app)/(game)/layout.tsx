@@ -17,10 +17,13 @@ export default async function GameLayout({
   const platform = await resolveRuntimePlatform();
   const { game } = await getCurrentOrNextGame(platform);
   const headerTitle = game ? formatGameLabel(game.gameNumber) : null;
+  const isCurrentGameLive = game
+    ? Date.now() >= game.startsAt.getTime() && Date.now() < game.endsAt.getTime()
+    : false;
 
   return (
     <>
-      <GameHeader title={headerTitle} />
+      <GameHeader title={headerTitle} isCurrentGameLive={isCurrentGameLive} />
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         {children}
       </div>

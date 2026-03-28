@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { UsersIcon } from "@/components/icons";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { fireCheer } from "../CheerOverlay";
 import { springs } from "@/lib/animations";
@@ -66,54 +65,12 @@ function LocalBubble({
 // ANIMATED COUNTER COMPONENT
 // ==========================================
 
-function AnimatedCount({ value }: { value: number }) {
-  const prevValue = useRef(value);
-  const [direction, setDirection] = useState<"up" | "down">("up");
-
-  useEffect(() => {
-    if (value !== prevValue.current) {
-      setDirection(value > prevValue.current ? "up" : "down");
-      prevValue.current = value;
-    }
-  }, [value]);
-
-  return (
-    <AnimatePresence mode="popLayout" initial={false}>
-      <motion.span
-        key={value}
-        initial={{ y: direction === "up" ? 10 : -10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: direction === "up" ? -10 : 10, opacity: 0 }}
-        transition={springs.snappy}
-        className="font-display inline-block"
-        style={{
-          fontSize: "16px",
-          lineHeight: "130%",
-          letterSpacing: "-0.03em",
-          color: "#B93814",
-        }}
-      >
-        {value}
-      </motion.span>
-    </AnimatePresence>
-  );
-}
-
 // ==========================================
 // COMPONENT
 // ==========================================
 
-/**
- * ChatInputBar - Trigger button to open chat drawer
- *
- * Shows active count on left, "Type..." placeholder button, and waffle cheer button.
- * Clicking the waffle creates animated bubbles that float up.
- */
 export function ChatInputBar({ onOpen }: ChatInputBarProps) {
-  const {
-    state: { onlineCount: activeCount },
-    sendCheer,
-  } = useRealtime();
+  const { sendCheer } = useRealtime();
   const [bubbles, setBubbles] = useState<WaffleBubble[]>([]);
   const [bubbleIdCounter, setBubbleIdCounter] = useState(0);
 

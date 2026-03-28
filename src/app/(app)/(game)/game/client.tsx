@@ -11,7 +11,6 @@ import {
 
 import { springs, staggerContainer, fadeInUp } from "@/lib/animations";
 import type { GameWithQuestionCount } from "@/lib/game";
-import { formatGameLabel } from "@/lib/game/labels";
 import { usePendingPurchaseRecovery } from "@/hooks/usePendingPurchaseRecovery";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useUser } from "@/hooks/useUser";
@@ -48,10 +47,6 @@ export function GameHub({ game }: GameHubProps) {
   const { user } = useUser();
   const { refetchEntry } = useRealtime();
 
-  // Derived state
-  const hasEnded = game ? Date.now() >= game.endsAt.getTime() : true;
-  const isLive = game ? !hasEnded && Date.now() >= game.startsAt.getTime() : false;
-  const hasActiveGame = game && !hasEnded;
   const isHowToPlayOpen = searchParams.get("modal") === MODAL_HOW_TO_PLAY;
 
   // Shared URL param helpers (computed once, used by both branches)

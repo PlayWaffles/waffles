@@ -11,7 +11,13 @@ import { motion } from "framer-motion";
 import { springs } from "@/lib/animations";
 import { useSounds } from "@/components/providers/SoundProvider";
 
-export function GameHeader({ title }: { title?: string | null }) {
+export function GameHeader({
+  title,
+  isCurrentGameLive = false,
+}: {
+  title?: string | null;
+  isCurrentGameLive?: boolean;
+}) {
   const pathname = usePathname();
   const params = useParams();
   const { isMuted, toggleMute, playBgMusic, stopBgMusic, isBgPlaying } = useSounds();
@@ -121,10 +127,42 @@ export function GameHeader({ title }: { title?: string | null }) {
               <span className="font-body text-[22px] leading-[92%] tracking-[-0.03em] text-white">
                 WAFFLES
               </span>
-              {title && (
-                <span className="font-body text-[18px] leading-[92%] tracking-[-0.03em] text-white/50">
-                  {title.replace(/^Waffles\s*/i, "")}
+              {isCurrentGameLive ? (
+                <span className="flex items-center gap-1.5">
+                  <motion.span
+                    className="w-2 h-2 rounded-full bg-[#FC1919]"
+                    animate={{
+                      scale: [1, 1.3, 1],
+                      boxShadow: [
+                        "0 0 6px rgba(252, 25, 25, 0.8), 0 0 12px rgba(252, 25, 25, 0.4)",
+                        "0 0 10px rgba(252, 25, 25, 1), 0 0 20px rgba(252, 25, 25, 0.6)",
+                        "0 0 6px rgba(252, 25, 25, 0.8), 0 0 12px rgba(252, 25, 25, 0.4)",
+                      ],
+                    }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut" as const,
+                    }}
+                  />
+                  <motion.span
+                    className="text-[#FC1919] text-[18px] not-italic font-normal leading-[92%] tracking-[-0.03em]"
+                    animate={{ opacity: [1, 0.7, 1] }}
+                    transition={{
+                      duration: 1.5,
+                      repeat: Infinity,
+                      ease: "easeInOut" as const,
+                    }}
+                  >
+                    Live
+                  </motion.span>
                 </span>
+              ) : (
+                title && (
+                  <span className="font-body text-[18px] leading-[92%] tracking-[-0.03em] text-white/50">
+                    {title.replace(/^Waffles\s*/i, "")}
+                  </span>
+                )
               )}
             </Link>
           </motion.div>
