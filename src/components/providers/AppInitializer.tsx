@@ -266,52 +266,64 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     if (
       runtime !== "farcaster" ||
       !user ||
-      !address ||
+      showOnboarding ||
       isSyncingFarcasterWallet
     ) {
       return;
     }
 
-    const attemptKey = `${user.id}:${address.toLowerCase()}`;
-    if (farcasterRecoveryAttemptRef.current === attemptKey) {
-      return;
-    }
-
     let cancelled = false;
-    farcasterRecoveryAttemptRef.current = attemptKey;
-    setIsSyncingFarcasterWallet(true);
 
-    authenticatedFetch("/api/v1/users/me/farcaster-wallet", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ wallet: address }),
-    })
-      .then(async (response) => {
-        if (!response.ok) {
-          throw new Error("Farcaster wallet sync failed");
-        }
-        return response.json();
-      })
-      .then((result) => {
+    (async () => {
+      try {
+        const provider = await sdk.wallet.getEthereumProvider();
+        if (!provider || cancelled) return;
+
+        const existingAccounts = (await provider.request({
+          method: "eth_accounts",
+        })) as string[];
+
+        const walletAddress =
+          existingAccounts[0] ||
+          ((await provider.request({
+            method: "eth_requestAccounts",
+          })) as string[])[0];
+
+        if (!walletAddress || cancelled) return;
+
+        const attemptKey = `${user.id}:${walletAddress.toLowerCase()}`;
+        if (farcasterRecoveryAttemptRef.current === attemptKey) return;
+        farcasterRecoveryAttemptRef.current = attemptKey;
+
+        setIsSyncingFarcasterWallet(true);
+
+        const response = await authenticatedFetch("/api/v1/users/me/farcaster-wallet", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ wallet: walletAddress }),
+        });
+
+        if (!response.ok) throw new Error("Farcaster wallet sync failed");
+
+        const result = await response.json();
         if (!cancelled && result.success) {
           refetch().catch(console.error);
         }
-      })
-      .catch((error) => {
+      } catch (error) {
         if (!cancelled) {
-          console.error("Farcaster wallet sync failed:", error);
+          console.error("[farcaster-recovery]", error);
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setIsSyncingFarcasterWallet(false);
         }
-      });
+      }
+    })();
 
     return () => {
       cancelled = true;
     };
-  }, [address, isSyncingFarcasterWallet, refetch, runtime, user]);
+  }, [isSyncingFarcasterWallet, refetch, runtime, showOnboarding, user]);
 
   if (!runtime) {
     return null;
