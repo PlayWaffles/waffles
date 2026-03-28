@@ -245,7 +245,13 @@ export default function ResultPageClient({
   useEffect(() => {
     if (!hasPlayedSound.current && userScore) {
       hasPlayedSound.current = true;
-      playSound(userScore.prize > 0 ? "victory" : "defeat");
+      const isPaid = entry?.paidAt != null;
+      const shouldPlayDefeat = isPaid && userScore.prize === 0 && userScore.score === 0;
+      if (shouldPlayDefeat) {
+        playSound("defeat");
+      } else if (userScore.score > 0) {
+        playSound("victory");
+      }
 
       // Fire confetti for winners (rank 1-10)
       if (userScore.prize > 0) {
@@ -294,19 +300,29 @@ export default function ResultPageClient({
 
     try {
       const hasPrize = userScore.prize > 0;
+      const username = user?.username ?? "Player";
+      const pfpUrl = user?.pfpUrl || "";
+      const shareParams = new URLSearchParams({
+        username,
+        score: userScore.score.toString(),
+        rank: userScore.rank.toString(),
+        ...(hasPrize && { prizeAmount: userScore.prize.toString() }),
+        ...(pfpUrl && { pfpUrl }),
+      });
+      const embedUrl = `${env.rootUrl}/game/${gameId}/result?${shareParams.toString()}`;
       const shareText = hasPrize
-        ? `Just won $${userScore.prize.toLocaleString()} on Waffles!`
-        : `Just scored ${userScore.score.toLocaleString()} points on Waffles #${String(gameNumber).padStart(3, "0")}!`;
+        ? `Just won $${userScore.prize.toLocaleString()} on Waffles! 🧇🏆`
+        : `Just scored ${userScore.score.toLocaleString()} points on Waffles #${String(gameNumber).padStart(3, "0")}! 🧇`;
 
       const result = await shareTextOrCopy({
         title: "Waffles",
         text: shareText,
-        url: `${env.rootUrl}/game/${gameId}/result`,
+        url: embedUrl,
       });
 
       if (result.shared || result.copied) {
         playSound("purchase");
-        notify.success(result.shared ? "Shared!" : "Result link copied!");
+        notify.success(result.shared ? "Shared to Farcaster! 🎉" : "Result link copied!");
       } else {
         notify.info("Share cancelled");
       }
@@ -314,7 +330,7 @@ export default function ResultPageClient({
       console.error("[Share] Error:", error);
       notify.error("Failed to share");
     }
-  }, [userScore, gameId, gameNumber]);
+  }, [gameId, gameNumber, user?.pfpUrl, user?.username, userScore]);
 
   // ==========================================
   // CLAIM LOGIC

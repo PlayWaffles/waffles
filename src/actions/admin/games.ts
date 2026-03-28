@@ -10,6 +10,7 @@ import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
 import { GameTheme, UserPlatform } from "@prisma";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
+import { rankGame, publishResults } from "@/lib/game/lifecycle";
 
 // ==========================================
 // SCHEMA
@@ -502,4 +503,63 @@ export async function deleteGameAction(gameId: string): Promise<void> {
 
   revalidatePath("/admin/games");
   redirect("/admin/games");
+}
+
+// ==========================================
+// ROUNDUP (RANK + PUBLISH)
+// ==========================================
+
+export async function roundupGameAction(gameId: string) {
+  const authResult = await requireAdminSession();
+  if (!authResult.authenticated || !authResult.session) {
+    throw new Error("Unauthorized");
+  }
+  const adminId = authResult.session.userId;
+
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { id: true, onchainId: true, endsAt: true, rankedAt: true, title: true },
+  });
+
+  if (!game) throw new Error("Game not found");
+  if (game.endsAt > new Date()) throw new Error("Game has not ended yet");
+
+  // 1. Rank entries
+  const rankResult = await rankGame(gameId);
+
+  // 2. Publish on-chain if applicable
+  let published = false;
+  if (game.onchainId && rankResult.prizesDistributed > 0) {
+    const publishResult = await publishResults(gameId);
+    published = publishResult.success;
+  }
+
+  await logAdminAction({
+    adminId,
+    action: AdminAction.CHANGE_GAME_STATUS,
+    entityType: EntityType.GAME,
+    entityId: gameId,
+    details: {
+      action: "roundup",
+      entriesRanked: rankResult.entriesRanked,
+      prizesDistributed: rankResult.prizesDistributed,
+      published,
+    },
+  });
+
+  console.log("[admin-games] roundup_complete", {
+    gameId,
+    title: game.title,
+    entriesRanked: rankResult.entriesRanked,
+    prizesDistributed: rankResult.prizesDistributed,
+    published,
+  });
+
+  revalidatePath(`/admin/games/${gameId}`);
+
+  return {
+    entriesRanked: rankResult.entriesRanked,
+    prizesDistributed: rankResult.prizesDistributed,
+    published,
+  };
 }

@@ -28,10 +28,16 @@ export const SuccessCard = ({
   const shareTicket = useCallback(async () => {
     if (!ticket) return;
     try {
+      const frameParams = new URLSearchParams();
+      if (ticket.code) {
+        frameParams.set("ticketCode", ticket.code);
+      }
+      const frameUrl = `${env.rootUrl}/game/${gameId}/ticket/success?${frameParams.toString()}`;
+
       await shareTextOrCopy({
         title: "Waffles",
-        text: `I just joined the next Waffles game! Theme: ${theme}. Prize Pool: $${prizePool.toLocaleString()}.`,
-        url: `${env.rootUrl}/game/${gameId}`,
+        text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
+        url: frameUrl,
       });
     } catch (error) {
       console.error("Error sharing cast:", error);

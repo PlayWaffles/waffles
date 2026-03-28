@@ -12,6 +12,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { getGamePhase } from "@/lib/types";
 import { SponsorGameCard } from "@/components/admin/SponsorGameCard";
+import { RoundupButton } from "@/components/admin/RoundupButton";
 import { formatAdminGameLabel } from "@/lib/game/labels";
 import { TicketPurchaseSource } from "@prisma";
 
@@ -136,6 +137,8 @@ export default async function GameDetailPage({
             playerCount: true,
             maxPlayers: true,
             roundBreakSec: true,
+            rankedAt: true,
+            onChainAt: true,
             _count: {
                 select: {
                     questions: true,
@@ -205,6 +208,9 @@ export default async function GameDetailPage({
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    {phase === "ENDED" && (
+                        <RoundupButton gameId={game.id} />
+                    )}
                     <Link
                         href={`/admin/games/${game.id}/edit`}
                         className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white rounded-xl transition-all text-sm font-medium border border-white/8 hover:border-white/15"
@@ -229,7 +235,27 @@ export default async function GameDetailPage({
 
                 <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                     <div className="space-y-4">
-                        <StatusBadge phase={phase} />
+                        <div className="flex items-center gap-2">
+                            <StatusBadge phase={phase} />
+                            {phase === "ENDED" && game.rankedAt && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#14B985]/10 border border-[#14B985]/30 text-[#14B985]">
+                                    <span className="w-2 h-2 rounded-full bg-[#14B985]" />
+                                    Ranked
+                                </span>
+                            )}
+                            {phase === "ENDED" && game.onChainAt && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#00CFF2]/10 border border-[#00CFF2]/30 text-[#00CFF2]">
+                                    <span className="w-2 h-2 rounded-full bg-[#00CFF2]" />
+                                    On-Chain
+                                </span>
+                            )}
+                            {phase === "ENDED" && !game.rankedAt && (
+                                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-red-500/10 border border-red-500/30 text-red-400">
+                                    <span className="w-2 h-2 rounded-full bg-red-400" />
+                                    Not Ranked
+                                </span>
+                            )}
+                        </div>
                         <h1 className="text-3xl sm:text-4xl font-bold text-white font-display tracking-tight">
                             {formatAdminGameLabel(game.title, game.platform)}
                         </h1>

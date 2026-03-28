@@ -35,12 +35,14 @@ export function GameHeader({
     pathname?.startsWith("/leaderboard") ||
     pathname?.startsWith("/profile");
 
-  // Start BG music when in game sections, stop when leaving
+  // Start BG music in game sections, stop during live gameplay
   useEffect(() => {
-    if (isGameSection && !isMuted) {
+    if (isLiveRoute) {
+      stopBgMusic();
+    } else if (isGameSection && !isMuted) {
       playBgMusic();
     }
-  }, [isGameSection, isMuted, playBgMusic]);
+  }, [isGameSection, isLiveRoute, isMuted, playBgMusic, stopBgMusic]);
 
   return (
     <>

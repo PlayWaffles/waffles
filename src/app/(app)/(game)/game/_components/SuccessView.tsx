@@ -36,14 +36,21 @@ export function SuccessView({
         setIsSharing(true);
 
         try {
+            const frameParams = new URLSearchParams();
+            frameParams.set("username", displayUsername);
+            if (displayAvatar) {
+                frameParams.set("pfpUrl", displayAvatar);
+            }
+            const frameUrl = `${env.rootUrl}/game/${gameId}/ticket/success?${frameParams.toString()}`;
+
             const result = await shareTextOrCopy({
                 title: "Waffles",
-                text: `I just joined the next Waffles game! Theme: ${theme}. Prize Pool: $${prizePool.toLocaleString()}.`,
-                url: `${env.rootUrl}/game/${gameId}`,
+                text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
+                url: frameUrl,
             });
 
             if (result.shared || result.copied) {
-                notify.success(result.shared ? "Shared!" : "Invite link copied!");
+                notify.success(result.shared ? "Shared to Farcaster! 🎉" : "Invite link copied!");
             }
         } catch (error) {
             console.error("Share error:", error);
@@ -51,7 +58,7 @@ export function SuccessView({
         } finally {
             setIsSharing(false);
         }
-    }, [theme, prizePool, isSharing, gameId]);
+    }, [displayAvatar, displayUsername, gameId, isSharing, prizePool, theme]);
 
     // Staggered entrance animations
     useEffect(() => {

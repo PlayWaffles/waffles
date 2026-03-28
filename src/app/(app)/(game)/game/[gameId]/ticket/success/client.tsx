@@ -99,10 +99,20 @@ export function TicketSuccessClient({
 
     const shareTicket = useCallback(async () => {
         try {
+            const frameParams = new URLSearchParams();
+            frameParams.set("username", user?.username || `Player #${user?.fid || ""}`);
+            if (user?.pfpUrl) {
+                frameParams.set("pfpUrl", user.pfpUrl);
+            }
+            if (ticketCode) {
+                frameParams.set("ticketCode", ticketCode);
+            }
+            const frameUrl = `${env.rootUrl}/game/${gameId}/ticket/success?${frameParams.toString()}`;
+
             const result = await shareTextOrCopy({
                 title: "Waffles",
-                text: `I just joined the next Waffles game! Theme: ${theme}. Prize Pool: $${prizePool.toLocaleString()}.`,
-                url: `${env.rootUrl}/game/${gameId}`,
+                text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
+                url: frameUrl,
             });
 
             if (!result.shared && !result.copied) {
@@ -111,7 +121,7 @@ export function TicketSuccessClient({
         } catch (error) {
             console.error("Error sharing cast:", error);
         }
-    }, [theme, prizePool, gameId]);
+    }, [gameId, prizePool, theme, ticketCode, user?.fid, user?.pfpUrl, user?.username]);
 
     return (
         <>

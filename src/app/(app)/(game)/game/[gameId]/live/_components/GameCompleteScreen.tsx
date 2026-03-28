@@ -10,6 +10,7 @@ import { playSound } from "@/lib/sounds";
 import { env } from "@/lib/env";
 import { FlashIcon } from "@/components/icons";
 import { shareTextOrCopy } from "@/lib/share";
+import { useUser } from "@/hooks/useUser";
 
 interface GameCompleteScreenProps {
     score: number;
@@ -25,6 +26,7 @@ export default function GameCompleteScreen({
     gameNumber,
 }: GameCompleteScreenProps) {
     const hasPlayedSound = useRef(false);
+    const { user } = useUser();
 
     // Play victory sound
     useEffect(() => {
@@ -36,15 +38,24 @@ export default function GameCompleteScreen({
 
     const handleShare = useCallback(async () => {
         try {
+            const ogParams = new URLSearchParams({
+                score: score.toString(),
+                username: user?.username || "Player",
+                gameNumber: gameNumber.toString(),
+                category: gameTheme,
+                ...(user?.pfpUrl && { pfpUrl: user.pfpUrl }),
+            });
+            const ogImageUrl = `${env.rootUrl}/api/og/score?${ogParams.toString()}`;
+
             await shareTextOrCopy({
                 title: "Waffles",
-                text: `I scored ${score.toLocaleString()} points in Waffles #${String(gameNumber).padStart(3, "0")}!`,
-                url: `${env.rootUrl}/game/${gameId}/result`,
+                text: `I scored ${score.toLocaleString()} points in Waffles #${String(gameNumber).padStart(3, "0")}! 🧇`,
+                url: ogImageUrl,
             });
         } catch (e) {
             console.error("Share failed:", e);
         }
-    }, [score, gameId, gameNumber]);
+    }, [gameNumber, gameTheme, score, user?.pfpUrl, user?.username]);
 
     return (
         <div className="w-full px-4 text-white flex flex-col items-center flex-1 overflow-y-auto pb-8">

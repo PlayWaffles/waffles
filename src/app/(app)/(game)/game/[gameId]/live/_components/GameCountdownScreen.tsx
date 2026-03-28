@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
+import { useSounds } from "@/components/providers/SoundProvider";
 
 // Rotation angles from design specs
 const AVATAR_ROTATIONS = [-8.71, 5.85, -3.57, 7.56];
@@ -30,9 +31,12 @@ export function GameCountdownScreen({
   const [hasEnded, setHasEnded] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [autoplayFailed, setAutoplayFailed] = useState(false);
+  const { stopBgMusic } = useSounds();
 
-  // Auto-play video on mount
+  // Stop bg music and auto-play video on mount
   useEffect(() => {
+    stopBgMusic();
+
     const video = videoRef.current;
     if (!video) return;
 
@@ -50,7 +54,7 @@ export function GameCountdownScreen({
       .catch(() => {
         setAutoplayFailed(true);
       });
-  }, []);
+  }, [stopBgMusic]);
 
   // Handle video end
   const handleEnded = useCallback(() => {
