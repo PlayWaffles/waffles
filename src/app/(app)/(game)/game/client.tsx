@@ -11,6 +11,7 @@ import {
 
 import { springs, staggerContainer, fadeInUp } from "@/lib/animations";
 import type { GameWithQuestionCount } from "@/lib/game";
+import { formatGameLabel } from "@/lib/game/labels";
 import { usePendingPurchaseRecovery } from "@/hooks/usePendingPurchaseRecovery";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useUser } from "@/hooks/useUser";
@@ -47,9 +48,11 @@ export function GameHub({ game }: GameHubProps) {
   const { user } = useUser();
   const { refetchEntry } = useRealtime();
 
-  // Derived state - check if game has ended by comparing current time to endsAt
+  // Derived state
   const hasEnded = game ? Date.now() >= game.endsAt.getTime() : true;
+  const isLive = game ? !hasEnded && Date.now() >= game.startsAt.getTime() : false;
   const hasActiveGame = game && !hasEnded;
+  const gameLabel = game ? formatGameLabel(game.gameNumber) : null;
   const isHowToPlayOpen = searchParams.get("modal") === MODAL_HOW_TO_PLAY;
 
   // Shared URL param helpers (computed once, used by both branches)
@@ -198,7 +201,60 @@ export function GameHub({ game }: GameHubProps) {
         transition={{ duration: 0.4 }}
         className="shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4"
       >
-        <NextGameCard game={game} howToPlayHref={howToPlayHref} />
+        {/* Game label + live indicator */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, ...springs.gentle }}
+          className="flex items-center gap-2.5 mb-3"
+        >
+          <span className="font-body text-[18px] text-white tracking-[0.04em]">
+            {gameLabel}
+          </span>
+          {isLive && (
+            <span
+              className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5"
+              style={{
+                background: "rgba(252, 25, 25, 0.12)",
+                border: "1px solid rgba(252, 25, 25, 0.25)",
+              }}
+            >
+              <span className="relative flex h-1.5 w-1.5">
+                <span
+                  className="absolute inline-flex h-full w-full rounded-full animate-ping"
+                  style={{ backgroundColor: "rgba(252, 25, 25, 0.6)" }}
+                />
+                <span
+                  className="relative inline-flex h-1.5 w-1.5 rounded-full"
+                  style={{ backgroundColor: "#FC1919" }}
+                />
+              </span>
+              <span className="font-display text-[10px] uppercase tracking-[0.15em] text-[#FC1919]">
+                Live
+              </span>
+            </span>
+          )}
+        </motion.div>
+
+        <NextGameCard game={game} />
+
+        {/* How to Play link */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="mt-3"
+        >
+          <Link
+            href={howToPlayHref}
+            scroll={false}
+            className="group inline-flex items-center gap-1.5 font-display text-[13px] text-white/35 transition-colors hover:text-[#FFC931]/70"
+          >
+            <QuestionMarkCircleIcon className="w-3.5 h-3.5" />
+            How to play
+            <ChevronRightIcon className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" />
+          </Link>
+        </motion.div>
       </motion.section>
 
       {/* Live Event Feed */}
