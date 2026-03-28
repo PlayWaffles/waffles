@@ -262,7 +262,7 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
                   onChange={(e) => setMessage(e.target.value)}
                   onFocus={() => setInputFocused(true)}
                   onBlur={() => setInputFocused(false)}
-                  placeholder="Type a comment"
+                  placeholder="Say something to the lobby"
                   disabled={isSubmitting || !isConnected}
                   className="flex-1 font-display bg-transparent text-sm font-medium text-white placeholder:text-white/40
                                  focus:outline-none disabled:opacity-50"

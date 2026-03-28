@@ -142,19 +142,6 @@ export function ChatInputBar({ onOpen }: ChatInputBarProps) {
 
   return (
     <div className="flex items-center gap-2.5">
-      {/* Active count on left with animated number */}
-      <motion.div
-        className="flex items-center gap-1 shrink-0"
-        role="status"
-        aria-live="polite"
-        initial={{ opacity: 0, x: -10 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={springs.gentle}
-      >
-        <UsersIcon className="w-4 h-4 text-[#B93814]" aria-hidden="true" />
-        <AnimatedCount value={activeCount} />
-      </motion.div>
-
       {/* Trigger button - opens drawer */}
       <motion.button
         onClick={onOpen}
@@ -180,7 +167,7 @@ export function ChatInputBar({ onOpen }: ChatInputBarProps) {
             opacity: 0.4,
           }}
         >
-          Type...
+          Talk trash, hype up, or say hi 👋
         </span>
       </motion.button>
 
