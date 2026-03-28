@@ -59,7 +59,6 @@ export async function GET(
         prisma.gameEntry.aggregate({
           where: {
             userId,
-            paidAt: { not: null },
             game: { platform: UserPlatform.FARCASTER },
           },
           _count: { _all: true },
@@ -70,7 +69,6 @@ export async function GET(
           where: {
             userId,
             rank: 1,
-            paidAt: { not: null },
             game: { platform: UserPlatform.FARCASTER },
           },
         }),
@@ -78,7 +76,6 @@ export async function GET(
           where: {
             userId,
             rank: { not: null },
-            paidAt: { not: null },
             game: { platform: UserPlatform.FARCASTER },
           },
           orderBy: { rank: "asc" },

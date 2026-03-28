@@ -91,7 +91,8 @@ export async function GET(
     const response: EntryResponse[] = entries.map((entry) => ({
       id: entry.id,
       status:
-        entry.purchaseSource === "FREE_ADMIN"
+        entry.purchaseSource === "FREE_ADMIN" ||
+        entry.purchaseSource === "FREE_PLAYER"
           ? "FREE"
           : entry.paidAt
             ? "PAID"

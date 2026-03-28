@@ -339,13 +339,12 @@ interface AnswerEntry {
 /**
  * Submit an answer for a question in a live game.
  */
-export async function submitAnswer(
+async function submitAnswerForUser(
+  userId: string,
   input: SubmitAnswerInput,
 ): Promise<SubmitAnswerResult> {
   const { gameId, questionId, selectedIndex, timeTakenMs } = input;
-  let currentUserId = "unknown";
 
-  // 1. VALIDATE INPUT
   if (!gameId || !questionId) {
     return {
       success: false,
@@ -357,17 +356,17 @@ export async function submitAnswer(
   const selectedIndexValue = selectedIndex ?? -1;
 
   try {
-    const { user } = await requireCurrentUser();
-    currentUserId = user.id;
-
-    // Fetch game, entry, and question in parallel
-    const [game, entry, question] = await Promise.all([
+    const [user, game, entry, question] = await Promise.all([
+      prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, username: true, wallet: true },
+      }),
       prisma.game.findUnique({
         where: { id: gameId },
         select: { startsAt: true, endsAt: true, gameNumber: true },
       }),
       prisma.gameEntry.findUnique({
-        where: { gameId_userId: { gameId, userId: user.id } },
+        where: { gameId_userId: { gameId, userId } },
         select: {
           id: true,
           score: true,
@@ -383,6 +382,10 @@ export async function submitAnswer(
         select: { correctIndex: true, durationSec: true, gameId: true },
       }),
     ]);
+
+    if (!user) {
+      return { success: false, error: "User not found", code: "NOT_FOUND" };
+    }
 
     if (!game) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
@@ -511,7 +514,7 @@ export async function submitAnswer(
     checkAndNotifyFlipped(
       gameId,
       game.gameNumber,
-      user.id,
+      userId,
       getDisplayName({ username: user.username, wallet: user.wallet }),
       updatedEntry.score,
     ).catch((err) => console.error("[game-actions] flip_check_error", err));
@@ -525,7 +528,7 @@ export async function submitAnswer(
   } catch (error) {
     console.error("[game-actions] answer_error", {
       gameId,
-      userId: currentUserId,
+      userId,
       questionId,
       error: error instanceof Error ? error.message : String(error),
     });
@@ -535,4 +538,32 @@ export async function submitAnswer(
       code: "INTERNAL_ERROR",
     };
   }
+}
+
+export async function submitAnswer(
+  input: SubmitAnswerInput,
+): Promise<SubmitAnswerResult> {
+  try {
+    const { user } = await requireCurrentUser();
+    return submitAnswerForUser(user.id, input);
+  } catch (error) {
+    console.error("[game-actions] answer_error", {
+      gameId: input.gameId,
+      userId: "unknown",
+      questionId: input.questionId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      success: false,
+      error: "Failed to submit answer",
+      code: "INTERNAL_ERROR",
+    };
+  }
+}
+
+export async function submitAnswerForAuthenticatedUser(
+  userId: string,
+  input: SubmitAnswerInput,
+): Promise<SubmitAnswerResult> {
+  return submitAnswerForUser(userId, input);
 }

@@ -89,7 +89,7 @@ async function handleAllTime(
   const [aggregated, countResult] = await Promise.all([
     prisma.gameEntry.groupBy({
       by: ["userId"],
-      where: { paidAt: { not: null }, ...entryWhere(platform) },
+      where: entryWhere(platform),
       _sum: { prize: true },
       orderBy: { _sum: { prize: "desc" } },
       take: PAGE_SIZE,
@@ -99,8 +99,7 @@ async function handleAllTime(
       SELECT COUNT(DISTINCT "userId") as count
       FROM "GameEntry" ge
       JOIN "Game" g ON ge."gameId" = g.id
-      WHERE ge."paidAt" IS NOT NULL
-        AND g.platform = ${platform}::"UserPlatform"
+      WHERE g.platform = ${platform}::"UserPlatform"
     `,
   ]);
 
@@ -187,11 +186,9 @@ async function handleGame(
     prisma.gameEntry.findMany({
       where: {
         gameId: targetGameId,
-        paidAt: { not: null },
       },
       select: {
         prize: true,
-        rank: true,
         score: true,
         user: {
           select: {
@@ -203,14 +200,13 @@ async function handleGame(
           },
         },
       },
-      orderBy: [{ rank: { sort: "asc", nulls: "last" } }, { score: "desc" }],
+      orderBy: [{ score: "desc" }, { updatedAt: "asc" }],
       take: PAGE_SIZE,
       skip: page * PAGE_SIZE,
     }),
     prisma.gameEntry.count({
       where: {
         gameId: targetGameId,
-        paidAt: { not: null },
       },
     }),
   ]);
@@ -230,7 +226,7 @@ async function handleGame(
     userId: p.user.id,
     fid: p.user.fid,
     wallet: p.user.wallet,
-    rank: p.rank ?? page * PAGE_SIZE + i + 1,
+    rank: page * PAGE_SIZE + i + 1,
     username: p.user.username,
     prize: p.prize ?? 0,
     pfpUrl: p.user.pfpUrl,

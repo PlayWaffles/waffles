@@ -438,17 +438,21 @@ async function submitAnswerToServer(
   timeMs: number,
   retries = 3,
 ): Promise<SubmitResult> {
-  // Import dynamically to avoid circular dependencies
-  const { submitAnswer } = await import("@/actions/game");
-
   for (let i = 0; i < retries; i++) {
     try {
-      const result = await submitAnswer({
-        gameId,
-        questionId,
-        selectedIndex,
-        timeTakenMs: timeMs,
+      const response = await authenticatedFetch(`/api/v1/games/${gameId}/answer`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          questionId,
+          selectedIndex,
+          timeTakenMs: timeMs,
+        }),
       });
+      const result = (await response.json()) as
+        | { success: true; pointsEarned: number }
+        | { success: false; error: string };
+
       if (result.success) {
         return { success: true, pointsEarned: result.pointsEarned };
       }

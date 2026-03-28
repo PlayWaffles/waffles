@@ -52,10 +52,14 @@ async function getTickets(searchParams: {
     if (searchParams.status === "paid") {
         where.paidAt = { not: null };
     } else if (searchParams.status === "free") {
-        where.purchaseSource = TicketPurchaseSource.FREE_ADMIN;
+        where.purchaseSource = {
+            in: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
+        };
     } else if (searchParams.status === "unpaid") {
         where.paidAt = null;
-        where.purchaseSource = { not: TicketPurchaseSource.FREE_ADMIN };
+        where.purchaseSource = {
+            notIn: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
+        };
     } else if (searchParams.status === "claimed") {
         where.claimedAt = { not: null };
     }
@@ -106,7 +110,13 @@ async function getStats() {
     const [totalEntries, paidEntries, freeEntries, claimedPrizes, games] = await Promise.all([
         prisma.gameEntry.count(),
         prisma.gameEntry.count({ where: { paidAt: { not: null } } }),
-        prisma.gameEntry.count({ where: { purchaseSource: TicketPurchaseSource.FREE_ADMIN } }),
+        prisma.gameEntry.count({
+            where: {
+                purchaseSource: {
+                    in: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
+                },
+            },
+        }),
         prisma.gameEntry.count({ where: { claimedAt: { not: null } } }),
         prisma.game.findMany({
             orderBy: { startsAt: "desc" },
@@ -662,7 +672,7 @@ export default async function TicketsPage({
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#00CFF2]/15 text-[#00CFF2]">
                                                     Claimed
                                                 </span>
-                                            ) : entry.purchaseSource === "FREE_ADMIN" ? (
+                                            ) : entry.purchaseSource === "FREE_ADMIN" || entry.purchaseSource === "FREE_PLAYER" ? (
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#FB72FF]/15 text-[#FB72FF]">
                                                     Free
                                                 </span>

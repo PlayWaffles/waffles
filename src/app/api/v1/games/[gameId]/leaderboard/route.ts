@@ -58,7 +58,6 @@ export async function GET(
     const entries = await prisma.gameEntry.findMany({
       where: {
         gameId: gameId,
-        paidAt: { not: null },
       },
       include: {
         user: {
@@ -89,7 +88,6 @@ export async function GET(
     const totalCount = await prisma.gameEntry.count({
       where: {
         gameId: gameId,
-        paidAt: { not: null },
       },
     });
 

@@ -33,7 +33,8 @@ export const GET = withAuth(async (request: NextRequest, auth) => {
       entries.map((entry) => ({
         id: entry.id,
         status:
-          entry.purchaseSource === "FREE_ADMIN"
+          entry.purchaseSource === "FREE_ADMIN" ||
+          entry.purchaseSource === "FREE_PLAYER"
             ? "FREE"
             : entry.paidAt
               ? "PAID"

@@ -49,7 +49,6 @@ export async function GET(
     const myEntries = await prisma.gameEntry.findMany({
       where: {
         userId: user.id,
-        paidAt: { not: null },
         game: { platform: UserPlatform.FARCASTER },
       },
       select: { gameId: true },
@@ -61,7 +60,6 @@ export async function GET(
       where: {
         gameId: { in: myGameIds },
         userId: { not: user.id },
-        paidAt: { not: null },
         game: { platform: UserPlatform.FARCASTER },
       },
       include: {

@@ -129,8 +129,6 @@ export const POST = withAuth<Params>(
 
       // Check eligibility
       const isEligible =
-        entry.rank !== null &&
-        entry.rank <= WINNERS_COUNT &&
         entry.prize !== null &&
         entry.prize > 0;
 

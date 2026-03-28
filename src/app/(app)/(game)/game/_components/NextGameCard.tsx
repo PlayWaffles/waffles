@@ -140,8 +140,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         transition={springs.gentle}
         className="relative w-full md:max-w-[361px] mx-auto rounded-2xl overflow-hidden flex flex-col"
         style={{
-          background:
-            "linear-gradient(180deg, rgba(248, 155, 46, 0.10) 0%, #1E1E1E 56%)",
+          background: "#1E1E1E",
           border: isLive
             ? "1px solid rgba(252, 25, 25, 0.3)"
             : "1px solid rgba(255, 255, 255, 0.06)",

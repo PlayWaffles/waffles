@@ -41,7 +41,7 @@ export interface GameEntryData {
   score: number;
   answered: number;
   paidAt: Date | null;
-  purchaseSource: "PAID" | "DISCOUNTED" | "FREE_ADMIN";
+  purchaseSource: "PAID" | "DISCOUNTED" | "FREE_ADMIN" | "FREE_PLAYER";
   hasTicket: boolean;
   rank: number | null;
   prize: number | null;

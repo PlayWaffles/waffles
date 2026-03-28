@@ -67,7 +67,7 @@ export async function rankGame(gameId: string): Promise<RankResult> {
   // Already ranked - return existing data
   if (game.rankedAt) {
     const existingWinners = await prisma.gameEntry.findMany({
-      where: { gameId, rank: { lte: WINNERS_COUNT }, prize: { gt: 0 } },
+      where: { gameId, prize: { gt: 0 } },
       select: {
         rank: true,
         prize: true,
@@ -251,7 +251,6 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
   const rankedEntries = await prisma.gameEntry.findMany({
     where: {
       gameId,
-      rank: { lte: WINNERS_COUNT },
       prize: { gt: 0 },
       paidAt: { not: null },
     },
@@ -349,10 +348,10 @@ export async function sendResultNotifications(gameId: string) {
   });
 
   const winners = allEntries.filter(
-    (e) => e.rank && e.rank <= WINNERS_COUNT && e.prize,
+    (e) => (e.prize ?? 0) > 0,
   );
   const nonWinners = allEntries.filter(
-    (e) => !(e.rank && e.rank <= WINNERS_COUNT && e.prize),
+    (e) => (e.prize ?? 0) <= 0,
   );
 
   // Import templates dynamically to avoid circular deps

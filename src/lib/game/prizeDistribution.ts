@@ -113,16 +113,19 @@ export function calculatePrizeDistribution(
     };
   }
 
+  const overallRankByEntryId = new Map(entries.map((entry, index) => [entry.id, index + 1]));
+
   // Single winner edge case
   if (paidEntries.length === 1) {
+    const onlyPaidEntry = paidEntries[0];
     return {
       allocations: entries.map((e, i) => ({
         entryId: e.id,
         userId: e.userId,
         rank: i + 1,
-        prize: i === 0 ? netPool : 0,
+        prize: e.id === onlyPaidEntry.id ? netPool : 0,
         username: e.username,
-        tier: i === 0 ? "podium" : "none",
+        tier: e.id === onlyPaidEntry.id ? "podium" : "none",
       })),
       grossPool: grossPrizePool,
       platformFee,
@@ -151,7 +154,7 @@ export function calculatePrizeDistribution(
   const podiumAllocations = distributeByTicket(
     podiumEntries,
     podiumPool,
-    1,
+    overallRankByEntryId,
     "podium"
   );
 
@@ -159,38 +162,27 @@ export function calculatePrizeDistribution(
   const runnerAllocations = distributeByTicket(
     runnerEntries,
     runnersPool,
-    4,
+    overallRankByEntryId,
     "runner"
   );
+  const prizeAllocationByEntryId = new Map(
+    [...podiumAllocations, ...runnerAllocations].map((allocation) => [
+      allocation.entryId,
+      allocation,
+    ]),
+  );
 
-  // Non-winners get rank only
-  const nonWinnerAllocations = nonWinners.map((e, i) => ({
-    entryId: e.id,
-    userId: e.userId,
-    rank: WINNERS_COUNT + i + 1,
-    prize: 0,
-    username: e.username,
-    tier: "none" as const,
-  }));
-
-  // Also include unpaid entries at the end
-  const unpaidEntries = entries.filter((e) => e.paidAmount <= 0);
-  const unpaidAllocations = unpaidEntries.map((e, i) => ({
-    entryId: e.id,
-    userId: e.userId,
-    rank: paidEntries.length + i + 1,
-    prize: 0,
-    username: e.username,
-    tier: "none" as const,
-  }));
-
-  // Combine all allocations
-  const allocations = [
-    ...podiumAllocations,
-    ...runnerAllocations,
-    ...nonWinnerAllocations,
-    ...unpaidAllocations,
-  ];
+  const allocations = entries.map((entry, index) => {
+    const prizeAllocation = prizeAllocationByEntryId.get(entry.id);
+    return {
+      entryId: entry.id,
+      userId: entry.userId,
+      rank: index + 1,
+      prize: prizeAllocation?.prize ?? 0,
+      username: entry.username,
+      tier: prizeAllocation?.tier ?? "none",
+    } satisfies PrizeAllocation;
+  });
 
   return {
     allocations,
@@ -237,7 +229,7 @@ function calculateTierPools(
 function distributeByTicket(
   entries: PlayerEntry[],
   pool: number,
-  startRank: number,
+  overallRankByEntryId: Map<string, number>,
   tier: "podium" | "runner"
 ): PrizeAllocation[] {
   if (entries.length === 0 || pool <= 0) return [];
@@ -247,7 +239,7 @@ function distributeByTicket(
   return entries.map((entry, i) => ({
     entryId: entry.id,
     userId: entry.userId,
-    rank: startRank + i,
+    rank: overallRankByEntryId.get(entry.id) ?? i + 1,
     prize:
       totalTickets > 0
         ? (entry.paidAmount / totalTickets) * pool

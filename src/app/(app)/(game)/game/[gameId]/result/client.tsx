@@ -238,21 +238,17 @@ export default function ResultPageClient({
 
   // Is user a winner (rank 1-10)?
   const isWinner = useMemo(() => {
-    return (
-      userScore !== null &&
-      userScore.rank <= WINNERS_COUNT &&
-      userScore.prize > 0
-    );
+    return userScore !== null && userScore.prize > 0;
   }, [userScore]);
 
   // Play sound and confetti on mount (once)
   useEffect(() => {
     if (!hasPlayedSound.current && userScore) {
       hasPlayedSound.current = true;
-      playSound(userScore.rank <= WINNERS_COUNT ? "victory" : "defeat");
+      playSound(userScore.prize > 0 ? "victory" : "defeat");
 
       // Fire confetti for winners (rank 1-10)
-      if (userScore.rank <= WINNERS_COUNT && userScore.prize > 0) {
+      if (userScore.prize > 0) {
         // Initial burst
         confetti({
           particleCount: 100,

@@ -20,14 +20,14 @@ const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") 
 // Fetch top 3 entries for leaderboard display
 const getTop3Entries = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   return prisma.gameEntry.findMany({
-    where: { gameId, paidAt: { not: null }, game: { platform } },
+    where: { gameId, game: { platform } },
     orderBy: { score: "desc" },
     take: 3,
     select: {
       score: true,
       rank: true,
       user: {
-        select: { fid: true, username: true, pfpUrl: true },
+        select: { fid: true, wallet: true, username: true, pfpUrl: true },
       },
     },
   });

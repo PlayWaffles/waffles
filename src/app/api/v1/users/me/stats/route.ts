@@ -20,7 +20,6 @@ export const GET = withAuth(async (_request: NextRequest, auth) => {
         prisma.gameEntry.aggregate({
           where: {
             userId,
-            paidAt: { not: null },
             ...platformFilter,
           },
           _count: { _all: true },
@@ -31,7 +30,6 @@ export const GET = withAuth(async (_request: NextRequest, auth) => {
           where: {
             userId,
             rank: 1,
-            paidAt: { not: null },
             ...platformFilter,
           },
         }),
@@ -39,7 +37,6 @@ export const GET = withAuth(async (_request: NextRequest, auth) => {
           where: {
             userId,
             rank: { not: null },
-            paidAt: { not: null },
             ...platformFilter,
           },
           orderBy: { rank: "asc" },
