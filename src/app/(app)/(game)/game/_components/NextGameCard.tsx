@@ -11,6 +11,7 @@ import { useUser } from "@/hooks/useUser";
 import { useTimer } from "@/hooks/useTimer";
 import { springs } from "@/lib/animations";
 import type { GameWithQuestionCount } from "@/lib/game";
+import { formatGameLabel } from "@/lib/game/labels";
 
 import { BuyTicketModal } from "./BuyTicketModal";
 
@@ -23,6 +24,7 @@ interface NextGameCardProps {
 export function NextGameCard({ game }: NextGameCardProps) {
   const router = useRouter();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const gameLabel = formatGameLabel(game.gameNumber);
 
   // Get real-time state from context (entry, stats, players)
   const {
@@ -141,20 +143,23 @@ export function NextGameCard({ game }: NextGameCardProps) {
         className="relative w-full md:max-w-[361px] mx-auto rounded-2xl overflow-hidden flex flex-col"
         style={{
           background: "#1E1E1E",
-          border: isLive
-            ? "1px solid rgba(252, 25, 25, 0.3)"
-            : "1px solid rgba(255, 255, 255, 0.06)",
-          boxShadow: isLive
-            ? "0 0 20px rgba(252, 25, 25, 0.12), 0 8px 32px rgba(0, 0, 0, 0.4)"
-            : "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04)",
+          border: "1px solid rgba(255, 255, 255, 0.06)",
+          boxShadow: "0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04)",
         }}
       >
+        {/* Game title */}
+        <div className="flex items-center justify-center gap-2 w-full px-4 pt-3 pb-1 z-10">
+          <span className="font-body text-[16px] text-white tracking-[0.04em]">
+            {gameLabel}
+          </span>
+        </div>
+
         {/* Countdown section */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, ...springs.gentle }}
-          className="flex flex-col items-center z-10 shrink-0 w-full px-4 pt-3 pb-2"
+          className="flex flex-col items-center z-10 shrink-0 w-full px-4 pt-1 pb-2"
         >
           <span className="font-display text-[10px] uppercase tracking-[0.18em] text-white/35 mb-2">
             {hasEnded
