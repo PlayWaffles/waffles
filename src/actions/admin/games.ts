@@ -509,57 +509,75 @@ export async function deleteGameAction(gameId: string): Promise<void> {
 // ROUNDUP (RANK + PUBLISH)
 // ==========================================
 
-export async function roundupGameAction(gameId: string) {
+export async function roundupGameAction(gameId: string): Promise<{
+  success: boolean;
+  error?: string;
+  entriesRanked?: number;
+  prizesDistributed?: number;
+  published?: boolean;
+}> {
   const authResult = await requireAdminSession();
   if (!authResult.authenticated || !authResult.session) {
-    throw new Error("Unauthorized");
+    return { success: false, error: "Unauthorized" };
   }
   const adminId = authResult.session.userId;
 
-  const game = await prisma.game.findUnique({
-    where: { id: gameId },
-    select: { id: true, onchainId: true, endsAt: true, rankedAt: true, title: true },
-  });
+  try {
+    const game = await prisma.game.findUnique({
+      where: { id: gameId },
+      select: { id: true, onchainId: true, endsAt: true, rankedAt: true, title: true },
+    });
 
-  if (!game) throw new Error("Game not found");
-  if (game.endsAt > new Date()) throw new Error("Game has not ended yet");
+    if (!game) return { success: false, error: "Game not found" };
+    if (game.endsAt > new Date()) return { success: false, error: "Game has not ended yet" };
 
-  // 1. Rank entries
-  const rankResult = await rankGame(gameId);
+    // 1. Rank entries
+    const rankResult = await rankGame(gameId);
 
-  // 2. Publish on-chain if applicable
-  let published = false;
-  if (game.onchainId && rankResult.prizesDistributed > 0) {
-    const publishResult = await publishResults(gameId);
-    published = publishResult.success;
-  }
+    // 2. Publish on-chain if applicable
+    let published = false;
+    if (game.onchainId && rankResult.prizesDistributed > 0) {
+      const publishResult = await publishResults(gameId);
+      published = publishResult.success;
+    }
 
-  await logAdminAction({
-    adminId,
-    action: AdminAction.CHANGE_GAME_STATUS,
-    entityType: EntityType.GAME,
-    entityId: gameId,
-    details: {
-      action: "roundup",
+    await logAdminAction({
+      adminId,
+      action: AdminAction.CHANGE_GAME_STATUS,
+      entityType: EntityType.GAME,
+      entityId: gameId,
+      details: {
+        action: "roundup",
+        entriesRanked: rankResult.entriesRanked,
+        prizesDistributed: rankResult.prizesDistributed,
+        published,
+      },
+    });
+
+    console.log("[admin-games] roundup_complete", {
+      gameId,
+      title: game.title,
       entriesRanked: rankResult.entriesRanked,
       prizesDistributed: rankResult.prizesDistributed,
       published,
-    },
-  });
+    });
 
-  console.log("[admin-games] roundup_complete", {
-    gameId,
-    title: game.title,
-    entriesRanked: rankResult.entriesRanked,
-    prizesDistributed: rankResult.prizesDistributed,
-    published,
-  });
+    revalidatePath(`/admin/games/${gameId}`);
 
-  revalidatePath(`/admin/games/${gameId}`);
-
-  return {
-    entriesRanked: rankResult.entriesRanked,
-    prizesDistributed: rankResult.prizesDistributed,
-    published,
-  };
+    return {
+      success: true,
+      entriesRanked: rankResult.entriesRanked,
+      prizesDistributed: rankResult.prizesDistributed,
+      published,
+    };
+  } catch (e) {
+    console.error("[admin-games] roundup_failed", {
+      gameId,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return {
+      success: false,
+      error: e instanceof Error ? e.message : "Roundup failed",
+    };
+  }
 }

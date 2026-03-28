@@ -16,11 +16,15 @@ export function RoundupButton({ gameId }: { gameId: string }) {
     setError(null);
     setResult(null);
     startTransition(async () => {
-      try {
-        const res = await roundupGameAction(gameId);
-        setResult(res);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Roundup failed");
+      const res = await roundupGameAction(gameId);
+      if (res.success) {
+        setResult({
+          entriesRanked: res.entriesRanked!,
+          prizesDistributed: res.prizesDistributed!,
+          published: res.published!,
+        });
+      } else {
+        setError(res.error ?? "Roundup failed");
       }
     });
   }
