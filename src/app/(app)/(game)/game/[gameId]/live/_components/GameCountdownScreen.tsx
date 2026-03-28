@@ -7,6 +7,9 @@ import Image from "next/image";
 // Rotation angles from design specs
 const AVATAR_ROTATIONS = [-8.71, 5.85, -3.57, 7.56];
 
+const VIDEO_URL =
+  "https://res.cloudinary.com/dfqjfrf4m/video/upload/v1768850603/waffles-countdown-compressed_gjj8rv.mp4";
+
 interface GameCountdownScreenProps {
   onComplete: () => void;
   entrants?: Array<{ pfpUrl: string | null; username?: string }>;
@@ -25,7 +28,8 @@ export function GameCountdownScreen({
 }: GameCountdownScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasEnded, setHasEnded] = useState(false);
-  const [, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(true);
+  const [autoplayFailed, setAutoplayFailed] = useState(false);
 
   // Auto-play video on mount
   useEffect(() => {
@@ -43,8 +47,8 @@ export function GameCountdownScreen({
           }
         }, 100);
       })
-      .catch((err) => {
-        console.error("[GameCountdown] Autoplay failed:", err);
+      .catch(() => {
+        setAutoplayFailed(true);
       });
   }, []);
 
@@ -55,28 +59,72 @@ export function GameCountdownScreen({
     onComplete();
   }, [hasEnded, onComplete]);
 
-  // Handle tap to unmute
+  // Handle tap to play (fallback for autoplay failure)
   const handleVideoTap = useCallback(() => {
     const video = videoRef.current;
-    if (video && video.muted) {
+    if (!video) return;
+
+    if (autoplayFailed) {
+      video.muted = false;
+      setIsMuted(false);
+      video.play().catch(() => {
+        // If even user-gesture play fails, just skip
+        onComplete();
+      });
+      setAutoplayFailed(false);
+      return;
+    }
+
+    if (video.muted) {
       video.muted = false;
       setIsMuted(false);
     }
-  }, []);
+  }, [autoplayFailed, onComplete]);
 
   return (
     <div className="relative flex-1 flex flex-col min-h-0 bg-black overflow-hidden">
       {/* Video - covers full viewport below header */}
       <video
         ref={videoRef}
-        src="https://res.cloudinary.com/dfqjfrf4m/video/upload/v1768850603/waffles-countdown-compressed_gjj8rv.mp4"
+        src={VIDEO_URL}
         autoPlay
         playsInline
+        muted
         preload="auto"
         onEnded={handleEnded}
         onClick={handleVideoTap}
         className="absolute inset-0 w-full h-full object-cover cursor-pointer"
       />
+
+      {/* Tap to play overlay - shown when autoplay fails */}
+      {autoplayFailed && (
+        <motion.button
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          onClick={handleVideoTap}
+          className="absolute inset-0 z-20 flex items-center justify-center bg-black/60"
+        >
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+              <svg width="24" height="28" viewBox="0 0 24 28" fill="none">
+                <path d="M22.5 12.268a2 2 0 010 3.464l-19.5 11.26A2 2 0 010 25.259V2.741A2 2 0 013 1.008l19.5 11.26z" fill="white" />
+              </svg>
+            </div>
+            <span className="font-display text-sm text-white/70">Tap to play</span>
+          </div>
+        </motion.button>
+      )}
+
+      {/* Skip button */}
+      <motion.button
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2 }}
+        onClick={onComplete}
+        className="absolute top-4 right-4 z-30 px-3 py-1.5 rounded-full bg-white/10 border border-white/20 font-display text-xs text-white/70 active:bg-white/20"
+      >
+        Skip
+      </motion.button>
 
       {/* Logo and player stack at bottom center */}
       <AnimatePresence>

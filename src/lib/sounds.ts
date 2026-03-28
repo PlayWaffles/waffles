@@ -84,7 +84,7 @@ function getAudio(name: SoundName): HTMLAudioElement | null {
 // STORAGE KEYS
 // ============================================
 
-const STORAGE_KEY_MUTED = "waffles-sound-muted";
+const STORAGE_KEY_MUTED = "waffles-bg-muted";
 const STORAGE_KEY_VOLUME = "waffles-sound-volume";
 
 // ============================================
@@ -125,11 +125,10 @@ class SoundManager {
   }
 
   /**
-   * Play a sound effect
+   * Play a sound effect (always plays regardless of mute — mute only affects bg music)
    */
   play(name: SoundName): void {
     this.init();
-    if (this._isMuted) return;
 
     const audio = getAudio(name);
     if (!audio) return;
