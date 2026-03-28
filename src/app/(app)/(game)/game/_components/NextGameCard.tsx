@@ -138,10 +138,10 @@ export function NextGameCard({ game }: NextGameCardProps) {
         initial={{ opacity: 0, y: 20, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         transition={springs.gentle}
-        className="relative w-full max-w-[361px] mx-auto rounded-2xl overflow-hidden flex flex-col"
+        className="relative w-full md:max-w-[361px] mx-auto rounded-2xl overflow-hidden flex flex-col"
         style={{
           background:
-            "linear-gradient(180deg, #FFFFFF 0%, #F89B2E 56%, rgba(248, 155, 46, 0.3) 100%)",
+            "linear-gradient(180deg, #FFFFFF 0%, #F89B2E 56%, #1A1A1E 100%)",
           border: isLive
             ? "1px solid rgba(252, 25, 25, 0.3)"
             : "1px solid rgba(255, 255, 255, 0.06)",

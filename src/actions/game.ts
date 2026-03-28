@@ -67,6 +67,7 @@ type ClaimFreeTicketUser = {
   platform: string;
   username: string | null;
   pfpUrl: string | null;
+  wallet?: string | null;
 };
 
 async function claimFreeTicketForUser(
@@ -143,7 +144,7 @@ async function claimFreeTicketForUser(
 
     if (result.wasCreated) {
       notifyTicketPurchased(gameId, {
-        username: user.username || "Player",
+        username: getDisplayName(user),
         pfpUrl: user.pfpUrl || null,
         prizePool: 0,
         playerCount: result.playerCount,
@@ -198,6 +199,7 @@ export async function claimFreeTicketForAuthenticatedUser(
       platform: true,
       username: true,
       pfpUrl: true,
+      wallet: true,
     },
   });
 

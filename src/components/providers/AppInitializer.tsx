@@ -45,7 +45,9 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
   const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
+  const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
+  const farcasterProfileSyncRef = useRef<string | null>(null);
   const onboardingKey = useMemo(() => {
     if (!runtime) return null;
     return runtime === "farcaster"
@@ -267,6 +269,78 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       runtime !== "farcaster" ||
       !user ||
       showOnboarding ||
+      isSyncingFarcasterProfile
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const context = await sdk.context;
+        if (cancelled || !context?.user) return;
+
+        const profileFid = context.user.fid;
+        if (!profileFid || (user.fid && user.fid !== profileFid)) {
+          return;
+        }
+
+        const syncKey = `${user.id}:${profileFid}:${context.user.username ?? ""}:${context.user.pfpUrl ?? ""}`;
+        if (farcasterProfileSyncRef.current === syncKey) return;
+        farcasterProfileSyncRef.current = syncKey;
+
+        setIsSyncingFarcasterProfile(true);
+
+        const response = await authenticatedFetch("/api/v1/users/me/farcaster-profile", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fid: profileFid,
+            username: context.user.username ?? null,
+            pfpUrl: context.user.pfpUrl ?? null,
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Farcaster profile sync failed");
+        }
+
+        if (
+          !cancelled &&
+          (user.username !== (context.user.username ?? null) ||
+            user.pfpUrl !== (context.user.pfpUrl ?? null))
+        ) {
+          refetch().catch(console.error);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          console.error("[farcaster-profile-sync]", error);
+        }
+      } finally {
+        if (!cancelled) {
+          setIsSyncingFarcasterProfile(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    isSyncingFarcasterProfile,
+    refetch,
+    runtime,
+    showOnboarding,
+    user,
+  ]);
+
+  useEffect(() => {
+    if (
+      runtime !== "farcaster" ||
+      !user ||
+      showOnboarding ||
+      isSyncingFarcasterProfile ||
       isSyncingFarcasterWallet
     ) {
       return;
@@ -323,7 +397,14 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isSyncingFarcasterWallet, refetch, runtime, showOnboarding, user]);
+  }, [
+    isSyncingFarcasterProfile,
+    isSyncingFarcasterWallet,
+    refetch,
+    runtime,
+    showOnboarding,
+    user,
+  ]);
 
   if (!runtime) {
     return null;
