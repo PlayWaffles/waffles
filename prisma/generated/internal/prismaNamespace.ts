@@ -1439,6 +1439,7 @@ export const GameScalarFieldEnum = {
   playerCount: 'playerCount',
   roundBreakSec: 'roundBreakSec',
   maxPlayers: 'maxPlayers',
+  isTestnet: 'isTestnet',
   rankedAt: 'rankedAt',
   onChainAt: 'onChainAt',
   onChainTxHash: 'onChainTxHash',

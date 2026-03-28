@@ -59,19 +59,23 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform }: Spon
         e.preventDefault();
 
         if (!isConnected) {
+            console.log("[Sponsor] Not connected, connecting...");
             connect({ connector: injected() });
             return;
         }
 
-        if (!amount || parseFloat(amount) <= 0) return;
+        if (!amount || parseFloat(amount) <= 0) {
+            console.log("[Sponsor] Invalid amount:", amount);
+            return;
+        }
 
         if (needsApproval) {
-            // First approve
+            console.log("[Sponsor] Approving", amount, "USDC");
             approve(amount);
             return;
         }
 
-        // Sponsor
+        console.log("[Sponsor] Sponsoring", amount, "USDC to game", onchainId);
         sponsorPrizePool(onchainId, amount);
     };
 

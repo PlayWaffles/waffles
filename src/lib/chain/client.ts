@@ -9,7 +9,7 @@
 import { createWalletClient, createPublicClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { env } from "@/lib/env";
-import { getPlatformChain } from "./config";
+import { getPlatformChain, getPlatformRpcUrl } from "./config";
 import type { ChainPlatform } from "./platform";
 
 // ============================================================================
@@ -23,7 +23,7 @@ export function getPublicClient(platform: ChainPlatform) {
   if (!client) {
     client = createPublicClient({
       chain: getPlatformChain(platform),
-      transport: http(),
+      transport: http(getPlatformRpcUrl(platform)),
     });
     publicClientCache.set(platform, client);
   }
@@ -46,7 +46,7 @@ export function getOperatorWalletClient(platform: ChainPlatform) {
   return createWalletClient({
     account: privateKeyToAccount(privateKey as `0x${string}`),
     chain: getPlatformChain(platform),
-    transport: http(),
+    transport: http(getPlatformRpcUrl(platform)),
   });
 }
 
@@ -62,6 +62,6 @@ export function getSettlerWalletClient(platform: ChainPlatform) {
   return createWalletClient({
     account: privateKeyToAccount(privateKey as `0x${string}`),
     chain: getPlatformChain(platform),
-    transport: http(),
+    transport: http(getPlatformRpcUrl(platform)),
   });
 }

@@ -6,8 +6,7 @@ import type { ChainPlatform } from "@/lib/chain/platform";
 /**
  * Hook to ensure the wallet is on the correct chain before performing actions.
  *
- * In test mode, OnchainKit defaults to Base mainnet. This hook switches
- * to the correct chain (e.g., Base Sepolia) before wallet actions.
+ * Ensures the wallet is on the correct platform chain before wallet actions.
  *
  * Usage:
  * ```ts

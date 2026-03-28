@@ -5,7 +5,7 @@ import { createConfig, createStorage, cookieStorage, http } from "wagmi";
 import { coinbaseWallet, injected } from "wagmi/connectors";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 
-import { farcasterChain, miniPayChain } from "@/lib/chain";
+import { farcasterChain, getPlatformRpcUrl, miniPayChain } from "@/lib/chain";
 import { env } from "@/lib/env";
 
 const appName = "Waffles";
@@ -25,8 +25,8 @@ function createWafflesWagmiConfig(includeInjected: boolean) {
     }),
     ssr: true,
     transports: {
-      [farcasterChain.id]: http(farcasterChain.rpcUrls.default.http[0]),
-      [miniPayChain.id]: http(miniPayChain.rpcUrls.default.http[0]),
+      [farcasterChain.id]: http(getPlatformRpcUrl("FARCASTER")),
+      [miniPayChain.id]: http(getPlatformRpcUrl("MINIPAY")),
     },
   });
 }
@@ -40,8 +40,8 @@ export const farcasterWagmiConfig = createConfig({
   }),
   ssr: true,
   transports: {
-    [farcasterChain.id]: http(farcasterChain.rpcUrls.default.http[0]),
-    [miniPayChain.id]: http(miniPayChain.rpcUrls.default.http[0]),
+    [farcasterChain.id]: http(getPlatformRpcUrl("FARCASTER")),
+    [miniPayChain.id]: http(getPlatformRpcUrl("MINIPAY")),
   },
 });
 export const miniPayWagmiConfig = wagmiConfig;

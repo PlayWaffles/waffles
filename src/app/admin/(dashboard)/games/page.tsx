@@ -55,6 +55,7 @@ async function getGames(searchParams: { search?: string; status?: string; platfo
             prizePool: true,
             tierPrices: true,
             maxPlayers: true,
+            isTestnet: true,
             _count: {
                 select: {
                     questions: true,

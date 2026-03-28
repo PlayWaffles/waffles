@@ -60,6 +60,7 @@ export type GameMinAggregateOutputType = {
   playerCount: number | null
   roundBreakSec: number | null
   maxPlayers: number | null
+  isTestnet: boolean | null
   rankedAt: Date | null
   onChainAt: Date | null
   onChainTxHash: string | null
@@ -84,6 +85,7 @@ export type GameMaxAggregateOutputType = {
   playerCount: number | null
   roundBreakSec: number | null
   maxPlayers: number | null
+  isTestnet: boolean | null
   rankedAt: Date | null
   onChainAt: Date | null
   onChainTxHash: string | null
@@ -109,6 +111,7 @@ export type GameCountAggregateOutputType = {
   playerCount: number
   roundBreakSec: number
   maxPlayers: number
+  isTestnet: number
   rankedAt: number
   onChainAt: number
   onChainTxHash: number
@@ -153,6 +156,7 @@ export type GameMinAggregateInputType = {
   playerCount?: true
   roundBreakSec?: true
   maxPlayers?: true
+  isTestnet?: true
   rankedAt?: true
   onChainAt?: true
   onChainTxHash?: true
@@ -177,6 +181,7 @@ export type GameMaxAggregateInputType = {
   playerCount?: true
   roundBreakSec?: true
   maxPlayers?: true
+  isTestnet?: true
   rankedAt?: true
   onChainAt?: true
   onChainTxHash?: true
@@ -202,6 +207,7 @@ export type GameCountAggregateInputType = {
   playerCount?: true
   roundBreakSec?: true
   maxPlayers?: true
+  isTestnet?: true
   rankedAt?: true
   onChainAt?: true
   onChainTxHash?: true
@@ -314,6 +320,7 @@ export type GameGroupByOutputType = {
   playerCount: number
   roundBreakSec: number
   maxPlayers: number
+  isTestnet: boolean
   rankedAt: Date | null
   onChainAt: Date | null
   onChainTxHash: string | null
@@ -362,6 +369,7 @@ export type GameWhereInput = {
   playerCount?: Prisma.IntFilter<"Game"> | number
   roundBreakSec?: Prisma.IntFilter<"Game"> | number
   maxPlayers?: Prisma.IntFilter<"Game"> | number
+  isTestnet?: Prisma.BoolFilter<"Game"> | boolean
   rankedAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainTxHash?: Prisma.StringNullableFilter<"Game"> | string | null
@@ -390,6 +398,7 @@ export type GameOrderByWithRelationInput = {
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
+  isTestnet?: Prisma.SortOrder
   rankedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -422,6 +431,7 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   playerCount?: Prisma.IntFilter<"Game"> | number
   roundBreakSec?: Prisma.IntFilter<"Game"> | number
   maxPlayers?: Prisma.IntFilter<"Game"> | number
+  isTestnet?: Prisma.BoolFilter<"Game"> | boolean
   rankedAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainTxHash?: Prisma.StringNullableFilter<"Game"> | string | null
@@ -450,6 +460,7 @@ export type GameOrderByWithAggregationInput = {
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
+  isTestnet?: Prisma.SortOrder
   rankedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -483,6 +494,7 @@ export type GameScalarWhereWithAggregatesInput = {
   playerCount?: Prisma.IntWithAggregatesFilter<"Game"> | number
   roundBreakSec?: Prisma.IntWithAggregatesFilter<"Game"> | number
   maxPlayers?: Prisma.IntWithAggregatesFilter<"Game"> | number
+  isTestnet?: Prisma.BoolWithAggregatesFilter<"Game"> | boolean
   rankedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
   onChainAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
   onChainTxHash?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
@@ -508,6 +520,7 @@ export type GameCreateInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -536,6 +549,7 @@ export type GameUncheckedCreateInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -563,6 +577,7 @@ export type GameUpdateInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -591,6 +606,7 @@ export type GameUncheckedUpdateInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -619,6 +635,7 @@ export type GameCreateManyInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -643,6 +660,7 @@ export type GameUpdateManyMutationInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -668,6 +686,7 @@ export type GameUncheckedUpdateManyInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -706,6 +725,7 @@ export type GameCountOrderByAggregateInput = {
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
+  isTestnet?: Prisma.SortOrder
   rankedAt?: Prisma.SortOrder
   onChainAt?: Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrder
@@ -739,6 +759,7 @@ export type GameMaxOrderByAggregateInput = {
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
+  isTestnet?: Prisma.SortOrder
   rankedAt?: Prisma.SortOrder
   onChainAt?: Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrder
@@ -763,6 +784,7 @@ export type GameMinOrderByAggregateInput = {
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
   maxPlayers?: Prisma.SortOrder
+  isTestnet?: Prisma.SortOrder
   rankedAt?: Prisma.SortOrder
   onChainAt?: Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrder
@@ -865,6 +887,7 @@ export type GameCreateWithoutQuestionsInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -892,6 +915,7 @@ export type GameUncheckedCreateWithoutQuestionsInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -934,6 +958,7 @@ export type GameUpdateWithoutQuestionsInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -961,6 +986,7 @@ export type GameUncheckedUpdateWithoutQuestionsInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -988,6 +1014,7 @@ export type GameCreateWithoutEntriesInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -1015,6 +1042,7 @@ export type GameUncheckedCreateWithoutEntriesInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -1057,6 +1085,7 @@ export type GameUpdateWithoutEntriesInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1084,6 +1113,7 @@ export type GameUncheckedUpdateWithoutEntriesInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1111,6 +1141,7 @@ export type GameCreateWithoutChatsInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -1138,6 +1169,7 @@ export type GameUncheckedCreateWithoutChatsInput = {
   playerCount?: number
   roundBreakSec?: number
   maxPlayers?: number
+  isTestnet?: boolean
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
@@ -1180,6 +1212,7 @@ export type GameUpdateWithoutChatsInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1207,6 +1240,7 @@ export type GameUncheckedUpdateWithoutChatsInput = {
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
   roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
   maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
+  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1283,6 +1317,7 @@ export type GameSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   playerCount?: boolean
   roundBreakSec?: boolean
   maxPlayers?: boolean
+  isTestnet?: boolean
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
@@ -1312,6 +1347,7 @@ export type GameSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   playerCount?: boolean
   roundBreakSec?: boolean
   maxPlayers?: boolean
+  isTestnet?: boolean
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
@@ -1337,6 +1373,7 @@ export type GameSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   playerCount?: boolean
   roundBreakSec?: boolean
   maxPlayers?: boolean
+  isTestnet?: boolean
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
@@ -1362,6 +1399,7 @@ export type GameSelectScalar = {
   playerCount?: boolean
   roundBreakSec?: boolean
   maxPlayers?: boolean
+  isTestnet?: boolean
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
@@ -1370,7 +1408,7 @@ export type GameSelectScalar = {
   updatedAt?: boolean
 }
 
-export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
+export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "isTestnet" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
 export type GameInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | Prisma.Game$questionsArgs<ExtArgs>
   entries?: boolean | Prisma.Game$entriesArgs<ExtArgs>
@@ -1404,6 +1442,7 @@ export type $GamePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     playerCount: number
     roundBreakSec: number
     maxPlayers: number
+    isTestnet: boolean
     rankedAt: Date | null
     onChainAt: Date | null
     onChainTxHash: string | null
@@ -1852,6 +1891,7 @@ export interface GameFieldRefs {
   readonly playerCount: Prisma.FieldRef<"Game", 'Int'>
   readonly roundBreakSec: Prisma.FieldRef<"Game", 'Int'>
   readonly maxPlayers: Prisma.FieldRef<"Game", 'Int'>
+  readonly isTestnet: Prisma.FieldRef<"Game", 'Boolean'>
   readonly rankedAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly onChainAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly onChainTxHash: Prisma.FieldRef<"Game", 'String'>

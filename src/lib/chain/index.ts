@@ -7,6 +7,7 @@ export {
   PAYMENT_TOKEN_DECIMALS,
   getPaymentTokenAddress,
   getPlatformChain,
+  getPlatformRpcUrl,
   getWaffleContractAddress,
 } from "./config";
 // Game operations

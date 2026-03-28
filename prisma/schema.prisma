@@ -221,6 +221,9 @@ model Game {
   roundBreakSec Int @default(20) @db.SmallInt
   maxPlayers    Int @default(200) @db.SmallInt
 
+  // -- NETWORK --
+  isTestnet Boolean @default(false) // Whether game was created on testnet
+
   // -- GAME LIFECYCLE TIMESTAMPS --
   rankedAt      DateTime? // When ranks/prizes were calculated (Step 1)
   onChainAt     DateTime? // When merkle root was published on-chain (Step 2)

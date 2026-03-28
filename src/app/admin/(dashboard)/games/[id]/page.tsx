@@ -137,6 +137,7 @@ export default async function GameDetailPage({
             playerCount: true,
             maxPlayers: true,
             roundBreakSec: true,
+            isTestnet: true,
             rankedAt: true,
             onChainAt: true,
             _count: {
@@ -235,8 +236,18 @@ export default async function GameDetailPage({
 
                 <div className="relative flex flex-col sm:flex-row sm:items-start justify-between gap-6">
                     <div className="space-y-4">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                             <StatusBadge phase={phase} />
+                            <span
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border ${
+                                    game.isTestnet
+                                        ? "bg-[#FFC931]/10 border-[#FFC931]/30 text-[#FFC931]"
+                                        : "bg-[#14B985]/10 border-[#14B985]/30 text-[#14B985]"
+                                }`}
+                            >
+                                <span className={`w-2 h-2 rounded-full ${game.isTestnet ? "bg-[#FFC931]" : "bg-[#14B985]"}`} />
+                                {game.isTestnet ? "Testnet" : "Mainnet"}
+                            </span>
                             {phase === "ENDED" && game.rankedAt && (
                                 <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium bg-[#14B985]/10 border border-[#14B985]/30 text-[#14B985]">
                                     <span className="w-2 h-2 rounded-full bg-[#14B985]" />

@@ -17,6 +17,7 @@ interface GameRowProps {
   prizePool: number;
   tierPrices: unknown;
   maxPlayers: number | null;
+  isTestnet: boolean;
   phase: GamePhase;
   _count: { questions: number; entries: number };
 }
@@ -63,7 +64,18 @@ export function GameRow({ game }: { game: GameRowProps }) {
         </Link>
       </td>
       <td className="px-6 py-4 whitespace-nowrap">
-        <GameStatusBadge status={game.phase} />
+        <div className="flex items-center gap-1.5">
+          <GameStatusBadge status={game.phase} />
+          <span
+            className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${
+              game.isTestnet
+                ? "bg-[#FFC931]/15 text-[#FFC931]"
+                : "bg-[#14B985]/15 text-[#14B985]"
+            }`}
+          >
+            {game.isTestnet ? "Testnet" : "Mainnet"}
+          </span>
+        </div>
       </td>
       <td className="px-6 py-4 whitespace-nowrap text-sm text-white/50">
         {new Date(game.startsAt).toLocaleString()}

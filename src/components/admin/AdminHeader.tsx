@@ -31,11 +31,11 @@ export function AdminHeader({ username, pfpUrl }: AdminHeaderProps) {
                 {/* Wallet Section */}
                 {isConnected ? (
                     <div className="flex items-center gap-1.5">
-                        <div className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs ${chain?.testnet
+                        <div className={`flex items-center gap-2 px-2.5 py-1 rounded-lg text-xs ${chain
                             ? "bg-[#14B985]/10 text-[#14B985]"
-                            : "bg-red-500/10 text-red-400"
+                            : "bg-white/10 text-white/60"
                             }`}>
-                            <div className={`w-1.5 h-1.5 rounded-full ${chain?.testnet ? "bg-[#14B985]" : "bg-red-400"
+                            <div className={`w-1.5 h-1.5 rounded-full ${chain ? "bg-[#14B985]" : "bg-white/40"
                                 }`} />
                             <span className="font-medium">{chain?.name}</span>
                             <span className="text-white/30">·</span>
