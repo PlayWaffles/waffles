@@ -141,7 +141,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         className="relative w-full max-w-[361px] mx-auto rounded-2xl overflow-hidden flex flex-col"
         style={{
           background:
-            "linear-gradient(180deg, rgba(30, 30, 34, 0.7) 0%, rgba(18, 18, 22, 0.85) 100%)",
+            "linear-gradient(180deg, #FFFFFF 0%, #F89B2E 56%, rgba(248, 155, 46, 0.3) 100%)",
           border: isLive
             ? "1px solid rgba(252, 25, 25, 0.3)"
             : "1px solid rgba(255, 255, 255, 0.06)",
