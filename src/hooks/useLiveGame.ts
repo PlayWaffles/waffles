@@ -270,13 +270,24 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       if (!hasAnswered && !isSubmitting && currentQuestion) {
         setIsSubmitting(true);
         const timeMs = currentQuestion.durationSec * 1000;
-        await submitAnswerToServer(
+        const result = await submitAnswerToServer(
           game.id,
           currentQuestion.id,
           -1,
           timeMs,
         );
-        await refetchEntry();
+        if (result.success) {
+          setEntry((currentEntry) =>
+            currentEntry
+              ? {
+                  score: result.totalScore,
+                  answered: currentEntry.answered + 1,
+                  answeredQuestionIds: [...currentEntry.answeredQuestionIds, currentQuestion.id],
+                }
+              : currentEntry,
+          );
+          void refetchEntry();
+        }
         setIsSubmitting(false);
       }
 
@@ -368,13 +379,24 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       const timeMs = Date.now() - questionStartRef.current;
 
       // Submit to server
-      await submitAnswerToServer(
+      const result = await submitAnswerToServer(
         game.id,
         currentQuestion.id,
         selectedIndex,
         timeMs,
       );
-      await refetchEntry();
+      if (result.success) {
+        setEntry((currentEntry) =>
+          currentEntry
+            ? {
+                score: result.totalScore,
+                answered: currentEntry.answered + 1,
+                answeredQuestionIds: [...currentEntry.answeredQuestionIds, currentQuestion.id],
+              }
+            : currentEntry,
+        );
+        void refetchEntry();
+      }
 
       setIsSubmitting(false);
       advanceToNext();
@@ -429,6 +451,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 interface SubmitResult {
   success: boolean;
   pointsEarned: number;
+  totalScore: number;
 }
 
 async function submitAnswerToServer(
@@ -450,11 +473,15 @@ async function submitAnswerToServer(
         }),
       });
       const result = (await response.json()) as
-        | { success: true; pointsEarned: number }
+        | { success: true; pointsEarned: number; totalScore: number }
         | { success: false; error: string };
 
       if (result.success) {
-        return { success: true, pointsEarned: result.pointsEarned };
+        return {
+          success: true,
+          pointsEarned: result.pointsEarned,
+          totalScore: result.totalScore,
+        };
       }
     } catch (e) {
       console.error(`Answer submit failed (attempt ${i + 1}):`, e);
@@ -463,5 +490,5 @@ async function submitAnswerToServer(
       await new Promise((r) => setTimeout(r, Math.pow(2, i) * 1000));
     }
   }
-  return { success: false, pointsEarned: 0 };
+  return { success: false, pointsEarned: 0, totalScore: 0 };
 }
