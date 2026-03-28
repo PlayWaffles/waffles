@@ -196,27 +196,9 @@ export function GameHub({ game }: GameHubProps) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.4 }}
-        className="shrink-0 flex flex-col justify-start items-center overflow-hidden px-4 pt-4"
+        className="shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4"
       >
-        <NextGameCard game={game} />
-
-        {/* How to Play link */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mt-3"
-        >
-          <Link
-            href={howToPlayHref}
-            scroll={false}
-            className="group inline-flex items-center gap-1.5 font-display text-[13px] text-white/35 transition-colors hover:text-[#FFC931]/70"
-          >
-            <QuestionMarkCircleIcon className="w-3.5 h-3.5" />
-            How to play
-            <ChevronRightIcon className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-        </motion.div>
+        <NextGameCard game={game} howToPlayHref={howToPlayHref} />
       </motion.section>
 
       {/* Live Event Feed */}
