@@ -8,10 +8,12 @@ import {
     ClockIcon,
     UserGroupIcon,
     CurrencyDollarIcon,
+    TicketIcon,
 } from "@heroicons/react/24/outline";
 import { getGamePhase } from "@/lib/types";
 import { SponsorGameCard } from "@/components/admin/SponsorGameCard";
 import { formatAdminGameLabel } from "@/lib/game/labels";
+import { TicketPurchaseSource } from "@prisma";
 
 // ============================================
 // HELPER COMPONENTS
@@ -141,16 +143,17 @@ export default async function GameDetailPage({
                 },
             },
             entries: {
-                where: { paidAt: { not: null } },
                 orderBy: { score: "desc" },
                 take: 20,
                 select: {
+                    paidAt: true,
+                    purchaseSource: true,
                     score: true,
                     rank: true,
                     prize: true,
                     claimedAt: true,
                     user: {
-                        select: { username: true, pfpUrl: true },
+                        select: { username: true, pfpUrl: true, wallet: true },
                     },
                 },
             },
@@ -175,6 +178,14 @@ export default async function GameDetailPage({
     };
 
     const duration = Math.round((game.endsAt.getTime() - game.startsAt.getTime()) / (1000 * 60));
+    const paidEntriesCount = game.entries.filter((entry) => entry.paidAt).length;
+    const freePlayerEntriesCount = game.entries.filter(
+        (entry) => entry.purchaseSource === TicketPurchaseSource.FREE_PLAYER,
+    ).length;
+    const freeAdminEntriesCount = game.entries.filter(
+        (entry) => entry.purchaseSource === TicketPurchaseSource.FREE_ADMIN,
+    ).length;
+    const freeEntriesCount = freePlayerEntriesCount + freeAdminEntriesCount;
 
     return (
         <div className="space-y-8 max-w-6xl">
@@ -269,6 +280,17 @@ export default async function GameDetailPage({
                     subtext={game.maxPlayers ? `of ${game.maxPlayers} max` : undefined}
                 />
                 <StatCard
+                    icon={TicketIcon}
+                    label="Ticket Mix"
+                    value={`${paidEntriesCount} paid`}
+                    color="gold"
+                    subtext={
+                        freeEntriesCount > 0
+                            ? `${freePlayerEntriesCount} play-only, ${freeAdminEntriesCount} admin free`
+                            : "No free tickets"
+                    }
+                />
+                <StatCard
                     icon={QuestionMarkCircleIcon}
                     label="Questions"
                     value={game._count.questions}
@@ -294,12 +316,15 @@ export default async function GameDetailPage({
 
             {/* Players List */}
             <div className="bg-linear-to-br from-white/6 to-white/2 border border-white/8 rounded-2xl p-6">
-                <h2 className="text-lg font-bold text-white font-display mb-4 flex items-center gap-2">
+                <h2 className="text-lg font-bold text-white font-display mb-2 flex items-center gap-2">
                     <span className="w-8 h-8 rounded-lg bg-[#FFC931]/10 flex items-center justify-center">
                         🏆
                     </span>
                     Players ({game._count.entries})
                 </h2>
+                <p className="text-sm text-white/45 mb-4">
+                    Showing paid, play-only, and admin-issued free entrants.
+                </p>
 
                 {game.entries.length > 0 ? (
                     <div className="space-y-2">
@@ -307,6 +332,21 @@ export default async function GameDetailPage({
                             const rank = entry.rank || i + 1;
                             const isWinner = (entry.prize || 0) > 0;
                             const hasClaimed = !!entry.claimedAt;
+                            const ticketType =
+                                entry.purchaseSource === TicketPurchaseSource.FREE_PLAYER
+                                    ? {
+                                        label: "Play Only",
+                                        className: "bg-[#00CFF2]/15 text-[#00CFF2]",
+                                    }
+                                    : entry.purchaseSource === TicketPurchaseSource.FREE_ADMIN
+                                        ? {
+                                            label: "Admin Free",
+                                            className: "bg-[#FFC931]/15 text-[#FFC931]",
+                                        }
+                                        : {
+                                            label: "Paid",
+                                            className: "bg-[#14B985]/15 text-[#14B985]",
+                                        };
 
                             return (
                                 <div
@@ -342,11 +382,16 @@ export default async function GameDetailPage({
                                         {/* Username & Score */}
                                         <div>
                                             <p className="text-white font-medium text-sm">
-                                                @{entry.user?.username || "Unknown"}
+                                                @{entry.user?.username || entry.user?.wallet?.slice(0, 8) || "Unknown"}
                                             </p>
-                                            <p className="text-white/50 text-xs">
+                                            <div className="flex items-center gap-2 mt-0.5">
+                                                <p className="text-white/50 text-xs">
                                                 {entry.score} pts
-                                            </p>
+                                                </p>
+                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${ticketType.className}`}>
+                                                    {ticketType.label}
+                                                </span>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -379,7 +424,7 @@ export default async function GameDetailPage({
                             <span className="text-3xl">📊</span>
                         </div>
                         <p className="text-white font-medium mb-1">No Entries</p>
-                        <p className="text-white/50 text-sm">No paid entries found for this game.</p>
+                        <p className="text-white/50 text-sm">No player entries found for this game.</p>
                     </div>
                 )}
             </div>

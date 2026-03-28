@@ -119,8 +119,20 @@ export function GameHeader({ title }: { title?: string | null }) {
                 />
               </motion.div>
               <span className="font-body text-[22px] leading-[92%] tracking-[-0.03em] text-white">
-                {title || "WAFFLES"}
+                WAFFLES
               </span>
+              {title && (
+                <span
+                  className="font-display text-[11px] uppercase tracking-[0.12em] rounded-full px-2 py-0.5"
+                  style={{
+                    color: "#F89B2E",
+                    background: "rgba(248, 155, 46, 0.12)",
+                    border: "1px solid rgba(248, 155, 46, 0.2)",
+                  }}
+                >
+                  {title.replace(/^Waffles\s*/i, "")}
+                </span>
+              )}
             </Link>
           </motion.div>
         )}
