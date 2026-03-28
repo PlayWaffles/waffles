@@ -89,6 +89,7 @@ export function PurchaseView({
       <h2
         className="font-body text-white text-center w-full"
         style={{
+          marginTop: "12px",
           fontSize: "clamp(18px, 4vw, 22px)",
           lineHeight: "92%",
           letterSpacing: "-0.03em",

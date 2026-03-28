@@ -263,7 +263,7 @@ export function GameHub({ game }: GameHubProps) {
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.5, ...springs.gentle }}
         className="flex-1 flex flex-col justify-end w-full px-4"
-        style={{ minHeight: "clamp(120px, 25vh, 320px)" }}
+        style={{ minHeight: "clamp(60px, 12vh, 180px)" }}
       >
         <LiveEventFeed />
       </motion.div>
