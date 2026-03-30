@@ -16,6 +16,7 @@ import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
 import type { TicketPricingSnapshot } from "@/lib/tickets";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import type { GameNetwork } from "@/lib/chain/network";
 import { authenticatedFetch, getAppRuntime, type AppRuntime } from "@/lib/client/runtime";
 
 interface BuyTicketModalProps {
@@ -23,6 +24,7 @@ interface BuyTicketModalProps {
   onClose: () => void;
   gameId: string;
   platform: ChainPlatform;
+  network: GameNetwork | null | undefined;
   onchainId: `0x${string}` | null;
   theme: string;
   themeIcon?: string;
@@ -37,6 +39,7 @@ export function BuyTicketModal({
   onClose,
   gameId,
   platform,
+  network,
   onchainId,
   theme,
   themeIcon,
@@ -103,11 +106,13 @@ export function BuyTicketModal({
     isSuccess: paidSuccess,
     isError: paidError,
     hasTicket,
+    salesClosed,
     purchase,
     reset: resetPaid,
   } = useTicketPurchase(
     gameId,
     platform,
+    network,
     onchainId,
     selectedPrice,
     onPurchaseSuccess,
@@ -207,14 +212,96 @@ export function BuyTicketModal({
       ? runtime === "farcaster"
         ? "Wallet unavailable"
         : "Connecting wallet..."
+      : salesClosed
+        ? "SALES CLOSED"
       : getPurchaseButtonText(paidStep, selectedPrice);
 
   const isButtonDisabled = isFree
     ? freeLoading || isPurchased
-    : paidLoading || !onchainId || isPurchased || !isWalletReady;
+    : paidLoading || !onchainId || isPurchased || !isWalletReady || salesClosed;
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    console.log("[ticket-modal]", {
+      stage: "opened",
+      gameId,
+      platform,
+      network,
+      onchainId,
+      runtime,
+      isConnected,
+      address: address ?? null,
+      selectedTier,
+      selectedPrice,
+      isWalletReady,
+      salesClosed,
+      hasTicket,
+    });
+  }, [
+    address,
+    gameId,
+    hasTicket,
+    isConnected,
+    isOpen,
+    isWalletReady,
+    network,
+    onchainId,
+    platform,
+    runtime,
+    salesClosed,
+    selectedPrice,
+    selectedTier,
+  ]);
+
+  useEffect(() => {
+    console.log("[ticket-modal]", {
+      stage: "button-state",
+      gameId,
+      platform,
+      network,
+      selectedTier,
+      buttonText,
+      isButtonDisabled,
+      step,
+      isLoading,
+      isError,
+      isPurchased,
+      isWalletReady,
+      salesClosed,
+    });
+  }, [
+    buttonText,
+    gameId,
+    isButtonDisabled,
+    isError,
+    isLoading,
+    isPurchased,
+    isWalletReady,
+    network,
+    platform,
+    salesClosed,
+    selectedTier,
+    step,
+  ]);
 
   // Handle purchase button click
   const handlePurchase = () => {
+    console.log("[ticket-modal]", {
+      stage: "cta-clicked",
+      gameId,
+      platform,
+      network,
+      selectedTier,
+      isButtonDisabled,
+      isWalletReady,
+      salesClosed,
+      hasTicket,
+      paidError,
+      freeError,
+      step,
+    });
+
     if (isFree) {
       if (freeError) {
         setFreeError(false);

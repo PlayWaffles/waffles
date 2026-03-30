@@ -288,6 +288,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         onClose={() => setIsModalOpen(false)}
         gameId={game.id}
         platform={game.platform}
+        network={game.network}
         onchainId={(game.onchainId as `0x${string}`) ?? null}
         theme={game.theme ?? ""}
         themeIcon={game.coverUrl ?? undefined}

@@ -5,8 +5,10 @@ import { prisma } from "@/lib/db";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { normalizeAddress } from "@/lib/auth";
 
-const RECOVERY_SCAN_WINDOW = BigInt(100_000);
-const LOG_BLOCK_CHUNK = BigInt(10_000);
+const BASE_MAINNET_RECOVERY_SCAN_WINDOW = BigInt(500);
+const DEFAULT_RECOVERY_SCAN_WINDOW = BigInt(25_000);
+const BASE_MAINNET_LOG_BLOCK_CHUNK = BigInt(10);
+const DEFAULT_LOG_BLOCK_CHUNK = BigInt(2_000);
 const ticketPurchasedEvent = parseAbiItem(
   "event TicketPurchased(bytes32 indexed gameId, address indexed buyer, uint256 amount)",
 );
@@ -19,6 +21,18 @@ type RecentPurchase = {
   buyer: string;
   paidAmount: number;
 };
+
+function getRecoveryScanWindow(platform: RecoveryPlatform) {
+  return platform === "FARCASTER"
+    ? BASE_MAINNET_RECOVERY_SCAN_WINDOW
+    : DEFAULT_RECOVERY_SCAN_WINDOW;
+}
+
+function getLogBlockChunk(platform: RecoveryPlatform) {
+  return platform === "FARCASTER"
+    ? BASE_MAINNET_LOG_BLOCK_CHUNK
+    : DEFAULT_LOG_BLOCK_CHUNK;
+}
 
 async function unlockReferralRewards(
   tx: Prisma.TransactionClient,
@@ -43,27 +57,43 @@ async function getRecentTicketPurchasesForBuyer(
   const buyer = normalizeAddress(wallet).toLowerCase() as `0x${string}`;
   const publicClient = getPublicClient(platform);
   const contractAddress = getWaffleContractAddress(platform);
+  const recoveryScanWindow = getRecoveryScanWindow(platform);
+  const logBlockChunk = getLogBlockChunk(platform);
   const latestBlock = await publicClient.getBlockNumber();
   const fromBlock =
-    latestBlock > RECOVERY_SCAN_WINDOW
-      ? latestBlock - RECOVERY_SCAN_WINDOW
+    latestBlock > recoveryScanWindow
+      ? latestBlock - recoveryScanWindow
       : BigInt(0);
 
   const logs = [];
 
-  for (let start = fromBlock; start <= latestBlock; start += LOG_BLOCK_CHUNK) {
+  for (let start = fromBlock; start <= latestBlock; start += logBlockChunk) {
     const end =
-      start + LOG_BLOCK_CHUNK - BigInt(1) < latestBlock
-        ? start + LOG_BLOCK_CHUNK - BigInt(1)
+      start + logBlockChunk - BigInt(1) < latestBlock
+        ? start + logBlockChunk - BigInt(1)
         : latestBlock;
 
-    const batch = await publicClient.getLogs({
-      address: contractAddress,
-      event: ticketPurchasedEvent,
-      args: { buyer },
-      fromBlock: start,
-      toBlock: end,
-    });
+    let batch;
+    try {
+      batch = await publicClient.getLogs({
+        address: contractAddress,
+        event: ticketPurchasedEvent,
+        args: { buyer },
+        fromBlock: start,
+        toBlock: end,
+      });
+    } catch (error) {
+      console.error("[ticket-recovery]", {
+        stage: "get-logs-failed",
+        platform,
+        buyer,
+        contractAddress,
+        fromBlock: start.toString(),
+        toBlock: end.toString(),
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
+      return [];
+    }
 
     logs.push(...batch);
   }

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
 import { useSwitchChain, useChainId } from "wagmi";
 import { getPlatformChain } from "@/lib/chain";
-import type { ChainPlatform } from "@/lib/chain/platform";
+import type { ChainTarget } from "@/lib/chain/network";
 
 /**
  * Hook to ensure the wallet is on the correct chain before performing actions.
@@ -18,10 +18,10 @@ import type { ChainPlatform } from "@/lib/chain/platform";
  * };
  * ```
  */
-export function useCorrectChain(platform: ChainPlatform = "FARCASTER") {
+export function useCorrectChain(target: ChainTarget = "FARCASTER") {
   const currentChainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
-  const chain = getPlatformChain(platform);
+  const chain = getPlatformChain(target);
 
   const isOnCorrectChain = currentChainId === chain.id;
 
@@ -33,7 +33,7 @@ export function useCorrectChain(platform: ChainPlatform = "FARCASTER") {
       );
       await switchChainAsync({ chainId: chain.id });
     }
-  }, [currentChainId, switchChainAsync]);
+  }, [chain.id, chain.name, currentChainId, switchChainAsync]);
 
   return {
     ensureCorrectChain,

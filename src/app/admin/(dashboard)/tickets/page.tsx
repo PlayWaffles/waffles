@@ -10,9 +10,11 @@ import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { ChainPlatform } from "@/lib/chain/platform";
 
-const CHAIN_SCAN_WINDOW = BigInt(1_000_000);
+const BASE_MAINNET_SCAN_WINDOW = BigInt(500);
+const DEFAULT_SCAN_WINDOW = BigInt(100_000);
 const MAX_UNRESOLVED_PURCHASES = 50;
-const LOG_BLOCK_CHUNK = BigInt(10_000);
+const BASE_MAINNET_LOG_BLOCK_CHUNK = BigInt(10);
+const DEFAULT_LOG_BLOCK_CHUNK = BigInt(2_000);
 const ticketPurchasedEvent = parseAbiItem(
     "event TicketPurchased(bytes32 indexed gameId, address indexed buyer, uint256 amount)",
 );
@@ -31,6 +33,16 @@ type OnchainMismatchRow = {
     status: "MISSING_IN_DB" | "USER_NOT_FOUND" | "GAME_NOT_FOUND" | "ENTRY_EXISTS";
     note: string;
 };
+
+function getChainScanWindow(platform: ChainPlatform) {
+    return platform === "FARCASTER" ? BASE_MAINNET_SCAN_WINDOW : DEFAULT_SCAN_WINDOW;
+}
+
+function getLogBlockChunk(platform: ChainPlatform) {
+    return platform === "FARCASTER"
+        ? BASE_MAINNET_LOG_BLOCK_CHUNK
+        : DEFAULT_LOG_BLOCK_CHUNK;
+}
 
 // ============================================
 // DATA FETCHING
@@ -155,7 +167,8 @@ async function getPlatformMismatches(platform: ChainPlatform): Promise<OnchainMi
     const publicClient = getPublicClient(platform);
     const contractAddress = getWaffleContractAddress(platform);
     const latestBlock = await publicClient.getBlockNumber();
-    const fromBlock = latestBlock > CHAIN_SCAN_WINDOW ? latestBlock - CHAIN_SCAN_WINDOW : BigInt(0);
+    const chainScanWindow = getChainScanWindow(platform);
+    const fromBlock = latestBlock > chainScanWindow ? latestBlock - chainScanWindow : BigInt(0);
     const logs = await getTicketPurchasedLogs({
         platform,
         address: contractAddress,
@@ -355,19 +368,33 @@ async function getTicketPurchasedLogs({
     toBlock: bigint;
 }) {
     const publicClient = getPublicClient(platform);
+    const logBlockChunk = getLogBlockChunk(platform);
     const logs = [];
 
-    for (let start = fromBlock; start <= toBlock; start += LOG_BLOCK_CHUNK) {
-        const end = start + LOG_BLOCK_CHUNK - BigInt(1) < toBlock
-            ? start + LOG_BLOCK_CHUNK - BigInt(1)
+    for (let start = fromBlock; start <= toBlock; start += logBlockChunk) {
+        const end = start + logBlockChunk - BigInt(1) < toBlock
+            ? start + logBlockChunk - BigInt(1)
             : toBlock;
 
-        const batch = await publicClient.getLogs({
-            address,
-            event: ticketPurchasedEvent,
-            fromBlock: start,
-            toBlock: end,
-        });
+        let batch;
+        try {
+            batch = await publicClient.getLogs({
+                address,
+                event: ticketPurchasedEvent,
+                fromBlock: start,
+                toBlock: end,
+            });
+        } catch (error) {
+            console.error("[admin-tickets]", {
+                stage: "get-logs-failed",
+                platform,
+                address,
+                fromBlock: start.toString(),
+                toBlock: end.toString(),
+                error: error instanceof Error ? error.message : "Unknown error",
+            });
+            return [];
+        }
 
         logs.push(...batch);
     }

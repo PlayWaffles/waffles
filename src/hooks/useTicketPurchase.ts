@@ -7,7 +7,7 @@ import { waitForTransactionReceipt } from "wagmi/actions";
 import { parseUnits, encodeFunctionData } from "viem";
 
 import { useRealtime } from "@/components/providers/RealtimeProvider";
-import { useTokenAllowance } from "./waffleContractHooks";
+import { useGetGame, useTokenAllowance } from "./waffleContractHooks";
 import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
 import { waffleGameAbi } from "@/lib/chain/abi";
@@ -20,6 +20,7 @@ import {
 import { useCorrectChain } from "./useCorrectChain";
 import { useUser } from "./useUser";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import type { GameNetwork } from "@/lib/chain/network";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { authenticatedFetch } from "@/lib/client/runtime";
 
@@ -49,13 +50,18 @@ export interface TicketPurchaseState {
 export function useTicketPurchase(
   gameId: string,
   platform: ChainPlatform,
+  network: GameNetwork | null | undefined,
   onchainId: `0x${string}` | null,
   price: number,
   onSuccess?: () => void,
 ) {
   const router = useRouter();
   const { address, isConnected } = useAccount();
-  const { ensureCorrectChain } = useCorrectChain(platform);
+  const chainTarget = useMemo(
+    () => ({ platform, network }),
+    [platform, network],
+  );
+  const { ensureCorrectChain } = useCorrectChain(chainTarget);
   const { user } = useUser();
   const [state, setState] = useState<TicketPurchaseState>({ step: "idle" });
 
@@ -76,13 +82,86 @@ export function useTicketPurchase(
     [price],
   );
 
-  const tokenAddress = getPaymentTokenAddress(platform);
-  const contractAddress = getWaffleContractAddress(platform);
+  const tokenAddress = getPaymentTokenAddress(chainTarget);
+  const contractAddress = getWaffleContractAddress(chainTarget);
   const { data: allowance } = useTokenAllowance(
     address as `0x${string}`,
     tokenAddress,
-    platform,
+    chainTarget,
   );
+  const { data: onchainGame } = useGetGame(onchainId, chainTarget);
+  const salesClosed =
+    !!onchainGame &&
+    typeof onchainGame === "object" &&
+    "salesClosed" in onchainGame &&
+    Boolean(onchainGame.salesClosed);
+
+  useEffect(() => {
+    console.log("[ticket-purchase]", {
+      stage: "hook-ready",
+      platform,
+      network,
+      gameId,
+      onchainId,
+      address,
+      isConnected,
+      tokenAddress,
+      contractAddress,
+      allowance: typeof allowance === "bigint" ? allowance.toString() : null,
+      price,
+      priceInUnits: priceInUnits.toString(),
+      hasTicket,
+      salesClosed,
+      onchainGame:
+        onchainGame && typeof onchainGame === "object"
+          ? {
+              minimumTicketPrice:
+                "minimumTicketPrice" in onchainGame
+                  ? String(onchainGame.minimumTicketPrice)
+                  : null,
+              ticketCount:
+                "ticketCount" in onchainGame ? String(onchainGame.ticketCount) : null,
+              ticketRevenue:
+                "ticketRevenue" in onchainGame
+                  ? String(onchainGame.ticketRevenue)
+                  : null,
+              settledAt:
+                "settledAt" in onchainGame ? String(onchainGame.settledAt) : null,
+              salesClosed:
+                "salesClosed" in onchainGame ? Boolean(onchainGame.salesClosed) : null,
+              cancelled:
+                "cancelled" in onchainGame ? Boolean(onchainGame.cancelled) : null,
+            }
+          : null,
+    });
+  }, [
+    address,
+    allowance,
+    contractAddress,
+    gameId,
+    hasTicket,
+    isConnected,
+    network,
+    onchainGame,
+    onchainId,
+    platform,
+    price,
+    priceInUnits,
+    salesClosed,
+    tokenAddress,
+  ]);
+
+  useEffect(() => {
+    console.log("[ticket-purchase]", {
+      stage: "ui-state-changed",
+      platform,
+      network,
+      gameId,
+      step: state.step,
+      error: state.error ?? null,
+      txHash: state.txHash ?? null,
+    });
+  }, [gameId, network, platform, state.error, state.step, state.txHash]);
 
   const needsApproval = useMemo(() => {
     if (!allowance) return true;
@@ -198,17 +277,51 @@ export function useTicketPurchase(
   // ==========================================
   const purchase = useCallback(async () => {
     if (!onchainId) {
+      console.warn("[ticket-purchase]", {
+        stage: "blocked-no-onchain-id",
+        platform,
+        network,
+        gameId,
+      });
       notify.error("Game not available");
       return;
     }
 
     if (hasTicket) {
+      console.warn("[ticket-purchase]", {
+        stage: "blocked-existing-ticket",
+        platform,
+        network,
+        gameId,
+        address,
+      });
       notify.error("You already have a ticket");
+      return;
+    }
+
+    if (salesClosed) {
+      console.warn("[ticket-purchase]", {
+        stage: "blocked-sales-closed",
+        platform,
+        network,
+        gameId,
+        onchainId,
+        address,
+      });
+      notify.error("Ticket sales are closed for this game");
       return;
     }
 
     // Wallet connection is handled by OnchainKit's autoConnect
     if (!isConnected || !address) {
+      console.warn("[ticket-purchase]", {
+        stage: "blocked-wallet-unavailable",
+        platform,
+        network,
+        gameId,
+        isConnected,
+        address: address ?? null,
+      });
       notify.info("Wallet connecting... Please wait.");
       return;
     }
@@ -289,6 +402,16 @@ export function useTicketPurchase(
         confirmations: 1,
       });
 
+      console.log("[ticket-purchase]", {
+        stage: "purchase-confirmed",
+        platform,
+        network,
+        gameId,
+        onchainId,
+        address,
+        txHash: purchaseHash,
+      });
+
       setState({ step: "syncing", txHash: purchaseHash });
       await syncWithBackend(purchaseHash);
     } catch (err) {
@@ -325,6 +448,7 @@ export function useTicketPurchase(
     price,
     priceInUnits,
     syncWithBackend,
+    salesClosed,
     tokenAddress,
     writeContractAsync,
   ]);
@@ -356,6 +480,7 @@ export function useTicketPurchase(
     hasTicket,
     isLoadingEntry,
     needsApproval,
+    salesClosed,
     entry,
 
     purchase,

@@ -9,20 +9,26 @@ import {
   getPaymentTokenAddress,
   getWaffleContractAddress,
 } from "@/lib/chain";
+import type { ChainTarget } from "@/lib/chain/network";
 import { withBuilderCodeDataSuffix } from "@/lib/chain/builderCode";
 import { waffleGameAbi } from "@/lib/chain/abi";
 import { ERC20_ABI } from "@/lib/constants";
-import type { ChainPlatform } from "@/lib/chain/platform";
 
 /**
  * Hook to read game data from the contract
  */
-export function useGetGame(onchainId: `0x${string}`, platform: ChainPlatform) {
+export function useGetGame(
+  onchainId: `0x${string}` | null,
+  target: ChainTarget,
+) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "getGame",
-    args: [onchainId],
+    args: onchainId ? [onchainId] : undefined,
+    query: {
+      enabled: !!onchainId,
+    },
   });
 }
 
@@ -30,9 +36,9 @@ export function useGetGame(onchainId: `0x${string}`, platform: ChainPlatform) {
  * Hook to get the payment token address from the WaffleGame contract
  * This prevents mismatch between hardcoded config and actual contract token
  */
-export function useContractToken(platform: ChainPlatform) {
+export function useContractToken(target: ChainTarget) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "paymentToken",
   });
@@ -44,10 +50,10 @@ export function useContractToken(platform: ChainPlatform) {
 export function useHasTicket(
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
-  platform: ChainPlatform,
+  target: ChainTarget,
 ) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "hasTicket",
     args: [onchainId, playerAddress],
@@ -63,10 +69,10 @@ export function useHasTicket(
 export function useHasClaimed(
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
-  platform: ChainPlatform,
+  target: ChainTarget,
 ) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "hasClaimed",
     args: [onchainId, playerAddress],
@@ -101,26 +107,26 @@ export function useTokenBalance(
 export function useTokenAllowance(
   ownerAddress: `0x${string}`,
   tokenAddress: `0x${string}`,
-  platform: ChainPlatform,
+  target: ChainTarget,
 ) {
   return useReadContract({
     address: tokenAddress,
     abi: ERC20_ABI,
     functionName: "allowance",
-    args: [ownerAddress, getWaffleContractAddress(platform)],
+    args: [ownerAddress, getWaffleContractAddress(target)],
   });
 }
 
 /**
  * Hook to approve tokens for WaffleGame contract
  */
-export function useApproveToken(platform: ChainPlatform) {
+export function useApproveToken(target: ChainTarget) {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
-  const tokenAddress = getPaymentTokenAddress(platform);
-  const contractAddress = getWaffleContractAddress(platform);
+  const tokenAddress = getPaymentTokenAddress(target);
+  const contractAddress = getWaffleContractAddress(target);
 
   const approve = (amount: string) => {
     const amountInUnits = parseUnits(amount, PAYMENT_TOKEN_DECIMALS);
@@ -140,12 +146,12 @@ export function useApproveToken(platform: ChainPlatform) {
 /**
  * Hook to buy a ticket for a game
  */
-export function useBuyTicket(platform: ChainPlatform) {
+export function useBuyTicket(target: ChainTarget) {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
-  const contractAddress = getWaffleContractAddress(platform);
+  const contractAddress = getWaffleContractAddress(target);
 
   const buyTicket = (onchainId: `0x${string}`, amount: string) => {
     const amountInUnits = parseUnits(amount, PAYMENT_TOKEN_DECIMALS);
@@ -165,12 +171,12 @@ export function useBuyTicket(platform: ChainPlatform) {
 /**
  * Hook to claim a prize using a Merkle proof
  */
-export function useClaimPrize(platform: ChainPlatform) {
+export function useClaimPrize(target: ChainTarget) {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
-  const contractAddress = getWaffleContractAddress(platform);
+  const contractAddress = getWaffleContractAddress(target);
 
   const claimPrize = (
     onchainId: `0x${string}`,
@@ -193,12 +199,12 @@ export function useClaimPrize(platform: ChainPlatform) {
 /**
  * Hook to sponsor a game's prize pool (v5 feature)
  */
-export function useSponsorPrizePool(platform: ChainPlatform) {
+export function useSponsorPrizePool(target: ChainTarget) {
   const { writeContract, data: hash, isPending, error } = useWriteContract();
   const { isLoading: isConfirming, isSuccess } = useWaitForTransactionReceipt({
     hash,
   });
-  const contractAddress = getWaffleContractAddress(platform);
+  const contractAddress = getWaffleContractAddress(target);
 
   const sponsorPrizePool = (onchainId: `0x${string}`, amount: string) => {
     const amountInUnits = parseUnits(amount, PAYMENT_TOKEN_DECIMALS);
@@ -221,10 +227,10 @@ export function useSponsorPrizePool(platform: ChainPlatform) {
  */
 export function useGetTotalPrizePool(
   onchainId: `0x${string}`,
-  platform: ChainPlatform,
+  target: ChainTarget,
 ) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "getTotalPrizePool",
     args: [onchainId],
@@ -237,9 +243,9 @@ export function useGetTotalPrizePool(
 /**
  * Hook to get accumulated platform fees (admin use)
  */
-export function useAccumulatedFees(platform: ChainPlatform) {
+export function useAccumulatedFees(target: ChainTarget) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "accumulatedFees",
   });
@@ -248,9 +254,9 @@ export function useAccumulatedFees(platform: ChainPlatform) {
 /**
  * Hook to get the platform fee percentage
  */
-export function usePlatformFee(platform: ChainPlatform) {
+export function usePlatformFee(target: ChainTarget) {
   return useReadContract({
-    address: getWaffleContractAddress(platform),
+    address: getWaffleContractAddress(target),
     abi: waffleGameAbi,
     functionName: "platformFeePermyriad",
   });
