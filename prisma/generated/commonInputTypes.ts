@@ -304,6 +304,13 @@ export type EnumRepeatFrequencyWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumRepeatFrequencyFilter<$PrismaModel>
 }
 
+export type EnumGameNetworkFilter<$PrismaModel = never> = {
+  equals?: $Enums.GameNetwork | Prisma.EnumGameNetworkFieldRefInput<$PrismaModel>
+  in?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  notIn?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumGameNetworkFilter<$PrismaModel> | $Enums.GameNetwork
+}
+
 export type EnumGameThemeFilter<$PrismaModel = never> = {
   equals?: $Enums.GameTheme | Prisma.EnumGameThemeFieldRefInput<$PrismaModel>
   in?: $Enums.GameTheme[] | Prisma.ListEnumGameThemeFieldRefInput<$PrismaModel>
@@ -320,6 +327,16 @@ export type FloatFilter<$PrismaModel = never> = {
   gt?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   gte?: number | Prisma.FloatFieldRefInput<$PrismaModel>
   not?: Prisma.NestedFloatFilter<$PrismaModel> | number
+}
+
+export type EnumGameNetworkWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.GameNetwork | Prisma.EnumGameNetworkFieldRefInput<$PrismaModel>
+  in?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  notIn?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumGameNetworkWithAggregatesFilter<$PrismaModel> | $Enums.GameNetwork
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumGameNetworkFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumGameNetworkFilter<$PrismaModel>
 }
 
 export type EnumGameThemeWithAggregatesFilter<$PrismaModel = never> = {
@@ -814,11 +831,28 @@ export type NestedEnumRepeatFrequencyWithAggregatesFilter<$PrismaModel = never> 
   _max?: Prisma.NestedEnumRepeatFrequencyFilter<$PrismaModel>
 }
 
+export type NestedEnumGameNetworkFilter<$PrismaModel = never> = {
+  equals?: $Enums.GameNetwork | Prisma.EnumGameNetworkFieldRefInput<$PrismaModel>
+  in?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  notIn?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumGameNetworkFilter<$PrismaModel> | $Enums.GameNetwork
+}
+
 export type NestedEnumGameThemeFilter<$PrismaModel = never> = {
   equals?: $Enums.GameTheme | Prisma.EnumGameThemeFieldRefInput<$PrismaModel>
   in?: $Enums.GameTheme[] | Prisma.ListEnumGameThemeFieldRefInput<$PrismaModel>
   notIn?: $Enums.GameTheme[] | Prisma.ListEnumGameThemeFieldRefInput<$PrismaModel>
   not?: Prisma.NestedEnumGameThemeFilter<$PrismaModel> | $Enums.GameTheme
+}
+
+export type NestedEnumGameNetworkWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.GameNetwork | Prisma.EnumGameNetworkFieldRefInput<$PrismaModel>
+  in?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  notIn?: $Enums.GameNetwork[] | Prisma.ListEnumGameNetworkFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumGameNetworkWithAggregatesFilter<$PrismaModel> | $Enums.GameNetwork
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumGameNetworkFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumGameNetworkFilter<$PrismaModel>
 }
 
 export type NestedEnumGameThemeWithAggregatesFilter<$PrismaModel = never> = {

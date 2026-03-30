@@ -25,6 +25,15 @@ export const UserPlatform = {
 export type UserPlatform = (typeof UserPlatform)[keyof typeof UserPlatform]
 
 
+export const GameNetwork = {
+  BASE_MAINNET: 'BASE_MAINNET',
+  BASE_SEPOLIA: 'BASE_SEPOLIA',
+  CELO_SEPOLIA: 'CELO_SEPOLIA'
+} as const
+
+export type GameNetwork = (typeof GameNetwork)[keyof typeof GameNetwork]
+
+
 export const RewardStatus = {
   PENDING: 'PENDING',
   UNLOCKED: 'UNLOCKED',

@@ -166,6 +166,7 @@ export const GameScalarFieldEnum = {
   gameNumber: 'gameNumber',
   onchainId: 'onchainId',
   platform: 'platform',
+  network: 'network',
   title: 'title',
   description: 'description',
   theme: 'theme',

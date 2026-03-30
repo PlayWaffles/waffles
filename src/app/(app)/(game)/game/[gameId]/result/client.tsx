@@ -27,6 +27,7 @@ import { useUser } from "@/hooks/useUser";
 import { shareTextOrCopy } from "@/lib/share";
 import { authenticatedFetch } from "@/lib/client/runtime";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import type { GameNetwork } from "@/lib/chain";
 
 // ==========================================
 // TYPES
@@ -72,6 +73,7 @@ interface ResultGame {
   gameNumber: number;
   onchainId: string | null;
   platform: ChainPlatform;
+  network: GameNetwork;
   title: string;
   theme: string;
   startsAt: Date;
@@ -217,7 +219,12 @@ export default function ResultPageClient({
 
   // Get onchainId
   const onchainId = game?.onchainId;
-  const contractAddress = game ? getWaffleContractAddress(game.platform) : null;
+  const contractAddress = game
+    ? getWaffleContractAddress({
+        platform: game.platform,
+        network: game.network,
+      })
+    : null;
 
   // User score from RealtimeProvider entry
   const userScore = useMemo(() => {

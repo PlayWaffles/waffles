@@ -11,6 +11,7 @@ import { GameTheme, UserPlatform } from "@prisma";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
 import { rankGame, publishResults } from "@/lib/game/lifecycle";
+import { defaultNetworkForPlatform } from "@/lib/chain";
 
 // ==========================================
 // SCHEMA
@@ -147,6 +148,7 @@ export async function createGameAction(
   const failures: string[] = [];
 
   for (const platform of platforms) {
+    const network = defaultNetworkForPlatform(platform);
     const onchainId = generateOnchainGameId();
     let gameId: string | null = null;
 
@@ -155,6 +157,8 @@ export async function createGameAction(
         data: {
           title: "Waffles",
           platform,
+          network,
+          isTestnet: network !== "BASE_MAINNET",
           description: null,
           theme: DEFAULT_GAME_THEME,
           coverUrl: DEFAULT_GAME_COVER_URL,
@@ -182,7 +186,12 @@ export async function createGameAction(
 
       await assignAutoQuestionsToGame(game.id, selectedTemplates);
 
-      const txHash = await createGameOnChain(platform, onchainId, data.ticketPrice);
+      const txHash = await createGameOnChain(
+        platform,
+        network,
+        onchainId,
+        data.ticketPrice,
+      );
 
       const template = (await import("@/lib/notifications/templates")).preGame
         .gameOpen;
@@ -232,6 +241,7 @@ export async function createGameAction(
         details: {
           title,
           platform,
+          network,
           theme: DEFAULT_GAME_THEME,
           onchainId,
           txHash,
@@ -410,6 +420,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
       id: true,
       onchainId: true,
       platform: true,
+      network: true,
       title: true,
       _count: { select: { entries: true } },
     },
@@ -451,6 +462,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
           await import("@/lib/chain");
         const onChainGame = await getOnChainGame(
           game.platform,
+          game.network,
           game.onchainId as `0x${string}`,
         );
 
@@ -463,6 +475,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
         if (needsClosing) {
           const txHash = await closeSalesOnChain(
             game.platform,
+            game.network,
             game.onchainId as `0x${string}`,
           );
           console.log("[admin-games] onchain_sales_closed", { gameId, txHash });

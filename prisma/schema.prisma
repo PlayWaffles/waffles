@@ -75,6 +75,12 @@ enum UserPlatform {
   MINIPAY
 }
 
+enum GameNetwork {
+  BASE_MAINNET
+  BASE_SEPOLIA
+  CELO_SEPOLIA
+}
+
 model ReferralReward {
   id        String @id @default(cuid())
   inviter   User   @relation("InviterRewards", fields: [inviterId], references: [id])
@@ -200,6 +206,7 @@ model Game {
 
   // -- INFO --
   platform    UserPlatform
+  network     GameNetwork
   title       String    @db.VarChar(100)
   description String?   @db.VarChar(1000)
   theme       GameTheme

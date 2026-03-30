@@ -219,6 +219,7 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
       id: true,
       onchainId: true,
       platform: true,
+      network: true,
       rankedAt: true,
       onChainAt: true,
       prizePool: true,
@@ -245,7 +246,8 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
   }
 
   const onchainId = game.onchainId as `0x${string}`;
-  const contractAddress = getWaffleContractAddress(game.platform);
+  const chainTarget = { platform: game.platform, network: game.network };
+  const contractAddress = getWaffleContractAddress(chainTarget);
 
   // Get winners with wallets
   const rankedEntries = await prisma.gameEntry.findMany({
@@ -277,8 +279,8 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
   const allProofs = generateAllProofs(winners);
 
   // Submit to chain
-  const publicClient = getPublicClient(game.platform);
-  const walletClient = getSettlerWalletClient(game.platform);
+  const publicClient = getPublicClient(chainTarget);
+  const walletClient = getSettlerWalletClient(chainTarget);
   const txHash = await walletClient.writeContract(
     withBuilderCodeDataSuffix({
       address: contractAddress,

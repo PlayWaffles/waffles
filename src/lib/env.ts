@@ -42,6 +42,7 @@ const envSchema = z.object({
     .string()
     .min(1, "NEXT_PUBLIC_ONCHAINKIT_API_KEY is required"),
   NEXT_PUBLIC_BASE_MAINNET_RPC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: z
     .string()
@@ -109,6 +110,8 @@ const getEnv = () => {
     NEXT_PUBLIC_ONCHAINKIT_API_KEY: process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
     NEXT_PUBLIC_BASE_MAINNET_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL,
+    NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL:
+      process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL,
     NEXT_PUBLIC_BASE_BUILDER_CODE: process.env.NEXT_PUBLIC_BASE_BUILDER_CODE,
     NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS:
       process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
@@ -170,6 +173,7 @@ const getEnv = () => {
         cloudinaryApiSecret: "",
         nextPublicOnchainkitApiKey: "",
         nextPublicBaseMainnetRpcUrl: "https://mainnet.base.org",
+        nextPublicBaseSepoliaRpcUrl: "https://sepolia.base.org",
         nextPublicBaseBuilderCode: undefined,
         nextPublicWaffleContractAddress:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
@@ -232,6 +236,8 @@ const getEnv = () => {
     nextPublicOnchainkitApiKey: data.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
     nextPublicBaseMainnetRpcUrl:
       data.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
+    nextPublicBaseSepoliaRpcUrl:
+      data.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
     nextPublicBaseBuilderCode: data.NEXT_PUBLIC_BASE_BUILDER_CODE,
     nextPublicWaffleContractAddress: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
       "0x0000000000000000000000000000000000000000") as `0x${string}`,

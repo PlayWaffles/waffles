@@ -14,6 +14,7 @@ import {
   getWaffleContractAddress,
 } from "./config";
 import { type ChainPlatform } from "./platform";
+import type { GameNetwork } from "./network";
 
 // ============================================================================
 // Types (v5 Contract)
@@ -52,11 +53,13 @@ export function generateOnchainGameId(): `0x${string}` {
  */
 export async function createGameOnChain(
   platform: ChainPlatform,
+  network: GameNetwork,
   onchainId: `0x${string}`,
   minTicketPriceUSDC: number,
 ): Promise<`0x${string}`> {
-  const walletClient = getOperatorWalletClient(platform);
-  const contractAddress = getWaffleContractAddress(platform);
+  const chainTarget = { platform, network };
+  const walletClient = getOperatorWalletClient(chainTarget);
+  const contractAddress = getWaffleContractAddress(chainTarget);
   const minimumTicketPrice = parseUnits(
     minTicketPriceUSDC.toString(),
     PAYMENT_TOKEN_DECIMALS,
@@ -82,10 +85,12 @@ export async function createGameOnChain(
  */
 export async function closeSalesOnChain(
   platform: ChainPlatform,
+  network: GameNetwork | null | undefined,
   onchainId: `0x${string}`,
 ): Promise<`0x${string}`> {
-  const walletClient = getOperatorWalletClient(platform);
-  const contractAddress = getWaffleContractAddress(platform);
+  const chainTarget = { platform, network };
+  const walletClient = getOperatorWalletClient(chainTarget);
+  const contractAddress = getWaffleContractAddress(chainTarget);
 
   const hash = await walletClient.writeContract(
     withBuilderCodeDataSuffix({
@@ -110,11 +115,13 @@ export async function closeSalesOnChain(
  */
 export async function getOnChainGame(
   platform: ChainPlatform,
+  network: GameNetwork | null | undefined,
   onchainId: `0x${string}`,
 ): Promise<OnChainGame | null> {
   try {
-    const publicClient = getPublicClient(platform);
-    const contractAddress = getWaffleContractAddress(platform);
+    const chainTarget = { platform, network };
+    const publicClient = getPublicClient(chainTarget);
+    const contractAddress = getWaffleContractAddress(chainTarget);
     const game = (await publicClient.readContract({
       address: contractAddress,
       abi: waffleGameAbi,
@@ -139,11 +146,13 @@ export async function getOnChainGame(
  */
 export async function hasTicketOnChain(
   platform: ChainPlatform,
+  network: GameNetwork | null | undefined,
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
 ): Promise<boolean> {
-  const publicClient = getPublicClient(platform);
-  const contractAddress = getWaffleContractAddress(platform);
+  const chainTarget = { platform, network };
+  const publicClient = getPublicClient(chainTarget);
+  const contractAddress = getWaffleContractAddress(chainTarget);
   const hasTicket = await publicClient.readContract({
     address: contractAddress,
     abi: waffleGameAbi,
@@ -159,11 +168,13 @@ export async function hasTicketOnChain(
  */
 export async function hasClaimedOnChain(
   platform: ChainPlatform,
+  network: GameNetwork | null | undefined,
   onchainId: `0x${string}`,
   playerAddress: `0x${string}`,
 ): Promise<boolean> {
-  const publicClient = getPublicClient(platform);
-  const contractAddress = getWaffleContractAddress(platform);
+  const chainTarget = { platform, network };
+  const publicClient = getPublicClient(chainTarget);
+  const contractAddress = getWaffleContractAddress(chainTarget);
   const hasClaimed = await publicClient.readContract({
     address: contractAddress,
     abi: waffleGameAbi,

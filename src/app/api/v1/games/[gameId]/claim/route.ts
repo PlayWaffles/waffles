@@ -67,7 +67,7 @@ export const POST = withAuth<Params>(
       // Find game with onchainId
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { id: true, platform: true, onchainId: true },
+        select: { id: true, platform: true, network: true, onchainId: true },
       });
 
       if (!game || game.platform !== auth.platform || !game.onchainId) {
@@ -145,6 +145,7 @@ export const POST = withAuth<Params>(
       const verification = await verifyClaim({
         txHash: txHash as `0x${string}`,
         platform: game.platform,
+        network: game.network,
         expectedGameId: game.onchainId as `0x${string}`,
         expectedClaimer: wallet as `0x${string}`,
       });

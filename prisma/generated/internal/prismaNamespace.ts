@@ -1427,6 +1427,7 @@ export const GameScalarFieldEnum = {
   gameNumber: 'gameNumber',
   onchainId: 'onchainId',
   platform: 'platform',
+  network: 'network',
   title: 'title',
   description: 'description',
   theme: 'theme',
@@ -1750,6 +1751,20 @@ export type EnumRepeatFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$
  * Reference to a field of type 'RepeatFrequency[]'
  */
 export type ListEnumRepeatFrequencyFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'RepeatFrequency[]'>
+    
+
+
+/**
+ * Reference to a field of type 'GameNetwork'
+ */
+export type EnumGameNetworkFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GameNetwork'>
+    
+
+
+/**
+ * Reference to a field of type 'GameNetwork[]'
+ */
+export type ListEnumGameNetworkFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'GameNetwork[]'>
     
 
 

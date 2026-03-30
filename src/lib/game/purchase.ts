@@ -98,6 +98,7 @@ export async function finalizeTicketPurchase(
       select: {
         id: true,
         platform: true,
+        network: true,
         onchainId: true,
         startsAt: true,
         endsAt: true,
@@ -161,6 +162,7 @@ export async function finalizeTicketPurchase(
 
     const verification = await verifyTicketPurchase({
       platform: game.platform,
+      network: game.network,
       txHash: txHash as `0x${string}`,
       expectedGameId: game.onchainId as `0x${string}`,
       expectedBuyer: payerWallet as `0x${string}`,

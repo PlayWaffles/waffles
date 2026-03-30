@@ -1,9 +1,9 @@
-import { base, celoSepolia } from "viem/chains";
+import { base, baseSepolia, celoSepolia } from "viem/chains";
 import type { Chain } from "viem";
 import { env } from "@/lib/env";
-import { type ChainPlatform } from "./platform";
+import { type ChainTarget, resolveChainTarget } from "./network";
 
-export const farcasterChain: Chain = {
+const farcasterMainnetChain: Chain = {
   ...base,
   rpcUrls: {
     ...base.rpcUrls,
@@ -15,27 +15,46 @@ export const farcasterChain: Chain = {
     },
   },
 };
+const farcasterSepoliaChain: Chain = {
+  ...baseSepolia,
+  rpcUrls: {
+    ...baseSepolia.rpcUrls,
+    default: {
+      http: [env.nextPublicBaseSepoliaRpcUrl],
+    },
+    public: {
+      http: [env.nextPublicBaseSepoliaRpcUrl],
+    },
+  },
+};
+export const farcasterChain = farcasterMainnetChain;
 export const miniPayChain = celoSepolia;
 
-export function getPlatformChain(platform: ChainPlatform): Chain {
-  return platform === "MINIPAY" ? miniPayChain : farcasterChain;
+export function getPlatformChain(target: ChainTarget): Chain {
+  const { network } = resolveChainTarget(target);
+  if (network === "BASE_SEPOLIA") return farcasterSepoliaChain;
+  if (network === "CELO_SEPOLIA") return miniPayChain;
+  return farcasterMainnetChain;
 }
 
-export function getPlatformRpcUrl(platform: ChainPlatform): string {
-  return platform === "MINIPAY"
-    ? miniPayChain.rpcUrls.default.http[0]
-    : env.nextPublicBaseMainnetRpcUrl;
+export function getPlatformRpcUrl(target: ChainTarget): string {
+  const { network } = resolveChainTarget(target);
+  if (network === "BASE_SEPOLIA") return env.nextPublicBaseSepoliaRpcUrl;
+  if (network === "CELO_SEPOLIA") return miniPayChain.rpcUrls.default.http[0];
+  return env.nextPublicBaseMainnetRpcUrl;
 }
 
 export function getWaffleContractAddress(
-  platform: ChainPlatform,
+  target: ChainTarget,
 ): `0x${string}` {
+  const { platform } = resolveChainTarget(target);
   return platform === "MINIPAY"
     ? env.nextPublicWaffleContractAddressMiniPay
     : env.nextPublicWaffleContractAddressFarcaster;
 }
 
-export function getPaymentTokenAddress(platform: ChainPlatform): `0x${string}` {
+export function getPaymentTokenAddress(target: ChainTarget): `0x${string}` {
+  const { platform } = resolveChainTarget(target);
   return platform === "MINIPAY"
     ? env.nextPublicPaymentTokenAddressMiniPay
     : env.nextPublicPaymentTokenAddressFarcaster;

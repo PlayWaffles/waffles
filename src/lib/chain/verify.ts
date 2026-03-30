@@ -15,6 +15,7 @@ import {
   getWaffleContractAddress,
 } from "./config";
 import { type ChainPlatform } from "./platform";
+import type { GameNetwork } from "./network";
 
 // ============================================================================
 // Types
@@ -41,6 +42,7 @@ export interface InspectTicketPurchaseResult {
 
 export interface VerifyTicketPurchaseInput {
   platform: ChainPlatform;
+  network?: GameNetwork | null;
   txHash: `0x${string}`;
   expectedGameId: `0x${string}`;
   expectedBuyer: `0x${string}`;
@@ -62,9 +64,17 @@ export interface VerifyTicketPurchaseInput {
 export async function verifyTicketPurchase(
   input: VerifyTicketPurchaseInput,
 ): Promise<VerifyTicketPurchaseResult> {
-  const { platform, txHash, expectedGameId, expectedBuyer, minimumAmount } = input;
-  const contractAddress = getWaffleContractAddress(platform);
-  const publicClient = getPublicClient(platform);
+  const {
+    platform,
+    network,
+    txHash,
+    expectedGameId,
+    expectedBuyer,
+    minimumAmount,
+  } = input;
+  const chainTarget = { platform, network };
+  const contractAddress = getWaffleContractAddress(chainTarget);
+  const publicClient = getPublicClient(chainTarget);
 
   console.log("[verify-ticket-purchase]", {
     stage: "start",
@@ -77,7 +87,7 @@ export async function verifyTicketPurchase(
   });
 
   try {
-    const inspected = await inspectTicketPurchase({ platform, txHash });
+    const inspected = await inspectTicketPurchase({ platform, network, txHash });
     if (!inspected.found || !inspected.details) {
       return {
         verified: false,
@@ -143,11 +153,13 @@ export async function verifyTicketPurchase(
 
 export async function inspectTicketPurchase(input: {
   platform: ChainPlatform;
+  network?: GameNetwork | null;
   txHash: `0x${string}`;
 }): Promise<InspectTicketPurchaseResult> {
-  const { platform, txHash } = input;
-  const contractAddress = getWaffleContractAddress(platform);
-  const publicClient = getPublicClient(platform);
+  const { platform, network, txHash } = input;
+  const chainTarget = { platform, network };
+  const contractAddress = getWaffleContractAddress(chainTarget);
+  const publicClient = getPublicClient(chainTarget);
 
   let receipt;
   try {
@@ -302,6 +314,7 @@ export interface VerifyClaimResult {
 
 export interface VerifyClaimInput {
   platform: ChainPlatform;
+  network?: GameNetwork | null;
   txHash: `0x${string}`;
   expectedGameId: `0x${string}`;
   expectedClaimer: `0x${string}`;
@@ -318,9 +331,10 @@ export interface VerifyClaimInput {
 export async function verifyClaim(
   input: VerifyClaimInput,
 ): Promise<VerifyClaimResult> {
-  const { platform, txHash, expectedGameId, expectedClaimer } = input;
-  const contractAddress = getWaffleContractAddress(platform);
-  const publicClient = getPublicClient(platform);
+  const { platform, network, txHash, expectedGameId, expectedClaimer } = input;
+  const chainTarget = { platform, network };
+  const contractAddress = getWaffleContractAddress(chainTarget);
+  const publicClient = getPublicClient(chainTarget);
 
   try {
     // =========================================================================

@@ -10,6 +10,12 @@ export {
   getPlatformRpcUrl,
   getWaffleContractAddress,
 } from "./config";
+export {
+  defaultNetworkForPlatform,
+  resolveChainTarget,
+  type ChainTarget,
+  type GameNetwork,
+} from "./network";
 // Game operations
 export {
   generateOnchainGameId,
