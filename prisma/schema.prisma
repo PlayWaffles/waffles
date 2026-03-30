@@ -470,4 +470,3 @@ model InviteCode {
 
   @@index([code])
 }
-~
