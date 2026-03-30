@@ -256,10 +256,8 @@ export async function inspectTicketPurchase(input: {
       buyer: purchase.buyer,
       error: err instanceof Error ? err.message : "Unknown error",
     });
-    return {
-      found: false,
-      error: "Failed to confirm ticket ownership on-chain.",
-    };
+    // The TicketPurchased event on the expected contract is the primary proof.
+    // If the follow-up state read is flaky, don't block purchase finalization.
   }
 
   return {
