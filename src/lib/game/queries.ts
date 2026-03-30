@@ -63,6 +63,7 @@ export const getCurrentOrNextGame = cache(
       prisma.game.findFirst({
         where: {
           platform,
+          isTestnet: false,
           OR: [
             { startsAt: { lte: now }, endsAt: { gt: now } }, // Live
             { startsAt: { gt: now } }, // Scheduled
@@ -72,7 +73,7 @@ export const getCurrentOrNextGame = cache(
         include: gameInclude,
       }),
       prisma.game.findFirst({
-        where: { platform, endsAt: { lte: now } },
+        where: { platform, isTestnet: false, endsAt: { lte: now } },
         orderBy: [{ endsAt: "desc" }],
         include: gameInclude,
       }),
@@ -107,7 +108,7 @@ export const getGameById = cache(
     platform: UserPlatform,
   ): Promise<GameQueryResult> => {
     const game = await prisma.game.findFirst({
-      where: { id: gameId, platform },
+      where: { id: gameId, platform, isTestnet: false },
       include: gameInclude,
     });
 

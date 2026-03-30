@@ -66,13 +66,14 @@ export async function GET(
       select: {
         id: true,
         platform: true,
+        isTestnet: true,
         merkleRoot: true,
         onChainAt: true,
         endsAt: true,
       },
     });
 
-    if (!game || game.platform !== expectedPlatform) {
+    if (!game || game.platform !== expectedPlatform || game.isTestnet) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

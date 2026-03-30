@@ -45,10 +45,10 @@ export async function GET(
 
     const game = await prisma.game.findUnique({
       where: { id: gameId },
-      select: { id: true, platform: true },
+      select: { id: true, platform: true, isTestnet: true },
     });
 
-    if (!game || game.platform !== platform) {
+    if (!game || game.platform !== platform || game.isTestnet) {
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

@@ -67,10 +67,21 @@ export const POST = withAuth<Params>(
       // Find game with onchainId
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { id: true, platform: true, network: true, onchainId: true },
+        select: {
+          id: true,
+          platform: true,
+          network: true,
+          onchainId: true,
+          isTestnet: true,
+        },
       });
 
-      if (!game || game.platform !== auth.platform || !game.onchainId) {
+      if (
+        !game ||
+        game.platform !== auth.platform ||
+        game.isTestnet ||
+        !game.onchainId
+      ) {
         return NextResponse.json<ApiError>(
           { error: "Game not found or not on-chain", code: "NOT_FOUND" },
           { status: 404 },

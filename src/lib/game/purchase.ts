@@ -82,6 +82,7 @@ export async function finalizeTicketPurchase(
         id: true,
         platform: true,
         network: true,
+        isTestnet: true,
         onchainId: true,
         startsAt: true,
         endsAt: true,
@@ -93,7 +94,7 @@ export async function finalizeTicketPurchase(
       },
     });
 
-    if (!game) {
+    if (!game || game.isTestnet) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 

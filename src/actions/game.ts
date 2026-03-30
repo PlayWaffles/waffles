@@ -56,6 +56,7 @@ async function claimFreeTicketForUser(
     select: {
       id: true,
       platform: true,
+      isTestnet: true,
       startsAt: true,
       endsAt: true,
       prizePool: true,
@@ -69,7 +70,7 @@ async function claimFreeTicketForUser(
     return { success: false, error: "Game not found", code: "NOT_FOUND" };
   }
 
-  if (game.platform !== user.platform) {
+  if (game.platform !== user.platform || game.isTestnet) {
     return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
   }
 
@@ -239,6 +240,7 @@ export async function leaveGame(
         leftAt: true,
         game: {
           select: {
+            isTestnet: true,
             startsAt: true,
             endsAt: true,
           },
@@ -247,6 +249,10 @@ export async function leaveGame(
     });
 
     if (!entry) {
+      return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
+    }
+
+    if (entry.game.isTestnet) {
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
     }
 
@@ -340,7 +346,7 @@ async function submitAnswerForUser(
       }),
       prisma.game.findUnique({
         where: { id: gameId },
-        select: { startsAt: true, endsAt: true, gameNumber: true },
+        select: { startsAt: true, endsAt: true, gameNumber: true, isTestnet: true },
       }),
       prisma.gameEntry.findUnique({
         where: { gameId_userId: { gameId, userId } },
@@ -365,6 +371,10 @@ async function submitAnswerForUser(
     }
 
     if (!game) {
+      return { success: false, error: "Game not found", code: "NOT_FOUND" };
+    }
+
+    if (game.isTestnet) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 

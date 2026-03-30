@@ -27,10 +27,16 @@ export const POST = withAuth<Params>(
 
       const game = await prisma.game.findUnique({
         where: { id: gameId },
-        select: { id: true, platform: true, startsAt: true, endsAt: true },
+        select: {
+          id: true,
+          platform: true,
+          isTestnet: true,
+          startsAt: true,
+          endsAt: true,
+        },
       });
 
-      if (!game) {
+      if (!game || game.isTestnet) {
         return NextResponse.json<ApiError>(
           { error: "Game not found", code: "NOT_FOUND" },
           { status: 404 }

@@ -30,6 +30,7 @@ export async function GET(
       select: {
         id: true,
         platform: true,
+        isTestnet: true,
         title: true,
         description: true,
         theme: true,
@@ -63,7 +64,7 @@ export async function GET(
       },
     });
 
-    if (!game || game.platform !== platform) {
+    if (!game || game.platform !== platform || game.isTestnet) {
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

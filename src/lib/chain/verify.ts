@@ -78,6 +78,35 @@ function extractTicketPurchaseFromLog(log: {
   }
 }
 
+function mergeDecodedTicketPurchase(params: {
+  log: {
+    topics: readonly `0x${string}`[];
+    data: `0x${string}`;
+  };
+  decodedArgs: {
+    gameId?: `0x${string}`;
+    buyer?: `0x${string}`;
+    amount?: bigint;
+  };
+}): TicketPurchaseDetails | null {
+  const { log, decodedArgs } = params;
+  const rawParsed = extractTicketPurchaseFromLog(log);
+  const gameId = decodedArgs.gameId ?? rawParsed?.gameId ?? null;
+  const buyer = decodedArgs.buyer ?? rawParsed?.buyer ?? null;
+  const amount = decodedArgs.amount ?? rawParsed?.amount ?? null;
+
+  if (!gameId || !buyer || typeof amount !== "bigint") {
+    return null;
+  }
+
+  return {
+    gameId,
+    buyer,
+    amount,
+    amountFormatted: formatUnits(amount, PAYMENT_TOKEN_DECIMALS),
+  };
+}
+
 function extractTransferAmountFromReceipt(params: {
   receipt: { logs: Array<{ address: `0x${string}`; topics: readonly `0x${string}`[]; data: `0x${string}` }> };
   tokenAddress: `0x${string}`;
@@ -395,12 +424,17 @@ export async function inspectTicketPurchase(input: {
 
       if (!decoded.args) continue;
       const args = decoded.args as unknown as {
-        gameId: `0x${string}`;
-        buyer: `0x${string}`;
-        amount: bigint;
+        gameId?: `0x${string}`;
+        buyer?: `0x${string}`;
+        amount?: bigint;
       };
 
-      if (!args.gameId || !args.buyer || typeof args.amount !== "bigint") {
+      const merged = mergeDecodedTicketPurchase({
+        log,
+        decodedArgs: args,
+      });
+
+      if (!merged) {
         console.error("[inspect-ticket-purchase]", {
           stage: "decoded-event-missing-fields",
           platform,
@@ -412,12 +446,7 @@ export async function inspectTicketPurchase(input: {
         continue;
       }
 
-      purchase = {
-        gameId: args.gameId,
-        buyer: args.buyer,
-        amount: args.amount,
-        amountFormatted: formatUnits(args.amount, PAYMENT_TOKEN_DECIMALS),
-      };
+      purchase = merged;
       break;
     } catch {
       const parsed = extractTicketPurchaseFromLog(log);

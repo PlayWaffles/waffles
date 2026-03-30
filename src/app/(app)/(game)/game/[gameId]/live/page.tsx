@@ -42,7 +42,7 @@ export interface LiveGameData {
 
 const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   const game = await prisma.game.findFirst({
-    where: { id: gameId, platform },
+    where: { id: gameId, platform, isTestnet: false },
     select: {
       id: true,
       gameNumber: true,

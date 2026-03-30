@@ -31,13 +31,14 @@ export const POST = withAuth<Params>(
         select: {
           id: true,
           leftAt: true,
-          game: {
-            select: {
-              platform: true,
-              startsAt: true,
-              endsAt: true,
-            },
+        game: {
+          select: {
+            platform: true,
+            isTestnet: true,
+            startsAt: true,
+            endsAt: true,
           },
+        },
         },
       });
 
@@ -48,7 +49,7 @@ export const POST = withAuth<Params>(
         );
       }
 
-      if (entry.game.platform !== auth.platform) {
+      if (entry.game.platform !== auth.platform || entry.game.isTestnet) {
         return NextResponse.json<ApiError>(
           { error: "You are not in this game", code: "NOT_IN_GAME" },
           { status: 404 }

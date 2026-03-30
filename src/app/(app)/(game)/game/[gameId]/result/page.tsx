@@ -13,14 +13,14 @@ interface ResultPageProps {
 // Fetch game info
 const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   return prisma.game.findFirst({
-    where: { id: gameId, platform },
+    where: { id: gameId, platform, isTestnet: false },
   });
 });
 
 // Fetch top 3 entries for leaderboard display
 const getTop3Entries = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   return prisma.gameEntry.findMany({
-    where: { gameId, game: { platform } },
+    where: { gameId, game: { platform, isTestnet: false } },
     orderBy: { score: "desc" },
     take: 3,
     select: {

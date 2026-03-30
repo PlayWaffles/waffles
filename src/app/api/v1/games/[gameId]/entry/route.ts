@@ -30,10 +30,10 @@ export async function GET(
     const fidParam = new URL(request.url).searchParams.get("fid");
     const game = await prisma.game.findUnique({
       where: { id: gameId },
-      select: { id: true, platform: true },
+      select: { id: true, platform: true, isTestnet: true },
     });
 
-    if (!game || game.platform !== expectedPlatform) {
+    if (!game || game.platform !== expectedPlatform || game.isTestnet) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
