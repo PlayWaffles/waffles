@@ -33,7 +33,12 @@ import {
 } from "@/components/admin/analytics";
 import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import { getGamePhase } from "@/lib/types";
-import { buildPlatformWhere, buildProductionEntryWhere, buildProductionGameWhere } from "@/lib/admin-utils";
+import {
+    buildPlatformWhere,
+    buildProductionEntryWhere,
+    buildProductionGameWhere,
+    calculateProtocolRevenue,
+} from "@/lib/admin-utils";
 
 // ============================================================
 // HELPERS
@@ -220,7 +225,10 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     dailyRevenue.forEach((e) => {
         if (e.paidAt) {
             const key = new Date(e.paidAt).toISOString().split("T")[0];
-            revenueMap.set(key, (revenueMap.get(key) || 0) + (e.paidAmount || 0));
+            revenueMap.set(
+                key,
+                (revenueMap.get(key) || 0) + calculateProtocolRevenue(e.paidAmount),
+            );
             ticketMap.set(key, (ticketMap.get(key) || 0) + 1);
         }
     });
@@ -233,7 +241,10 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     const leaveRate = totalEntriesInPeriod > 0 ? (leftEntries / totalEntriesInPeriod) * 100 : 0;
     const activationRate = totalSignups > 0 ? (activatedUsers / totalSignups) * 100 : 0;
     const avgScore = avgScoreResult._avg.score || 0;
-    const totalRevenue = gamesWithRevenue.reduce((sum, g) => sum + g.prizePool, 0);
+    const totalRevenue = gamesWithRevenue.reduce(
+        (sum, g) => sum + calculateProtocolRevenue(g.prizePool),
+        0,
+    );
     const revenuePerGame = gamesWithRevenue.length > 0 ? totalRevenue / gamesWithRevenue.length : 0;
     const claimRate = totalPrizes > 0 ? (claimedPrizes / totalPrizes) * 100 : 0;
     const activeUsersChange = previousActiveUsers > 0
@@ -247,7 +258,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     const themePerformance = themeStats.map((t) => ({
         theme: t.theme,
         games: t._count,
-        revenue: t._sum.prizePool || 0,
+        revenue: calculateProtocolRevenue(t._sum.prizePool),
         players: t._sum.playerCount || 0,
     }));
 
@@ -289,7 +300,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             status: getGamePhase(g),
             playerCount: g.playerCount,
             ticketCount: g.playerCount,
-            revenue: g.prizePool,
+            revenue: calculateProtocolRevenue(g.prizePool),
             avgScore: 0,
         })),
     };
@@ -638,8 +649,8 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         prisma.gameEntry.aggregate({ where: { paidAt: { not: null }, ...gpf }, _sum: { paidAmount: true } }),
     ]);
 
-    const revenue = currentRevenue._sum.paidAmount || 0;
-    const prevRevenue = previousRevenue._sum.paidAmount || 0;
+    const revenue = calculateProtocolRevenue(currentRevenue._sum.paidAmount);
+    const prevRevenue = calculateProtocolRevenue(previousRevenue._sum.paidAmount);
     const revenueChange = prevRevenue > 0 ? ((revenue - prevRevenue) / prevRevenue) * 100 : 0;
     const entriesChange = previousEntries > 0 ? ((totalEntries - previousEntries) / previousEntries) * 100 : 0;
     const revenuePerActiveUser = uniqueBuyers > 0 ? revenue / uniqueBuyers : 0;
@@ -650,7 +661,9 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
     const claimRate = (totalPrizesAwarded._count || 0) > 0
         ? ((totalPrizesClaimed._count || 0) / (totalPrizesAwarded._count || 1)) * 100
         : 0;
-    const lifetimeRevenuePerUser = uniqueBuyers > 0 ? (lifetimeRevenue._sum.paidAmount || 0) / uniqueBuyers : 0;
+    const lifetimeRevenuePerUser = uniqueBuyers > 0
+        ? calculateProtocolRevenue(lifetimeRevenue._sum.paidAmount) / uniqueBuyers
+        : 0;
 
     // Daily chart data
     const dailyMap = new Map<string, { revenue: number; tickets: number }>();
@@ -666,7 +679,7 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
             const key = new Date(e.paidAt).toISOString().split("T")[0];
             const existing = dailyMap.get(key);
             if (existing) {
-                existing.revenue += e.paidAmount || 0;
+                existing.revenue += calculateProtocolRevenue(e.paidAmount);
                 existing.tickets++;
             }
         }
@@ -824,9 +837,9 @@ function OverviewTab({
                     subtitle="signup → first ticket"
                 />
                 <KPICard
-                    title="Revenue"
+                    title="Protocol Revenue"
                     value={`$${data.totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    tooltip="Total paid ticket revenue recorded in the selected date range."
+                    tooltip="Total protocol revenue recorded in the selected date range, calculated as the 20% fee on paid tickets."
                     change={{ value: data.entriesChange, isPositive: data.entriesChange >= 0 }}
                     icon={<BanknotesIcon className="h-5 w-5 text-[#FFC931]" />}
                     sparklineData={data.revenueSparkline}
@@ -837,7 +850,7 @@ function OverviewTab({
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
                 <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average final score across paid entries with answer data in the selected range." />
                 <MiniStat label="Avg Answer Speed" value={`${(data.avgAnswerSpeed / 1000).toFixed(1)}s`} color="#00CFF2" tooltip="Average time taken to answer a question, based on stored per-answer latency in milliseconds." />
-                <MiniStat label="Rev / Game" value={`$${data.revenuePerGame.toFixed(2)}`} color="#14B985" tooltip="Average revenue generated per ended game in the selected range." />
+                <MiniStat label="Fee / Game" value={`$${data.revenuePerGame.toFixed(2)}`} color="#14B985" tooltip="Average protocol revenue generated per ended game in the selected range." />
                 <MiniStat label="Claim Rate" value={`${data.claimRate.toFixed(1)}%`} color="#FB72FF" tooltip="The share of prize-winning entries that have already claimed their payouts." />
                 <MiniStat label="DAU/WAU" value={`${retention.dauWauRatio.toFixed(0)}%`} color="#FFC931" tooltip="Daily active users divided by weekly active users. Higher values usually mean better short-term stickiness." />
             </div>
@@ -985,9 +998,9 @@ function RevenueRetentionTab({
             {/* Revenue KPIs */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
-                    title="Total Revenue"
+                    title="Protocol Revenue"
                     value={`$${revenue.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
-                    tooltip="Total paid ticket revenue in the selected date range."
+                    tooltip="Total protocol revenue in the selected date range, calculated as the 20% fee on paid tickets."
                     change={{ value: revenue.revenueChange, isPositive: revenue.revenueChange >= 0 }}
                     icon={<BanknotesIcon className="h-5 w-5 text-[#FFC931]" />}
                     sparklineData={revenue.sparkline}
@@ -1001,11 +1014,11 @@ function RevenueRetentionTab({
                     glowVariant="cyan"
                 />
                 <KPICard
-                    title="Rev / Active User"
+                    title="Fee / Active User"
                     value={`$${revenue.revenuePerActiveUser.toFixed(2)}`}
-                    tooltip="Revenue divided by unique buyers in the selected range. This measures monetization per paying active user."
+                    tooltip="Protocol revenue divided by unique buyers in the selected range."
                     icon={<UserGroupIcon className="h-5 w-5 text-[#14B985]" />}
-                    subtitle={`LTV: $${revenue.lifetimeRevenuePerUser.toFixed(2)}`}
+                    subtitle={`Fee LTV: $${revenue.lifetimeRevenuePerUser.toFixed(2)}`}
                     glowVariant="success"
                 />
                 <KPICard

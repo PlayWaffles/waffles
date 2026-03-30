@@ -10,7 +10,12 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getGamePhase } from "@/lib/types";
-import { buildPlatformWhere, buildProductionEntryWhere, buildProductionGameWhere } from "@/lib/admin-utils";
+import {
+    buildPlatformWhere,
+    buildProductionEntryWhere,
+    buildProductionGameWhere,
+    calculateProtocolRevenue,
+} from "@/lib/admin-utils";
 import { getDisplayName } from "@/lib/address";
 
 async function getStats(platform?: string) {
@@ -29,7 +34,7 @@ async function getStats(platform?: string) {
         paidEntries,
         recentUsers,
         recentEntries,
-        revenueResult,
+        totalPaidAmount,
     ] = await Promise.all([
         prisma.user.count({ where: pf }),
         prisma.user.count({ where: { ...pf, lastLoginAt: { not: null } } }),
@@ -53,9 +58,9 @@ async function getStats(platform?: string) {
                 paidAmount: true,
             },
         }),
-        prisma.game.aggregate({
-            where: gamePf,
-            _sum: { prizePool: true },
+        prisma.gameEntry.aggregate({
+            where: { paidAt: { not: null }, ...gpf },
+            _sum: { paidAmount: true },
         }),
     ]);
 
@@ -73,7 +78,7 @@ async function getStats(platform?: string) {
         date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
         amount: recentEntries
             .filter((e: { paidAt: Date | null }) => e.paidAt?.toISOString().startsWith(date))
-            .reduce((sum: number, e: { paidAmount: number | null }) => sum + (e.paidAmount || 0), 0)
+            .reduce((sum: number, e: { paidAmount: number | null }) => sum + calculateProtocolRevenue(e.paidAmount), 0)
     }));
 
     return {
@@ -83,7 +88,7 @@ async function getStats(platform?: string) {
         liveGames,
         totalTickets: totalEntries,
         paidTickets: paidEntries,
-        totalRevenue: revenueResult._sum.prizePool || 0,
+        totalRevenue: calculateProtocolRevenue(totalPaidAmount._sum.paidAmount),
         userGrowth,
         revenueData,
     };
@@ -191,9 +196,9 @@ export default async function AdminDashboard({
                     glowVariant="pink"
                 />
                 <StatsCard
-                    title="Revenue"
+                    title="Protocol Revenue"
                     value={`$${stats.totalRevenue.toLocaleString()}`}
-                    subtitle="USDC"
+                    subtitle="20% fee share"
                     icon={<BanknotesIcon className="h-6 w-6 text-[#FFC931]" />}
                     glowVariant="gold"
                 />

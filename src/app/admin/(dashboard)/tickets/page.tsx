@@ -9,7 +9,11 @@ import { TicketPurchaseSource } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { ChainPlatform } from "@/lib/chain/platform";
-import { buildProductionEntryWhere, buildProductionGameWhere } from "@/lib/admin-utils";
+import {
+    buildProductionEntryWhere,
+    buildProductionGameWhere,
+    calculateProtocolRevenue,
+} from "@/lib/admin-utils";
 
 const BASE_MAINNET_SCAN_WINDOW = BigInt(500);
 const DEFAULT_SCAN_WINDOW = BigInt(100_000);
@@ -152,7 +156,7 @@ async function getStats() {
         freeEntries,
         pendingEntries: totalEntries - paidEntries - freeEntries,
         claimedPrizes,
-        totalRevenue: totalRevenue._sum.paidAmount || 0,
+        totalRevenue: calculateProtocolRevenue(totalRevenue._sum.paidAmount),
         games,
     };
 }
@@ -593,7 +597,7 @@ export default async function TicketsPage({
                             <span className="text-lg">💰</span>
                         </div>
                         <div>
-                            <p className="text-white/50 text-sm">Revenue</p>
+                            <p className="text-white/50 text-sm">Protocol Revenue</p>
                             <p className="text-2xl font-bold text-[#00CFF2] font-display">${stats.totalRevenue.toFixed(2)}</p>
                         </div>
                     </div>
