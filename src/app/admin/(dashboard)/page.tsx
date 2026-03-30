@@ -10,15 +10,15 @@ import {
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getGamePhase } from "@/lib/types";
-import { buildPlatformWhere } from "@/lib/admin-utils";
+import { buildPlatformWhere, buildProductionEntryWhere, buildProductionGameWhere } from "@/lib/admin-utils";
 import { getDisplayName } from "@/lib/address";
 
 async function getStats(platform?: string) {
     const now = new Date();
     const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const pf = buildPlatformWhere(platform);
-
-    const gpf = pf.platform ? { game: pf } : {};
+    const gamePf = buildProductionGameWhere(platform);
+    const gpf = buildProductionEntryWhere(platform);
 
     const [
         totalUsers,
@@ -33,9 +33,9 @@ async function getStats(platform?: string) {
     ] = await Promise.all([
         prisma.user.count({ where: pf }),
         prisma.user.count({ where: { ...pf, lastLoginAt: { not: null } } }),
-        prisma.game.count({ where: pf }),
+        prisma.game.count({ where: gamePf }),
         prisma.game.count({
-            where: { ...pf, startsAt: { lte: now }, endsAt: { gt: now } },
+            where: { ...gamePf, startsAt: { lte: now }, endsAt: { gt: now } },
         }),
         prisma.gameEntry.count({ where: gpf }),
         prisma.gameEntry.count({ where: { paidAt: { not: null }, ...gpf } }),
@@ -54,7 +54,7 @@ async function getStats(platform?: string) {
             },
         }),
         prisma.game.aggregate({
-            where: pf,
+            where: gamePf,
             _sum: { prizePool: true },
         }),
     ]);
@@ -91,10 +91,12 @@ async function getStats(platform?: string) {
 
 async function getRecentActivity(platform?: string) {
     const pf = buildPlatformWhere(platform);
+    const gamePf = buildProductionGameWhere(platform);
+    const entryPf = buildProductionEntryWhere(platform);
 
-    const [games, users] = await Promise.all([
+    const [games, users, ticketBuys] = await Promise.all([
         prisma.game.findMany({
-            where: pf,
+            where: gamePf,
             take: 3,
             orderBy: { createdAt: "desc" },
             select: {
@@ -118,9 +120,35 @@ async function getRecentActivity(platform?: string) {
                 createdAt: true,
             },
         }),
+        prisma.gameEntry.findMany({
+            where: {
+                ...entryPf,
+                paidAt: { not: null },
+            },
+            take: 5,
+            orderBy: { paidAt: "desc" },
+            select: {
+                id: true,
+                paidAt: true,
+                paidAmount: true,
+                user: {
+                    select: {
+                        username: true,
+                        wallet: true,
+                        platform: true,
+                    },
+                },
+                game: {
+                    select: {
+                        id: true,
+                        title: true,
+                    },
+                },
+            },
+        }),
     ]);
 
-    return { games, users };
+    return { games, users, ticketBuys };
 }
 
 export default async function AdminDashboard({
@@ -185,7 +213,7 @@ export default async function AdminDashboard({
             />
 
             {/* Recent Activity Section */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 font-display">
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 font-display">
                 {/* Recent Games */}
                 <div className="bg-linear-to-br from-[#FB72FF]/5 to-transparent border border-white/10 rounded-2xl overflow-hidden">
                     <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
@@ -253,6 +281,53 @@ export default async function AdminDashboard({
                                     <span className="text-xs text-white/50">
                                         {new Date(user.createdAt).toLocaleDateString()}
                                     </span>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Recent Ticket Buys */}
+                <div className="bg-linear-to-br from-[#14B985]/5 to-transparent border border-white/10 rounded-2xl overflow-hidden font-display">
+                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-white font-body">Recent Ticket Buys</h2>
+                        <Link href="/admin/tickets?status=paid" className="text-sm text-[#FFC931] hover:underline">View all</Link>
+                    </div>
+                    <div className="divide-y divide-white/10">
+                        {activity.ticketBuys.length === 0 ? (
+                            <div className="p-6 text-center text-white/50">No paid tickets yet</div>
+                        ) : (
+                            activity.ticketBuys.map((entry) => (
+                                <div key={entry.id} className="px-6 py-4 hover:bg-white/3 transition-colors">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div className="min-w-0">
+                                            <p className="font-medium text-white truncate">
+                                                {getDisplayName({
+                                                    username: entry.user.username,
+                                                    wallet: entry.user.wallet,
+                                                })}
+                                            </p>
+                                            <p className="text-xs text-white/50 truncate mt-1">
+                                                {entry.game.title}
+                                            </p>
+                                            <div className="mt-2 flex items-center gap-2">
+                                                <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium uppercase tracking-[0.16em] ${entry.user.platform === "MINIPAY"
+                                                    ? "bg-[#14B985]/15 text-[#14B985]"
+                                                    : "bg-[#1B8FF5]/15 text-[#72C3FF]"
+                                                    }`}>
+                                                    {entry.user.platform}
+                                                </span>
+                                                <span className="text-xs text-white/50">
+                                                    {entry.paidAt ? new Date(entry.paidAt).toLocaleString() : "Pending"}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div className="shrink-0 text-right">
+                                            <p className="font-semibold text-[#14B985]">
+                                                ${entry.paidAmount?.toLocaleString() ?? 0}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             ))
                         )}

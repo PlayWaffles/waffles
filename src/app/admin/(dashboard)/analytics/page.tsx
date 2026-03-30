@@ -33,7 +33,7 @@ import {
 } from "@/components/admin/analytics";
 import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import { getGamePhase } from "@/lib/types";
-import { buildPlatformWhere, buildGamePlatformWhere } from "@/lib/admin-utils";
+import { buildPlatformWhere, buildProductionEntryWhere, buildProductionGameWhere } from "@/lib/admin-utils";
 
 // ============================================================
 // HELPERS
@@ -55,7 +55,8 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const previousStart = new Date(start.getTime() - periodDays * 24 * 60 * 60 * 1000);
     const pf = buildPlatformWhere(platform);
-    const gpf = buildGamePlatformWhere(platform);
+    const gamePf = buildProductionGameWhere(platform);
+    const gpf = buildProductionEntryWhere(platform);
 
     // Helper to build date range for daily aggregation
     const buildDailyMap = (startDate: Date, endDate: Date) => {
@@ -132,7 +133,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         // Onboarded users (hasGameAccess)
         prisma.user.count({ where: { ...pf, hasGameAccess: true, createdAt: { gte: start, lte: end } } }),
         // Games in period
-        prisma.game.count({ where: { ...pf, startsAt: { gte: start, lte: end } } }),
+        prisma.game.count({ where: { ...gamePf, startsAt: { gte: start, lte: end } } }),
         // Total entries (ticket purchases) in period
         prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, ...gpf } }),
         // Previous period entries
@@ -162,7 +163,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         }),
         // Games with revenue for per-game avg
         prisma.game.findMany({
-            where: { ...pf, endsAt: { lte: now, gte: start } },
+            where: { ...gamePf, endsAt: { lte: now, gte: start } },
             select: { id: true, title: true, theme: true, prizePool: true, playerCount: true, startsAt: true, endsAt: true },
             orderBy: { prizePool: "desc" },
             take: 20,
@@ -185,7 +186,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         // Theme stats
         prisma.game.groupBy({
             by: ["theme"],
-            where: { ...pf, startsAt: { gte: start, lte: end } },
+            where: { ...gamePf, startsAt: { gte: start, lte: end } },
             _count: true,
             _sum: { prizePool: true, playerCount: true },
         }),
@@ -301,6 +302,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
 async function getRetentionData(start: Date, end: Date, platform?: string) {
     const now = new Date();
     const pf = buildPlatformWhere(platform);
+    const gpf = buildProductionEntryWhere(platform);
 
     const [
         // DAU / WAU / MAU
@@ -364,13 +366,13 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         // Repeat buyers (>1 entry)
         prisma.gameEntry.groupBy({
             by: ["userId"],
-            where: { paidAt: { not: null, gte: start, lte: end }, ...buildGamePlatformWhere(platform) },
+            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
             _count: true,
         }).then((groups) => groups.filter((g) => g._count > 1).length),
         // Total unique buyers
         prisma.gameEntry.groupBy({
             by: ["userId"],
-            where: { paidAt: { not: null, gte: start, lte: end }, ...buildGamePlatformWhere(platform) },
+            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
         }).then((r) => r.length),
         // Days since last session (last entry per user)
         prisma.user.findMany({
@@ -435,8 +437,8 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
 // ============================================================
 
 async function getGameplayData(start: Date, end: Date, platform?: string) {
-    const pf = buildPlatformWhere(platform);
-    const gpf = buildGamePlatformWhere(platform);
+    const gamePf = buildProductionGameWhere(platform);
+    const gpf = buildProductionEntryWhere(platform);
 
     const [
         entries,
@@ -455,7 +457,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             take: 10000,
         }),
         prisma.question.findMany({
-            where: { game: { ...pf, startsAt: { gte: start, lte: end } } },
+            where: { game: { ...gamePf, startsAt: { gte: start, lte: end } } },
             select: { id: true, content: true, correctIndex: true, game: { select: { title: true } } },
         }),
         prisma.gameEntry.findMany({
@@ -466,7 +468,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, rank: { not: null }, ...gpf } }),
         prisma.game.groupBy({
             by: ["theme"],
-            where: { ...pf, startsAt: { gte: start, lte: end } },
+            where: { ...gamePf, startsAt: { gte: start, lte: end } },
             _sum: { playerCount: true },
             _count: true,
             _avg: { prizePool: true },
@@ -586,8 +588,8 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
 // ============================================================
 
 async function getRevenueData(start: Date, end: Date, platform?: string) {
-    const pf = buildPlatformWhere(platform);
-    const gpf = buildGamePlatformWhere(platform);
+    const gamePf = buildProductionGameWhere(platform);
+    const gpf = buildProductionEntryWhere(platform);
     const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const previousStart = new Date(start.getTime() - periodDays * 24 * 60 * 60 * 1000);
 
@@ -628,7 +630,7 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
             select: { paidAt: true, paidAmount: true },
         }),
         prisma.game.findMany({
-            where: { ...pf, startsAt: { gte: start, lte: end } },
+            where: { ...gamePf, startsAt: { gte: start, lte: end } },
             select: { id: true, title: true, theme: true, prizePool: true, playerCount: true, startsAt: true, endsAt: true },
             orderBy: { prizePool: "desc" },
             take: 10,

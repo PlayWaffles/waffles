@@ -5,12 +5,13 @@ import { GameRow } from "@/components/admin/GameRow";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { getGamePhase, type GamePhase } from "@/lib/types";
 import { UserPlatform } from "@prisma";
+import { buildProductionGameWhere } from "@/lib/admin-utils";
 
 // Phase filtering using time-based logic
 const VALID_PHASES: GamePhase[] = ["SCHEDULED", "LIVE", "ENDED"];
 
 async function getGames(searchParams: { search?: string; status?: string; platform?: string }) {
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = buildProductionGameWhere();
     const now = new Date();
 
     if (searchParams.search) {

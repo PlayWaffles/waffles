@@ -9,6 +9,7 @@ import { TicketPurchaseSource } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import { buildProductionEntryWhere, buildProductionGameWhere } from "@/lib/admin-utils";
 
 const BASE_MAINNET_SCAN_WINDOW = BigInt(500);
 const DEFAULT_SCAN_WINDOW = BigInt(100_000);
@@ -57,8 +58,7 @@ async function getTickets(searchParams: {
     const page = parseInt(searchParams.page || "1");
     const pageSize = 50;
     const skip = (page - 1) * pageSize;
-
-    const where: any = {};
+    const where: any = buildProductionEntryWhere();
 
     // Filter by ticket status
     if (searchParams.status === "paid") {
@@ -119,18 +119,22 @@ async function getTickets(searchParams: {
 }
 
 async function getStats() {
+    const productionEntriesWhere = buildProductionEntryWhere();
+    const productionGamesWhere = buildProductionGameWhere();
     const [totalEntries, paidEntries, freeEntries, claimedPrizes, games] = await Promise.all([
-        prisma.gameEntry.count(),
-        prisma.gameEntry.count({ where: { paidAt: { not: null } } }),
+        prisma.gameEntry.count({ where: productionEntriesWhere }),
+        prisma.gameEntry.count({ where: { ...productionEntriesWhere, paidAt: { not: null } } }),
         prisma.gameEntry.count({
             where: {
+                ...productionEntriesWhere,
                 purchaseSource: {
                     in: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
                 },
             },
         }),
-        prisma.gameEntry.count({ where: { claimedAt: { not: null } } }),
+        prisma.gameEntry.count({ where: { ...productionEntriesWhere, claimedAt: { not: null } } }),
         prisma.game.findMany({
+            where: productionGamesWhere,
             orderBy: { startsAt: "desc" },
             take: 20,
             select: { id: true, title: true },
@@ -138,7 +142,7 @@ async function getStats() {
     ]);
 
     const totalRevenue = await prisma.gameEntry.aggregate({
-        where: { paidAt: { not: null } },
+        where: { ...productionEntriesWhere, paidAt: { not: null } },
         _sum: { paidAmount: true },
     });
 
