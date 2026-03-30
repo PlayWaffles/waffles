@@ -38,24 +38,22 @@ export default function GameCompleteScreen({
 
     const handleShare = useCallback(async () => {
         try {
-            const ogParams = new URLSearchParams({
+            const shareParams = new URLSearchParams({
                 score: score.toString(),
                 username: user?.username || "Player",
-                gameNumber: gameNumber.toString(),
-                category: gameTheme,
                 ...(user?.pfpUrl && { pfpUrl: user.pfpUrl }),
             });
-            const ogImageUrl = `${env.rootUrl}/api/og/score?${ogParams.toString()}`;
+            const embedUrl = `${env.rootUrl}/game/${gameId}/result?${shareParams.toString()}`;
 
             await shareTextOrCopy({
                 title: "Waffles",
                 text: `I scored ${score.toLocaleString()} points in Waffles #${String(gameNumber).padStart(3, "0")}! 🧇`,
-                url: ogImageUrl,
+                url: embedUrl,
             });
         } catch (e) {
             console.error("Share failed:", e);
         }
-    }, [gameNumber, gameTheme, score, user?.pfpUrl, user?.username]);
+    }, [gameId, gameNumber, score, user?.pfpUrl, user?.username]);
 
     return (
         <div className="w-full px-4 text-white flex flex-col items-center flex-1 overflow-y-auto pb-8">

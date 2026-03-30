@@ -10,12 +10,13 @@ export async function shareTextOrCopy(data: {
   url?: string;
 }) {
   const runtime = await getAppRuntime();
+  const normalizedUrl = data.url?.trim();
 
   if (runtime === "farcaster") {
     try {
       await sdk.actions.composeCast({
         text: data.text,
-        embeds: data.url ? [data.url] : [],
+        embeds: normalizedUrl ? [normalizedUrl] : [],
       });
       return { shared: true, copied: false };
     } catch {
@@ -24,7 +25,7 @@ export async function shareTextOrCopy(data: {
   }
 
   if (runtime === "minipay" && typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    const text = data.url ? `${data.text}\n${data.url}` : data.text;
+    const text = normalizedUrl ? `${data.text}\n${normalizedUrl}` : data.text;
     await navigator.clipboard.writeText(text);
     return { shared: false, copied: true };
   }
@@ -39,7 +40,7 @@ export async function shareTextOrCopy(data: {
   }
 
   if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-    const text = data.url ? `${data.text}\n${data.url}` : data.text;
+    const text = normalizedUrl ? `${data.text}\n${normalizedUrl}` : data.text;
     await navigator.clipboard.writeText(text);
     return { shared: false, copied: true };
   }

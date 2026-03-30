@@ -95,6 +95,17 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const hours = pad(Math.floor(countdown / 3600));
   const minutes = pad(Math.floor((countdown % 3600) / 60));
   const seconds = pad(countdown % 60);
+  const ticketSuccessParams = new URLSearchParams();
+
+  if (user?.username) {
+    ticketSuccessParams.set("username", user.username);
+  }
+
+  if (user?.pfpUrl) {
+    ticketSuccessParams.set("pfpUrl", user.pfpUrl);
+  }
+
+  const ticketSuccessHref = `/game/${game.id}/ticket/success${ticketSuccessParams.size > 0 ? `?${ticketSuccessParams.toString()}` : ""}`;
 
   // Button config - show loading while checking entry to prevent flash
   const buttonConfig = isLoadingEntry
@@ -116,7 +127,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
             : { text: "PLAY NOW", disabled: false, href: `/game/${game.id}/live` }
           : { text: "GET TICKET", disabled: false, href: null }
         : hasTicket
-          ? { text: "YOU'RE IN!", disabled: true, href: null }
+          ? { text: "WHAT NEXT???", disabled: false, href: ticketSuccessHref }
           : {
               text: "GET TICKET",
               disabled: false,
