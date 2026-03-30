@@ -49,6 +49,100 @@ export interface VerifyTicketPurchaseInput {
   minimumAmount: bigint;
 }
 
+async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
+  const {
+    platform,
+    network,
+    txHash,
+    expectedGameId,
+    expectedBuyer,
+    minimumAmount,
+  } = input;
+  const chainTarget = { platform, network };
+  const contractAddress = getWaffleContractAddress(chainTarget);
+  const publicClient = getPublicClient(chainTarget);
+
+  let receipt;
+  try {
+    receipt = await publicClient.getTransactionReceipt({ hash: txHash });
+  } catch (error) {
+    console.error("[verify-ticket-purchase]", {
+      stage: "fallback-receipt-failed",
+      platform,
+      txHash,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return null;
+  }
+
+  if (receipt.status !== "success") {
+    return null;
+  }
+
+  const hasContractLog = receipt.logs.some(
+    (log) => log.address.toLowerCase() === contractAddress.toLowerCase(),
+  );
+
+  if (!hasContractLog) {
+    console.error("[verify-ticket-purchase]", {
+      stage: "fallback-no-contract-log",
+      platform,
+      txHash,
+      contractAddress,
+    });
+    return null;
+  }
+
+  try {
+    const hasTicket = (await publicClient.readContract({
+      address: contractAddress,
+      abi: waffleGameAbi,
+      functionName: "hasTicket",
+      args: [expectedGameId, expectedBuyer],
+    })) as boolean;
+
+    if (!hasTicket) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "fallback-ticket-missing",
+        platform,
+        txHash,
+        expectedGameId,
+        expectedBuyer,
+      });
+      return null;
+    }
+
+    console.log("[verify-ticket-purchase]", {
+      stage: "fallback-verified",
+      platform,
+      txHash,
+      expectedGameId,
+      expectedBuyer,
+      minimumAmount: minimumAmount.toString(),
+    });
+
+    return {
+      verified: true,
+      details: {
+        gameId: expectedGameId,
+        buyer: expectedBuyer,
+        amount: minimumAmount,
+        amountFormatted: formatUnits(minimumAmount, PAYMENT_TOKEN_DECIMALS),
+      },
+    } satisfies VerifyTicketPurchaseResult;
+  } catch (error) {
+    console.error("[verify-ticket-purchase]", {
+      stage: "fallback-read-failed",
+      platform,
+      txHash,
+      expectedGameId,
+      expectedBuyer,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return null;
+  }
+}
+
 // ============================================================================
 // Main Verification Function
 // ============================================================================
@@ -89,9 +183,28 @@ export async function verifyTicketPurchase(
   try {
     const inspected = await inspectTicketPurchase({ platform, network, txHash });
     if (!inspected.found || !inspected.details) {
+      const fallback = await verifyTicketPurchaseFallback(input);
+      if (fallback) return fallback;
       return {
         verified: false,
         error: inspected.error || "TicketPurchased event not found.",
+      };
+    }
+
+    if (!inspected.details.gameId || !inspected.details.buyer) {
+      console.error("[verify-ticket-purchase]", {
+        stage: "missing-event-fields",
+        platform,
+        txHash,
+        expectedGameId,
+        expectedBuyer,
+        details: inspected.details,
+      });
+      return {
+        ...(await verifyTicketPurchaseFallback(input)) ?? {
+          verified: false,
+          error: "TicketPurchased event was missing required fields.",
+        },
       };
     }
 
@@ -212,6 +325,18 @@ export async function inspectTicketPurchase(input: {
         buyer: `0x${string}`;
         amount: bigint;
       };
+
+      if (!args.gameId || !args.buyer || typeof args.amount !== "bigint") {
+        console.error("[inspect-ticket-purchase]", {
+          stage: "decoded-event-missing-fields",
+          platform,
+          txHash,
+          gameId: args.gameId ?? null,
+          buyer: args.buyer ?? null,
+          amountType: typeof args.amount,
+        });
+        continue;
+      }
 
       purchase = {
         gameId: args.gameId,
