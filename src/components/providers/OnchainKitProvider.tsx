@@ -19,7 +19,7 @@ interface Props {
 }
 
 export function OnchainKitProvider({ children }: Props) {
-  const [runtime, setRuntime] = useState<AppRuntime>("browser");
+  const [runtime, setRuntime] = useState<AppRuntime | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -40,6 +40,10 @@ export function OnchainKitProvider({ children }: Props) {
       cancelled = true;
     };
   }, []);
+
+  if (!runtime) {
+    return null;
+  }
 
   const chain = getPlatformChain(runtime === "minipay" ? "MINIPAY" : "FARCASTER");
   const activeWagmiConfig =

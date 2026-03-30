@@ -201,6 +201,8 @@ export function BuyTicketModal({
   const isError = isFree ? freeError : paidError;
   const isPurchased = hasTicket || paidSuccess;
   const isWalletReady = isConnected && !!address;
+  const isFarcasterWalletLoading =
+    runtime === "farcaster" && !isWalletReady && !paidLoading && !paidError;
 
   const buttonText = isFree
     ? freeLoading
@@ -209,8 +211,8 @@ export function BuyTicketModal({
         ? "TRY AGAIN"
         : "PLAY FOR FREE"
     : !isWalletReady
-      ? runtime === "farcaster"
-        ? "Wallet unavailable"
+      ? isFarcasterWalletLoading
+        ? "Loading wallet..."
         : "Connecting wallet..."
       : salesClosed
         ? "SALES CLOSED"
@@ -235,6 +237,7 @@ export function BuyTicketModal({
       selectedTier,
       selectedPrice,
       isWalletReady,
+      isFarcasterWalletLoading,
       salesClosed,
       hasTicket,
     });
@@ -245,6 +248,7 @@ export function BuyTicketModal({
     isConnected,
     isOpen,
     isWalletReady,
+    isFarcasterWalletLoading,
     network,
     onchainId,
     platform,
@@ -268,6 +272,7 @@ export function BuyTicketModal({
       isError,
       isPurchased,
       isWalletReady,
+      isFarcasterWalletLoading,
       salesClosed,
     });
   }, [
@@ -278,6 +283,7 @@ export function BuyTicketModal({
     isLoading,
     isPurchased,
     isWalletReady,
+    isFarcasterWalletLoading,
     network,
     platform,
     salesClosed,
