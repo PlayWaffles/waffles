@@ -52,6 +52,14 @@ const envSchema = z.object({
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/)
     .optional(),
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{40}$/)
+    .optional(),
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY: z
     .string()
     .regex(/^0x[a-fA-F0-9]{40}$/)
@@ -117,6 +125,10 @@ const getEnv = () => {
       process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
     NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER:
       process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER,
+    NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET:
+      process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET,
+    NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA:
+      process.env.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA,
     NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY:
       process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY,
     NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS:
@@ -178,6 +190,10 @@ const getEnv = () => {
         nextPublicWaffleContractAddress:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
         nextPublicWaffleContractAddressFarcaster:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicPaymentTokenAddressBaseMainnet:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicPaymentTokenAddressBaseSepolia:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
         nextPublicWaffleContractAddressMiniPay:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
@@ -243,6 +259,11 @@ const getEnv = () => {
       "0x0000000000000000000000000000000000000000") as `0x${string}`,
     nextPublicWaffleContractAddressFarcaster: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER ||
       data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicPaymentTokenAddressBaseMainnet: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicPaymentTokenAddressBaseSepolia: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA ||
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER ||
       "0x0000000000000000000000000000000000000000") as `0x${string}`,
     nextPublicWaffleContractAddressMiniPay: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY ||
       data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||

@@ -70,9 +70,9 @@ function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
 export function WalletBalance() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
-  const platform = isMiniPayRuntime() ? "MINIPAY" : "FARCASTER";
-  const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain(platform);
   const [runtime, setRuntime] = useState<AppRuntime>("browser");
+  const platform = runtime === "minipay" || isMiniPayRuntime() ? "MINIPAY" : "FARCASTER";
+  const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain(platform);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,7 +112,7 @@ export function WalletBalance() {
   const chain = getPlatformChain(platform);
 
   // Fetch balance using the TARGET chain
-  const { roundedBalance } = useGetTokenBalance(address as `0x${string}`, {
+  const { roundedBalance, status } = useGetTokenBalance(address as `0x${string}`, {
     address: tokenAddress as `0x${string}`,
     decimals: PAYMENT_TOKEN_DECIMALS,
     name: "USDC",
@@ -123,18 +123,31 @@ export function WalletBalance() {
 
   // Track previous balance for animation trigger
   const prevBalance = useRef(roundedBalance);
+  const [displayBalance, setDisplayBalance] = useState<string>("");
   const controls = useAnimation();
 
   // Animate on balance change
   useEffect(() => {
-    if (prevBalance.current !== roundedBalance) {
+    if (status === "success" && roundedBalance !== undefined && roundedBalance !== "") {
+      setDisplayBalance(roundedBalance);
+    }
+
+    if (prevBalance.current !== roundedBalance && roundedBalance !== undefined && roundedBalance !== "") {
       controls.start({
         scale: [1, 1.1, 1],
         transition: { duration: 0.3, ease: "easeOut" as const },
       });
       prevBalance.current = roundedBalance;
     }
-  }, [roundedBalance, controls]);
+  }, [roundedBalance, status, controls]);
+
+  const balanceLabel =
+    displayBalance !== ""
+      ? `$${Number(displayBalance).toLocaleString("en-US", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}`
+      : "..."
 
   return (
     <motion.div
@@ -151,7 +164,7 @@ export function WalletBalance() {
         className="text-center font-normal not-italic text-[16px] leading-[100%] tracking-[0px] text-white"
         animate={controls}
       >
-        {`$${Number(roundedBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+        {balanceLabel}
       </motion.span>
     </motion.div>
   );

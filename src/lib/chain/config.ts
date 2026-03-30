@@ -54,10 +54,16 @@ export function getWaffleContractAddress(
 }
 
 export function getPaymentTokenAddress(target: ChainTarget): `0x${string}` {
-  const { platform } = resolveChainTarget(target);
-  return platform === "MINIPAY"
-    ? env.nextPublicPaymentTokenAddressMiniPay
-    : env.nextPublicPaymentTokenAddressFarcaster;
+  const { platform, network } = resolveChainTarget(target);
+  if (platform === "MINIPAY") {
+    return env.nextPublicPaymentTokenAddressMiniPay;
+  }
+
+  if (network === "BASE_SEPOLIA") {
+    return env.nextPublicPaymentTokenAddressBaseSepolia;
+  }
+
+  return env.nextPublicPaymentTokenAddressBaseMainnet;
 }
 
 export const PAYMENT_TOKEN_DECIMALS = 6;
