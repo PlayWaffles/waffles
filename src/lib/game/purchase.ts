@@ -1,13 +1,14 @@
-import { revalidatePath } from "next/cache";
-import { Prisma, TicketPurchaseSource, type UserPlatform } from "@prisma";
-import { parseUnits } from "viem";
+import { TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { formatUnits, parseUnits } from "viem";
 
 import { prisma } from "@/lib/db";
 import { PAYMENT_TOKEN_DECIMALS, verifyTicketPurchase } from "@/lib/chain";
 import { notifyTicketPurchased } from "@/lib/partykit";
-import { sendToUser } from "@/lib/notifications";
+import { sendToUser, sendBatch } from "@/lib/notifications";
+import { transactional, preGame, buildPayload } from "@/lib/notifications/templates";
 import { formatGameTime } from "@/lib/utils";
-import { getTicketPricingSnapshot } from "@/lib/tickets";
+import { normalizeAddress } from "@/lib/auth";
+import { unlockReferralRewards, revalidateGamePaths } from "./shared";
 
 export type PurchaseResult =
   | { success: true; entryId: string }
@@ -25,27 +26,7 @@ interface PurchaseUser {
   platform: UserPlatform;
   username: string | null;
   pfpUrl: string | null;
-}
-
-async function unlockReferralRewards(
-  tx: Prisma.TransactionClient,
-  userId: string,
-) {
-  const entryCount = await tx.gameEntry.count({
-    where: { userId },
-  });
-
-  if (entryCount === 1) {
-    await tx.referralReward.updateMany({
-      where: { inviteeId: userId, status: "PENDING" },
-      data: { status: "UNLOCKED", unlockedAt: new Date() },
-    });
-  }
-}
-
-function revalidateGamePaths() {
-  revalidatePath("/game");
-  revalidatePath("/(app)/(game)", "layout");
+  wallet: string | null;
 }
 
 function isSamePrice(a: number, b: number) {
@@ -58,16 +39,7 @@ export async function finalizeTicketPurchase(
 ): Promise<PurchaseResult> {
   const { gameId, txHash, paidAmount, payerWallet } = input;
 
-  console.log("[game-actions]", {
-    stage: "purchase-start",
-    gameId,
-    txHash,
-    paidAmount,
-    payerWallet,
-    userId: user.id,
-  });
-
-  if (!gameId || !txHash) {
+  if (!gameId || !txHash || !payerWallet) {
     return {
       success: false,
       error: "Missing required fields",
@@ -82,6 +54,17 @@ export async function finalizeTicketPurchase(
       code: "INVALID_INPUT",
     };
   }
+
+  const normalizedPayerWallet = normalizeAddress(payerWallet);
+
+  console.log("[game-actions]", {
+    stage: "purchase-start",
+    gameId,
+    txHash,
+    paidAmount,
+    payerWallet,
+    userId: user.id,
+  });
 
   try {
     const existing = await prisma.gameEntry.findUnique({
@@ -114,6 +97,22 @@ export async function finalizeTicketPurchase(
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 
+    if (!normalizedPayerWallet) {
+      return {
+        success: false,
+        error: "Invalid payer wallet",
+        code: "INVALID_INPUT",
+      };
+    }
+
+    if (user.wallet && normalizeAddress(user.wallet) !== normalizedPayerWallet) {
+      return {
+        success: false,
+        error: "Payment wallet does not match your linked wallet",
+        code: "INVALID_INPUT",
+      };
+    }
+
     console.log("[game-actions]", {
       stage: "purchase-game-loaded",
       gameId,
@@ -144,14 +143,6 @@ export async function finalizeTicketPurchase(
       };
     }
 
-    if (new Date() >= game.endsAt) {
-      return { success: false, error: "Game has ended", code: "GAME_ENDED" };
-    }
-
-    if (game.playerCount >= game.maxPlayers) {
-      return { success: false, error: "Game is full", code: "GAME_FULL" };
-    }
-
     if (!game.onchainId) {
       return {
         success: false,
@@ -165,7 +156,7 @@ export async function finalizeTicketPurchase(
       network: game.network,
       txHash: txHash as `0x${string}`,
       expectedGameId: game.onchainId as `0x${string}`,
-      expectedBuyer: payerWallet as `0x${string}`,
+      expectedBuyer: normalizedPayerWallet as `0x${string}`,
       minimumAmount: parseUnits(paidAmount.toString(), PAYMENT_TOKEN_DECIMALS),
     });
 
@@ -202,6 +193,22 @@ export async function finalizeTicketPurchase(
       };
     }
 
+    const verifiedPaidAmount = Number(
+      formatUnits(
+        verification.details?.amount ??
+          parseUnits(paidAmount.toString(), PAYMENT_TOKEN_DECIMALS),
+        PAYMENT_TOKEN_DECIMALS,
+      ),
+    );
+
+    if (!Number.isFinite(verifiedPaidAmount) || verifiedPaidAmount <= 0) {
+      return {
+        success: false,
+        error: "Unable to derive paid amount from on-chain purchase",
+        code: "VERIFICATION_FAILED",
+      };
+    }
+
     let entry:
       | {
           id: string;
@@ -213,118 +220,57 @@ export async function finalizeTicketPurchase(
     let updatedPrizePool = game.prizePool;
     let updatedPlayerCount = game.playerCount;
 
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        const transactionResult = await prisma.$transaction(
-          async (tx) => {
-            const existingEntry = await tx.gameEntry.findUnique({
-              where: { gameId_userId: { gameId, userId: user.id } },
-              select: { id: true, purchaseSource: true, paidAmount: true },
-            });
+    const transactionResult = await prisma.$transaction(async (tx) => {
+      const existingEntry = await tx.gameEntry.findUnique({
+        where: { gameId_userId: { gameId, userId: user.id } },
+        select: { id: true, purchaseSource: true, paidAmount: true },
+      });
 
-            if (existingEntry) {
-              return {
-                entry: existingEntry,
-                prizePool: game.prizePool,
-                playerCount: game.playerCount,
-                wasCreated: false,
-              };
-            }
-
-            const currentGame = await tx.game.findUnique({
-              where: { id: gameId },
-              select: {
-                id: true,
-                prizePool: true,
-                playerCount: true,
-                maxPlayers: true,
-                tierPrices: true,
-              },
-            });
-
-            if (!currentGame) {
-              throw new Error("Game not found");
-            }
-
-            if (currentGame.playerCount >= currentGame.maxPlayers) {
-              throw new Error("GAME_FULL");
-            }
-
-            const pricing = getTicketPricingSnapshot(currentGame);
-
-            if (!isSamePrice(pricing.currentPrice, paidAmount)) {
-              const error = new Error("PRICE_CHANGED");
-              error.name = "PRICE_CHANGED";
-              throw error;
-            }
-
-            const newEntry = await tx.gameEntry.create({
-              data: {
-                gameId,
-                userId: user.id,
-                txHash,
-                payerWallet: payerWallet || null,
-                paidAmount,
-                paidAt: new Date(),
-                purchaseSource: TicketPurchaseSource.PAID,
-              },
-              select: { id: true, paidAmount: true, purchaseSource: true },
-            });
-
-            const updatedGame = await tx.game.update({
-              where: { id: gameId },
-              data: {
-                playerCount: { increment: 1 },
-                prizePool: { increment: paidAmount },
-              },
-              select: { prizePool: true, playerCount: true },
-            });
-
-            await unlockReferralRewards(tx, user.id);
-
-            return {
-              entry: newEntry,
-              prizePool: updatedGame.prizePool,
-              playerCount: updatedGame.playerCount,
-              wasCreated: true,
-            };
-          },
-          { isolationLevel: Prisma.TransactionIsolationLevel.Serializable },
-        );
-
-        entry = transactionResult.entry;
-        updatedPrizePool = transactionResult.prizePool;
-        updatedPlayerCount = transactionResult.playerCount;
-        entryWasCreated = transactionResult.wasCreated;
-        break;
-      } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === "P2034" &&
-          attempt < 2
-        ) {
-          continue;
-        }
-
-        if (error instanceof Error && error.message === "PRICE_CHANGED") {
-          return {
-            success: false,
-            error: "Ticket price changed. Refresh and try again.",
-            code: "PRICE_CHANGED",
-          };
-        }
-
-        if (error instanceof Error && error.message === "GAME_FULL") {
-          return {
-            success: false,
-            error: "Game is full",
-            code: "GAME_FULL",
-          };
-        }
-
-        throw error;
+      if (existingEntry) {
+        return {
+          entry: existingEntry,
+          prizePool: game.prizePool,
+          playerCount: game.playerCount,
+          wasCreated: false,
+        };
       }
-    }
+
+      const newEntry = await tx.gameEntry.create({
+        data: {
+          gameId,
+          userId: user.id,
+          txHash,
+          payerWallet: normalizedPayerWallet,
+          paidAmount: verifiedPaidAmount,
+          paidAt: new Date(),
+          purchaseSource: TicketPurchaseSource.PAID,
+        },
+        select: { id: true, paidAmount: true, purchaseSource: true },
+      });
+
+      const updatedGame = await tx.game.update({
+        where: { id: gameId },
+        data: {
+          playerCount: { increment: 1 },
+          prizePool: { increment: verifiedPaidAmount },
+        },
+        select: { prizePool: true, playerCount: true },
+      });
+
+      await unlockReferralRewards(tx, user.id);
+
+      return {
+        entry: newEntry,
+        prizePool: updatedGame.prizePool,
+        playerCount: updatedGame.playerCount,
+        wasCreated: true,
+      };
+    });
+
+    entry = transactionResult.entry;
+    updatedPrizePool = transactionResult.prizePool;
+    updatedPlayerCount = transactionResult.playerCount;
+    entryWasCreated = transactionResult.wasCreated;
 
     if (!entry) {
       return {
@@ -341,17 +287,12 @@ export async function finalizeTicketPurchase(
     }
 
     const timeStr = formatGameTime(game.startsAt);
-    void import("@/lib/notifications/templates").then(
-      ({ transactional, buildPayload }) => {
-        const payload = buildPayload(transactional.ticketSecured(timeStr));
-        sendToUser(user.id, payload).catch((err) =>
-          console.error("[game-actions]", "notification_error", {
-            gameId,
-            userId: user.id,
-            error: err instanceof Error ? err.message : String(err),
-          }),
-        );
-      },
+    void sendToUser(user.id, buildPayload(transactional.ticketSecured(timeStr))).catch((err) =>
+      console.error("[game-actions]", "notification_error", {
+        gameId,
+        userId: user.id,
+        error: err instanceof Error ? err.message : String(err),
+      }),
     );
 
     void notifyTicketPurchased(gameId, {
@@ -370,27 +311,21 @@ export async function finalizeTicketPurchase(
     const newCount = updatedPlayerCount;
 
     if (newCount === playerThreshold) {
-      void (async () => {
-        const { preGame, buildPayload } =
-          await import("@/lib/notifications/templates");
-        const { sendBatch } = await import("@/lib/notifications");
-
-        const eligibleUsers = await prisma.user.findMany({
-          where: {
-            hasGameAccess: true,
-            isBanned: false,
-            entries: { none: { gameId } },
-          },
-          select: { id: true },
-          take: 500,
-        });
-
+      void prisma.user.findMany({
+        where: {
+          hasGameAccess: true,
+          isBanned: false,
+          entries: { none: { gameId } },
+        },
+        select: { id: true },
+        take: 500,
+      }).then((eligibleUsers) => {
         if (eligibleUsers.length > 0) {
           const template = preGame.almostSoldOut(game.gameNumber || 0);
           const payload = buildPayload(template, undefined, "pregame");
-          await sendBatch(payload, eligibleUsers.map((eligibleUser) => eligibleUser.id));
+          return sendBatch(payload, eligibleUsers.map((u) => u.id));
         }
-      })().catch((err) =>
+      }).catch((err) =>
         console.error("[game-actions]", "sold_out_notify_error", err),
       );
     }

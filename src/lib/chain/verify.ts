@@ -12,6 +12,7 @@ import { getPublicClient } from "./client";
 import { waffleGameAbi } from "./abi";
 import {
   PAYMENT_TOKEN_DECIMALS,
+  getPaymentTokenAddress,
   getWaffleContractAddress,
 } from "./config";
 import { type ChainPlatform } from "./platform";
@@ -49,6 +50,70 @@ export interface VerifyTicketPurchaseInput {
   minimumAmount: bigint;
 }
 
+function parseIndexedAddress(topic?: `0x${string}`): `0x${string}` | null {
+  if (!topic || topic.length < 42) return null;
+  return `0x${topic.slice(-40)}` as `0x${string}`;
+}
+
+function extractTicketPurchaseFromLog(log: {
+  topics: readonly `0x${string}`[];
+  data: `0x${string}`;
+}): TicketPurchaseDetails | null {
+  if (log.topics.length < 3 || !log.data || log.data === "0x") return null;
+
+  const gameId = log.topics[1] as `0x${string}`;
+  const buyer = parseIndexedAddress(log.topics[2]);
+
+  try {
+    const amount = BigInt(log.data);
+    if (!gameId || !buyer) return null;
+    return {
+      gameId,
+      buyer,
+      amount,
+      amountFormatted: formatUnits(amount, PAYMENT_TOKEN_DECIMALS),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function extractTransferAmountFromReceipt(params: {
+  receipt: { logs: Array<{ address: `0x${string}`; topics: readonly `0x${string}`[]; data: `0x${string}` }> };
+  tokenAddress: `0x${string}`;
+  buyer: `0x${string}`;
+  recipient: `0x${string}`;
+}): bigint | null {
+  const { receipt, tokenAddress, buyer, recipient } = params;
+  const transferEventTopic =
+    "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
+
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== tokenAddress.toLowerCase()) continue;
+    if (log.topics.length < 3 || log.topics[0]?.toLowerCase() !== transferEventTopic) {
+      continue;
+    }
+
+    const from = parseIndexedAddress(log.topics[1]);
+    const to = parseIndexedAddress(log.topics[2]);
+
+    try {
+      const amount = BigInt(log.data);
+      if (
+        from?.toLowerCase() === buyer.toLowerCase() &&
+        to?.toLowerCase() === recipient.toLowerCase() &&
+        amount > BigInt(0)
+      ) {
+        return amount;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
   const {
     platform,
@@ -60,6 +125,7 @@ async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
   } = input;
   const chainTarget = { platform, network };
   const contractAddress = getWaffleContractAddress(chainTarget);
+  const tokenAddress = getPaymentTokenAddress(chainTarget);
   const publicClient = getPublicClient(chainTarget);
 
   let receipt;
@@ -121,13 +187,21 @@ async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
       minimumAmount: minimumAmount.toString(),
     });
 
+    const transferAmount =
+      extractTransferAmountFromReceipt({
+        receipt,
+        tokenAddress,
+        buyer: expectedBuyer,
+        recipient: contractAddress,
+      }) ?? minimumAmount;
+
     return {
       verified: true,
       details: {
         gameId: expectedGameId,
         buyer: expectedBuyer,
-        amount: minimumAmount,
-        amountFormatted: formatUnits(minimumAmount, PAYMENT_TOKEN_DECIMALS),
+        amount: transferAmount,
+        amountFormatted: formatUnits(transferAmount, PAYMENT_TOKEN_DECIMALS),
       },
     } satisfies VerifyTicketPurchaseResult;
   } catch (error) {
@@ -346,7 +420,10 @@ export async function inspectTicketPurchase(input: {
       };
       break;
     } catch {
-      continue;
+      const parsed = extractTicketPurchaseFromLog(log);
+      if (!parsed) continue;
+      purchase = parsed;
+      break;
     }
   }
 

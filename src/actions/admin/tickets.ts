@@ -4,13 +4,15 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
-import { Prisma, TicketPurchaseSource } from "@prisma";
+import { TicketPurchaseSource } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser } from "@/lib/notifications";
 import { formatGameTime } from "@/lib/utils";
 import { inspectTicketPurchase } from "@/lib/chain";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import type { GameNetwork } from "@/lib/chain/network";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
+import { unlockReferralRewards } from "@/lib/game/shared";
 
 export type IssueFreeTicketResult =
   | { success: true; entryId: string; message: string }
@@ -32,20 +34,12 @@ const reconcilePaidTicketSchema = z.object({
     .regex(/^0x[a-fA-F0-9]{64}$/, "Enter a valid transaction hash"),
 });
 
-async function unlockReferralRewards(
-  tx: Prisma.TransactionClient,
-  userId: string,
-) {
-  const entryCount = await tx.gameEntry.count({
-    where: { userId },
-  });
-
-  if (entryCount === 1) {
-    await tx.referralReward.updateMany({
-      where: { inviteeId: userId, status: "PENDING" },
-      data: { status: "UNLOCKED", unlockedAt: new Date() },
-    });
+function getReconcileTargets(platform: ChainPlatform): GameNetwork[] {
+  if (platform === "FARCASTER") {
+    return ["BASE_MAINNET", "BASE_SEPOLIA"];
   }
+
+  return ["CELO_SEPOLIA"];
 }
 
 export async function issueFreeTicketAction(
@@ -245,6 +239,7 @@ export async function reconcilePaidTicketAction(
   let inspected:
     | {
         platform: ChainPlatform;
+        network: GameNetwork;
         gameId: `0x${string}`;
         buyer: `0x${string}`;
         amount: bigint;
@@ -253,16 +248,24 @@ export async function reconcilePaidTicketAction(
     | null = null;
 
   for (const platform of platforms) {
-    const result = await inspectTicketPurchase({
-      platform,
-      txHash: txHash as `0x${string}`,
-    });
-
-    if (result.found && result.details) {
-      inspected = {
+    for (const network of getReconcileTargets(platform)) {
+      const result = await inspectTicketPurchase({
         platform,
-        ...result.details,
-      };
+        network,
+        txHash: txHash as `0x${string}`,
+      });
+
+      if (result.found && result.details) {
+        inspected = {
+          platform,
+          network,
+          ...result.details,
+        };
+        break;
+      }
+    }
+
+    if (inspected) {
       break;
     }
   }
@@ -291,6 +294,7 @@ export async function reconcilePaidTicketAction(
   const game = await prisma.game.findFirst({
     where: {
       platform: inspected.platform,
+      network: inspected.network,
       onchainId: { equals: inspected.gameId, mode: "insensitive" },
     },
     select: {
@@ -309,14 +313,6 @@ export async function reconcilePaidTicketAction(
     return {
       success: false,
       error: "This on-chain purchase does not map to any game in the database.",
-    };
-  }
-
-  if (game.rankedAt || game.onChainAt) {
-    return {
-      success: false,
-      error:
-        "This game has already been settled. Recover the ticket manually with extra care instead of using auto-reconcile.",
     };
   }
 
@@ -412,6 +408,7 @@ export async function reconcilePaidTicketAction(
       userId: user.id,
       wallet: inspected.buyer,
       platform: inspected.platform,
+      network: inspected.network,
       paidAmount,
     },
   });

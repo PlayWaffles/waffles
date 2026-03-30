@@ -1,11 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { Prisma, TicketPurchaseSource } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getScore } from "@/lib/game/scoring";
+import { unlockReferralRewards, revalidateGamePaths } from "@/lib/game/shared";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
 import { hasPlayableTicket } from "@/lib/tickets";
@@ -14,27 +14,6 @@ import {
   type PurchaseInput,
   type PurchaseResult,
 } from "@/lib/game/purchase";
-
-function revalidateGamePaths() {
-  revalidatePath("/game");
-  revalidatePath("/(app)/(game)", "layout");
-}
-
-async function unlockReferralRewards(
-  tx: Prisma.TransactionClient,
-  userId: string,
-) {
-  const entryCount = await tx.gameEntry.count({
-    where: { userId },
-  });
-
-  if (entryCount === 1) {
-    await tx.referralReward.updateMany({
-      where: { inviteeId: userId, status: "PENDING" },
-      data: { status: "UNLOCKED", unlockedAt: new Date() },
-    });
-  }
-}
 
 /**
  * Records a ticket purchase after on-chain transaction succeeds.

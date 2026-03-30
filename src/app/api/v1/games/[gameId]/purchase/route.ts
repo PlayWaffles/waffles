@@ -28,6 +28,7 @@ export const POST = withAuth(async (request: NextRequest, auth, params) => {
         platform: true,
         username: true,
         pfpUrl: true,
+        wallet: true,
       },
     });
 

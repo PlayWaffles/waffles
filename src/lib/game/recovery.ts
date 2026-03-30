@@ -1,9 +1,11 @@
-import { Prisma, TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 
 import { prisma } from "@/lib/db";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import type { GameNetwork } from "@/lib/chain/network";
 import { normalizeAddress } from "@/lib/auth";
+import { unlockReferralRewards } from "./shared";
 
 const BASE_MAINNET_RECOVERY_SCAN_WINDOW = BigInt(500);
 const DEFAULT_RECOVERY_SCAN_WINDOW = BigInt(25_000);
@@ -17,10 +19,24 @@ type RecoveryPlatform = Extract<UserPlatform, "FARCASTER" | "MINIPAY">;
 
 type RecentPurchase = {
   txHash: `0x${string}`;
+  network: GameNetwork;
   gameOnchainId: string;
   buyer: string;
   paidAmount: number;
 };
+
+function getRecoveryTargets(
+  platform: RecoveryPlatform,
+): Array<{ platform: RecoveryPlatform; network: GameNetwork }> {
+  if (platform === "FARCASTER") {
+    return [
+      { platform, network: "BASE_MAINNET" },
+      { platform, network: "BASE_SEPOLIA" },
+    ];
+  }
+
+  return [{ platform, network: "CELO_SEPOLIA" }];
+}
 
 function getRecoveryScanWindow(platform: RecoveryPlatform) {
   return platform === "FARCASTER"
@@ -34,84 +50,84 @@ function getLogBlockChunk(platform: RecoveryPlatform) {
     : DEFAULT_LOG_BLOCK_CHUNK;
 }
 
-async function unlockReferralRewards(
-  tx: Prisma.TransactionClient,
-  userId: string,
-) {
-  const entryCount = await tx.gameEntry.count({
-    where: { userId },
-  });
-
-  if (entryCount === 1) {
-    await tx.referralReward.updateMany({
-      where: { inviteeId: userId, status: "PENDING" },
-      data: { status: "UNLOCKED", unlockedAt: new Date() },
-    });
-  }
-}
-
 async function getRecentTicketPurchasesForBuyer(
   platform: RecoveryPlatform,
   wallet: string,
 ): Promise<RecentPurchase[]> {
   const buyer = normalizeAddress(wallet).toLowerCase() as `0x${string}`;
-  const publicClient = getPublicClient(platform);
-  const contractAddress = getWaffleContractAddress(platform);
-  const recoveryScanWindow = getRecoveryScanWindow(platform);
-  const logBlockChunk = getLogBlockChunk(platform);
-  const latestBlock = await publicClient.getBlockNumber();
-  const fromBlock =
-    latestBlock > recoveryScanWindow
-      ? latestBlock - recoveryScanWindow
-      : BigInt(0);
+  const recoveryTargets = getRecoveryTargets(platform);
+  const logs: Array<{
+    transactionHash: `0x${string}` | null;
+    args: {
+      gameId: `0x${string}`;
+      buyer: `0x${string}`;
+      amount: bigint;
+    };
+    network: GameNetwork;
+  }> = [];
 
-  const logs = [];
+  for (const target of recoveryTargets) {
+    const publicClient = getPublicClient(target);
+    const contractAddress = getWaffleContractAddress(target);
+    const recoveryScanWindow = getRecoveryScanWindow(platform);
+    const logBlockChunk = getLogBlockChunk(platform);
+    const latestBlock = await publicClient.getBlockNumber();
+    const fromBlock =
+      latestBlock > recoveryScanWindow
+        ? latestBlock - recoveryScanWindow
+        : BigInt(0);
 
-  for (let start = fromBlock; start <= latestBlock; start += logBlockChunk) {
-    const end =
-      start + logBlockChunk - BigInt(1) < latestBlock
-        ? start + logBlockChunk - BigInt(1)
-        : latestBlock;
+    for (let start = fromBlock; start <= latestBlock; start += logBlockChunk) {
+      const end =
+        start + logBlockChunk - BigInt(1) < latestBlock
+          ? start + logBlockChunk - BigInt(1)
+          : latestBlock;
 
-    let batch;
-    try {
-      batch = await publicClient.getLogs({
-        address: contractAddress,
-        event: ticketPurchasedEvent,
-        args: { buyer },
-        fromBlock: start,
-        toBlock: end,
-      });
-    } catch (error) {
-      console.error("[ticket-recovery]", {
-        stage: "get-logs-failed",
-        platform,
-        buyer,
-        contractAddress,
-        fromBlock: start.toString(),
-        toBlock: end.toString(),
-        error: error instanceof Error ? error.message : "Unknown error",
-      });
-      return [];
+      let batch;
+      try {
+        batch = await publicClient.getLogs({
+          address: contractAddress,
+          event: ticketPurchasedEvent,
+          args: { buyer },
+          fromBlock: start,
+          toBlock: end,
+        });
+      } catch (error) {
+        console.error("[ticket-recovery]", {
+          stage: "get-logs-failed",
+          platform,
+          network: target.network,
+          buyer,
+          contractAddress,
+          fromBlock: start.toString(),
+          toBlock: end.toString(),
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        continue;
+      }
+
+      logs.push(
+        ...batch.map((log) => ({
+          transactionHash: log.transactionHash,
+          args: log.args as unknown as {
+            gameId: `0x${string}`;
+            buyer: `0x${string}`;
+            amount: bigint;
+          },
+          network: target.network,
+        })),
+      );
     }
-
-    logs.push(...batch);
   }
 
   const purchases = logs
     .map((log) => {
-      const args = log.args as unknown as {
-        gameId: `0x${string}`;
-        buyer: `0x${string}`;
-        amount: bigint;
-      };
-
       if (!log.transactionHash) {
         return null;
       }
 
       const paidAmount = Number(
-        formatUnits(args.amount, PAYMENT_TOKEN_DECIMALS),
+        formatUnits(log.args.amount, PAYMENT_TOKEN_DECIMALS),
       );
 
       if (!Number.isFinite(paidAmount) || paidAmount <= 0) {
@@ -120,8 +136,9 @@ async function getRecentTicketPurchasesForBuyer(
 
       return {
         txHash: log.transactionHash,
-        gameOnchainId: args.gameId.toLowerCase(),
-        buyer: args.buyer.toLowerCase(),
+        network: log.network,
+        gameOnchainId: log.args.gameId.toLowerCase(),
+        buyer: log.args.buyer.toLowerCase(),
         paidAmount,
       };
     })
@@ -143,21 +160,27 @@ export async function recoverRecentPurchasesForUser(params: {
   }
 
   const uniquePurchases = [...new Map(
-    purchases.map((purchase) => [purchase.txHash.toLowerCase(), purchase]),
+    purchases.map((purchase) => [
+      `${purchase.network}:${purchase.txHash.toLowerCase()}`,
+      purchase,
+    ]),
   ).values()];
 
   const onchainIds = [...new Set(uniquePurchases.map((purchase) => purchase.gameOnchainId))];
+  const networks = [...new Set(uniquePurchases.map((purchase) => purchase.network))];
   const txHashes = uniquePurchases.map((purchase) => purchase.txHash);
 
   const games = await prisma.game.findMany({
     where: {
       platform: params.platform,
+      network: { in: networks },
       OR: onchainIds.map((onchainId) => ({
         onchainId: { equals: onchainId, mode: "insensitive" },
       })),
     },
     select: {
       id: true,
+      network: true,
       onchainId: true,
       rankedAt: true,
       onChainAt: true,
@@ -167,7 +190,7 @@ export async function recoverRecentPurchasesForUser(params: {
   const gameByOnchainId = new Map(
     games
       .filter((game) => game.onchainId)
-      .map((game) => [game.onchainId!.toLowerCase(), game]),
+      .map((game) => [`${game.network}:${game.onchainId!.toLowerCase()}`, game]),
   );
 
   const existingEntries = await prisma.gameEntry.findMany({
@@ -202,9 +225,11 @@ export async function recoverRecentPurchasesForUser(params: {
   let skipped = 0;
 
   for (const purchase of uniquePurchases) {
-    const game = gameByOnchainId.get(purchase.gameOnchainId);
+    const game = gameByOnchainId.get(
+      `${purchase.network}:${purchase.gameOnchainId}`,
+    );
 
-    if (!game || game.rankedAt || game.onChainAt) {
+    if (!game) {
       skipped += 1;
       continue;
     }
