@@ -45,7 +45,7 @@ export function UserFilters() {
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
                     <input
                         type="text"
-                        placeholder="Search users by name or wallet..."
+                        placeholder="Search by username, wallet address, or FID..."
                         className="w-full pl-10 pr-4 py-2.5 bg-transparent border border-white/10 rounded-xl text-white placeholder-white/40 focus:ring-2 focus:ring-[#FFC931]/20 focus:border-[#FFC931]/50 transition-all"
                         defaultValue={searchParams.get("q")?.toString()}
                         onChange={(e) => handleSearch(e.target.value)}

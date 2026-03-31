@@ -23,11 +23,16 @@ async function getUsers(searchParams: { page?: string; status?: string; q?: stri
     }
 
     if (searchParams.q) {
-        const isNumber = !isNaN(parseInt(searchParams.q));
+        const query = searchParams.q.trim();
+        const isFidQuery = /^\d+$/.test(query);
+        const isWalletAddress = /^0x[a-fA-F0-9]{40}$/.test(query);
         where.OR = [
-            { username: { contains: searchParams.q, mode: "insensitive" } },
-            { wallet: { contains: searchParams.q, mode: "insensitive" } },
-            ...(isNumber ? [{ fid: { equals: parseInt(searchParams.q) } }] : []),
+            { username: { contains: query, mode: "insensitive" } },
+            { wallet: { contains: query, mode: "insensitive" } },
+            ...(isWalletAddress
+                ? [{ wallet: { equals: query, mode: "insensitive" } }]
+                : []),
+            ...(isFidQuery ? [{ fid: { equals: parseInt(query, 10) } }] : []),
         ];
     }
 

@@ -454,18 +454,19 @@ export function useTicketPurchase(
         error: message,
       });
 
-      const msg = message.includes("rejected")
+      const lowered = message.toLowerCase();
+      const msg = lowered.includes("rejected")
         ? "Transaction rejected"
-        : message.includes("insufficient")
-          ? "Insufficient funds"
-          : "Transaction failed";
+        : lowered.includes("insufficient funds for transfer") ||
+            lowered.includes("insufficient funds for gas") ||
+            lowered.includes("exceeds the balance of the account")
+          ? "Insufficient gas"
+          : lowered.includes("insufficient")
+            ? "Insufficient funds"
+            : "Transaction failed";
 
       setState({ step: "error", error: msg });
       notify.error(msg);
-
-      if (msg === "Insufficient funds") {
-        onInsufficientFunds?.();
-      }
     }
   }, [
     allowance,

@@ -7,6 +7,7 @@ import {
     TrophyIcon,
     BanknotesIcon,
     TicketIcon,
+    MagnifyingGlassIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getGamePhase } from "@/lib/types";
@@ -216,6 +217,34 @@ export default async function AdminDashboard({
                 userGrowth={stats.userGrowth}
                 revenueData={stats.revenueData}
             />
+
+            <div className="rounded-2xl border border-white/10 bg-linear-to-br from-[#FFC931]/6 to-transparent p-6">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                    <div>
+                        <h2 className="text-lg font-semibold text-white font-body">User Lookup</h2>
+                        <p className="mt-1 text-sm text-white/60">
+                            Search the users dashboard by wallet address, username, or FID.
+                        </p>
+                    </div>
+                    <form action="/admin/users" method="GET" className="flex w-full max-w-2xl flex-col gap-3 sm:flex-row">
+                        <div className="relative flex-1">
+                            <MagnifyingGlassIcon className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-white/40" />
+                            <input
+                                type="text"
+                                name="q"
+                                placeholder="Paste wallet address, @username, or FID"
+                                className="w-full rounded-xl border border-white/10 bg-transparent py-3 pl-10 pr-4 text-white placeholder-white/40 transition-all focus:border-[#FFC931]/50 focus:ring-2 focus:ring-[#FFC931]/20"
+                            />
+                        </div>
+                        <button
+                            type="submit"
+                            className="rounded-xl bg-[#FFC931] px-5 py-3 text-sm font-bold text-black transition-colors hover:bg-[#FFD966]"
+                        >
+                            Find User
+                        </button>
+                    </form>
+                </div>
+            </div>
 
             {/* Recent Activity Section */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 font-display">
