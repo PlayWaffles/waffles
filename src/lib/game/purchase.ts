@@ -13,7 +13,7 @@ import {
   farcasterUserHasWallet,
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
-import { unlockReferralRewards, revalidateGamePaths } from "./shared";
+import { unlockReferralRewards } from "./shared";
 
 export type PurchaseResult =
   | { success: true; entryId: string }
@@ -24,6 +24,10 @@ export interface PurchaseInput {
   txHash: string;
   paidAmount: number;
   payerWallet: string;
+}
+
+interface FinalizeTicketPurchaseOptions {
+  onSuccess?: (result: { entryId: string; entryWasCreated: boolean }) => Promise<void> | void;
 }
 
 interface PurchaseUser {
@@ -41,8 +45,28 @@ function isSamePrice(a: number, b: number) {
 export async function finalizeTicketPurchase(
   user: PurchaseUser,
   input: PurchaseInput,
+  options: FinalizeTicketPurchaseOptions = {},
 ): Promise<PurchaseResult> {
   const { gameId, txHash, paidAmount, payerWallet } = input;
+
+  const runSuccessHook = async (result: {
+    entryId: string;
+    entryWasCreated: boolean;
+  }) => {
+    if (!options.onSuccess) {
+      return;
+    }
+
+    try {
+      await options.onSuccess(result);
+    } catch (error) {
+      console.error("[game-actions]", "purchase_success_hook_error", {
+        gameId,
+        userId: user.id,
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  };
 
   if (!gameId || !txHash || !payerWallet) {
     return {
@@ -77,7 +101,7 @@ export async function finalizeTicketPurchase(
     });
 
     if (existing) {
-      revalidateGamePaths();
+      await runSuccessHook({ entryId: existing.id, entryWasCreated: false });
       return { success: true, entryId: existing.id };
     }
 
@@ -298,7 +322,7 @@ export async function finalizeTicketPurchase(
       };
     }
 
-    revalidateGamePaths();
+    await runSuccessHook({ entryId: entry.id, entryWasCreated: entryWasCreated });
 
     if (!entryWasCreated) {
       return { success: true, entryId: entry.id };

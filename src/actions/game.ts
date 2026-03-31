@@ -5,7 +5,8 @@ import { Prisma, TicketPurchaseSource } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getScore } from "@/lib/game/scoring";
-import { unlockReferralRewards, revalidateGamePaths } from "@/lib/game/shared";
+import { unlockReferralRewards } from "@/lib/game/shared";
+import { safeRevalidateGamePaths } from "@/lib/game/cache";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
@@ -25,7 +26,9 @@ export async function purchaseGameTicket(
 ): Promise<PurchaseResult> {
   try {
     const { user } = await requireCurrentUser();
-    return finalizeTicketPurchase(user, input);
+    return finalizeTicketPurchase(user, input, {
+      onSuccess: () => safeRevalidateGamePaths("purchaseGameTicket"),
+    });
   } catch (error) {
     console.error("[game-actions]", "purchase_error", {
       gameId: input.gameId,
@@ -120,7 +123,7 @@ async function claimFreeTicketForUser(
       return { entryId: entry.id, wasCreated: true, playerCount: updated.playerCount };
     });
 
-    revalidateGamePaths();
+    safeRevalidateGamePaths("claimFreeTicketForUser");
 
     if (result.wasCreated) {
       notifyTicketPurchased(gameId, {
@@ -281,7 +284,7 @@ export async function leaveGame(
       select: { leftAt: true },
     });
 
-    revalidateGamePaths();
+    safeRevalidateGamePaths("leaveGame");
 
     console.log("[game-actions]", "game_left", { gameId, userId: user.id });
 

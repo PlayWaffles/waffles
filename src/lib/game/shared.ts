@@ -1,4 +1,3 @@
-import { revalidatePath } from "next/cache";
 import type { Prisma } from "@prisma";
 
 /**
@@ -19,12 +18,4 @@ export async function unlockReferralRewards(
       data: { status: "UNLOCKED", unlockedAt: new Date() },
     });
   }
-}
-
-/**
- * Revalidate Next.js cache for game-related pages.
- */
-export function revalidateGamePaths() {
-  revalidatePath("/game");
-  revalidatePath("/(app)/(game)", "layout");
 }
