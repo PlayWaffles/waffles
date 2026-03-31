@@ -13,6 +13,7 @@ import {
   getTicketPricingSnapshot,
   type TicketPricingSnapshot,
 } from "@/lib/tickets";
+import { gameWhere } from "@/lib/platform/query";
 
 // ============================================================================
 // Types
@@ -62,8 +63,7 @@ export const getCurrentOrNextGame = cache(
     const [activeGame, endedGame] = await Promise.all([
       prisma.game.findFirst({
         where: {
-          platform,
-          isTestnet: false,
+          ...gameWhere(platform),
           OR: [
             { startsAt: { lte: now }, endsAt: { gt: now } }, // Live
             { startsAt: { gt: now } }, // Scheduled
@@ -73,7 +73,7 @@ export const getCurrentOrNextGame = cache(
         include: gameInclude,
       }),
       prisma.game.findFirst({
-        where: { platform, isTestnet: false, endsAt: { lte: now } },
+        where: { ...gameWhere(platform), endsAt: { lte: now } },
         orderBy: [{ endsAt: "desc" }],
         include: gameInclude,
       }),
@@ -108,7 +108,7 @@ export const getGameById = cache(
     platform: UserPlatform,
   ): Promise<GameQueryResult> => {
     const game = await prisma.game.findFirst({
-      where: { id: gameId, platform, isTestnet: false },
+      where: { id: gameId, ...gameWhere(platform) },
       include: gameInclude,
     });
 

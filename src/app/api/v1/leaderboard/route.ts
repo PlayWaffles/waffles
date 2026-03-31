@@ -4,7 +4,7 @@ import { env } from "@/lib/env";
 import { z } from "zod";
 import { UserPlatform } from "@prisma";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
-import { entryWhere, gameWhere } from "@/lib/platform/query";
+import { entryWhere, gameWhere, isGameVisibleToPlatform } from "@/lib/platform/query";
 
 // ============================================
 // CONFIGURATION
@@ -101,6 +101,7 @@ async function handleAllTime(
       FROM "GameEntry" ge
       JOIN "Game" g ON ge."gameId" = g.id
       WHERE g.platform = ${platform}::"UserPlatform"
+        AND (${platform}::"UserPlatform" = 'MINIPAY'::"UserPlatform" OR g."isTestnet" = false)
     `,
   ]);
 
@@ -172,10 +173,10 @@ async function handleGame(
 
   const game = await prisma.game.findUnique({
     where: { id: targetGameId },
-    select: { title: true, gameNumber: true, platform: true },
+    select: { title: true, gameNumber: true, platform: true, isTestnet: true },
   });
 
-  if (!game || game.platform !== platform) {
+  if (!game || !isGameVisibleToPlatform(game, platform)) {
     return NextResponse.json({
       entries: [],
       hasMore: false,

@@ -12,7 +12,7 @@ import { GameHub } from "./client";
 
 export const metadata: Metadata = {
   title: "Waffles",
-  description: "Pattern-matching tournaments built for MiniPay on Celo.",
+  description: "Guess the movie scene. Win real prizes.",
 };
 
 // ==========================================

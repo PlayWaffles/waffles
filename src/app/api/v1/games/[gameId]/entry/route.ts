@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthFromRequest, type ApiError } from "@/lib/auth";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { hasPlayableTicket } from "@/lib/tickets";
 
 type Params = { gameId: string };
@@ -33,7 +34,7 @@ export async function GET(
       select: { id: true, platform: true, isTestnet: true },
     });
 
-    if (!game || game.platform !== expectedPlatform || game.isTestnet) {
+    if (!game || !isGameVisibleToPlatform(game, expectedPlatform)) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

@@ -8,6 +8,7 @@ import { sendToUser, sendBatch } from "@/lib/notifications";
 import { transactional, preGame, buildPayload } from "@/lib/notifications/templates";
 import { formatGameTime } from "@/lib/utils";
 import { normalizeAddress } from "@/lib/auth";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { unlockReferralRewards, revalidateGamePaths } from "./shared";
 
 export type PurchaseResult =
@@ -94,7 +95,7 @@ export async function finalizeTicketPurchase(
       },
     });
 
-    if (!game || game.isTestnet) {
+    if (!game || !isGameVisibleToPlatform(game, user.platform)) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 
@@ -123,14 +124,6 @@ export async function finalizeTicketPurchase(
       playerCount: game.playerCount,
       maxPlayers: game.maxPlayers,
     });
-
-    if (game.platform !== user.platform) {
-      return {
-        success: false,
-        error: "This game belongs to a different platform",
-        code: "WRONG_PLATFORM",
-      };
-    }
 
     const pricingCandidates = (game.tierPrices ?? []).filter(
       (price): price is number => typeof price === "number" && price > 0,

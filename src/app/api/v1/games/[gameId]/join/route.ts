@@ -3,6 +3,7 @@ import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { hasPlayableTicket } from "@/lib/tickets";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 
 type Params = { gameId: string };
 
@@ -36,14 +37,7 @@ export const POST = withAuth<Params>(
         },
       });
 
-      if (!game || game.isTestnet) {
-        return NextResponse.json<ApiError>(
-          { error: "Game not found", code: "NOT_FOUND" },
-          { status: 404 }
-        );
-      }
-
-      if (game.platform !== auth.platform) {
+      if (!game || !isGameVisibleToPlatform(game, auth.platform)) {
         return NextResponse.json<ApiError>(
           { error: "Game not found", code: "NOT_FOUND" },
           { status: 404 }

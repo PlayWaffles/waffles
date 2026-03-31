@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { RealtimeProvider } from "@/components/providers/RealtimeProvider";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { gameWhere } from "@/lib/platform/query";
 import LiveGameScreen from "./LiveGameScreen";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ export interface LiveGameData {
 
 const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   const game = await prisma.game.findFirst({
-    where: { id: gameId, platform, isTestnet: false },
+    where: { id: gameId, ...gameWhere(platform) },
     select: {
       id: true,
       gameNumber: true,

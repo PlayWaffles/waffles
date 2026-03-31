@@ -4,6 +4,7 @@ import { cache } from "react";
 import { env } from "@/lib/env";
 import { buildJoinedOGUrl } from "@/lib/og";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { gameWhere } from "@/lib/platform/query";
 import { TicketSuccessClient } from "./client";
 
 interface SuccessPageProps {
@@ -14,7 +15,7 @@ interface SuccessPageProps {
 // Cache game data fetch
 const getGameInfo = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
     const game = await prisma.game.findFirst({
-        where: { id: gameId, platform, isTestnet: false },
+        where: { id: gameId, ...gameWhere(platform) },
         select: {
             id: true,
             title: true,

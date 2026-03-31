@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { CLAIM_DELAY_MS } from "@/lib/constants";
 import { getAuthFromRequest, type ApiError } from "@/lib/auth";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 
 type Params = { gameId: string };
 
@@ -73,7 +74,7 @@ export async function GET(
       },
     });
 
-    if (!game || game.platform !== expectedPlatform || game.isTestnet) {
+    if (!game || !isGameVisibleToPlatform(game, expectedPlatform)) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

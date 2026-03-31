@@ -8,6 +8,7 @@ import { getScore } from "@/lib/game/scoring";
 import { unlockReferralRewards, revalidateGamePaths } from "@/lib/game/shared";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { hasPlayableTicket } from "@/lib/tickets";
 import {
   finalizeTicketPurchase,
@@ -70,7 +71,7 @@ async function claimFreeTicketForUser(
     return { success: false, error: "Game not found", code: "NOT_FOUND" };
   }
 
-  if (game.platform !== user.platform || game.isTestnet) {
+  if (!isGameVisibleToPlatform(game, user.platform as "FARCASTER" | "MINIPAY")) {
     return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
   }
 
@@ -252,7 +253,10 @@ export async function leaveGame(
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
     }
 
-    if (entry.game.isTestnet) {
+    if (!isGameVisibleToPlatform(
+      { ...entry.game, platform: user.platform as "FARCASTER" | "MINIPAY" },
+      user.platform as "FARCASTER" | "MINIPAY",
+    )) {
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
     }
 
@@ -346,7 +350,13 @@ async function submitAnswerForUser(
       }),
       prisma.game.findUnique({
         where: { id: gameId },
-        select: { startsAt: true, endsAt: true, gameNumber: true, isTestnet: true },
+        select: {
+          platform: true,
+          startsAt: true,
+          endsAt: true,
+          gameNumber: true,
+          isTestnet: true,
+        },
       }),
       prisma.gameEntry.findUnique({
         where: { gameId_userId: { gameId, userId } },
@@ -374,7 +384,7 @@ async function submitAnswerForUser(
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 
-    if (game.isTestnet) {
+    if (!isGameVisibleToPlatform(game, game.platform)) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 

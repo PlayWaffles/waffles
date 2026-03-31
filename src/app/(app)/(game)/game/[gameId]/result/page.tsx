@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import ResultPageClient from "./client";
 import { buildPrizeOGUrl, buildScoreOGUrl } from "@/lib/og";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { gameWhere } from "@/lib/platform/query";
 
 interface ResultPageProps {
   params: Promise<{ gameId: string }>;
@@ -13,14 +14,14 @@ interface ResultPageProps {
 // Fetch game info
 const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   return prisma.game.findFirst({
-    where: { id: gameId, platform, isTestnet: false },
+    where: { id: gameId, ...gameWhere(platform) },
   });
 });
 
 // Fetch top 3 entries for leaderboard display
 const getTop3Entries = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
   return prisma.gameEntry.findMany({
-    where: { gameId, game: { platform, isTestnet: false } },
+    where: { gameId, game: gameWhere(platform) },
     orderBy: { score: "desc" },
     take: 3,
     select: {

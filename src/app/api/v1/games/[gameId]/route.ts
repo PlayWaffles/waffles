@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
 import { getTicketPricingSnapshot } from "@/lib/tickets";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 
 type Params = { gameId: string };
 
@@ -64,7 +65,7 @@ export async function GET(
       },
     });
 
-    if (!game || game.platform !== platform || game.isTestnet) {
+    if (!game || !isGameVisibleToPlatform(game, platform)) {
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

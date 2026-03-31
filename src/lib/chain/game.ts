@@ -4,7 +4,7 @@
  * Updated for WaffleGame v5
  */
 
-import { parseUnits } from "viem";
+import { formatEther, parseUnits } from "viem";
 
 import { getPublicClient, getOperatorWalletClient } from "./client";
 import { waffleGameAbi } from "./abi";
@@ -59,23 +59,44 @@ export async function createGameOnChain(
 ): Promise<`0x${string}`> {
   const chainTarget = { platform, network };
   const walletClient = getOperatorWalletClient(chainTarget);
+  const publicClient = getPublicClient(chainTarget);
   const contractAddress = getWaffleContractAddress(chainTarget);
   const minimumTicketPrice = parseUnits(
     minTicketPriceUSDC.toString(),
     PAYMENT_TOKEN_DECIMALS,
   );
 
-  const hash = await walletClient.writeContract(
-    withBuilderCodeDataSuffix({
-      address: contractAddress,
-      abi: waffleGameAbi,
-      functionName: "createGame",
-      args: [onchainId, minimumTicketPrice],
-    }),
-  );
+  try {
+    const hash = await walletClient.writeContract(
+      withBuilderCodeDataSuffix({
+        address: contractAddress,
+        abi: waffleGameAbi,
+        functionName: "createGame",
+        args: [onchainId, minimumTicketPrice],
+      }),
+    );
 
-  console.log(`[Chain] Created game ${onchainId}. TX: ${hash}`);
-  return hash;
+    console.log(`[Chain] Created game ${onchainId}. TX: ${hash}`);
+    return hash;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+
+    if (/insufficient funds/i.test(message)) {
+      const balance = await publicClient.getBalance({
+        address: walletClient.account.address,
+      });
+      const chainName = walletClient.chain.name;
+      const nativeSymbol = walletClient.chain.nativeCurrency.symbol;
+      const formattedBalance = formatEther(balance);
+      const shortAddress = `${walletClient.account.address.slice(0, 6)}...${walletClient.account.address.slice(-4)}`;
+
+      throw new Error(
+        `${platform} operator wallet ${shortAddress} has ${formattedBalance} ${nativeSymbol} on ${chainName}, so it cannot pay gas to create the game. Fund that wallet with testnet ${nativeSymbol} and try again.`,
+      );
+    }
+
+    throw error;
+  }
 }
 
 /**

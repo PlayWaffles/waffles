@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 
 type Params = { gameId: string };
 
@@ -49,7 +50,7 @@ export const POST = withAuth<Params>(
         );
       }
 
-      if (entry.game.platform !== auth.platform || entry.game.isTestnet) {
+      if (!isGameVisibleToPlatform(entry.game, auth.platform)) {
         return NextResponse.json<ApiError>(
           { error: "You are not in this game", code: "NOT_IN_GAME" },
           { status: 404 }

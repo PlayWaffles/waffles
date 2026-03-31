@@ -1,4 +1,5 @@
 import { UserPlatform } from "@prisma";
+import { excludesTestnet } from "@/lib/platform/query";
 
 export type PlatformWhere = { platform: UserPlatform } | Record<string, never>;
 export const PLATFORM_FEE_RATE = 0.2;
@@ -17,9 +18,18 @@ export function buildGamePlatformWhere(platform?: string) {
 
 export function buildProductionGameWhere(platform?: string) {
     const pf = buildPlatformWhere(platform);
-    return pf.platform
-        ? { platform: pf.platform, isTestnet: false }
-        : { isTestnet: false };
+    if (pf.platform) {
+        return excludesTestnet(pf.platform)
+            ? { platform: pf.platform, isTestnet: false }
+            : { platform: pf.platform };
+    }
+
+    return {
+        OR: [
+            { platform: UserPlatform.MINIPAY },
+            { platform: UserPlatform.FARCASTER, isTestnet: false },
+        ],
+    };
 }
 
 export function buildProductionEntryWhere(platform?: string) {
