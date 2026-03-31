@@ -14,6 +14,7 @@ import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
 import { OnboardingOverlay } from "../OnboardingOverlay";
 import { WaffleButton } from "../buttons/WaffleButton";
+import { getDemoQuestion, type DemoQuestion } from "@/actions/onboarding";
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
 import {
@@ -43,6 +44,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<"idle" | "authenticating" | "error">("idle");
   const [authError, setAuthError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [demoQuestion, setDemoQuestion] = useState<DemoQuestion | null>(null);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
   const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
   const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
@@ -166,6 +168,14 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
     setShowOnboarding(!hasSeen);
   }, [onboardingKey, runtime, user]);
+
+  // Fetch a random question from the template bank for the onboarding demo
+  useEffect(() => {
+    if (!showOnboarding) return;
+    getDemoQuestion()
+      .then(setDemoQuestion)
+      .catch(() => setDemoQuestion(null));
+  }, [showOnboarding]);
 
   const authenticateWallet = useCallback(async (walletAddress: string) => {
     if (!walletAddress) return;
@@ -439,6 +449,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         <OnboardingOverlay
           onComplete={handleOnboardingComplete}
           errorMessage={authError}
+          demoQuestion={demoQuestion}
         />
       );
     }
