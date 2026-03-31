@@ -6,6 +6,8 @@ import { IssueFreeTicketCard } from "./_components/IssueFreeTicketCard";
 import { TicketReconciliationCard } from "./_components/TicketReconciliationCard";
 import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
+import { RetryPendingPurchaseButton } from "./_components/RetryPendingPurchaseButton";
+import { ReplayPendingPurchasesButton } from "./_components/ReplayPendingPurchasesButton";
 import { TicketPurchaseSource } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
@@ -38,6 +40,29 @@ type OnchainMismatchRow = {
     username?: string | null;
     status: "MISSING_IN_DB" | "USER_NOT_FOUND" | "GAME_NOT_FOUND" | "ENTRY_EXISTS";
     note: string;
+};
+
+type PendingPurchaseRow = {
+    id: string;
+    txHash: string;
+    gameId: string;
+    expectedAmount: number;
+    payerWallet: string;
+    status: "SUBMITTED" | "FAILED" | "SYNCED";
+    attempts: number;
+    lastError: string | null;
+    syncedEntryId: string | null;
+    syncedAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    user: {
+        id: string;
+        username: string | null;
+    };
+    game: {
+        id: string;
+        title: string;
+    };
 };
 
 function getChainScanWindow(platform: ChainPlatform) {
@@ -159,6 +184,50 @@ async function getStats() {
         claimedPrizes,
         totalRevenue: calculateProtocolRevenue(totalRevenue._sum.paidAmount),
         games,
+    };
+}
+
+async function getPendingPurchases() {
+    const pendingPurchases = await prisma.pendingPurchase.findMany({
+        orderBy: [{ updatedAt: "desc" }],
+        take: 50,
+        select: {
+            id: true,
+            txHash: true,
+            gameId: true,
+            expectedAmount: true,
+            payerWallet: true,
+            status: true,
+            attempts: true,
+            lastError: true,
+            syncedEntryId: true,
+            syncedAt: true,
+            createdAt: true,
+            updatedAt: true,
+            user: {
+                select: {
+                    id: true,
+                    username: true,
+                },
+            },
+            game: {
+                select: {
+                    id: true,
+                    title: true,
+                },
+            },
+        },
+    });
+
+    const unresolvedCount = pendingPurchases.filter((purchase) => purchase.status !== "SYNCED").length;
+    const exhaustedCount = pendingPurchases.filter(
+        (purchase) => purchase.status === "FAILED" && purchase.attempts >= 10,
+    ).length;
+
+    return {
+        pendingPurchases: pendingPurchases as PendingPurchaseRow[],
+        unresolvedCount,
+        exhaustedCount,
     };
 }
 
@@ -451,10 +520,11 @@ export default async function TicketsPage({
     searchParams: Promise<{ page?: string; status?: string; game?: string; q?: string }>;
 }) {
     const resolvedParams = await searchParams;
-    const [{ entries, total, page, pageSize }, stats, onchainMismatches] = await Promise.all([
+    const [{ entries, total, page, pageSize }, stats, onchainMismatches, pendingPurchaseData] = await Promise.all([
         getTickets(resolvedParams),
         getStats(),
         getRecentOnchainMismatches(),
+        getPendingPurchases(),
     ]);
     const totalPages = Math.ceil(total / pageSize);
 
@@ -471,6 +541,142 @@ export default async function TicketsPage({
             </div>
 
             <IssueFreeTicketCard games={stats.games} />
+            <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
+                <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="space-y-2">
+                        <div>
+                            <h2 className="text-lg font-bold text-white font-display">
+                                Pending Purchase Queue
+                            </h2>
+                            <p className="text-sm text-white/60">
+                                Inspect pending purchase syncs, retry blocked rows, and replay the unresolved queue.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-2 text-xs">
+                            <span className="rounded-full bg-white/10 px-3 py-1 text-white/70">
+                                Recent rows: {pendingPurchaseData.pendingPurchases.length}
+                            </span>
+                            <span className="rounded-full bg-[#FFC931]/15 px-3 py-1 text-[#FFC931]">
+                                Unresolved: {pendingPurchaseData.unresolvedCount}
+                            </span>
+                            <span className="rounded-full bg-red-500/15 px-3 py-1 text-red-300">
+                                Exhausted retries: {pendingPurchaseData.exhaustedCount}
+                            </span>
+                        </div>
+                    </div>
+                    <ReplayPendingPurchasesButton />
+                </div>
+
+                {pendingPurchaseData.pendingPurchases.length === 0 ? (
+                    <p className="text-sm text-white/50">
+                        No pending purchases found.
+                    </p>
+                ) : (
+                    <div className="overflow-x-auto">
+                        <table className="min-w-full">
+                            <thead>
+                                <tr className="border-b border-white/10">
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        User
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Game
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Wallet / Tx
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Status
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Amount
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Error
+                                    </th>
+                                    <th className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-white/50 font-display">
+                                        Action
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {pendingPurchaseData.pendingPurchases.map((purchase) => {
+                                    const isResolved = purchase.status === "SYNCED";
+                                    return (
+                                        <tr key={purchase.id} className="border-b border-white/5 align-top">
+                                            <td className="px-4 py-4 text-sm text-white">
+                                                <div className="space-y-1">
+                                                    <Link href={`/admin/users/${purchase.user.id}`} className="font-medium hover:text-[#FFC931]">
+                                                        {purchase.user.username || purchase.user.id}
+                                                    </Link>
+                                                    <p className="text-xs text-white/40">{purchase.user.id}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-sm text-white">
+                                                <div className="space-y-1">
+                                                    <Link href={`/admin/games/${purchase.game.id}`} className="font-medium hover:text-[#FFC931]">
+                                                        {purchase.game.title}
+                                                    </Link>
+                                                    <p className="text-xs text-white/40">{purchase.game.id}</p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-sm text-white">
+                                                <div className="space-y-1">
+                                                    <p className="font-mono text-xs text-white/60">{purchase.payerWallet}</p>
+                                                    <p className="font-mono text-xs text-white/40">
+                                                        {purchase.txHash.slice(0, 12)}...{purchase.txHash.slice(-8)}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-sm">
+                                                <div className="space-y-1">
+                                                    <span
+                                                        className={`inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                            purchase.status === "SYNCED"
+                                                                ? "bg-[#14B985]/15 text-[#14B985]"
+                                                                : purchase.status === "SUBMITTED"
+                                                                    ? "bg-[#FFC931]/15 text-[#FFC931]"
+                                                                    : "bg-red-500/15 text-red-300"
+                                                        }`}
+                                                    >
+                                                        {purchase.status}
+                                                    </span>
+                                                    <p className="text-xs text-white/45">
+                                                        Attempts: {purchase.attempts}
+                                                        {purchase.syncedAt ? ` • Synced ${purchase.syncedAt.toLocaleString()}` : ""}
+                                                    </p>
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-sm font-mono text-[#14B985]">
+                                                ${purchase.expectedAmount.toFixed(2)}
+                                            </td>
+                                            <td className="px-4 py-4 text-sm text-white/60">
+                                                <div className="max-w-[280px] space-y-1">
+                                                    <p className="text-xs">
+                                                        {purchase.lastError || (isResolved ? "Synced successfully." : "No error recorded.")}
+                                                    </p>
+                                                    {purchase.syncedEntryId ? (
+                                                        <p className="text-xs text-white/40">
+                                                            Entry: {purchase.syncedEntryId}
+                                                        </p>
+                                                    ) : null}
+                                                </div>
+                                            </td>
+                                            <td className="px-4 py-4 text-sm">
+                                                {isResolved ? (
+                                                    <span className="text-xs text-[#14B985]">Done</span>
+                                                ) : (
+                                                    <RetryPendingPurchaseButton txHash={purchase.txHash} />
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
+                )}
+            </div>
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <div className="mb-4 flex flex-col gap-1">
                     <h2 className="text-lg font-bold text-white font-display">

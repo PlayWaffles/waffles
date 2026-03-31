@@ -13,6 +13,8 @@ import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { unlockReferralRewards } from "@/lib/game/shared";
+import { PendingPurchaseStatus } from "../../../prisma/generated/enums";
+import { processPendingPurchaseByTxHash } from "@/lib/game/pending-purchases";
 import {
   attachWalletToFarcasterUser,
   resolveUserByWalletForPlatform,
@@ -24,6 +26,10 @@ export type IssueFreeTicketResult =
 
 export type ReconcilePaidTicketResult =
   | { success: true; entryId: string; message: string }
+  | { success: false; error: string };
+
+export type PendingPurchaseAdminResult =
+  | { success: true; message: string }
   | { success: false; error: string };
 
 const issueFreeTicketSchema = z.object({
@@ -40,6 +46,12 @@ const reconcilePaidTicketSchema = z.object({
 
 const reconcilePaidTicketToUserSchema = reconcilePaidTicketSchema.extend({
   userQuery: z.string().trim().min(1, "Username is required"),
+});
+
+const retryPendingPurchaseSchema = z.object({
+  txHash: z
+    .string()
+    .regex(/^0x[a-fA-F0-9]{64}$/, "Enter a valid transaction hash"),
 });
 
 type InspectedPurchase = {
@@ -109,6 +121,130 @@ function getReconcileTargets(platform: ChainPlatform): GameNetwork[] {
   }
 
   return ["CELO_SEPOLIA"];
+}
+
+function revalidateTicketAdminPaths(gameId?: string) {
+  revalidatePath("/admin/tickets");
+  if (gameId) {
+    revalidatePath(`/admin/games/${gameId}`);
+  }
+  revalidatePath("/game");
+  revalidatePath("/(app)/(game)", "layout");
+}
+
+export async function retryPendingPurchaseAction(
+  _prevState: PendingPurchaseAdminResult | null,
+  formData: FormData,
+): Promise<PendingPurchaseAdminResult> {
+  const auth = await requireAdminSession();
+  if (!auth.authenticated || !auth.session) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const parsed = retryPendingPurchaseSchema.safeParse({
+    txHash: formData.get("txHash")?.toString().trim(),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  const pendingPurchase = await prisma.pendingPurchase.findUnique({
+    where: { txHash: parsed.data.txHash },
+    select: {
+      gameId: true,
+      status: true,
+      syncedEntryId: true,
+    },
+  });
+
+  if (!pendingPurchase) {
+    return { success: false, error: "Pending purchase not found." };
+  }
+
+  if (
+    pendingPurchase.status === PendingPurchaseStatus.SYNCED &&
+    pendingPurchase.syncedEntryId
+  ) {
+    return {
+      success: true,
+      message: "This pending purchase is already synced.",
+    };
+  }
+
+  const result = await processPendingPurchaseByTxHash(parsed.data.txHash);
+  revalidateTicketAdminPaths(pendingPurchase.gameId);
+
+  if (!result.success) {
+    return {
+      success: false,
+      error: result.error || "Failed to retry pending purchase.",
+    };
+  }
+
+  return {
+    success: true,
+    message: "Pending purchase synced successfully.",
+  };
+}
+
+export async function replayPendingPurchasesAction(
+  _prevState: PendingPurchaseAdminResult | null,
+): Promise<PendingPurchaseAdminResult> {
+  const auth = await requireAdminSession();
+  if (!auth.authenticated || !auth.session) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const pendingPurchases = await prisma.pendingPurchase.findMany({
+    where: {
+      status: {
+        in: [PendingPurchaseStatus.SUBMITTED, PendingPurchaseStatus.FAILED],
+      },
+    },
+    orderBy: [{ updatedAt: "asc" }],
+    select: {
+      txHash: true,
+      gameId: true,
+    },
+  });
+
+  if (pendingPurchases.length === 0) {
+    return {
+      success: true,
+      message: "There are no unresolved pending purchases right now.",
+    };
+  }
+
+  let synced = 0;
+  let failed = 0;
+  const touchedGameIds = new Set<string>();
+
+  for (const pendingPurchase of pendingPurchases) {
+    touchedGameIds.add(pendingPurchase.gameId);
+    const result = await processPendingPurchaseByTxHash(pendingPurchase.txHash);
+    if (result.success) {
+      synced += 1;
+    } else {
+      failed += 1;
+    }
+  }
+
+  revalidateTicketAdminPaths();
+  for (const gameId of touchedGameIds) {
+    revalidatePath(`/admin/games/${gameId}`);
+  }
+
+  return {
+    success: true,
+    message:
+      failed > 0
+        ? `Replayed ${pendingPurchases.length} pending purchases: ${synced} synced, ${failed} still failing.`
+        : `Replayed ${pendingPurchases.length} pending purchases and synced all of them.`,
+  };
 }
 
 export async function issueFreeTicketAction(
