@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { purchaseGameTicket } from "@/actions/game";
+import { authenticatedFetch } from "@/lib/client/runtime";
 
 /**
  * Hook to recover pending purchases that failed to sync.
@@ -47,13 +47,23 @@ export function usePendingPurchaseRecovery(
         pending,
       );
 
-      // Attempt recovery
-      purchaseGameTicket({
-        gameId,
-        txHash: pending.txHash,
-        paidAmount: pending.price,
-        payerWallet: pending.wallet,
+      // Attempt recovery through the authenticated purchase API so the
+      // background retry path matches the normal client purchase flow.
+      authenticatedFetch(`/api/v1/games/${gameId}/purchase`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          txHash: pending.txHash,
+          paidAmount: pending.price,
+          payerWallet: pending.wallet,
+        }),
       })
+        .then(async (response) => {
+          const result = (await response.json()) as
+            | { success: true; entryId: string }
+            | { success: false; error: string; code?: string };
+          return result;
+        })
         .then((result) => {
           if (result.success) {
             console.log("[Recovery] Successfully recovered pending purchase!");
