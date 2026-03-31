@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
+import withOutray from "@outray/next";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const workspaceRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["*.outray.app"],
   turbopack: {
     root: workspaceRoot,
   },
@@ -36,4 +38,4 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+export default withOutray(nextConfig);

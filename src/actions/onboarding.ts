@@ -9,44 +9,21 @@ export interface DemoQuestion {
   correctIndex: number;
 }
 
+const DEMO_QUESTION_TEMPLATE_ID = "cmkct276000030lqj9jbd0c8d";
+
 /**
- * Fetches a random question template from the bank for the onboarding demo.
- * Prefers questions with media for a more engaging experience.
+ * Fetches the fixed question template used for the onboarding demo.
  */
 export async function getDemoQuestion(): Promise<DemoQuestion | null> {
-  // Try to find a question with media first for visual appeal
-  let template = await prisma.questionTemplate.findFirst({
-    where: { mediaUrl: { not: null } },
+  const template = await prisma.questionTemplate.findUnique({
+    where: { id: DEMO_QUESTION_TEMPLATE_ID },
     select: {
       content: true,
       mediaUrl: true,
       options: true,
       correctIndex: true,
     },
-    orderBy: { usageCount: "asc" },
-    skip: Math.floor(
-      Math.random() *
-        (await prisma.questionTemplate.count({
-          where: { mediaUrl: { not: null } },
-        })),
-    ),
   });
-
-  // Fall back to any question if none have media
-  if (!template) {
-    template = await prisma.questionTemplate.findFirst({
-      select: {
-        content: true,
-        mediaUrl: true,
-        options: true,
-        correctIndex: true,
-      },
-      orderBy: { usageCount: "asc" },
-      skip: Math.floor(
-        Math.random() * (await prisma.questionTemplate.count()),
-      ),
-    });
-  }
 
   if (!template) return null;
 

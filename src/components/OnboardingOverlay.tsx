@@ -14,25 +14,16 @@ interface OnboardingOverlayProps {
   demoQuestion?: DemoQuestion | null;
 }
 
-interface Slide {
-  type: "info" | "demo";
-  icon?: string;
+interface InfoSlide {
+  icon: string;
   title: string;
-  description?: React.ReactNode;
+  description: React.ReactNode;
 }
-
-const FALLBACK_DEMO_QUESTION: DemoQuestion = {
-  content: "Which movie is this scene from?",
-  mediaUrl: "/images/illustrations/movie-clapper.png",
-  options: ["The Godfather", "Titanic", "The Lion King", "Jurassic Park"],
-  correctIndex: 2,
-};
 
 const optionColorThemes = ["gold", "purple", "cyan", "green"] as const;
 
-const slides: Slide[] = [
+const infoSlides: InfoSlide[] = [
   {
-    type: "info",
     icon: "/images/illustrations/movie-clapper.png",
     title: "Guess the Scene",
     description: (
@@ -44,11 +35,6 @@ const slides: Slide[] = [
     ),
   },
   {
-    type: "demo",
-    title: "Try It Out!",
-  },
-  {
-    type: "info",
     icon: "/images/illustrations/two-tickets.png",
     title: "Free or Paid",
     description: (
@@ -60,7 +46,6 @@ const slides: Slide[] = [
     ),
   },
   {
-    type: "info",
     icon: "/images/illustrations/treasure-chest.png",
     title: "Win Real Prizes",
     description: (
@@ -72,7 +57,6 @@ const slides: Slide[] = [
     ),
   },
   {
-    type: "info",
     icon: "/images/illustrations/play-live.png",
     title: "Play Live",
     description: (
@@ -84,6 +68,19 @@ const slides: Slide[] = [
     ),
   },
 ];
+
+type Slide = { type: "info"; data: InfoSlide } | { type: "demo" };
+
+function buildSlides(hasDemoQuestion: boolean): Slide[] {
+  const slides: Slide[] = [{ type: "info", data: infoSlides[0] }];
+  if (hasDemoQuestion) {
+    slides.push({ type: "demo" });
+  }
+  for (let i = 1; i < infoSlides.length; i++) {
+    slides.push({ type: "info", data: infoSlides[i] });
+  }
+  return slides;
+}
 
 // ============================================
 // FLOATING PARTICLES - Subtle background
@@ -317,6 +314,7 @@ export function OnboardingOverlay({
   const [direction, setDirection] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
+  const slides = buildSlides(!!demoQuestion);
   const currentSlide = slides[currentSlideIndex];
   const isLastSlide = currentSlideIndex === slides.length - 1;
   const isDemoSlide = currentSlide.type === "demo";
@@ -415,10 +413,10 @@ export function OnboardingOverlay({
             }}
             className="absolute inset-0 flex items-center justify-center"
           >
-            {isDemoSlide ? (
+            {isDemoSlide && demoQuestion ? (
               <div className="flex flex-col items-center w-full gap-4">
                 <DemoQuestionSlide
-                  question={demoQuestion ?? FALLBACK_DEMO_QUESTION}
+                  question={demoQuestion}
                   onComplete={goToNextSlide}
                 />
                 <ProgressDots
@@ -426,7 +424,7 @@ export function OnboardingOverlay({
                   current={currentSlideIndex}
                 />
               </div>
-            ) : (
+            ) : currentSlide.type === "info" ? (
               <div className="flex flex-col items-center gap-8 text-center w-full">
                 {/* Illustration with gentle float */}
                 <motion.div
@@ -439,8 +437,8 @@ export function OnboardingOverlay({
                   }}
                 >
                   <Image
-                    src={currentSlide.icon!}
-                    alt={currentSlide.title}
+                    src={currentSlide.data.icon}
+                    alt={currentSlide.data.title}
                     fill
                     className="object-contain drop-shadow-lg"
                     priority
@@ -451,10 +449,10 @@ export function OnboardingOverlay({
                 <div className="flex flex-col items-center w-full px-4 gap-5">
                   <div className="flex flex-col items-center gap-1">
                     <h2 className="text-[44px] text-white font-normal text-center leading-[0.92] tracking-[-0.03em] font-body">
-                      {currentSlide.title}
+                      {currentSlide.data.title}
                     </h2>
                     <p className="text-[16px] font-medium font-display text-[#99A0AE] text-center leading-[130%] tracking-[-0.03em] max-w-md text-pretty">
-                      {currentSlide.description}
+                      {currentSlide.data.description}
                     </p>
                   </div>
 
@@ -495,7 +493,7 @@ export function OnboardingOverlay({
                   ) : null}
                 </div>
               </div>
-            )}
+            ) : null}
           </motion.div>
         </AnimatePresence>
       </div>

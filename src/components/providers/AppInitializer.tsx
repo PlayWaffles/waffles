@@ -45,6 +45,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [authError, setAuthError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [demoQuestion, setDemoQuestion] = useState<DemoQuestion | null>(null);
+  const [demoQuestionLoaded, setDemoQuestionLoaded] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
   const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
   const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
@@ -170,12 +171,14 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   }, [onboardingKey, runtime, user]);
 
   // Fetch a random question from the template bank for the onboarding demo
+  // Must complete before showing the overlay so the slide list is stable
   useEffect(() => {
-    if (!showOnboarding) return;
+    if (!showOnboarding || demoQuestionLoaded) return;
     getDemoQuestion()
       .then(setDemoQuestion)
-      .catch(() => setDemoQuestion(null));
-  }, [showOnboarding]);
+      .catch(() => setDemoQuestion(null))
+      .finally(() => setDemoQuestionLoaded(true));
+  }, [showOnboarding, demoQuestionLoaded]);
 
   const authenticateWallet = useCallback(async (walletAddress: string) => {
     if (!walletAddress) return;
@@ -445,6 +448,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     }
 
     if (showOnboarding) {
+      if (!demoQuestionLoaded) return null;
       return (
         <OnboardingOverlay
           onComplete={handleOnboardingComplete}
@@ -458,10 +462,12 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   }
 
   if (showOnboarding) {
+    if (!demoQuestionLoaded) return null;
     return (
       <OnboardingOverlay
         onComplete={handleOnboardingComplete}
         errorMessage={authError}
+        demoQuestion={demoQuestion}
       />
     );
   }
