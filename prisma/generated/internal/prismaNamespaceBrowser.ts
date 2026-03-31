@@ -52,6 +52,7 @@ export const AnyNull = runtime.AnyNull
 
 export const ModelName = {
   User: 'User',
+  UserWallet: 'UserWallet',
   ReferralReward: 'ReferralReward',
   Quest: 'Quest',
   CompletedQuest: 'CompletedQuest',
@@ -60,6 +61,7 @@ export const ModelName = {
   Question: 'Question',
   GameEntry: 'GameEntry',
   Chat: 'Chat',
+  PendingPurchase: 'PendingPurchase',
   NotificationToken: 'NotificationToken',
   AuditLog: 'AuditLog',
   InviteCode: 'InviteCode'
@@ -107,6 +109,18 @@ export const UserScalarFieldEnum = {
 } as const
 
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
+
+
+export const UserWalletScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  wallet: 'wallet',
+  platform: 'platform',
+  createdAt: 'createdAt',
+  lastUsedAt: 'lastUsedAt'
+} as const
+
+export type UserWalletScalarFieldEnum = (typeof UserWalletScalarFieldEnum)[keyof typeof UserWalletScalarFieldEnum]
 
 
 export const ReferralRewardScalarFieldEnum = {
@@ -265,6 +279,26 @@ export const ChatScalarFieldEnum = {
 } as const
 
 export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
+
+
+export const PendingPurchaseScalarFieldEnum = {
+  id: 'id',
+  txHash: 'txHash',
+  userId: 'userId',
+  gameId: 'gameId',
+  platform: 'platform',
+  payerWallet: 'payerWallet',
+  expectedAmount: 'expectedAmount',
+  status: 'status',
+  attempts: 'attempts',
+  lastError: 'lastError',
+  syncedEntryId: 'syncedEntryId',
+  syncedAt: 'syncedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PendingPurchaseScalarFieldEnum = (typeof PendingPurchaseScalarFieldEnum)[keyof typeof PendingPurchaseScalarFieldEnum]
 
 
 export const NotificationTokenScalarFieldEnum = {

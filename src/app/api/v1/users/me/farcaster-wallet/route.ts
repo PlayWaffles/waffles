@@ -5,6 +5,7 @@ import { syncFarcasterWalletAndRecoverForUser } from "@/actions/users";
 
 interface SyncWalletBody {
   wallet?: string;
+  username?: string | null;
 }
 
 export const POST = withAuth(async (request: NextRequest, auth) => {
@@ -21,6 +22,7 @@ export const POST = withAuth(async (request: NextRequest, auth) => {
     const result = await syncFarcasterWalletAndRecoverForUser(
       auth.userId,
       body.wallet,
+      body.username ?? null,
     );
 
     if (!result.success) {

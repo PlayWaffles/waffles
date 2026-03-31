@@ -47,7 +47,6 @@ export interface TicketPurchaseState {
 // ==========================================
 // HOOK: useTicketPurchase
 // ==========================================
-
 export function useTicketPurchase(
   gameId: string,
   platform: ChainPlatform,

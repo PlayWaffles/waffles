@@ -13,6 +13,7 @@ import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { unlockReferralRewards } from "@/lib/game/shared";
+import { resolveUserByWalletForPlatform } from "@/lib/user-wallets";
 
 export type IssueFreeTicketResult =
   | { success: true; entryId: string; message: string }
@@ -316,19 +317,9 @@ export async function reconcilePaidTicketAction(
     };
   }
 
-  const user = await prisma.user.findFirst({
-    where: {
-      platform: inspected.platform,
-      wallet: { equals: inspected.buyer, mode: "insensitive" },
-    },
-    select: {
-      id: true,
-      username: true,
-      pfpUrl: true,
-      hasGameAccess: true,
-      isBanned: true,
-    },
-  });
+  const user = await prisma.$transaction((tx) =>
+    resolveUserByWalletForPlatform(tx, inspected.platform, inspected.buyer),
+  );
 
   if (!user) {
     return {

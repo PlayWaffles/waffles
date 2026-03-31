@@ -373,6 +373,8 @@ export type UserWhereInput = {
   chats?: Prisma.ChatListRelationFilter
   notifs?: Prisma.NotificationTokenListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  wallets?: Prisma.UserWalletListRelationFilter
+  pendingPurchases?: Prisma.PendingPurchaseListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -407,6 +409,8 @@ export type UserOrderByWithRelationInput = {
   chats?: Prisma.ChatOrderByRelationAggregateInput
   notifs?: Prisma.NotificationTokenOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
+  wallets?: Prisma.UserWalletOrderByRelationAggregateInput
+  pendingPurchases?: Prisma.PendingPurchaseOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -444,6 +448,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   chats?: Prisma.ChatListRelationFilter
   notifs?: Prisma.NotificationTokenListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
+  wallets?: Prisma.UserWalletListRelationFilter
+  pendingPurchases?: Prisma.PendingPurchaseListRelationFilter
 }, "id" | "fid" | "wallet" | "inviteCode">
 
 export type UserOrderByWithAggregationInput = {
@@ -535,6 +541,8 @@ export type UserCreateInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -568,6 +576,8 @@ export type UserUncheckedCreateInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -601,6 +611,8 @@ export type UserUpdateInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -634,6 +646,8 @@ export type UserUncheckedUpdateInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -921,6 +935,20 @@ export type UserUncheckedUpdateManyWithoutReferredByNestedInput = {
   deleteMany?: Prisma.UserScalarWhereInput | Prisma.UserScalarWhereInput[]
 }
 
+export type UserCreateNestedOneWithoutWalletsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWalletsInput, Prisma.UserUncheckedCreateWithoutWalletsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWalletsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutWalletsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutWalletsInput, Prisma.UserUncheckedCreateWithoutWalletsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWalletsInput
+  upsert?: Prisma.UserUpsertWithoutWalletsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWalletsInput, Prisma.UserUpdateWithoutWalletsInput>, Prisma.UserUncheckedUpdateWithoutWalletsInput>
+}
+
 export type UserCreateNestedOneWithoutRewardsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutRewardsInput, Prisma.UserUncheckedCreateWithoutRewardsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutRewardsInput
@@ -975,6 +1003,20 @@ export type UserUpdateOneRequiredWithoutChatsNestedInput = {
   upsert?: Prisma.UserUpsertWithoutChatsInput
   connect?: Prisma.UserWhereUniqueInput
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutChatsInput, Prisma.UserUpdateWithoutChatsInput>, Prisma.UserUncheckedUpdateWithoutChatsInput>
+}
+
+export type UserCreateNestedOneWithoutPendingPurchasesInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPendingPurchasesInput, Prisma.UserUncheckedCreateWithoutPendingPurchasesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPendingPurchasesInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPendingPurchasesNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPendingPurchasesInput, Prisma.UserUncheckedCreateWithoutPendingPurchasesInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPendingPurchasesInput
+  upsert?: Prisma.UserUpsertWithoutPendingPurchasesInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPendingPurchasesInput, Prisma.UserUpdateWithoutPendingPurchasesInput>, Prisma.UserUncheckedUpdateWithoutPendingPurchasesInput>
 }
 
 export type UserCreateNestedOneWithoutNotifsInput = {
@@ -1051,6 +1093,8 @@ export type UserCreateWithoutReferralsInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReferralsInput = {
@@ -1083,6 +1127,8 @@ export type UserUncheckedCreateWithoutReferralsInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReferralsInput = {
@@ -1120,6 +1166,8 @@ export type UserCreateWithoutReferredByInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReferredByInput = {
@@ -1152,6 +1200,8 @@ export type UserUncheckedCreateWithoutReferredByInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReferredByInput = {
@@ -1205,6 +1255,8 @@ export type UserUpdateWithoutReferralsInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReferralsInput = {
@@ -1237,6 +1289,8 @@ export type UserUncheckedUpdateWithoutReferralsInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithWhereUniqueWithoutReferredByInput = {
@@ -1283,6 +1337,158 @@ export type UserScalarWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
 }
 
+export type UserCreateWithoutWalletsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutWalletsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  referredById?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutWalletsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutWalletsInput, Prisma.UserUncheckedCreateWithoutWalletsInput>
+}
+
+export type UserUpsertWithoutWalletsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutWalletsInput, Prisma.UserUncheckedUpdateWithoutWalletsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutWalletsInput, Prisma.UserUncheckedCreateWithoutWalletsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutWalletsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutWalletsInput, Prisma.UserUncheckedUpdateWithoutWalletsInput>
+}
+
+export type UserUpdateWithoutWalletsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutWalletsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
+}
+
 export type UserCreateWithoutRewardsInput = {
   id?: string
   platform: $Enums.UserPlatform
@@ -1313,6 +1519,8 @@ export type UserCreateWithoutRewardsInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRewardsInput = {
@@ -1345,6 +1553,8 @@ export type UserUncheckedCreateWithoutRewardsInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRewardsInput = {
@@ -1393,6 +1603,8 @@ export type UserUpdateWithoutRewardsInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRewardsInput = {
@@ -1425,6 +1637,8 @@ export type UserUncheckedUpdateWithoutRewardsInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCompletedQuestsInput = {
@@ -1457,6 +1671,8 @@ export type UserCreateWithoutCompletedQuestsInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCompletedQuestsInput = {
@@ -1489,6 +1705,8 @@ export type UserUncheckedCreateWithoutCompletedQuestsInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCompletedQuestsInput = {
@@ -1537,6 +1755,8 @@ export type UserUpdateWithoutCompletedQuestsInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
@@ -1569,6 +1789,8 @@ export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutEntriesInput = {
@@ -1601,6 +1823,8 @@ export type UserCreateWithoutEntriesInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEntriesInput = {
@@ -1633,6 +1857,8 @@ export type UserUncheckedCreateWithoutEntriesInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEntriesInput = {
@@ -1681,6 +1907,8 @@ export type UserUpdateWithoutEntriesInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEntriesInput = {
@@ -1713,6 +1941,8 @@ export type UserUncheckedUpdateWithoutEntriesInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChatsInput = {
@@ -1745,6 +1975,8 @@ export type UserCreateWithoutChatsInput = {
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChatsInput = {
@@ -1777,6 +2009,8 @@ export type UserUncheckedCreateWithoutChatsInput = {
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChatsInput = {
@@ -1825,6 +2059,8 @@ export type UserUpdateWithoutChatsInput = {
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChatsInput = {
@@ -1857,6 +2093,160 @@ export type UserUncheckedUpdateWithoutChatsInput = {
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPendingPurchasesInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPendingPurchasesInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  referredById?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPendingPurchasesInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPendingPurchasesInput, Prisma.UserUncheckedCreateWithoutPendingPurchasesInput>
+}
+
+export type UserUpsertWithoutPendingPurchasesInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPendingPurchasesInput, Prisma.UserUncheckedUpdateWithoutPendingPurchasesInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPendingPurchasesInput, Prisma.UserUncheckedCreateWithoutPendingPurchasesInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPendingPurchasesInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPendingPurchasesInput, Prisma.UserUncheckedUpdateWithoutPendingPurchasesInput>
+}
+
+export type UserUpdateWithoutPendingPurchasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPendingPurchasesInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotifsInput = {
@@ -1889,6 +2279,8 @@ export type UserCreateWithoutNotifsInput = {
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotifsInput = {
@@ -1921,6 +2313,8 @@ export type UserUncheckedCreateWithoutNotifsInput = {
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotifsInput = {
@@ -1969,6 +2363,8 @@ export type UserUpdateWithoutNotifsInput = {
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotifsInput = {
@@ -2001,6 +2397,8 @@ export type UserUncheckedUpdateWithoutNotifsInput = {
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -2033,6 +2431,8 @@ export type UserCreateWithoutAuditLogsInput = {
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -2065,6 +2465,8 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -2113,6 +2515,8 @@ export type UserUpdateWithoutAuditLogsInput = {
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -2145,6 +2549,8 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRedeemedCodesInput = {
@@ -2177,6 +2583,8 @@ export type UserCreateWithoutRedeemedCodesInput = {
   chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRedeemedCodesInput = {
@@ -2209,6 +2617,8 @@ export type UserUncheckedCreateWithoutRedeemedCodesInput = {
   chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRedeemedCodesInput = {
@@ -2257,6 +2667,8 @@ export type UserUpdateWithoutRedeemedCodesInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
@@ -2289,6 +2701,8 @@ export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyReferredByInput = {
@@ -2345,6 +2759,8 @@ export type UserUpdateWithoutReferredByInput = {
   chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReferredByInput = {
@@ -2377,6 +2793,8 @@ export type UserUncheckedUpdateWithoutReferredByInput = {
   chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutReferredByInput = {
@@ -2417,6 +2835,8 @@ export type UserCountOutputType = {
   chats: number
   notifs: number
   auditLogs: number
+  wallets: number
+  pendingPurchases: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2428,6 +2848,8 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   chats?: boolean | UserCountOutputTypeCountChatsArgs
   notifs?: boolean | UserCountOutputTypeCountNotifsArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
+  wallets?: boolean | UserCountOutputTypeCountWalletsArgs
+  pendingPurchases?: boolean | UserCountOutputTypeCountPendingPurchasesArgs
 }
 
 /**
@@ -2496,6 +2918,20 @@ export type UserCountOutputTypeCountAuditLogsArgs<ExtArgs extends runtime.Types.
   where?: Prisma.AuditLogWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountWalletsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.UserWalletWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPendingPurchasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PendingPurchaseWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -2529,6 +2965,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   chats?: boolean | Prisma.User$chatsArgs<ExtArgs>
   notifs?: boolean | Prisma.User$notifsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
+  wallets?: boolean | Prisma.User$walletsArgs<ExtArgs>
+  pendingPurchases?: boolean | Prisma.User$pendingPurchasesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -2620,6 +3058,8 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   chats?: boolean | Prisma.User$chatsArgs<ExtArgs>
   notifs?: boolean | Prisma.User$notifsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
+  wallets?: boolean | Prisma.User$walletsArgs<ExtArgs>
+  pendingPurchases?: boolean | Prisma.User$pendingPurchasesArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2641,6 +3081,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     chats: Prisma.$ChatPayload<ExtArgs>[]
     notifs: Prisma.$NotificationTokenPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
+    wallets: Prisma.$UserWalletPayload<ExtArgs>[]
+    pendingPurchases: Prisma.$PendingPurchasePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -3068,6 +3510,8 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   chats<T extends Prisma.User$chatsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifs<T extends Prisma.User$notifsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notifsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  wallets<T extends Prisma.User$walletsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$walletsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserWalletPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pendingPurchases<T extends Prisma.User$pendingPurchasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$pendingPurchasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PendingPurchasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -3723,6 +4167,54 @@ export type User$auditLogsArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.AuditLogScalarFieldEnum | Prisma.AuditLogScalarFieldEnum[]
+}
+
+/**
+ * User.wallets
+ */
+export type User$walletsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the UserWallet
+   */
+  select?: Prisma.UserWalletSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the UserWallet
+   */
+  omit?: Prisma.UserWalletOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.UserWalletInclude<ExtArgs> | null
+  where?: Prisma.UserWalletWhereInput
+  orderBy?: Prisma.UserWalletOrderByWithRelationInput | Prisma.UserWalletOrderByWithRelationInput[]
+  cursor?: Prisma.UserWalletWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.UserWalletScalarFieldEnum | Prisma.UserWalletScalarFieldEnum[]
+}
+
+/**
+ * User.pendingPurchases
+ */
+export type User$pendingPurchasesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PendingPurchase
+   */
+  select?: Prisma.PendingPurchaseSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PendingPurchase
+   */
+  omit?: Prisma.PendingPurchaseOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PendingPurchaseInclude<ExtArgs> | null
+  where?: Prisma.PendingPurchaseWhereInput
+  orderBy?: Prisma.PendingPurchaseOrderByWithRelationInput | Prisma.PendingPurchaseOrderByWithRelationInput[]
+  cursor?: Prisma.PendingPurchaseWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PendingPurchaseScalarFieldEnum | Prisma.PendingPurchaseScalarFieldEnum[]
 }
 
 /**

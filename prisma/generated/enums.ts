@@ -25,6 +25,15 @@ export const UserPlatform = {
 export type UserPlatform = (typeof UserPlatform)[keyof typeof UserPlatform]
 
 
+export const PendingPurchaseStatus = {
+  SUBMITTED: 'SUBMITTED',
+  SYNCED: 'SYNCED',
+  FAILED: 'FAILED'
+} as const
+
+export type PendingPurchaseStatus = (typeof PendingPurchaseStatus)[keyof typeof PendingPurchaseStatus]
+
+
 export const GameNetwork = {
   BASE_MAINNET: 'BASE_MAINNET',
   BASE_SEPOLIA: 'BASE_SEPOLIA',

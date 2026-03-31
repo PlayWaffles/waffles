@@ -23,6 +23,11 @@ export * from './enums';
  */
 export type User = Prisma.UserModel
 /**
+ * Model UserWallet
+ * 
+ */
+export type UserWallet = Prisma.UserWalletModel
+/**
  * Model ReferralReward
  * 
  */
@@ -62,6 +67,11 @@ export type GameEntry = Prisma.GameEntryModel
  * 
  */
 export type Chat = Prisma.ChatModel
+/**
+ * Model PendingPurchase
+ * 
+ */
+export type PendingPurchase = Prisma.PendingPurchaseModel
 /**
  * Model NotificationToken
  * 

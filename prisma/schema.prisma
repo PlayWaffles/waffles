@@ -63,6 +63,8 @@ model User {
   chats     Chat[]
   notifs    NotificationToken[]
   auditLogs AuditLog[]
+  wallets   UserWallet[]
+  pendingPurchases PendingPurchase[]
 }
 
 enum UserRole {
@@ -73,6 +75,25 @@ enum UserRole {
 enum UserPlatform {
   FARCASTER
   MINIPAY
+}
+
+model UserWallet {
+  id        String       @id @default(cuid())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  wallet    String       @unique @db.VarChar(42)
+  platform  UserPlatform
+  createdAt DateTime     @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+  @@index([platform, wallet])
+}
+
+enum PendingPurchaseStatus {
+  SUBMITTED
+  SYNCED
+  FAILED
 }
 
 enum GameNetwork {
@@ -243,6 +264,7 @@ model Game {
   questions Question[]
   entries   GameEntry[]
   chats     Chat[]
+  pendingPurchases PendingPurchase[]
 
   // -- TIMESTAMPS --
   createdAt DateTime @default(now())
@@ -415,6 +437,29 @@ model Chat {
   createdAt DateTime @default(now())
 
   @@index([gameId, createdAt])
+}
+
+model PendingPurchase {
+  id             String                @id @default(cuid())
+  txHash         String                @unique @db.VarChar(66)
+  user           User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  game           Game                  @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  gameId         String
+  platform       UserPlatform
+  payerWallet    String                @db.VarChar(42)
+  expectedAmount Float
+  status         PendingPurchaseStatus @default(SUBMITTED)
+  attempts       Int                   @default(0)
+  lastError      String?               @db.VarChar(500)
+  syncedEntryId  String?
+  syncedAt       DateTime?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  @@index([status, updatedAt])
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([gameId, createdAt(sort: Desc)])
 }
 
 // ==========================================

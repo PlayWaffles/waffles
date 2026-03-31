@@ -9,6 +9,10 @@ import { generateInviteCode } from "@/lib/utils";
 import { normalizeAddress, requireCurrentUser } from "@/lib/auth";
 import { recoverRecentPurchasesForUser } from "@/lib/game/recovery";
 import { sendToUser } from "@/lib/notifications";
+import {
+  attachWalletToFarcasterUser,
+  resolveCanonicalFarcasterUser,
+} from "@/lib/user-wallets";
 
 const MAX_RETRIES = 10;
 
@@ -146,40 +150,32 @@ export async function syncFarcasterWalletAndRecover(
 export async function syncFarcasterWalletAndRecoverForUser(
   userId: string,
   wallet: string,
+  username?: string | null,
 ): Promise<SyncFarcasterWalletResult> {
   const normalizedWallet = normalizeAddress(wallet);
   if (!normalizedWallet) {
     return { success: false, error: "Invalid wallet address" };
   }
 
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, platform: true },
-  });
+  let canonicalUserId = userId;
 
-  if (!user || user.platform !== UserPlatform.FARCASTER) {
-    return { success: false, error: "Only Farcaster users can use this sync" };
-  }
+  try {
+    const canonicalUser = await prisma.$transaction(async (tx) => {
+      const resolvedUser = await resolveCanonicalFarcasterUser(tx, userId, username);
+      await attachWalletToFarcasterUser(tx, resolvedUser.id, normalizedWallet);
+      return resolvedUser;
+    });
 
-  const conflict = await prisma.user.findUnique({
-    where: { wallet: normalizedWallet },
-    select: { id: true },
-  });
-
-  if (conflict && conflict.id !== user.id) {
+    canonicalUserId = canonicalUser.id;
+  } catch (error) {
     return {
       success: false,
-      error: "This wallet is already linked to another user",
+      error: error instanceof Error ? error.message : "Wallet sync failed",
     };
   }
 
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { wallet: normalizedWallet },
-  });
-
   const recovery = await recoverRecentPurchasesForUser({
-    userId: user.id,
+    userId: canonicalUserId,
     platform: UserPlatform.FARCASTER,
     wallet: normalizedWallet,
   });
@@ -190,7 +186,7 @@ export async function syncFarcasterWalletAndRecoverForUser(
         const payload = buildPayload(
           transactional.ticketRecovered(recovery.recovered),
         );
-        sendToUser(user.id, payload).catch((error) =>
+        sendToUser(canonicalUserId, payload).catch((error) =>
           console.error("syncFarcasterWalletAndRecover notification error:", error),
         );
       },

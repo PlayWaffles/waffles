@@ -1,6 +1,7 @@
 import cron from "node-cron";
 import { prisma } from "@/lib/db";
 import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/lifecycle";
+import { processPendingPurchases } from "@/lib/game/pending-purchases";
 
 /**
  * Roundup ended games that weren't processed by PartyKit alarm.
@@ -44,6 +45,19 @@ async function roundupGames() {
   }
 }
 
+async function reconcilePendingPurchasesJob() {
+  try {
+    const result = await processPendingPurchases(25);
+    if (result.processed > 0) {
+      console.log(
+        `[Cron] Pending purchases: ${result.processed} processed, ${result.synced} synced, ${result.failed} failed`,
+      );
+    }
+  } catch (e) {
+    console.error("[Cron] Pending purchase reconcile failed:", e);
+  }
+}
+
 /**
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
@@ -51,4 +65,8 @@ export function startCronJobs() {
   // Every 5 minutes: roundup unranked ended games
   cron.schedule("*/5 * * * *", roundupGames);
   console.log("[Cron] Scheduled: roundup-games (every 5 min)");
+
+  // Every minute: retry pending purchase syncs
+  cron.schedule("* * * * *", reconcilePendingPurchasesJob);
+  console.log("[Cron] Scheduled: reconcile-pending-purchases (every min)");
 }

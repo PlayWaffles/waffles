@@ -2,12 +2,29 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { withAuth, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { finalizeTicketPurchase } from "@/lib/game/purchase";
+import {
+  processPendingPurchaseByTxHash,
+  registerPendingPurchase,
+} from "@/lib/game/pending-purchases";
 
 interface PurchaseBody {
   txHash?: string;
   paidAmount?: number;
   payerWallet?: string;
+}
+
+const PURCHASE_ERROR_STATUS: Record<string, number> = {
+  NOT_FOUND: 404,
+  WRONG_PLATFORM: 403,
+  INVALID_INPUT: 400,
+  VERIFICATION_FAILED: 422,
+  GAME_ENDED: 409,
+  GAME_FULL: 409,
+  PRICE_CHANGED: 409,
+};
+
+function getPurchaseErrorStatus(code?: string) {
+  return (code && PURCHASE_ERROR_STATUS[code]) || 500;
 }
 
 export const POST = withAuth(async (request: NextRequest, auth, params) => {
@@ -39,32 +56,28 @@ export const POST = withAuth(async (request: NextRequest, auth, params) => {
       );
     }
 
-    const result = await finalizeTicketPurchase(user, {
-      gameId: params.gameId,
+    const registration = await registerPendingPurchase({
       txHash: body.txHash,
-      paidAmount: body.paidAmount,
+      userId: user.id,
+      gameId: params.gameId,
+      platform: user.platform,
       payerWallet: body.payerWallet,
+      expectedAmount: body.paidAmount,
     });
 
-    if (!result.success) {
-      const status =
-        result.code === "NOT_FOUND"
-          ? 404
-          : result.code === "WRONG_PLATFORM"
-            ? 403
-            : result.code === "INVALID_INPUT"
-              ? 400
-              : result.code === "VERIFICATION_FAILED"
-                ? 422
-                : result.code === "GAME_ENDED" ||
-                    result.code === "GAME_FULL" ||
-                    result.code === "PRICE_CHANGED"
-                  ? 409
-                  : 500;
+    if (!registration.success) {
+      return NextResponse.json<ApiError>(
+        { error: registration.error, code: registration.code },
+        { status: 400 },
+      );
+    }
 
+    const result = await processPendingPurchaseByTxHash(body.txHash);
+
+    if (!result.success) {
       return NextResponse.json<ApiError>(
         { error: result.error, code: result.code },
-        { status },
+        { status: getPurchaseErrorStatus(result.code) },
       );
     }
 

@@ -9,6 +9,10 @@ import { transactional, preGame, buildPayload } from "@/lib/notifications/templa
 import { formatGameTime } from "@/lib/utils";
 import { normalizeAddress } from "@/lib/auth";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import {
+  farcasterUserHasWallet,
+  touchFarcasterWalletUsage,
+} from "@/lib/user-wallets";
 import { unlockReferralRewards, revalidateGamePaths } from "./shared";
 
 export type PurchaseResult =
@@ -107,12 +111,26 @@ export async function finalizeTicketPurchase(
       };
     }
 
-    if (user.wallet && normalizeAddress(user.wallet) !== normalizedPayerWallet) {
-      return {
-        success: false,
-        error: "Payment wallet does not match your linked wallet",
-        code: "INVALID_INPUT",
-      };
+    if (user.platform === "MINIPAY") {
+      if (user.wallet && normalizeAddress(user.wallet) !== normalizedPayerWallet) {
+        return {
+          success: false,
+          error: "Payment wallet does not match your linked wallet",
+          code: "INVALID_INPUT",
+        };
+      }
+    } else {
+      const isAllowedWallet = await prisma.$transaction((tx) =>
+        farcasterUserHasWallet(tx, user.id, normalizedPayerWallet),
+      );
+
+      if (!isAllowedWallet) {
+        return {
+          success: false,
+          error: "Payment wallet is not linked to your Farcaster account",
+          code: "INVALID_INPUT",
+        };
+      }
     }
 
     console.log("[game-actions]", {
@@ -265,6 +283,12 @@ export async function finalizeTicketPurchase(
     updatedPrizePool = transactionResult.prizePool;
     updatedPlayerCount = transactionResult.playerCount;
     entryWasCreated = transactionResult.wasCreated;
+
+    if (user.platform === "FARCASTER") {
+      await prisma.$transaction((tx) =>
+        touchFarcasterWalletUsage(tx, user.id, normalizedPayerWallet),
+      );
+    }
 
     if (!entry) {
       return {

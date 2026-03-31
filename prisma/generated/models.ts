@@ -9,6 +9,7 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/User'
+export type * from './models/UserWallet'
 export type * from './models/ReferralReward'
 export type * from './models/Quest'
 export type * from './models/CompletedQuest'
@@ -17,6 +18,7 @@ export type * from './models/QuestionTemplate'
 export type * from './models/Question'
 export type * from './models/GameEntry'
 export type * from './models/Chat'
+export type * from './models/PendingPurchase'
 export type * from './models/NotificationToken'
 export type * from './models/AuditLog'
 export type * from './models/InviteCode'

@@ -385,6 +385,7 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 export const ModelName = {
   User: 'User',
+  UserWallet: 'UserWallet',
   ReferralReward: 'ReferralReward',
   Quest: 'Quest',
   CompletedQuest: 'CompletedQuest',
@@ -393,6 +394,7 @@ export const ModelName = {
   Question: 'Question',
   GameEntry: 'GameEntry',
   Chat: 'Chat',
+  PendingPurchase: 'PendingPurchase',
   NotificationToken: 'NotificationToken',
   AuditLog: 'AuditLog',
   InviteCode: 'InviteCode'
@@ -411,7 +413,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "chat" | "notificationToken" | "auditLog" | "inviteCode"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "chat" | "pendingPurchase" | "notificationToken" | "auditLog" | "inviteCode"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -486,6 +488,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.UserCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.UserCountAggregateOutputType> | number
+        }
+      }
+    }
+    UserWallet: {
+      payload: Prisma.$UserWalletPayload<ExtArgs>
+      fields: Prisma.UserWalletFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.UserWalletFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.UserWalletFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>
+        }
+        findFirst: {
+          args: Prisma.UserWalletFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.UserWalletFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>
+        }
+        findMany: {
+          args: Prisma.UserWalletFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>[]
+        }
+        create: {
+          args: Prisma.UserWalletCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>
+        }
+        createMany: {
+          args: Prisma.UserWalletCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.UserWalletCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>[]
+        }
+        delete: {
+          args: Prisma.UserWalletDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>
+        }
+        update: {
+          args: Prisma.UserWalletUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>
+        }
+        deleteMany: {
+          args: Prisma.UserWalletDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.UserWalletUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.UserWalletUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>[]
+        }
+        upsert: {
+          args: Prisma.UserWalletUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$UserWalletPayload>
+        }
+        aggregate: {
+          args: Prisma.UserWalletAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateUserWallet>
+        }
+        groupBy: {
+          args: Prisma.UserWalletGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserWalletGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.UserWalletCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.UserWalletCountAggregateOutputType> | number
         }
       }
     }
@@ -1081,6 +1157,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PendingPurchase: {
+      payload: Prisma.$PendingPurchasePayload<ExtArgs>
+      fields: Prisma.PendingPurchaseFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PendingPurchaseFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PendingPurchaseFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>
+        }
+        findFirst: {
+          args: Prisma.PendingPurchaseFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PendingPurchaseFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>
+        }
+        findMany: {
+          args: Prisma.PendingPurchaseFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>[]
+        }
+        create: {
+          args: Prisma.PendingPurchaseCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>
+        }
+        createMany: {
+          args: Prisma.PendingPurchaseCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PendingPurchaseCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>[]
+        }
+        delete: {
+          args: Prisma.PendingPurchaseDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>
+        }
+        update: {
+          args: Prisma.PendingPurchaseUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>
+        }
+        deleteMany: {
+          args: Prisma.PendingPurchaseDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PendingPurchaseUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PendingPurchaseUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>[]
+        }
+        upsert: {
+          args: Prisma.PendingPurchaseUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PendingPurchasePayload>
+        }
+        aggregate: {
+          args: Prisma.PendingPurchaseAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePendingPurchase>
+        }
+        groupBy: {
+          args: Prisma.PendingPurchaseGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PendingPurchaseGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PendingPurchaseCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PendingPurchaseCountAggregateOutputType> | number
+        }
+      }
+    }
     NotificationToken: {
       payload: Prisma.$NotificationTokenPayload<ExtArgs>
       fields: Prisma.NotificationTokenFieldRefs
@@ -1370,6 +1520,18 @@ export const UserScalarFieldEnum = {
 export type UserScalarFieldEnum = (typeof UserScalarFieldEnum)[keyof typeof UserScalarFieldEnum]
 
 
+export const UserWalletScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  wallet: 'wallet',
+  platform: 'platform',
+  createdAt: 'createdAt',
+  lastUsedAt: 'lastUsedAt'
+} as const
+
+export type UserWalletScalarFieldEnum = (typeof UserWalletScalarFieldEnum)[keyof typeof UserWalletScalarFieldEnum]
+
+
 export const ReferralRewardScalarFieldEnum = {
   id: 'id',
   inviterId: 'inviterId',
@@ -1526,6 +1688,26 @@ export const ChatScalarFieldEnum = {
 } as const
 
 export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
+
+
+export const PendingPurchaseScalarFieldEnum = {
+  id: 'id',
+  txHash: 'txHash',
+  userId: 'userId',
+  gameId: 'gameId',
+  platform: 'platform',
+  payerWallet: 'payerWallet',
+  expectedAmount: 'expectedAmount',
+  status: 'status',
+  attempts: 'attempts',
+  lastError: 'lastError',
+  syncedEntryId: 'syncedEntryId',
+  syncedAt: 'syncedAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type PendingPurchaseScalarFieldEnum = (typeof PendingPurchaseScalarFieldEnum)[keyof typeof PendingPurchaseScalarFieldEnum]
 
 
 export const NotificationTokenScalarFieldEnum = {
@@ -1837,6 +2019,20 @@ export type JsonFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'J
 export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'QueryMode'>
     
 
+
+/**
+ * Reference to a field of type 'PendingPurchaseStatus'
+ */
+export type EnumPendingPurchaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PendingPurchaseStatus'>
+    
+
+
+/**
+ * Reference to a field of type 'PendingPurchaseStatus[]'
+ */
+export type ListEnumPendingPurchaseStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'PendingPurchaseStatus[]'>
+    
+
 /**
  * Batch Payload for updateMany & deleteMany & createMany
  */
@@ -1933,6 +2129,7 @@ export type PrismaClientOptions = ({
 }
 export type GlobalOmitConfig = {
   user?: Prisma.UserOmit
+  userWallet?: Prisma.UserWalletOmit
   referralReward?: Prisma.ReferralRewardOmit
   quest?: Prisma.QuestOmit
   completedQuest?: Prisma.CompletedQuestOmit
@@ -1941,6 +2138,7 @@ export type GlobalOmitConfig = {
   question?: Prisma.QuestionOmit
   gameEntry?: Prisma.GameEntryOmit
   chat?: Prisma.ChatOmit
+  pendingPurchase?: Prisma.PendingPurchaseOmit
   notificationToken?: Prisma.NotificationTokenOmit
   auditLog?: Prisma.AuditLogOmit
   inviteCode?: Prisma.InviteCodeOmit

@@ -405,11 +405,15 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         farcasterRecoveryAttemptRef.current = attemptKey;
 
         setIsSyncingFarcasterWallet(true);
+        const farcasterContext = await sdk.context.catch(() => null);
 
         const response = await authenticatedFetch("/api/v1/users/me/farcaster-wallet", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ wallet: walletAddress }),
+          body: JSON.stringify({
+            wallet: walletAddress,
+            username: farcasterContext?.user?.username ?? user.username ?? null,
+          }),
         });
 
         if (!response.ok) throw new Error("Farcaster wallet sync failed");

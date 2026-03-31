@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { GameNetwork } from "@/lib/chain/network";
 import { normalizeAddress } from "@/lib/auth";
+import { resolveUserByWalletForPlatform } from "@/lib/user-wallets";
 import { unlockReferralRewards } from "./shared";
 
 const BASE_MAINNET_RECOVERY_SCAN_WINDOW = BigInt(500);
@@ -153,6 +154,14 @@ export async function recoverRecentPurchasesForUser(params: {
   wallet: string;
 }) {
   const wallet = normalizeAddress(params.wallet).toLowerCase();
+  const resolvedUser = await prisma.$transaction((tx) =>
+    resolveUserByWalletForPlatform(tx, params.platform, wallet),
+  );
+
+  if (!resolvedUser || resolvedUser.id !== params.userId) {
+    return { recovered: 0, skipped: 0 };
+  }
+
   const purchases = await getRecentTicketPurchasesForBuyer(params.platform, wallet);
 
   if (purchases.length === 0) {

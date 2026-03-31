@@ -219,7 +219,7 @@ async function getPlatformMismatches(platform: ChainPlatform): Promise<OnchainMi
     const uniqueWallets = [...new Set(purchases.map((purchase) => purchase.buyer.toLowerCase()))];
     const uniqueTxHashes = [...new Set(purchases.map((purchase) => purchase.txHash.toLowerCase()))];
 
-    const [games, users, entriesByTxHash] = await Promise.all([
+    const [games, users, linkedWallets, entriesByTxHash] = await Promise.all([
         prisma.game.findMany({
             where: {
                 platform,
@@ -236,9 +236,20 @@ async function getPlatformMismatches(platform: ChainPlatform): Promise<OnchainMi
         prisma.user.findMany({
             where: {
                 platform,
-                OR: uniqueWallets.map((wallet) => ({
-                    wallet: { equals: wallet, mode: "insensitive" },
-                })),
+                OR: [
+                    ...uniqueWallets.map((wallet) => ({
+                        wallet: { equals: wallet, mode: "insensitive" as const },
+                    })),
+                    ...(platform === "FARCASTER"
+                        ? [{
+                            wallets: {
+                                some: {
+                                    wallet: { in: uniqueWallets },
+                                },
+                            },
+                        }]
+                        : []),
+                ],
             },
             select: {
                 id: true,
@@ -246,6 +257,18 @@ async function getPlatformMismatches(platform: ChainPlatform): Promise<OnchainMi
                 wallet: true,
             },
         }),
+        platform === "FARCASTER"
+            ? prisma.userWallet.findMany({
+                where: {
+                    platform: "FARCASTER",
+                    wallet: { in: uniqueWallets },
+                },
+                select: {
+                    wallet: true,
+                    userId: true,
+                },
+            })
+            : Promise.resolve([]),
         prisma.gameEntry.findMany({
             where: {
                 txHash: {
@@ -269,6 +292,13 @@ async function getPlatformMismatches(platform: ChainPlatform): Promise<OnchainMi
             .filter((user) => user.wallet)
             .map((user) => [user.wallet!.toLowerCase(), user]),
     );
+    const userById = new Map(users.map((user) => [user.id, user]));
+    for (const linkedWallet of linkedWallets) {
+        const user = userById.get(linkedWallet.userId);
+        if (user) {
+            userByWallet.set(linkedWallet.wallet.toLowerCase(), user);
+        }
+    }
     const entryByTxHash = new Set(
         entriesByTxHash
             .map((entry) => entry.txHash?.toLowerCase())
