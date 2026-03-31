@@ -10,7 +10,9 @@ import { formatGameTime } from "@/lib/utils";
 import { normalizeAddress } from "@/lib/auth";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import {
+  attachWalletToFarcasterUser,
   farcasterUserHasWallet,
+  resolveCanonicalFarcasterUser,
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
 import { unlockReferralRewards } from "./shared";
@@ -37,6 +39,14 @@ interface PurchaseUser {
   pfpUrl: string | null;
   wallet: string | null;
 }
+
+const PURCHASE_USER_SELECT = {
+  id: true,
+  platform: true,
+  username: true,
+  pfpUrl: true,
+  wallet: true,
+} as const;
 
 function isSamePrice(a: number, b: number) {
   return Math.abs(a - b) < 0.0001;
@@ -96,15 +106,6 @@ export async function finalizeTicketPurchase(
   });
 
   try {
-    const existing = await prisma.gameEntry.findUnique({
-      where: { gameId_userId: { gameId, userId: user.id } },
-    });
-
-    if (existing) {
-      await runSuccessHook({ entryId: existing.id, entryWasCreated: false });
-      return { success: true, entryId: existing.id };
-    }
-
     const game = await prisma.game.findUnique({
       where: { id: gameId },
       select: {
@@ -140,18 +141,6 @@ export async function finalizeTicketPurchase(
         return {
           success: false,
           error: "Payment wallet does not match your linked wallet",
-          code: "INVALID_INPUT",
-        };
-      }
-    } else {
-      const isAllowedWallet = await prisma.$transaction((tx) =>
-        farcasterUserHasWallet(tx, user.id, normalizedPayerWallet),
-      );
-
-      if (!isAllowedWallet) {
-        return {
-          success: false,
-          error: "Payment wallet is not linked to your Farcaster account",
           code: "INVALID_INPUT",
         };
       }
@@ -245,6 +234,66 @@ export async function finalizeTicketPurchase(
       };
     }
 
+    let purchaseUser = user;
+
+    if (user.platform === "FARCASTER") {
+      try {
+        const resolvedUser = await prisma.$transaction(async (tx) => {
+          const canonicalUser = await resolveCanonicalFarcasterUser(
+            tx,
+            user.id,
+            user.username,
+          );
+          const hasLinkedWallet = await farcasterUserHasWallet(
+            tx,
+            canonicalUser.id,
+            normalizedPayerWallet,
+          );
+
+          if (!hasLinkedWallet) {
+            await attachWalletToFarcasterUser(
+              tx,
+              canonicalUser.id,
+              normalizedPayerWallet,
+            );
+          }
+
+          return tx.user.findUnique({
+            where: { id: canonicalUser.id },
+            select: PURCHASE_USER_SELECT,
+          });
+        });
+
+        if (!resolvedUser) {
+          return {
+            success: false,
+            error: "User not found",
+            code: "NOT_FOUND",
+          };
+        }
+
+        purchaseUser = resolvedUser;
+      } catch (error) {
+        return {
+          success: false,
+          error:
+            error instanceof Error
+              ? error.message
+              : "Payment wallet is not linked to your Farcaster account",
+          code: "INVALID_INPUT",
+        };
+      }
+    }
+
+    const existing = await prisma.gameEntry.findUnique({
+      where: { gameId_userId: { gameId, userId: purchaseUser.id } },
+    });
+
+    if (existing) {
+      await runSuccessHook({ entryId: existing.id, entryWasCreated: false });
+      return { success: true, entryId: existing.id };
+    }
+
     let entry:
       | {
           id: string;
@@ -258,7 +307,7 @@ export async function finalizeTicketPurchase(
 
     const transactionResult = await prisma.$transaction(async (tx) => {
       const existingEntry = await tx.gameEntry.findUnique({
-        where: { gameId_userId: { gameId, userId: user.id } },
+        where: { gameId_userId: { gameId, userId: purchaseUser.id } },
         select: { id: true, purchaseSource: true, paidAmount: true },
       });
 
@@ -274,7 +323,7 @@ export async function finalizeTicketPurchase(
       const newEntry = await tx.gameEntry.create({
         data: {
           gameId,
-          userId: user.id,
+          userId: purchaseUser.id,
           txHash,
           payerWallet: normalizedPayerWallet,
           paidAmount: verifiedPaidAmount,
@@ -293,7 +342,7 @@ export async function finalizeTicketPurchase(
         select: { prizePool: true, playerCount: true },
       });
 
-      await unlockReferralRewards(tx, user.id);
+      await unlockReferralRewards(tx, purchaseUser.id);
 
       return {
         entry: newEntry,
@@ -308,9 +357,9 @@ export async function finalizeTicketPurchase(
     updatedPlayerCount = transactionResult.playerCount;
     entryWasCreated = transactionResult.wasCreated;
 
-    if (user.platform === "FARCASTER") {
+    if (purchaseUser.platform === "FARCASTER") {
       await prisma.$transaction((tx) =>
-        touchFarcasterWalletUsage(tx, user.id, normalizedPayerWallet),
+        touchFarcasterWalletUsage(tx, purchaseUser.id, normalizedPayerWallet),
       );
     }
 
@@ -329,17 +378,20 @@ export async function finalizeTicketPurchase(
     }
 
     const timeStr = formatGameTime(game.startsAt);
-    void sendToUser(user.id, buildPayload(transactional.ticketSecured(timeStr))).catch((err) =>
+    void sendToUser(
+      purchaseUser.id,
+      buildPayload(transactional.ticketSecured(timeStr)),
+    ).catch((err) =>
       console.error("[game-actions]", "notification_error", {
         gameId,
-        userId: user.id,
+        userId: purchaseUser.id,
         error: err instanceof Error ? err.message : String(err),
       }),
     );
 
     void notifyTicketPurchased(gameId, {
-      username: user.username || "Player",
-      pfpUrl: user.pfpUrl || null,
+      username: purchaseUser.username || "Player",
+      pfpUrl: purchaseUser.pfpUrl || null,
       prizePool: updatedPrizePool,
       playerCount: updatedPlayerCount,
     }).catch((err) =>
@@ -375,7 +427,7 @@ export async function finalizeTicketPurchase(
     console.log("[game-actions]", "ticket_purchased", {
       gameId,
       entryId: entry.id,
-      userId: user.id,
+      userId: purchaseUser.id,
       paidAmount: entry.paidAmount,
       purchaseSource: entry.purchaseSource,
     });
