@@ -49,6 +49,9 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
   const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
   const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
+  const [notificationNudgeDismissed, setNotificationNudgeDismissed] = useState(false);
+  const [notificationNudgeError, setNotificationNudgeError] = useState<string | null>(null);
+  const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const farcasterProfileSyncRef = useRef<string | null>(null);
   const onboardingAuthInProgressRef = useRef(false);
@@ -174,6 +177,22 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
     setShowOnboarding(!hasSeen);
   }, [onboardingKey, runtime, user]);
+
+  useEffect(() => {
+    if (runtime !== "farcaster" || !user?.id) {
+      setNotificationNudgeDismissed(false);
+      setNotificationNudgeError(null);
+      return;
+    }
+
+    if (user.notificationsEnabled) {
+      setNotificationNudgeDismissed(false);
+      setNotificationNudgeError(null);
+      return;
+    }
+
+    setNotificationNudgeDismissed(false);
+  }, [runtime, user?.id, user?.notificationsEnabled]);
 
   // Fetch a random question from the template bank for the onboarding demo
   // Must complete before showing the overlay so the slide list is stable
@@ -445,6 +464,74 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     user,
   ]);
 
+  useEffect(() => {
+    if (runtime !== "farcaster" || !user?.id) {
+      return;
+    }
+
+    const handleNotificationsEnabled = () => {
+      setNotificationNudgeDismissed(false);
+      setNotificationNudgeError(null);
+      setIsEnablingNotifications(false);
+      refetch().catch(console.error);
+    };
+
+    const handleMiniAppAdded = ({
+      notificationDetails,
+    }: {
+      notificationDetails?: { token?: string; url?: string };
+    }) => {
+      if (!notificationDetails) {
+        return;
+      }
+      handleNotificationsEnabled();
+    };
+
+    const handleMiniAppAddRejected = () => {
+      setNotificationNudgeDismissed(true);
+      setNotificationNudgeError(null);
+      setIsEnablingNotifications(false);
+    };
+
+    sdk.on("notificationsEnabled", handleNotificationsEnabled);
+    sdk.on("miniAppAdded", handleMiniAppAdded);
+    sdk.on("miniAppAddRejected", handleMiniAppAddRejected);
+
+    return () => {
+      sdk.off("notificationsEnabled", handleNotificationsEnabled);
+      sdk.off("miniAppAdded", handleMiniAppAdded);
+      sdk.off("miniAppAddRejected", handleMiniAppAddRejected);
+    };
+  }, [refetch, runtime, user?.id]);
+
+  const dismissNotificationNudge = useCallback(() => {
+    setNotificationNudgeDismissed(true);
+    setNotificationNudgeError(null);
+  }, []);
+
+  const enableNotifications = useCallback(async () => {
+    try {
+      setIsEnablingNotifications(true);
+      setNotificationNudgeError(null);
+      await sdk.actions.addMiniApp();
+      refetch().catch(console.error);
+    } catch (error) {
+      setIsEnablingNotifications(false);
+      setNotificationNudgeError(
+        error instanceof Error
+          ? error.message
+          : "Could not open the notifications prompt.",
+      );
+    }
+  }, [refetch]);
+
+  const shouldShowNotificationNudge =
+    runtime === "farcaster" &&
+    Boolean(user) &&
+    !showOnboarding &&
+    user?.notificationsEnabled === false &&
+    !notificationNudgeDismissed;
+
   if (!runtime) {
     return null;
   }
@@ -484,7 +571,42 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       );
     }
 
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        {shouldShowNotificationNudge ? (
+          <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">
+            <div className="pointer-events-auto w-full max-w-md rounded-[28px] border border-white/10 bg-black/80 p-4 shadow-2xl backdrop-blur">
+              <div className="space-y-2">
+                <p className="font-body text-2xl text-white">Turn on alerts</p>
+                <p className="text-sm text-white/65">
+                  Get nudges for tickets, almost sold out games, live updates, and results in Farcaster.
+                </p>
+              </div>
+              <div className="mt-4 flex flex-col gap-3">
+                <WaffleButton
+                  className="h-12 max-w-none border-(--brand-cyan) px-4 text-base"
+                  onClick={() => enableNotifications().catch(console.error)}
+                  disabled={isEnablingNotifications}
+                >
+                  {isEnablingNotifications ? "Opening..." : "Enable Notifications"}
+                </WaffleButton>
+                <button
+                  type="button"
+                  className="text-sm text-white/60 underline"
+                  onClick={dismissNotificationNudge}
+                >
+                  Not now
+                </button>
+                {notificationNudgeError ? (
+                  <p className="text-sm text-red-300">{notificationNudgeError}</p>
+                ) : null}
+              </div>
+            </div>
+          </div>
+        ) : null}
+      </>
+    );
   }
 
   if (showOnboarding) {

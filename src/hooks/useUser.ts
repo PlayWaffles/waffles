@@ -15,6 +15,7 @@ export interface UserData {
   username: string | null;
   pfpUrl: string | null;
   wallet: string | null;
+  notificationsEnabled: boolean;
   inviteQuota: number;
   inviteCode: string;
   hasGameAccess: boolean;

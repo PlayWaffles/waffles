@@ -14,14 +14,14 @@ export const GET = withAuth(async (_request: NextRequest, auth) => {
         username: true,
         pfpUrl: true,
         wallet: true,
+        _count: {
+          select: { referrals: true, notifs: true },
+        },
         inviteQuota: true,
         inviteCode: true,
         hasGameAccess: true,
         isBanned: true,
         createdAt: true,
-        _count: {
-          select: { referrals: true },
-        },
       },
     });
 
@@ -39,6 +39,8 @@ export const GET = withAuth(async (_request: NextRequest, auth) => {
       username: user.username,
       pfpUrl: user.pfpUrl,
       wallet: user.wallet,
+      notificationsEnabled:
+        user.platform === "FARCASTER" ? user._count.notifs > 0 : false,
       inviteQuota: user.inviteQuota,
       inviteCode: user.inviteCode,
       hasGameAccess: user.hasGameAccess,
