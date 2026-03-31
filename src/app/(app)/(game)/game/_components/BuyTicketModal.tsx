@@ -17,7 +17,14 @@ import { playSound } from "@/lib/sounds";
 import type { TicketPricingSnapshot } from "@/lib/tickets";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
-import { authenticatedFetch, getAppRuntime, type AppRuntime } from "@/lib/client/runtime";
+import {
+  authenticatedFetch,
+  getAppRuntime,
+  isMiniPayRuntime,
+  type AppRuntime,
+} from "@/lib/client/runtime";
+
+const MINIPAY_ADD_CASH_URL = "https://minipay.opera.com/add_cash";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
@@ -60,6 +67,14 @@ export function BuyTicketModal({
   const [freeLoading, setFreeLoading] = useState(false);
   const [freeError, setFreeError] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime>("browser");
+
+  const openMiniPayAddCash = useCallback(() => {
+    if (typeof window === "undefined") return;
+    if (runtime !== "minipay" && !isMiniPayRuntime()) return;
+
+    notify.info("Opening MiniPay Add Cash...");
+    window.location.assign(MINIPAY_ADD_CASH_URL);
+  }, [runtime]);
 
   // Derived display values
   const displayUsername =
@@ -116,6 +131,7 @@ export function BuyTicketModal({
     onchainId,
     selectedPrice,
     onPurchaseSuccess,
+    openMiniPayAddCash,
   );
 
   // Redirect to success page on purchase success (paid or free)

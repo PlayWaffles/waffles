@@ -51,12 +51,17 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const farcasterProfileSyncRef = useRef<string | null>(null);
+  const onboardingAuthInProgressRef = useRef(false);
   const onboardingKey = useMemo(() => {
     if (!runtime) return null;
-    return runtime === "farcaster"
-      ? getOnboardingKey(runtime, user?.id)
-      : getOnboardingKey(runtime);
-  }, [runtime, user?.id]);
+    if (runtime === "farcaster") {
+      return getOnboardingKey(runtime, user?.id);
+    }
+    // Scope MiniPay/browser onboarding to wallet so different users on
+    // the same device each see onboarding once.
+    const walletScope = address?.toLowerCase();
+    return getOnboardingKey(runtime, walletScope);
+  }, [runtime, user?.id, address]);
 
   useEffect(() => {
     let mounted = true;
@@ -249,6 +254,12 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Prevent racing with handleOnboardingComplete which already
+    // calls authenticateWallet right before flipping showOnboarding off.
+    if (onboardingAuthInProgressRef.current) {
+      return;
+    }
+
     if (!isConnected || !address || !isUnauthenticated || authState !== "idle") {
       return;
     }
@@ -266,9 +277,20 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
   const handleOnboardingComplete = useCallback(async () => {
     if (runtime !== "farcaster") {
-      const walletAddress = await connectWallet();
-      await authenticateWallet(walletAddress);
-      await refetch();
+      onboardingAuthInProgressRef.current = true;
+      try {
+        const walletAddress = await connectWallet();
+        await authenticateWallet(walletAddress);
+        await refetch();
+      } catch (error) {
+        console.error("Wallet auth during onboarding failed:", error);
+        setAuthError(
+          error instanceof Error ? error.message : "Wallet connection failed",
+        );
+        throw error;
+      } finally {
+        onboardingAuthInProgressRef.current = false;
+      }
     }
 
     if (typeof window !== "undefined" && onboardingKey) {

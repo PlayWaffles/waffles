@@ -3,7 +3,7 @@
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useWriteContract } from "wagmi";
-import { waitForTransactionReceipt } from "wagmi/actions";
+import { readContract, waitForTransactionReceipt } from "wagmi/actions";
 import { parseUnits, encodeFunctionData } from "viem";
 
 import { useRealtime } from "@/components/providers/RealtimeProvider";
@@ -15,6 +15,7 @@ import { ERC20_ABI } from "@/lib/constants";
 import {
   PAYMENT_TOKEN_DECIMALS,
   getPaymentTokenAddress,
+  getPlatformChain,
   getWaffleContractAddress,
 } from "@/lib/chain";
 import { useCorrectChain } from "./useCorrectChain";
@@ -54,6 +55,7 @@ export function useTicketPurchase(
   onchainId: `0x${string}` | null,
   price: number,
   onSuccess?: () => void,
+  onInsufficientFunds?: () => void,
 ) {
   const router = useRouter();
   const { address, isConnected } = useAccount();
@@ -331,6 +333,33 @@ export function useTicketPurchase(
     try {
       await ensureCorrectChain();
 
+      const tokenBalance = (await readContract(wagmiConfig, {
+        address: tokenAddress,
+        abi: ERC20_ABI,
+        functionName: "balanceOf",
+        args: [address],
+        chainId: getPlatformChain(chainTarget).id,
+      })) as bigint;
+
+      if (tokenBalance < priceInUnits) {
+        console.warn("[ticket-purchase]", {
+          stage: "blocked-insufficient-balance",
+          platform,
+          network,
+          gameId,
+          onchainId,
+          address,
+          balance: tokenBalance.toString(),
+          priceInUnits: priceInUnits.toString(),
+        });
+
+        const msg = "Insufficient funds";
+        setState({ step: "error", error: msg });
+        notify.error(msg);
+        onInsufficientFunds?.();
+        return;
+      }
+
       console.log("[ticket-purchase]", {
         stage: "before-send",
         platform,
@@ -433,6 +462,10 @@ export function useTicketPurchase(
 
       setState({ step: "error", error: msg });
       notify.error(msg);
+
+      if (msg === "Insufficient funds") {
+        onInsufficientFunds?.();
+      }
     }
   }, [
     allowance,
@@ -451,6 +484,7 @@ export function useTicketPurchase(
     salesClosed,
     tokenAddress,
     writeContractAsync,
+    onInsufficientFunds,
   ]);
 
   const reset = useCallback(() => {
