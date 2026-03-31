@@ -17,8 +17,8 @@ import { FloatingParticles, LandingNoise } from "./GradientBlobs";
 
 // Headline lines for explicit line breaks
 const headlineLines = [
-    ["THE", "WORLD"],
-    ["IS", "A", "PUZZLE"],
+    ["GUESS", "THE"],
+    ["MOVIE", "SCENE"],
 ];
 
 export function HeroSection() {
@@ -104,7 +104,7 @@ export function HeroSection() {
                     transition={{ delay: 0.5 }}
                     className="font-display font-medium text-lg sm:text-xl md:text-2xl lg:text-[28px] leading-[1.3] text-center tracking-[-0.03em] text-white/70 max-w-[453px]"
                 >
-                    Win real money by recognizing patterns faster than everyone else
+                    Spot the film from a single scene faster than everyone else and win real prizes
                 </motion.p>
 
                 {/* CTA Button with magnetic effect and 3D press */}

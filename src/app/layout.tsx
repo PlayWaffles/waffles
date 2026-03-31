@@ -8,11 +8,11 @@ import { env } from "@/lib/env";
 
 export const metadata: Metadata = {
   title: "Waffles",
-  description: "Pattern-matching tournaments built for everyone.",
-  keywords: ["waffles", "games", "minipay", "celo", "tournaments", "fun"],
+  description: "Guess the movie scene. Win real prizes.",
+  keywords: ["waffles", "games", "movie scenes", "trivia", "minipay", "celo", "farcaster"],
   openGraph: {
     title: "Waffles",
-    description: "Play daily social games",
+    description: "Guess the movie scene. Win real prizes.",
     url: env.rootUrl,
     type: "website",
     images: [
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Waffles",
-    description: "Play daily social games",
+    description: "Guess the movie scene. Win real prizes.",
     images: ["/images/hero-image.png"],
   },
   icons: {

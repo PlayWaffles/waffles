@@ -69,9 +69,9 @@ export function SpeedSection() {
                     viewport={{ once: true }}
                     className="font-display text-[32px] leading-[1.3] tracking-[-0.03em] text-[#1E1E1E]/70 max-w-[556px] max-md:text-xl"
                 >
-                    This isn&apos;t about luck. It&apos;s about who can recognize patterns
-                    the fastest. Movie scenes reimagined as AI art. Memes compressed into
-                    visual puzzles. Sports moments transformed into aesthetic challenges.
+                    This isn&apos;t about luck. It&apos;s about who can name the movie
+                    the fastest. Iconic scenes, obscure gems, and everything in between
+                    — all reimagined as visual challenges.
                 </motion.p>
             </motion.div>
 
@@ -130,8 +130,8 @@ export function SpeedSection() {
                 viewport={{ once: true }}
                 className="absolute right-[86px] top-[600px] w-[443px] font-display text-[32px] leading-[1.3] tracking-[-0.03em] text-[#1E1E1E]/70 max-lg:relative max-lg:right-0 max-lg:w-auto max-lg:px-8 max-lg:mt-8 max-md:text-xl"
             >
-                You have seconds to connect the dots. The world rewards those who see
-                signals before everyone else.
+                You have seconds to name the film. The fastest eyes
+                win the biggest share of the pot.
             </motion.p>
 
             {/* Scrolling Marquee - Enhanced with continuous animation */}
@@ -146,7 +146,7 @@ export function SpeedSection() {
                         viewport={{ once: true }}
                         className="font-input text-[80px] leading-[1.3] tracking-[-0.03em] text-[#1E1E1E] whitespace-nowrap text-center max-md:text-[40px] pr-8"
                     >
-                        How fast can you connect the dots? • How fast can you connect the dots? •
+                        How fast can you name the movie? • How fast can you name the movie? •
                     </motion.p>
                 </motion.div>
             </div>

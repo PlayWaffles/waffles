@@ -132,10 +132,6 @@ function ThemeCard({
 
 const themes = [
     { image: "/images/themes/movie-scenes.png", label: "MOVIE SCENES", color: "purple" as const },
-    { image: "/images/themes/football-moments.png", label: "FOOTBALL MOMENTS", color: "cyan" as const },
-    { image: "/images/themes/nba-history.png", label: "NBA HISTORY", color: "purple" as const },
-    { image: "/images/themes/meme-culture.png", label: "MEME CULTURE", color: "cyan" as const },
-    { image: "/images/themes/anime.png", label: "ANIME", color: "purple" as const },
 ];
 
 export function ThemesSection() {
@@ -183,10 +179,10 @@ export function ThemesSection() {
                     {/* Text Content - Frame 1618869268 */}
                     <div className="flex flex-col items-center gap-5">
                         <h2 className="font-body text-5xl sm:text-6xl md:text-8xl lg:text-[120px] leading-[0.9] tracking-[-0.03em] text-[#470149] uppercase">
-                            WEEKLY THEMES
+                            MOVIE SCENES
                         </h2>
                         <p className="font-display font-medium text-lg sm:text-xl md:text-2xl lg:text-[32px] leading-[1.3] tracking-[-0.03em] text-[#470149]/70 max-w-[786px]">
-                            Each week brings a new theme. The images change. The patterns shift. But one thing stays constant: whoever sees the connections fastest, wins.
+                            From blockbusters to cult classics — every game serves up scenes you know and love. Whoever names the film fastest, wins.
                         </p>
                     </div>
                 </motion.div>

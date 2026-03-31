@@ -5,7 +5,7 @@ import { Metadata } from "next";
 export async function generateMetadata(): Promise<Metadata> {
     return {
         title: "Waffles",
-        description: "Pattern-matching tournaments built for MiniPay on Celo.",
+        description: "Guess the movie scene. Win real prizes.",
     };
 }
 export default function AppLayout({

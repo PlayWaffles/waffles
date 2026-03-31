@@ -13,7 +13,7 @@ import { TextScramble } from "./TextScramble";
 import { FloatingParticles, LandingNoise } from "./GradientBlobs";
 
 // Headline words for stagger
-const headlineWords = ["Think", "You're", "Faster", "Than", "Everyone", "Else?"];
+const headlineWords = ["Can", "You", "Name", "The", "Movie?"];
 
 export function FinalCTASection() {
     const router = useRouter();
@@ -164,7 +164,7 @@ export function FinalCTASection() {
                     viewport={{ once: true }}
                     className="font-input text-4xl md:text-[80px] leading-[1.3] tracking-[-0.03em] text-[#1E1E1E] uppercase whitespace-nowrap"
                 >
-                    See you in the next game • See you in the next game • See you in the next game
+                    Lights, camera, compete • Lights, camera, compete • Lights, camera, compete
                 </motion.p>
             </motion.div>
         </section>

@@ -8,27 +8,27 @@ import { LandingNoise } from "./GradientBlobs";
 const faqs = [
     {
         question: "What is Waffles?",
-        answer: "Waffles is a real-time trivia game where you compete against other players to recognize patterns faster than everyone else. Think movie scenes reimagined as AI art, memes compressed into visual puzzles, and sports moments transformed into aesthetic challenges.",
+        answer: "Waffles is a real-time movie trivia game where you compete against other players to guess the film from a single scene. The faster you answer, the more you earn.",
     },
     {
         question: "How do I win money?",
-        answer: "Buy a ticket to enter a game, answer questions correctly and quickly to earn points. The faster you answer, the more points you get. At the end of each game, the prize pool is distributed among the top performers based on their final ranking.",
+        answer: "Buy a ticket to enter a game, then guess movie scenes correctly and quickly to earn points. The faster you answer, the more points you get. At the end of each game, the prize pool is split among the top performers.",
     },
     {
         question: "How much does it cost to play?",
-        answer: "Ticket prices vary per game, typically ranging from $5 to $50 USDC. The ticket price contributes to the prize pool, meaning bigger games have bigger rewards. You can see the current prize pool before joining any game.",
+        answer: "Each game has a set ticket price in USDC. The ticket price goes straight into the prize pool, so bigger games mean bigger rewards. You can see the current prize pool before joining.",
     },
     {
         question: "When are games played?",
-        answer: "Games run on a regular schedule with multiple games throughout the day. Each game has a set start time, and you'll need to have your ticket purchased before the game begins. Check the app for upcoming game times!",
+        answer: "Games run on a regular schedule. Each game has a set start time, and you'll need your ticket before the game begins. Check the app for upcoming game times!",
     },
     {
-        question: "What categories are available?",
-        answer: "We rotate through exciting themes weekly: Movie Scenes, Football Moments, NBA History, Meme Culture, Anime, and more. Each week brings fresh content and new challenges to keep you on your toes.",
+        question: "What kind of movies are featured?",
+        answer: "Everything from blockbusters to cult classics, iconic scenes to deep cuts. Each game serves up a mix of scenes to test both casual fans and movie buffs alike.",
     },
     {
         question: "How do I get started?",
-        answer: "Simply open Waffles on Farcaster, buy a ticket for an upcoming game, and you're ready to compete! No complicated setup required – just bring your pattern recognition skills.",
+        answer: "Open Waffles on Farcaster or MiniPay, grab a ticket for an upcoming game, and you're in. No setup needed — just bring your movie knowledge.",
     },
 ];
 
