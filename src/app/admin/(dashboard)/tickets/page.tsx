@@ -5,6 +5,7 @@ import { GameFilter } from "./_components/GameFilter";
 import { IssueFreeTicketCard } from "./_components/IssueFreeTicketCard";
 import { TicketReconciliationCard } from "./_components/TicketReconciliationCard";
 import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
+import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
 import { TicketPurchaseSource } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
@@ -573,6 +574,8 @@ export default async function TicketsPage({
                                         <td className="px-4 py-4 text-sm">
                                             {row.status === "MISSING_IN_DB" ? (
                                                 <RecoverPaidTicketButton txHash={row.txHash} />
+                                            ) : row.status === "USER_NOT_FOUND" && row.platform === "FARCASTER" ? (
+                                                <ResolveOnchainPurchaseButton txHash={row.txHash} />
                                             ) : (
                                                 <span className="text-xs text-white/40">Review</span>
                                             )}

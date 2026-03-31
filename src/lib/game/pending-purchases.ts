@@ -1,4 +1,4 @@
-import { PendingPurchaseStatus } from "@prisma";
+import { PendingPurchaseStatus } from "../../../prisma/generated/enums";
 
 import { prisma } from "@/lib/db";
 import { finalizeTicketPurchase, type PurchaseInput } from "@/lib/game/purchase";
