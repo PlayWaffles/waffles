@@ -5,6 +5,8 @@ import ResultPageClient from "./client";
 import { buildPrizeOGUrl, buildScoreOGUrl } from "@/lib/og";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
+import { buildMiniAppEmbed } from "@/lib/farcaster";
+import { env } from "@/lib/env";
 
 interface ResultPageProps {
   params: Promise<{ gameId: string }>;
@@ -79,6 +81,14 @@ export async function generateMetadata({
     : score > 0
       ? `${username} scored ${score.toLocaleString()} points on Waffles!`
       : `Check out the results for ${game.title || game.theme}`;
+  const pageUrl = `${env.rootUrl}/game/${gameId}/result`;
+  const embed = imageUrl
+    ? buildMiniAppEmbed({
+        imageUrl,
+        buttonTitle: "View Results",
+        url: pageUrl,
+      })
+    : null;
 
   return {
     title,
@@ -88,6 +98,11 @@ export async function generateMetadata({
       description,
       images: imageUrl ? [imageUrl] : [],
     },
+    other: embed
+      ? {
+          "fc:miniapp": JSON.stringify(embed),
+        }
+      : undefined,
   };
 }
 

@@ -6,6 +6,7 @@ import { buildJoinedOGUrl } from "@/lib/og";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import { TicketSuccessClient } from "./client";
+import { buildMiniAppEmbed } from "@/lib/farcaster";
 
 interface SuccessPageProps {
     params: Promise<{ gameId: string }>;
@@ -59,6 +60,12 @@ export async function generateMetadata({
         pfpUrl,
         themeImageUrl,
     });
+    const pageUrl = `${env.rootUrl}/game/${gameId}/ticket/success`;
+    const embed = buildMiniAppEmbed({
+        imageUrl,
+        buttonTitle: "Join Waffles",
+        url: pageUrl,
+    });
 
     return {
         title: `${username} joined Waffles!`,
@@ -67,6 +74,9 @@ export async function generateMetadata({
             title: `${username} joined Waffles!`,
             description: `Theme: ${game.theme} | Current Prize Pool: $${game.prizePool.toLocaleString()}`,
             images: imageUrl ? [imageUrl] : [],
+        },
+        other: {
+            "fc:miniapp": JSON.stringify(embed),
         },
     };
 }
