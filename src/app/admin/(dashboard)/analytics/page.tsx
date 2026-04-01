@@ -21,7 +21,6 @@ import {
     UserGrowthChart,
     GamePerformanceTable,
     ReferralFunnel,
-    ThemeAnalytics,
     ActivityFeed,
     GameInsights,
     QuestionDifficulty,
@@ -49,6 +48,57 @@ interface AnswerData {
     correct: boolean;
     points: number;
     ms: number;
+}
+
+interface RevenueEntryWithGame {
+    paidAt: Date | null;
+    paidAmount: number | null;
+    game: {
+        id: string;
+        title: string;
+        theme: string;
+        playerCount: number;
+        startsAt: Date;
+        endsAt: Date;
+    };
+}
+
+function summarizeRevenueByGame(entries: RevenueEntryWithGame[]) {
+    const gameRevenueMap = new Map<string, {
+        id: string;
+        title: string;
+        theme: string;
+        playerCount: number;
+        ticketCount: number;
+        grossRevenue: number;
+        startsAt: Date;
+        endsAt: Date;
+    }>();
+
+    entries.forEach((entry) => {
+        const existing = gameRevenueMap.get(entry.game.id) ?? {
+            id: entry.game.id,
+            title: entry.game.title,
+            theme: entry.game.theme,
+            playerCount: entry.game.playerCount,
+            ticketCount: 0,
+            grossRevenue: 0,
+            startsAt: entry.game.startsAt,
+            endsAt: entry.game.endsAt,
+        };
+
+        existing.ticketCount += 1;
+        existing.grossRevenue += entry.paidAmount || 0;
+        existing.playerCount = Math.max(existing.playerCount, entry.game.playerCount);
+        gameRevenueMap.set(entry.game.id, existing);
+    });
+
+    return Array.from(gameRevenueMap.values())
+        .map((game) => ({
+            ...game,
+            revenue: calculateProtocolRevenue(game.grossRevenue),
+        }))
+        .sort((a, b) => b.revenue - a.revenue);
 }
 
 // ============================================================
@@ -97,17 +147,13 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         avgScoreResult,
         // Average answer speed (need to compute from JSON)
         entriesWithAnswers,
-        // Revenue per game
-        gamesWithRevenue,
         // Prize claims
         totalPrizes,
         claimedPrizes,
         // Daily signups sparkline
         dailySignups,
-        // Daily revenue sparkline
-        dailyRevenue,
-        // Theme performance
-        themeStats,
+        // Revenue entries for chart + summaries
+        revenueEntries,
     ] = await Promise.all([
         // Active players in period
         prisma.user.count({
@@ -135,8 +181,18 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         }),
         // Total signups in period
         prisma.user.count({ where: { ...pf, createdAt: { gte: start, lte: end } } }),
-        // Onboarded users (hasGameAccess)
-        prisma.user.count({ where: { ...pf, hasGameAccess: true, createdAt: { gte: start, lte: end } } }),
+        // Onboarded users created in period
+        prisma.user.count({
+            where: {
+                ...pf,
+                createdAt: { gte: start, lte: end },
+                OR: [
+                    { hasGameAccess: true },
+                    { accessGrantedAt: { not: null } },
+                    { entries: { some: { paidAt: { not: null } } } },
+                ],
+            },
+        }),
         // Games in period
         prisma.game.count({ where: { ...gamePf, startsAt: { gte: start, lte: end } } }),
         // Total entries (ticket purchases) in period
@@ -166,13 +222,6 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             select: { answers: true },
             take: 5000,
         }),
-        // Games with revenue for per-game avg
-        prisma.game.findMany({
-            where: { ...gamePf, endsAt: { lte: now, gte: start } },
-            select: { id: true, title: true, theme: true, prizePool: true, playerCount: true, startsAt: true, endsAt: true },
-            orderBy: { prizePool: "desc" },
-            take: 20,
-        }),
         // Total prizes awarded
         prisma.gameEntry.count({ where: { prize: { not: null, gt: 0 }, ...gpf, paidAt: { gte: start, lte: end } } }),
         // Claimed prizes
@@ -183,17 +232,23 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             where: { ...pf, createdAt: { gte: start, lte: end } },
             _count: true,
         }),
-        // Daily revenue for sparkline
+        // Revenue entries for sparkline + summaries
         prisma.gameEntry.findMany({
             where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
-            select: { paidAt: true, paidAmount: true },
-        }),
-        // Theme stats
-        prisma.game.groupBy({
-            by: ["theme"],
-            where: { ...gamePf, startsAt: { gte: start, lte: end } },
-            _count: true,
-            _sum: { prizePool: true, playerCount: true },
+            select: {
+                paidAt: true,
+                paidAmount: true,
+                game: {
+                    select: {
+                        id: true,
+                        title: true,
+                        theme: true,
+                        playerCount: true,
+                        startsAt: true,
+                        endsAt: true,
+                    },
+                },
+            },
         }),
     ]);
 
@@ -222,7 +277,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
 
     const revenueMap = buildDailyMap(start, end);
     const ticketMap = buildDailyMap(start, end);
-    dailyRevenue.forEach((e) => {
+    revenueEntries.forEach((e) => {
         if (e.paidAt) {
             const key = new Date(e.paidAt).toISOString().split("T")[0];
             revenueMap.set(
@@ -233,19 +288,21 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         }
     });
     const revenueSparkline = Array.from(revenueMap.values()).slice(-7);
+    const gamesWithRevenue = summarizeRevenueByGame(revenueEntries as RevenueEntryWithGame[]);
 
     // Computed metrics
     const onboardingRate = totalSignups > 0 ? (onboardedUsers / totalSignups) * 100 : 0;
-    const viewToPurchaseRate = totalGamesInPeriod > 0 ? (totalEntriesInPeriod / (totalGamesInPeriod * Math.max(activeUsersInPeriod, 1))) * 100 : 0;
     const purchaseToCompletionRate = totalEntriesInPeriod > 0 ? (completedEntries / totalEntriesInPeriod) * 100 : 0;
     const leaveRate = totalEntriesInPeriod > 0 ? (leftEntries / totalEntriesInPeriod) * 100 : 0;
     const activationRate = totalSignups > 0 ? (activatedUsers / totalSignups) * 100 : 0;
     const avgScore = avgScoreResult._avg.score || 0;
-    const totalRevenue = gamesWithRevenue.reduce(
-        (sum, g) => sum + calculateProtocolRevenue(g.prizePool),
+    const totalRevenue = revenueEntries.reduce(
+        (sum, entry) => sum + calculateProtocolRevenue(entry.paidAmount),
         0,
     );
-    const revenuePerGame = gamesWithRevenue.length > 0 ? totalRevenue / gamesWithRevenue.length : 0;
+    const revenuePerGame = gamesWithRevenue.length > 0
+        ? totalRevenue / gamesWithRevenue.length
+        : 0;
     const claimRate = totalPrizes > 0 ? (claimedPrizes / totalPrizes) * 100 : 0;
     const activeUsersChange = previousActiveUsers > 0
         ? ((activeUsersInPeriod - previousActiveUsers) / previousActiveUsers) * 100
@@ -253,14 +310,6 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     const entriesChange = previousEntriesInPeriod > 0
         ? ((totalEntriesInPeriod - previousEntriesInPeriod) / previousEntriesInPeriod) * 100
         : 0;
-
-    // Theme performance
-    const themePerformance = themeStats.map((t) => ({
-        theme: t.theme,
-        games: t._count,
-        revenue: calculateProtocolRevenue(t._sum.prizePool),
-        players: t._sum.playerCount || 0,
-    }));
 
     // Revenue chart data (single pass — revenueMap and ticketMap built above)
     const sortedRevenueDates = Array.from(revenueMap.keys()).sort();
@@ -291,7 +340,6 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         revenueSparkline,
         // Chart data
         revenueChartData,
-        themePerformance,
         // Game performance table
         gamePerformance: gamesWithRevenue.map((g) => ({
             id: g.id,
@@ -299,8 +347,8 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             theme: g.theme,
             status: getGamePhase(g),
             playerCount: g.playerCount,
-            ticketCount: g.playerCount,
-            revenue: calculateProtocolRevenue(g.prizePool),
+            ticketCount: g.ticketCount,
+            revenue: g.revenue,
             avgScore: 0,
         })),
     };
@@ -323,6 +371,7 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         // New vs returning in period
         newPlayersInPeriod,
         totalPlayersInPeriod,
+        newPlayersWithTicket,
         // Streak distribution
         streakDistribution,
         // Repeat ticket buyers
@@ -365,6 +414,13 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
             where: {
                 ...pf,
                 lastLoginAt: { not: null, gte: start, lte: end },
+            },
+        }),
+        prisma.user.count({
+            where: {
+                ...pf,
+                createdAt: { gte: start, lte: end },
+                entries: { some: { paidAt: { not: null, gte: start, lte: end }, ...gpf } },
             },
         }),
         // Login streak distribution from User model
@@ -434,6 +490,7 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         mau: mauUsers,
         dauWauRatio: wauUsers > 0 ? ((dauUsers / wauUsers) * 100) : 0,
         newPlayers: newPlayersInPeriod,
+        newPlayersWithTicket,
         returningPlayers,
         repeatBuyerRate,
         repeatBuyers,
@@ -599,7 +656,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
 // ============================================================
 
 async function getRevenueData(start: Date, end: Date, platform?: string) {
-    const gamePf = buildProductionGameWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
     const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const previousStart = new Date(start.getTime() - periodDays * 24 * 60 * 60 * 1000);
@@ -621,8 +677,6 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         unclaimedPrizeAmount,
         // Daily breakdown
         dailyEntries,
-        // Top games by revenue
-        topGames,
         // Lifetime value
         lifetimeRevenue,
     ] = await Promise.all([
@@ -638,13 +692,20 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, claimedAt: null, paidAt: { not: null, gte: start, lte: end }, ...gpf }, _sum: { prize: true } }),
         prisma.gameEntry.findMany({
             where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
-            select: { paidAt: true, paidAmount: true },
-        }),
-        prisma.game.findMany({
-            where: { ...gamePf, startsAt: { gte: start, lte: end } },
-            select: { id: true, title: true, theme: true, prizePool: true, playerCount: true, startsAt: true, endsAt: true },
-            orderBy: { prizePool: "desc" },
-            take: 10,
+            select: {
+                paidAt: true,
+                paidAmount: true,
+                game: {
+                    select: {
+                        id: true,
+                        title: true,
+                        theme: true,
+                        playerCount: true,
+                        startsAt: true,
+                        endsAt: true,
+                    },
+                },
+            },
         }),
         prisma.gameEntry.aggregate({ where: { paidAt: { not: null }, ...gpf }, _sum: { paidAmount: true } }),
     ]);
@@ -688,6 +749,7 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         date: date.slice(5),
         ...data,
     }));
+    const topGames = summarizeRevenueByGame(dailyEntries as RevenueEntryWithGame[]).slice(0, 10);
 
     return {
         revenue,
@@ -709,8 +771,8 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
             theme: g.theme,
             status: getGamePhase(g),
             playerCount: g.playerCount,
-            ticketCount: g.playerCount,
-            revenue: g.prizePool,
+            ticketCount: g.ticketCount,
+            revenue: g.revenue,
             avgScore: 0,
         })),
         sparkline: chartData.slice(-7).map((d) => d.revenue),
@@ -816,9 +878,9 @@ function OverviewTab({
                 <KPICard
                     title="Onboarding Rate"
                     value={`${data.onboardingRate.toFixed(1)}%`}
-                    tooltip="The share of users created in the selected range who reached game access. Use this to judge signup-to-access conversion."
+                    tooltip="The share of users created in the selected range who reached game access or bought their first ticket."
                     icon={<CheckCircleIcon className="h-5 w-5 text-[#14B985]" />}
-                    subtitle="signup → access"
+                    subtitle="signup → onboarded"
                     glowVariant="success"
                 />
                 <KPICard
@@ -858,34 +920,29 @@ function OverviewTab({
             {/* Revenue chart */}
             <RevenueChart data={data.revenueChartData} />
 
-            {/* Retention snapshot + Theme performance */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Retention snapshot */}
-                <div className="rounded-2xl border border-white/10 p-6">
-                    <h3 className="text-lg font-semibold text-white font-display mb-4">Retention Snapshot</h3>
-                    <div className="grid grid-cols-3 gap-4 mb-6">
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-[#00CFF2] font-body">{retention.dau}</div>
-                            <div className="text-xs text-white/40 mt-1">DAU</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-[#FFC931] font-body">{retention.wau}</div>
-                            <div className="text-xs text-white/40 mt-1">WAU</div>
-                        </div>
-                        <div className="text-center">
-                            <div className="text-2xl font-bold text-[#FB72FF] font-body">{retention.mau}</div>
-                            <div className="text-xs text-white/40 mt-1">MAU</div>
-                        </div>
+            {/* Retention snapshot */}
+            <div className="rounded-2xl border border-white/10 p-6">
+                <h3 className="text-lg font-semibold text-white font-display mb-4">Retention Snapshot</h3>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-[#00CFF2] font-body">{retention.dau}</div>
+                        <div className="text-xs text-white/40 mt-1">DAU</div>
                     </div>
-                    <div className="space-y-3">
-                        <RetentionBar label="New Players" value={retention.newPlayers} total={retention.newPlayers + retention.returningPlayers} color="#14B985" tooltip="Users created in the selected range who were also active during that same range." />
-                        <RetentionBar label="Returning" value={retention.returningPlayers} total={retention.newPlayers + retention.returningPlayers} color="#00CFF2" tooltip="Active users in the selected range who were created before that range started." />
-                        <RetentionBar label="Repeat Buyers" value={retention.repeatBuyers} total={retention.totalBuyers} color="#FFC931" tooltip="Unique buyers with more than one paid ticket in the selected range." />
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-[#FFC931] font-body">{retention.wau}</div>
+                        <div className="text-xs text-white/40 mt-1">WAU</div>
+                    </div>
+                    <div className="text-center">
+                        <div className="text-2xl font-bold text-[#FB72FF] font-body">{retention.mau}</div>
+                        <div className="text-xs text-white/40 mt-1">MAU</div>
                     </div>
                 </div>
-
-                {/* Theme performance */}
-                <ThemeAnalytics data={data.themePerformance} />
+                <div className="space-y-3">
+                    <RetentionBar label="New Players" value={retention.newPlayers} total={retention.newPlayers + retention.returningPlayers} color="#14B985" tooltip="Users created in the selected range who were also active during that same range." />
+                    <RetentionBar label="New Players Who Bought" value={retention.newPlayersWithTicket} total={retention.newPlayers} color="#FB72FF" tooltip="New players created in the selected range who bought at least one paid ticket in that same range." />
+                    <RetentionBar label="Returning" value={retention.returningPlayers} total={retention.newPlayers + retention.returningPlayers} color="#00CFF2" tooltip="Active users in the selected range who were created before that range started." />
+                    <RetentionBar label="Repeat Buyers" value={retention.repeatBuyers} total={retention.totalBuyers} color="#FFC931" tooltip="Unique buyers with more than one paid ticket in the selected range." />
+                </div>
             </div>
 
             {/* Game performance table */}
