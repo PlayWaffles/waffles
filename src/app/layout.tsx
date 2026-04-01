@@ -33,6 +33,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
   },
+  other: {
+    "base:app_id": "69cc9bb31aacdcc17b25514a",
+  },
   metadataBase: new URL(env.rootUrl),
 };
 

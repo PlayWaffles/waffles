@@ -126,6 +126,7 @@ export default async function GameDetailPage({
             id: true,
             onchainId: true,
             platform: true,
+            network: true,
             title: true,
             description: true,
             theme: true,
@@ -348,6 +349,7 @@ export default async function GameDetailPage({
                     onchainId={game.onchainId as `0x${string}`}
                     gameTitle={game.title}
                     platform={game.platform}
+                    network={game.network}
                 />
             )}
 

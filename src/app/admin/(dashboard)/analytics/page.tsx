@@ -189,7 +189,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
                 OR: [
                     { hasGameAccess: true },
                     { accessGrantedAt: { not: null } },
-                    { entries: { some: { paidAt: { not: null } } } },
+                    { entries: { some: { game: gamePf } } },
                 ],
             },
         }),
@@ -208,7 +208,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             where: {
                 ...pf,
                 createdAt: { gte: start, lte: end },
-                entries: { some: { paidAt: { not: null } } },
+                entries: { some: { game: gamePf } },
             },
         }),
         // Average score
@@ -371,12 +371,11 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         // New vs returning in period
         newPlayersInPeriod,
         totalPlayersInPeriod,
-        newPlayersWithTicket,
+        newPlayersWithEntries,
         // Streak distribution
         streakDistribution,
-        // Repeat ticket buyers
-        repeatBuyers,
-        totalBuyers,
+        // Ticket users in period for free vs paid breakdowns
+        entriesInPeriod,
         // Users with last session info
         usersWithLastEntry,
     ] = await Promise.all([
@@ -420,7 +419,7 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
             where: {
                 ...pf,
                 createdAt: { gte: start, lte: end },
-                entries: { some: { paidAt: { not: null, gte: start, lte: end }, ...gpf } },
+                entries: { some: { createdAt: { gte: start, lte: end }, ...gpf } },
             },
         }),
         // Login streak distribution from User model
@@ -430,17 +429,18 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
             _count: true,
             orderBy: { currentStreak: "asc" },
         }),
-        // Repeat buyers (>1 entry)
-        prisma.gameEntry.groupBy({
-            by: ["userId"],
-            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
-            _count: true,
-        }).then((groups) => groups.filter((g) => g._count > 1).length),
-        // Total unique buyers
-        prisma.gameEntry.groupBy({
-            by: ["userId"],
-            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
-        }).then((r) => r.length),
+        prisma.gameEntry.findMany({
+            where: { createdAt: { gte: start, lte: end }, ...gpf },
+            select: {
+                userId: true,
+                purchaseSource: true,
+                user: {
+                    select: {
+                        createdAt: true,
+                    },
+                },
+            },
+        }),
         // Days since last session (last entry per user)
         prisma.user.findMany({
             where: { ...pf, lastLoginAt: { not: null } },
@@ -449,7 +449,40 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
     ]);
 
     const returningPlayers = totalPlayersInPeriod - newPlayersInPeriod;
+    const entryUsers = new Map<string, {
+        entryCount: number;
+        hasPaid: boolean;
+        createdAt: Date;
+    }>();
+
+    entriesInPeriod.forEach((entry) => {
+        const existing = entryUsers.get(entry.userId) ?? {
+            entryCount: 0,
+            hasPaid: false,
+            createdAt: entry.user.createdAt,
+        };
+        existing.entryCount += 1;
+        if (entry.purchaseSource === "PAID" || entry.purchaseSource === "DISCOUNTED") {
+            existing.hasPaid = true;
+        }
+        entryUsers.set(entry.userId, existing);
+    });
+
+    const usersWithEntries = Array.from(entryUsers.values());
+    const totalBuyers = usersWithEntries.length;
+    const repeatBuyers = usersWithEntries.filter((user) => user.entryCount > 1).length;
     const repeatBuyerRate = totalBuyers > 0 ? (repeatBuyers / totalBuyers) * 100 : 0;
+    const newPlayersWithTicketPaid = usersWithEntries.filter(
+        (user) => user.createdAt >= start && user.createdAt <= end && user.hasPaid,
+    ).length;
+    const newPlayersWithTicketFree = Math.max(
+        newPlayersWithEntries - newPlayersWithTicketPaid,
+        0,
+    );
+    const repeatTicketUsersPaid = usersWithEntries.filter(
+        (user) => user.entryCount > 1 && user.hasPaid,
+    ).length;
+    const repeatTicketUsersFree = Math.max(repeatBuyers - repeatTicketUsersPaid, 0);
 
     // Streak distribution buckets
     const streakBuckets = [
@@ -490,11 +523,15 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         mau: mauUsers,
         dauWauRatio: wauUsers > 0 ? ((dauUsers / wauUsers) * 100) : 0,
         newPlayers: newPlayersInPeriod,
-        newPlayersWithTicket,
+        newPlayersWithTicket: newPlayersWithEntries,
+        newPlayersWithTicketPaid,
+        newPlayersWithTicketFree,
         returningPlayers,
         repeatBuyerRate,
         repeatBuyers,
         totalBuyers,
+        repeatTicketUsersPaid,
+        repeatTicketUsersFree,
         streakDistribution: streakData,
         daysSinceLastSession: daysSinceData,
     };
@@ -878,7 +915,7 @@ function OverviewTab({
                 <KPICard
                     title="Onboarding Rate"
                     value={`${data.onboardingRate.toFixed(1)}%`}
-                    tooltip="The share of users created in the selected range who reached game access or bought their first ticket."
+                    tooltip="The share of users created in the selected range who reached game access or claimed any ticket, free or paid."
                     icon={<CheckCircleIcon className="h-5 w-5 text-[#14B985]" />}
                     subtitle="signup → onboarded"
                     glowVariant="success"
@@ -894,7 +931,7 @@ function OverviewTab({
                 <KPICard
                     title="Activation Rate"
                     value={`${data.activationRate.toFixed(1)}%`}
-                    tooltip="The share of users created in the selected range who reached their first paid ticket. This is signup-to-first-purchase activation, not retention."
+                    tooltip="The share of users created in the selected range who reached their first ticket, free or paid. This is signup-to-first-ticket activation, not retention."
                     icon={<FireIcon className="h-5 w-5 text-[#FFC931]" />}
                     subtitle="signup → first ticket"
                 />
@@ -939,9 +976,29 @@ function OverviewTab({
                 </div>
                 <div className="space-y-3">
                     <RetentionBar label="New Players" value={retention.newPlayers} total={retention.newPlayers + retention.returningPlayers} color="#14B985" tooltip="Users created in the selected range who were also active during that same range." />
-                    <RetentionBar label="New Players Who Bought" value={retention.newPlayersWithTicket} total={retention.newPlayers} color="#FB72FF" tooltip="New players created in the selected range who bought at least one paid ticket in that same range." />
+                    <RetentionBar
+                        label="New Players With Ticket"
+                        value={retention.newPlayersWithTicket}
+                        total={retention.newPlayers}
+                        color="#FB72FF"
+                        tooltip="New players created in the selected range who claimed at least one ticket in that same range."
+                        segments={[
+                            { value: retention.newPlayersWithTicketPaid, color: "#14B985", label: "Paid" },
+                            { value: retention.newPlayersWithTicketFree, color: "#00CFF2", label: "Free" },
+                        ]}
+                    />
                     <RetentionBar label="Returning" value={retention.returningPlayers} total={retention.newPlayers + retention.returningPlayers} color="#00CFF2" tooltip="Active users in the selected range who were created before that range started." />
-                    <RetentionBar label="Repeat Buyers" value={retention.repeatBuyers} total={retention.totalBuyers} color="#FFC931" tooltip="Unique buyers with more than one paid ticket in the selected range." />
+                    <RetentionBar
+                        label="Repeat Ticket Users"
+                        value={retention.repeatBuyers}
+                        total={retention.totalBuyers}
+                        color="#FFC931"
+                        tooltip="Unique users with more than one ticket in the selected range."
+                        segments={[
+                            { value: retention.repeatTicketUsersPaid, color: "#14B985", label: "Has paid ticket" },
+                            { value: retention.repeatTicketUsersFree, color: "#00CFF2", label: "Free only" },
+                        ]}
+                    />
                 </div>
             </div>
 
@@ -1186,14 +1243,17 @@ function RetentionBar({
     total,
     color,
     tooltip,
+    segments,
 }: {
     label: string;
     value: number;
     total: number;
     color: string;
     tooltip?: string;
+    segments?: Array<{ value: number; color: string; label: string }>;
 }) {
     const pct = total > 0 ? (value / total) * 100 : 0;
+    const visibleSegments = (segments || []).filter((segment) => segment.value > 0);
     return (
         <div>
             <div className="flex items-center justify-between mb-1">
@@ -1204,8 +1264,33 @@ function RetentionBar({
                 <span className="text-sm font-body" style={{ color }}>{value} ({pct.toFixed(0)}%)</span>
             </div>
             <div className="h-2 bg-white/5 rounded-full overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: color }} />
+                {visibleSegments.length > 0 ? (
+                    <div className="h-full flex" style={{ width: `${Math.max(pct, 1)}%` }}>
+                        {visibleSegments.map((segment) => {
+                            const segmentPct = value > 0 ? (segment.value / value) * 100 : 0;
+                            return (
+                                <div
+                                    key={segment.label}
+                                    className="h-full"
+                                    style={{ width: `${segmentPct}%`, backgroundColor: segment.color }}
+                                />
+                            );
+                        })}
+                    </div>
+                ) : (
+                    <div className="h-full rounded-full" style={{ width: `${Math.max(pct, 1)}%`, backgroundColor: color }} />
+                )}
             </div>
+            {visibleSegments.length > 0 ? (
+                <div className="mt-2 flex items-center gap-4 text-[11px] text-white/45">
+                    {visibleSegments.map((segment) => (
+                        <span key={segment.label} className="flex items-center gap-1.5">
+                            <span className="h-2 w-2 rounded-full" style={{ backgroundColor: segment.color }} />
+                            <span>{segment.label}: {segment.value}</span>
+                        </span>
+                    ))}
+                </div>
+            ) : null}
         </div>
     );
 }

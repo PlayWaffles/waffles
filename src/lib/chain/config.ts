@@ -28,6 +28,7 @@ const farcasterSepoliaChain: Chain = {
   },
 };
 export const farcasterChain = farcasterMainnetChain;
+export const farcasterSepoliaChainConfig = farcasterSepoliaChain;
 export const miniPayChain = celoSepolia;
 
 export function getPlatformChain(target: ChainTarget): Chain {

@@ -3,6 +3,7 @@ export { getPublicClient, getOperatorWalletClient, getSettlerWalletClient } from
 
 export {
   farcasterChain,
+  farcasterSepoliaChainConfig,
   miniPayChain,
   PAYMENT_TOKEN_DECIMALS,
   getPaymentTokenAddress,

@@ -15,37 +15,49 @@ import {
     useGetTotalPrizePool,
     useTokenBalance,
     useApproveToken,
-    useTokenAllowance
+    useTokenAllowance,
+    useContractToken,
 } from "@/hooks/waffleContractHooks";
 import { PAYMENT_TOKEN_DECIMALS, getPaymentTokenAddress } from "@/lib/chain";
 import { parseUnits, formatUnits } from "viem";
 import type { ChainPlatform } from "@/lib/chain/platform";
+import type { GameNetwork } from "@/lib/chain/network";
 
 interface SponsorGameCardProps {
     gameId: string;
     onchainId: `0x${string}`;
     gameTitle: string;
     platform: ChainPlatform;
+    network: GameNetwork;
 }
 
-export function SponsorGameCard({ gameId, onchainId, gameTitle, platform }: SponsorGameCardProps) {
+function getExplorerTxUrl(network: GameNetwork, hash: `0x${string}`) {
+    if (network === "BASE_MAINNET") return `https://basescan.org/tx/${hash}`;
+    if (network === "BASE_SEPOLIA") return `https://sepolia.basescan.org/tx/${hash}`;
+    return `https://celo-sepolia.blockscout.com/tx/${hash}`;
+}
+
+export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, network }: SponsorGameCardProps) {
     const [amount, setAmount] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
-    const tokenAddress = getPaymentTokenAddress(platform);
+    const target = { platform, network } as const;
+    const configuredTokenAddress = getPaymentTokenAddress(target);
 
     // Wallet connection
     const { address, isConnected } = useAccount();
     const { connect } = useConnect();
 
     // Contract hooks
-    const { sponsorPrizePool, hash, isPending: isSponsorPending, isConfirming, isSuccess, error } = useSponsorPrizePool(platform);
-    const { data: totalPrizePool, refetch: refetchPrizePool } = useGetTotalPrizePool(onchainId, platform);
+    const { sponsorPrizePool, hash, isPending: isSponsorPending, isConfirming, isSuccess, error } = useSponsorPrizePool(target);
+    const { data: totalPrizePool, refetch: refetchPrizePool } = useGetTotalPrizePool(onchainId, target);
+    const { data: contractTokenAddress } = useContractToken(target);
+    const tokenAddress = (contractTokenAddress as `0x${string}` | undefined) || configuredTokenAddress;
     const { data: balance } = useTokenBalance(address, tokenAddress);
-    const { approve, isPending: isApprovePending, isSuccess: approveSuccess } = useApproveToken(platform);
+    const { approve, isPending: isApprovePending, isSuccess: approveSuccess } = useApproveToken(target);
     const { data: allowance, refetch: refetchAllowance } = useTokenAllowance(
         address || "0x0000000000000000000000000000000000000000" as `0x${string}`,
         tokenAddress,
-        platform,
+        target,
     );
 
     const isPending = isSponsorPending || isApprovePending || isConfirming;
@@ -218,7 +230,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform }: Spon
                         {hash && (
                             <div className="text-center">
                                 <a
-                                    href={`https://basescan.org/tx/${hash}`}
+                                    href={getExplorerTxUrl(network, hash)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-xs text-white/40 hover:text-white/60 transition-colors"
