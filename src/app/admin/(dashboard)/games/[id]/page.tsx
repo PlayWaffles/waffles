@@ -220,7 +220,10 @@ export default async function GameDetailPage({
                 </div>
                 <div className="flex items-center gap-2">
                     {phase === "ENDED" && (
-                        <RoundupButton gameId={game.id} />
+                        <RoundupButton
+                            gameId={game.id}
+                            isPublished={Boolean(game.onChainAt)}
+                        />
                     )}
                     <Link
                         href={`/admin/games/${game.id}/edit`}

@@ -2,7 +2,7 @@ import { cache } from "react";
 import { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import ResultPageClient from "./client";
-import { buildPrizeOGUrl, buildScoreOGUrl } from "@/lib/og";
+import { buildJoinedOGUrl, buildPrizeOGUrl, buildScoreOGUrl } from "@/lib/og";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import { buildMiniAppEmbed } from "@/lib/farcaster";
@@ -52,43 +52,62 @@ export async function generateMetadata({
 
   // Extract share params (passed when sharing)
   const username = (sParams.username as string) || "Player";
-  const prizeAmount = parseInt((sParams.prizeAmount as string) || "0", 10);
-  const score = parseInt((sParams.score as string) || "0", 10);
+  const prizeAmountParam = sParams.prizeAmount as string | undefined;
+  const scoreParam = sParams.score as string | undefined;
+  const rankParam = sParams.rank as string | undefined;
+  const prizeAmount = parseInt(prizeAmountParam || "0", 10);
+  const score = parseInt(scoreParam || "0", 10);
   const pfpUrl = sParams.pfpUrl as string | undefined;
   const gameNumber = game.gameNumber;
   const category = game.theme || "Trivia";
-  const rank = sParams.rank ? parseInt(sParams.rank as string, 10) : undefined;
+  const rank = rankParam ? parseInt(rankParam, 10) : undefined;
+  const hasResultShareParams =
+    typeof prizeAmountParam === "string" ||
+    typeof scoreParam === "string" ||
+    typeof rankParam === "string";
 
   // Build OG image URL based on context
   let imageUrl: string | null = null;
   if (prizeAmount > 0) {
     // Prize winner - use prize OG
     imageUrl = buildPrizeOGUrl({ prizeAmount, pfpUrl });
-  } else if (score > 0) {
+  } else if (hasResultShareParams) {
     // Score share - use score OG
     imageUrl = buildScoreOGUrl({ score, username, gameNumber, category, rank, pfpUrl });
+  } else {
+    const themeImageUrl = game.coverUrl
+      ? game.coverUrl.startsWith("http")
+        ? game.coverUrl
+        : `${env.rootUrl}${game.coverUrl}`
+      : `${env.rootUrl}/logo.png`;
+
+    imageUrl = buildJoinedOGUrl({
+      username,
+      prizePool: game.prizePool,
+      theme: game.theme,
+      pfpUrl,
+      themeImageUrl,
+    });
   }
 
 
   // Metadata based on context
   const title = prizeAmount > 0
     ? `${username} won on Waffles!`
-    : score > 0
+    : hasResultShareParams
       ? `${username} scored ${score.toLocaleString()} pts on Waffles!`
       : `Game Results | ${game.title || game.theme}`;
   const description = prizeAmount > 0
     ? `${username} just won $${prizeAmount.toLocaleString()} on Waffles!`
-    : score > 0
+    : hasResultShareParams
       ? `${username} scored ${score.toLocaleString()} points on Waffles!`
       : `Check out the results for ${game.title || game.theme}`;
   const pageUrl = `${env.rootUrl}/game/${gameId}/result`;
-  const embed = imageUrl
-    ? buildMiniAppEmbed({
-        imageUrl,
-        buttonTitle: "View Results",
-        url: pageUrl,
-      })
-    : null;
+  const embed = buildMiniAppEmbed({
+    imageUrl: imageUrl || `${env.rootUrl}/logo.png`,
+    buttonTitle: "View Results",
+    url: pageUrl,
+  });
 
   return {
     title,
@@ -98,11 +117,9 @@ export async function generateMetadata({
       description,
       images: imageUrl ? [imageUrl] : [],
     },
-    other: embed
-      ? {
-          "fc:miniapp": JSON.stringify(embed),
-        }
-      : undefined,
+    other: {
+      "fc:miniapp": JSON.stringify(embed),
+    },
   };
 }
 
