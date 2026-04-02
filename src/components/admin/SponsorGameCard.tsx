@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
     SparklesIcon,
     ArrowPathIcon,
@@ -8,18 +9,32 @@ import {
     ExclamationCircleIcon,
     BanknotesIcon,
 } from "@heroicons/react/24/outline";
-import { useAccount, useConnect } from "wagmi";
-import { injected } from "wagmi/connectors";
 import {
-    useSponsorPrizePool,
+    useAccount,
+    useChainId,
+    useConnect,
+    useSwitchChain,
+    useWriteContract,
+} from "wagmi";
+import { readContract, waitForTransactionReceipt } from "wagmi/actions";
+import { BaseError, formatUnits, parseUnits } from "viem";
+
+import {
     useGetTotalPrizePool,
     useTokenBalance,
-    useApproveToken,
     useTokenAllowance,
     useContractToken,
 } from "@/hooks/waffleContractHooks";
-import { PAYMENT_TOKEN_DECIMALS, getPaymentTokenAddress } from "@/lib/chain";
-import { parseUnits, formatUnits } from "viem";
+import {
+    PAYMENT_TOKEN_DECIMALS,
+    getPaymentTokenAddress,
+    getPlatformChain,
+    getWaffleContractAddress,
+} from "@/lib/chain";
+import { ERC20_ABI } from "@/lib/constants";
+import { wagmiConfig } from "@/lib/wagmi/config";
+import { waffleGameAbi } from "@/lib/chain/abi";
+import { withBuilderCodeDataSuffix } from "@/lib/chain/builderCode";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 
@@ -31,83 +46,553 @@ interface SponsorGameCardProps {
     network: GameNetwork;
 }
 
+type SponsorStep =
+    | "idle"
+    | "connecting"
+    | "switching"
+    | "approving"
+    | "confirming-approval"
+    | "sponsoring"
+    | "confirming-sponsorship"
+    | "success"
+    | "error";
+
 function getExplorerTxUrl(network: GameNetwork, hash: `0x${string}`) {
     if (network === "BASE_MAINNET") return `https://basescan.org/tx/${hash}`;
     if (network === "BASE_SEPOLIA") return `https://sepolia.basescan.org/tx/${hash}`;
     return `https://celo-sepolia.blockscout.com/tx/${hash}`;
 }
 
+function toError(error: unknown) {
+    return error instanceof Error ? error : new Error(String(error));
+}
+
+function getContractErrorMessage(error: unknown) {
+    if (!error) return null;
+
+    const normalizedError = toError(error);
+
+    if (normalizedError instanceof BaseError) {
+        const revertError = normalizedError.walk((candidate) => {
+            if (!candidate || typeof candidate !== "object") {
+                return false;
+            }
+
+            const shortMessage = "shortMessage" in candidate && typeof candidate.shortMessage === "string"
+                ? candidate.shortMessage
+                : "";
+
+            if (!shortMessage) {
+                return false;
+            }
+
+            return shortMessage.toLowerCase().includes("reverted");
+        });
+
+        if (
+            revertError &&
+            typeof revertError === "object" &&
+            "shortMessage" in revertError &&
+            typeof revertError.shortMessage === "string"
+        ) {
+            return revertError.shortMessage;
+        }
+
+        if (normalizedError.shortMessage) {
+            return normalizedError.shortMessage;
+        }
+    }
+
+    return normalizedError.message;
+}
+
+async function getLiveWalletChainId() {
+    if (typeof window === "undefined") return null;
+
+    const ethereum = (window as Window & {
+        ethereum?: { request?: (args: { method: string }) => Promise<string> };
+    }).ethereum;
+
+    if (!ethereum?.request) return null;
+
+    try {
+        const hexChainId = await ethereum.request({ method: "eth_chainId" });
+        return Number.parseInt(hexChainId, 16);
+    } catch {
+        return null;
+    }
+}
+
+async function requestLiveWalletChainSwitch(targetChainId: number) {
+    if (typeof window === "undefined") {
+        throw new Error("No injected wallet provider found.");
+    }
+
+    const ethereum = (window as Window & {
+        ethereum?: {
+            request?: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+        };
+    }).ethereum;
+
+    if (!ethereum?.request) {
+        throw new Error("No injected wallet provider found.");
+    }
+
+    await ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: `0x${targetChainId.toString(16)}` }],
+    });
+}
+
+function formatUsdAmount(amount: string) {
+    const parsed = Number(amount);
+    if (!Number.isFinite(parsed)) return amount;
+    return parsed.toFixed(2);
+}
+
 export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, network }: SponsorGameCardProps) {
+    const router = useRouter();
     const [amount, setAmount] = useState("");
     const [isExpanded, setIsExpanded] = useState(false);
-    const target = { platform, network } as const;
+    const [step, setStep] = useState<SponsorStep>("idle");
+    const [errorMessage, setErrorMessage] = useState<string | null>(null);
+    const [successMessage, setSuccessMessage] = useState<string | null>(null);
+    const [txHash, setTxHash] = useState<`0x${string}` | null>(null);
+    const [liveWalletChainId, setLiveWalletChainId] = useState<number | null>(null);
+
+    const target = useMemo(() => ({ platform, network } as const), [network, platform]);
+    const targetChain = getPlatformChain(target);
+    const contractAddress = getWaffleContractAddress(target);
     const configuredTokenAddress = getPaymentTokenAddress(target);
+    const wagmiChainId = useChainId();
 
-    // Wallet connection
     const { address, isConnected } = useAccount();
-    const { connect } = useConnect();
+    const { connectAsync, connectors, isPending: isConnecting } = useConnect();
+    const { switchChainAsync } = useSwitchChain();
+    const { writeContractAsync } = useWriteContract();
 
-    // Contract hooks
-    const { sponsorPrizePool, hash, isPending: isSponsorPending, isConfirming, isSuccess, error } = useSponsorPrizePool(target);
-    const { data: totalPrizePool, refetch: refetchPrizePool } = useGetTotalPrizePool(onchainId, target);
+    const preferredConnector = useMemo(
+        () => connectors.find((connector) => connector.id === "injected") || connectors[0],
+        [connectors],
+    );
+
     const { data: contractTokenAddress } = useContractToken(target);
-    const tokenAddress = (contractTokenAddress as `0x${string}` | undefined) || configuredTokenAddress;
-    const { data: balance } = useTokenBalance(address, tokenAddress);
-    const { approve, isPending: isApprovePending, isSuccess: approveSuccess } = useApproveToken(target);
-    const { data: allowance, refetch: refetchAllowance } = useTokenAllowance(
-        address || "0x0000000000000000000000000000000000000000" as `0x${string}`,
+    const tokenAddress = (contractTokenAddress as `0x${string}` | undefined) ?? configuredTokenAddress;
+
+    const {
+        data: totalPrizePool,
+        refetch: refetchPrizePool,
+    } = useGetTotalPrizePool(onchainId, target);
+    const {
+        data: balance,
+        refetch: refetchBalance,
+    } = useTokenBalance(address, tokenAddress, target);
+    const {
+        data: allowance,
+        refetch: refetchAllowance,
+    } = useTokenAllowance(
+        (address ?? "0x0000000000000000000000000000000000000000") as `0x${string}`,
         tokenAddress,
         target,
     );
 
-    const isPending = isSponsorPending || isApprovePending || isConfirming;
-
-    // Calculate if approval is needed
     const amountInUnits = amount ? parseUnits(amount, PAYMENT_TOKEN_DECIMALS) : BigInt(0);
-    const allowanceBigInt = typeof allowance === "bigint" ? allowance : BigInt(0);
-    const needsApproval = amountInUnits > BigInt(0) && amountInUnits > allowanceBigInt;
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-
-        if (!isConnected) {
-            console.log("[Sponsor] Not connected, connecting...");
-            connect({ connector: injected() });
-            return;
-        }
-
-        if (!amount || parseFloat(amount) <= 0) {
-            console.log("[Sponsor] Invalid amount:", amount);
-            return;
-        }
-
-        if (needsApproval) {
-            console.log("[Sponsor] Approving", amount, "USDC");
-            approve(amount);
-            return;
-        }
-
-        console.log("[Sponsor] Sponsoring", amount, "USDC to game", onchainId);
-        sponsorPrizePool(onchainId, amount);
-    };
-
-    // After success, refetch
-    if (isSuccess || approveSuccess) {
-        refetchPrizePool();
-        refetchAllowance();
-    }
-
+    const maxAmount = balance ? formatUnits(balance as bigint, PAYMENT_TOKEN_DECIMALS) : "0";
     const formattedBalance = balance
         ? parseFloat(formatUnits(balance as bigint, PAYMENT_TOKEN_DECIMALS)).toFixed(2)
         : "0.00";
-
     const formattedPrizePool = totalPrizePool
         ? parseFloat(formatUnits(totalPrizePool as bigint, PAYMENT_TOKEN_DECIMALS)).toFixed(2)
         : "0.00";
+    const allowanceBigInt = typeof allowance === "bigint" ? allowance : BigInt(0);
+    const effectiveChainId = liveWalletChainId ?? wagmiChainId;
+    const isOnCorrectChain = isConnected && effectiveChainId === targetChain.id;
+    const needsApproval = amountInUnits > BigInt(0) && allowanceBigInt < amountInUnits;
+    const isWorking = step !== "idle" && step !== "success" && step !== "error";
+
+    const refreshLiveChainId = useCallback(async () => {
+        const nextChainId = await getLiveWalletChainId();
+        setLiveWalletChainId(nextChainId);
+        return nextChainId;
+    }, []);
+
+    useEffect(() => {
+        if (!isConnected) {
+            setLiveWalletChainId(null);
+            return;
+        }
+
+        void refreshLiveChainId();
+    }, [isConnected, refreshLiveChainId, wagmiChainId]);
+
+    useEffect(() => {
+        console.log("[Sponsor]", {
+            stage: "state",
+            gameId,
+            gameTitle,
+            onchainId,
+            address: address ?? null,
+            isConnected,
+            amount,
+            amountInUnits: amountInUnits.toString(),
+            tokenAddress,
+            configuredTokenAddress,
+            contractTokenAddress: contractTokenAddress ?? null,
+            balance: typeof balance === "bigint" ? balance.toString() : null,
+            allowance: typeof allowance === "bigint" ? allowance.toString() : null,
+            needsApproval,
+            wagmiChainId,
+            liveWalletChainId,
+            effectiveChainId,
+            targetChainId: targetChain.id,
+            step,
+            txHash,
+            errorMessage,
+        });
+    }, [
+        address,
+        allowance,
+        amount,
+        amountInUnits,
+        balance,
+        configuredTokenAddress,
+        contractTokenAddress,
+        effectiveChainId,
+        errorMessage,
+        gameId,
+        gameTitle,
+        isConnected,
+        liveWalletChainId,
+        needsApproval,
+        onchainId,
+        step,
+        targetChain.id,
+        tokenAddress,
+        txHash,
+        wagmiChainId,
+    ]);
+
+    const readBalanceOnTargetChain = useCallback(
+        async (ownerAddress: `0x${string}`) => {
+            const result = await readContract(wagmiConfig, {
+                chainId: targetChain.id,
+                address: tokenAddress,
+                abi: ERC20_ABI,
+                functionName: "balanceOf",
+                args: [ownerAddress],
+            });
+
+            return result as bigint;
+        },
+        [targetChain.id, tokenAddress],
+    );
+
+    const readAllowanceOnTargetChain = useCallback(
+        async (ownerAddress: `0x${string}`) => {
+            const result = await readContract(wagmiConfig, {
+                chainId: targetChain.id,
+                address: tokenAddress,
+                abi: ERC20_ABI,
+                functionName: "allowance",
+                args: [ownerAddress, contractAddress],
+            });
+
+            return result as bigint;
+        },
+        [contractAddress, targetChain.id, tokenAddress],
+    );
+
+    const ensureTargetChain = useCallback(async () => {
+        const initialLiveChainId = await refreshLiveChainId();
+
+        if (initialLiveChainId === targetChain.id) {
+            return initialLiveChainId;
+        }
+
+        setStep("switching");
+        console.log("[Sponsor]", {
+            stage: "chain-switch-start",
+            liveWalletChainId: initialLiveChainId,
+            wagmiChainId,
+            targetChainId: targetChain.id,
+        });
+
+        try {
+            await switchChainAsync({ chainId: targetChain.id });
+        } catch (wagmiError) {
+            console.log("[Sponsor]", {
+                stage: "chain-switch-wagmi-error",
+                message: getContractErrorMessage(wagmiError),
+            });
+
+            await requestLiveWalletChainSwitch(targetChain.id);
+        }
+
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        const confirmedLiveChainId = await refreshLiveChainId();
+
+        console.log("[Sponsor]", {
+            stage: "chain-switch-finished",
+            confirmedLiveChainId,
+            targetChainId: targetChain.id,
+        });
+
+        if (confirmedLiveChainId !== targetChain.id) {
+            throw new Error(
+                `Your wallet is still on chain ${confirmedLiveChainId ?? "unknown"}. Please switch it to ${targetChain.name} (chain ${targetChain.id}) and try again.`,
+            );
+        }
+
+        return confirmedLiveChainId;
+    }, [refreshLiveChainId, switchChainAsync, targetChain.id, targetChain.name, wagmiChainId]);
+
+    const handleSwitchNetwork = async () => {
+        setErrorMessage(null);
+        setSuccessMessage(null);
+
+        try {
+            await ensureTargetChain();
+            setStep("idle");
+        } catch (error) {
+            setStep("error");
+            setErrorMessage(
+                getContractErrorMessage(error) ??
+                `Please switch your wallet to ${targetChain.name} (chain ${targetChain.id}).`,
+            );
+        }
+    };
+
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setErrorMessage(null);
+        setSuccessMessage(null);
+
+        console.log("[Sponsor]", {
+            stage: "submit",
+            gameId,
+            onchainId,
+            amount,
+            isConnected,
+            effectiveChainId,
+            targetChainId: targetChain.id,
+        });
+
+        if (!amount || Number(amount) <= 0) {
+            setStep("error");
+            setErrorMessage("Enter a sponsorship amount greater than 0.");
+            return;
+        }
+
+        try {
+            let sponsorAddress = address;
+
+            if (!sponsorAddress || !isConnected) {
+                if (!preferredConnector) {
+                    throw new Error("No wallet connector is available.");
+                }
+
+                setStep("connecting");
+                console.log("[Sponsor]", {
+                    stage: "connect-start",
+                    connectorId: preferredConnector.id,
+                    connectorName: preferredConnector.name,
+                });
+
+                const connection = await connectAsync({ connector: preferredConnector });
+                sponsorAddress = connection.accounts[0] as `0x${string}` | undefined;
+
+                console.log("[Sponsor]", {
+                    stage: "connect-success",
+                    connectorId: preferredConnector.id,
+                    connectorName: preferredConnector.name,
+                    account: sponsorAddress ?? null,
+                    chainId: connection.chainId,
+                });
+            }
+
+            if (!sponsorAddress) {
+                throw new Error("Wallet connected, but no account was returned.");
+            }
+
+            await ensureTargetChain();
+
+            const [latestBalance, latestAllowance] = await Promise.all([
+                readBalanceOnTargetChain(sponsorAddress),
+                readAllowanceOnTargetChain(sponsorAddress),
+            ]);
+
+            console.log("[Sponsor]", {
+                stage: "preflight",
+                sponsorAddress,
+                latestBalance: latestBalance.toString(),
+                latestAllowance: latestAllowance.toString(),
+                amountInUnits: amountInUnits.toString(),
+            });
+
+            if (latestBalance < amountInUnits) {
+                throw new Error("Insufficient USDC balance for this sponsorship.");
+            }
+
+            if (latestAllowance < amountInUnits) {
+                setStep("approving");
+                console.log("[Sponsor]", {
+                    stage: "approval-submit",
+                    sponsorAddress,
+                    amountInUnits: amountInUnits.toString(),
+                    tokenAddress,
+                    contractAddress,
+                    chainId: targetChain.id,
+                });
+
+                const approvalHash = await writeContractAsync(
+                    withBuilderCodeDataSuffix({
+                        chainId: targetChain.id,
+                        address: tokenAddress,
+                        abi: ERC20_ABI,
+                        functionName: "approve",
+                        args: [contractAddress, amountInUnits],
+                    }),
+                );
+
+                setTxHash(approvalHash);
+                setStep("confirming-approval");
+                console.log("[Sponsor]", {
+                    stage: "approval-submitted",
+                    approvalHash,
+                });
+
+                await waitForTransactionReceipt(wagmiConfig, {
+                    hash: approvalHash,
+                    chainId: targetChain.id,
+                    confirmations: 1,
+                });
+
+                console.log("[Sponsor]", {
+                    stage: "approval-confirmed",
+                    approvalHash,
+                });
+
+                const updatedAllowance = await readAllowanceOnTargetChain(sponsorAddress);
+
+                console.log("[Sponsor]", {
+                    stage: "approval-postcheck",
+                    updatedAllowance: updatedAllowance.toString(),
+                    requiredAllowance: amountInUnits.toString(),
+                });
+
+                if (updatedAllowance < amountInUnits) {
+                    throw new Error(
+                        `Approval confirmed, but allowance is still too low on ${targetChain.name}.`,
+                    );
+                }
+            }
+
+            setStep("sponsoring");
+            console.log("[Sponsor]", {
+                stage: "sponsor-submit",
+                sponsorAddress,
+                onchainId,
+                amountInUnits: amountInUnits.toString(),
+                contractAddress,
+                chainId: targetChain.id,
+            });
+
+            const sponsorshipHash = await writeContractAsync(
+                withBuilderCodeDataSuffix({
+                    chainId: targetChain.id,
+                    address: contractAddress,
+                    abi: waffleGameAbi,
+                    functionName: "sponsorPrizePool",
+                    args: [onchainId, amountInUnits],
+                }),
+            );
+
+            setTxHash(sponsorshipHash);
+            setStep("confirming-sponsorship");
+            console.log("[Sponsor]", {
+                stage: "sponsor-submitted",
+                sponsorshipHash,
+            });
+
+            await waitForTransactionReceipt(wagmiConfig, {
+                hash: sponsorshipHash,
+                chainId: targetChain.id,
+                confirmations: 1,
+            });
+
+            console.log("[Sponsor]", {
+                stage: "sponsor-confirmed",
+                sponsorshipHash,
+            });
+
+            const syncResponse = await fetch(`/api/v1/admin/games/${gameId}/sponsorship/sync`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ txHash: sponsorshipHash }),
+            });
+
+            const syncResult = (await syncResponse.json().catch(() => null)) as
+                | { success: true; prizePool: number }
+                | { error?: string }
+                | null;
+
+            console.log("[Sponsor]", {
+                stage: "db-sync",
+                ok: syncResponse.ok,
+                result: syncResult,
+            });
+
+            if (!syncResponse.ok || !syncResult || !("success" in syncResult)) {
+                throw new Error(
+                    syncResult && "error" in syncResult && syncResult.error
+                        ? syncResult.error
+                        : "Sponsorship confirmed on-chain, but DB sync failed.",
+                );
+            }
+
+            await Promise.all([
+                refetchPrizePool(),
+                refetchAllowance(),
+                refetchBalance(),
+                refreshLiveChainId(),
+            ]);
+
+            setAmount("");
+            setStep("success");
+            setSuccessMessage(
+                `${gameTitle} prize pool increased by $${formatUsdAmount(amount)}.`,
+            );
+            router.refresh();
+        } catch (error) {
+            const message = getContractErrorMessage(error) ?? "Sponsorship failed.";
+
+            console.log("[Sponsor]", {
+                stage: "flow-error",
+                message,
+            });
+
+            setStep("error");
+            setErrorMessage(message);
+        }
+    };
+
+    const submitLabel = (() => {
+        if (step === "connecting" || isConnecting) return "Connecting Wallet...";
+        if (step === "switching") return "Switching Network...";
+        if (step === "approving") return "Approving USDC...";
+        if (step === "confirming-approval") return "Confirming Approval...";
+        if (step === "sponsoring") return "Submitting Sponsorship...";
+        if (step === "confirming-sponsorship") return "Confirming Sponsorship...";
+        if (!isConnected) return "Connect Wallet";
+        if (!isOnCorrectChain) return `Switch to ${targetChain.name}`;
+        if (needsApproval) return "Approve & Sponsor Prize Pool";
+        return "Sponsor Prize Pool";
+    })();
 
     return (
         <div className="bg-linear-to-br from-[#14B985]/10 to-[#14B985]/5 border border-[#14B985]/20 rounded-2xl overflow-hidden">
-            {/* Header - Always visible */}
             <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="w-full p-5 flex items-center justify-between hover:bg-white/5 transition-colors"
@@ -119,7 +604,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                     <div className="text-left">
                         <h3 className="font-bold text-white font-display">Sponsor Prize Pool</h3>
                         <p className="text-sm text-white/50">
-                            Add funds to increase the prize pool
+                            Add funds directly from your wallet on the game&apos;s chain
                         </p>
                     </div>
                 </div>
@@ -136,30 +621,26 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                 </div>
             </button>
 
-            {/* Expandable Form */}
             {isExpanded && (
                 <div className="px-5 pb-5 pt-2 border-t border-white/10">
-                    {/* Success Message */}
-                    {isSuccess && (
+                    {successMessage && (
                         <div className="mb-4 p-3 bg-[#14B985]/20 border border-[#14B985]/30 rounded-xl flex items-center gap-3">
                             <CheckCircleIcon className="h-5 w-5 text-[#14B985] shrink-0" />
                             <div>
                                 <p className="text-sm font-medium text-[#14B985]">Sponsorship Successful!</p>
-                                <p className="text-xs text-white/50">Prize pool has been increased</p>
+                                <p className="text-xs text-white/50">{successMessage}</p>
                             </div>
                         </div>
                     )}
 
-                    {/* Error Message */}
-                    {error && (
+                    {errorMessage && (
                         <div className="mb-4 p-3 bg-red-500/20 border border-red-500/30 rounded-xl flex items-center gap-3">
                             <ExclamationCircleIcon className="h-5 w-5 text-red-400 shrink-0" />
-                            <p className="text-sm text-red-400">{error.message}</p>
+                            <p className="text-sm text-red-400">{errorMessage}</p>
                         </div>
                     )}
 
                     <form onSubmit={handleSubmit} className="space-y-4">
-                        {/* Amount Input */}
                         <div>
                             <label className="block text-sm font-medium text-white/70 mb-2">
                                 Sponsorship Amount
@@ -172,7 +653,12 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                                 <input
                                     type="number"
                                     value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
+                                    onChange={(event) => {
+                                        setAmount(event.target.value);
+                                        if (step === "success") {
+                                            setStep("idle");
+                                        }
+                                    }}
                                     placeholder="0.00"
                                     min="0"
                                     step="0.01"
@@ -183,7 +669,6 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                                 </div>
                             </div>
 
-                            {/* Balance Info */}
                             {isConnected && (
                                 <div className="mt-2 flex items-center justify-between text-xs">
                                     <span className="text-white/40">
@@ -191,46 +676,67 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={() => setAmount(formattedBalance)}
+                                        onClick={() => setAmount(maxAmount)}
                                         className="text-[#14B985] hover:text-[#14B985]/80 font-medium"
                                     >
                                         Max
                                     </button>
                                 </div>
                             )}
+
+                            {isConnected && !isOnCorrectChain && (
+                                <div className="mt-2 flex items-center justify-between gap-3">
+                                    <p className="text-xs text-amber-300">
+                                        Wrong network. Wallet is on chain {effectiveChainId ?? "unknown"} and needs to switch to {targetChain.name} ({targetChain.id}).
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            void handleSwitchNetwork();
+                                        }}
+                                        disabled={isWorking}
+                                        className="shrink-0 rounded-lg border border-[#14B985]/40 px-3 py-1.5 text-xs font-medium text-[#14B985] hover:bg-[#14B985]/10 disabled:opacity-60"
+                                    >
+                                        {step === "switching" ? "Switching..." : `Switch to ${targetChain.name}`}
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Submit Button */}
                         <button
                             type="submit"
-                            disabled={isPending || (!amount && isConnected)}
+                            disabled={isWorking || (!amount && isConnected)}
                             className="w-full py-4 bg-[#14B985] hover:bg-[#14B985]/90 disabled:bg-white/10 disabled:cursor-not-allowed text-white font-bold rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#14B985]/20"
                         >
-                            {isPending ? (
+                            {isWorking || isConnecting ? (
                                 <>
                                     <ArrowPathIcon className="h-5 w-5 animate-spin" />
-                                    {isConfirming ? "Confirming..." : needsApproval ? "Approving..." : "Sponsoring..."}
+                                    {submitLabel}
                                 </>
                             ) : !isConnected ? (
-                                "Connect Wallet"
+                                submitLabel
+                            ) : !isOnCorrectChain ? (
+                                <>
+                                    <ArrowPathIcon className="h-5 w-5" />
+                                    {submitLabel}
+                                </>
                             ) : needsApproval ? (
                                 <>
                                     <CheckCircleIcon className="h-5 w-5" />
-                                    Approve USDC
+                                    {submitLabel}
                                 </>
                             ) : (
                                 <>
                                     <SparklesIcon className="h-5 w-5" />
-                                    Sponsor Prize Pool
+                                    {submitLabel}
                                 </>
                             )}
                         </button>
 
-                        {/* Transaction Hash */}
-                        {hash && (
+                        {txHash && (
                             <div className="text-center">
                                 <a
-                                    href={getExplorerTxUrl(network, hash)}
+                                    href={getExplorerTxUrl(network, txHash)}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-xs text-white/40 hover:text-white/60 transition-colors"

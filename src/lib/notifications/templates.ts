@@ -74,6 +74,12 @@ export const preGame = {
     title: `A Friend joined Waffles #${formatGameNum(gameNumber)}! 🫣`,
     body: "Tap to see who just bought a ticket.",
   }),
+
+  /** When the prize pool gets sponsored */
+  prizePoolBoost: (gameNumber: number, boostAmount: string, totalPrizePool: string): NotificationTemplate => ({
+    title: `Waffles #${formatGameNum(gameNumber)} Just Got a 2x Boost 🧇`,
+    body: `Prize pool is now $${totalPrizePool}. You're welcome.`,
+  }),
 };
 
 // ==========================================

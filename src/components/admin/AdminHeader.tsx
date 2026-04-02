@@ -1,7 +1,6 @@
 "use client";
 
 import { useAccount, useConnect, useDisconnect } from "wagmi";
-import { injected } from "wagmi/connectors";
 import {
     ArrowRightEndOnRectangleIcon,
     WalletIcon
@@ -15,8 +14,9 @@ interface AdminHeaderProps {
 export function AdminHeader({ username, pfpUrl }: AdminHeaderProps) {
     const { isConnected, address, chain } = useAccount();
 
-    const { connect, isPending: isConnecting } = useConnect();
+    const { connect, connectors, isPending: isConnecting } = useConnect();
     const { disconnect } = useDisconnect();
+    const preferredConnector = connectors.find((connector) => connector.id === "injected") || connectors[0];
 
 
     return (
@@ -53,8 +53,11 @@ export function AdminHeader({ username, pfpUrl }: AdminHeaderProps) {
                     </div>
                 ) : (
                     <button
-                        onClick={() => connect({ connector: injected() })}
-                        disabled={isConnecting}
+                        onClick={() => {
+                            if (!preferredConnector) return;
+                            connect({ connector: preferredConnector });
+                        }}
+                        disabled={isConnecting || !preferredConnector}
                         className="flex items-center gap-1.5 px-2.5 py-1 bg-[#FFC931]/10 hover:bg-[#FFC931]/20 rounded-lg text-xs font-medium text-[#FFC931] transition-colors disabled:opacity-50"
                     >
                         <WalletIcon className="h-3.5 w-3.5" />
