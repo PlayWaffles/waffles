@@ -470,7 +470,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     }
 
     const handleNotificationsEnabled = () => {
-      setNotificationNudgeDismissed(false);
+      setNotificationNudgeDismissed(true);
       setNotificationNudgeError(null);
       setIsEnablingNotifications(false);
       refetch().catch(console.error);
