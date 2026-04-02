@@ -570,17 +570,42 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         themeParticipation,
     ] = await Promise.all([
         prisma.gameEntry.findMany({
-            where: { paidAt: { not: null, gte: start, lte: end }, answered: { gt: 0 }, ...gpf },
-            select: { score: true, answered: true, answers: true, rank: true, leftAt: true, game: { select: { id: true, title: true, theme: true } } },
+            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
+            select: {
+                score: true,
+                answered: true,
+                answers: true,
+                rank: true,
+                leftAt: true,
+                createdAt: true,
+                paidAmount: true,
+                purchaseSource: true,
+                game: {
+                    select: {
+                        id: true,
+                        title: true,
+                        theme: true,
+                        startsAt: true,
+                    },
+                },
+            },
             take: 10000,
         }),
         prisma.question.findMany({
             where: { game: { ...gamePf, startsAt: { gte: start, lte: end } } },
-            select: { id: true, content: true, correctIndex: true, game: { select: { title: true } } },
+            select: {
+                id: true,
+                gameId: true,
+                content: true,
+                correctIndex: true,
+                roundIndex: true,
+                orderInRound: true,
+                game: { select: { title: true } },
+            },
         }),
         prisma.gameEntry.findMany({
             where: { paidAt: { not: null, gte: start, lte: end }, rank: { not: null }, ...gpf },
-            select: { rank: true },
+            select: { rank: true, purchaseSource: true, createdAt: true, game: { select: { startsAt: true } } },
         }),
         prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, rank: 1, ...gpf } }),
         prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, rank: { not: null }, ...gpf } }),
@@ -593,27 +618,114 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         }),
     ]);
 
-    // Single pass over entries: accuracy, speed, completion, leave rate, and per-question stats
+    const gameQuestions = new Map<string, typeof questionsRaw>();
+    for (const question of questionsRaw) {
+        const existing = gameQuestions.get(question.gameId) ?? [];
+        existing.push(question);
+        gameQuestions.set(question.gameId, existing);
+    }
+
+    const firstQuestionIds = new Set<string>();
+    const lastQuestionIds = new Set<string>();
+    const gameQuestionCounts = new Map<string, number>();
+    for (const [gameId, questions] of gameQuestions.entries()) {
+        const ordered = [...questions].sort((a, b) =>
+            a.roundIndex - b.roundIndex || a.orderInRound - b.orderInRound
+        );
+        const lastQuestion = ordered[ordered.length - 1];
+        if (ordered[0]) firstQuestionIds.add(ordered[0].id);
+        if (lastQuestion) lastQuestionIds.add(lastQuestion.id);
+        gameQuestionCounts.set(gameId, ordered.length);
+    }
+
+    // Single pass over entries: accuracy, speed, completion, leave rate, and behavior stats
     let totalCorrect = 0;
     let totalAnswered = 0;
     let totalMs = 0;
     let msCount = 0;
     const scores: number[] = [];
-    let completedCount = 0;
+    let playedCount = 0;
     let leftCount = 0;
     const questionStatsMap = new Map<string, { total: number; correct: number; totalMs: number; msCount: number }>();
+    const ticketTypeStats = {
+        paid: { entries: 0, noShow: 0, partial: 0, completedAll: 0, revenue: 0, noShowRevenue: 0 },
+        free: { entries: 0, noShow: 0, partial: 0, completedAll: 0, revenue: 0, noShowRevenue: 0 },
+    };
+    const answerQuality = {
+        paid: { correct: 0, answered: 0, totalMs: 0, msCount: 0, totalPoints: 0 },
+        free: { correct: 0, answered: 0, totalMs: 0, msCount: 0, totalPoints: 0 },
+    };
+    let lateEntries = 0;
+    let latePlayed = 0;
+    let lateNoShows = 0;
+    let startedEntries = 0;
+    let reachedFinalQuestion = 0;
 
     for (const entry of entries) {
         scores.push(entry.score);
         if (entry.leftAt) leftCount++;
+        const isPaid =
+            entry.purchaseSource === "PAID" || entry.purchaseSource === "DISCOUNTED";
+        const ticketBucket = isPaid ? ticketTypeStats.paid : ticketTypeStats.free;
+        const qualityBucket = isPaid ? answerQuality.paid : answerQuality.free;
+        const questionCount = gameQuestionCounts.get(entry.game.id) ?? 0;
+        const isLate = entry.createdAt > entry.game.startsAt;
+
+        ticketBucket.entries++;
+        ticketBucket.revenue += entry.paidAmount ?? 0;
+        if (isLate) lateEntries++;
+
         const answers = entry.answers as Record<string, AnswerData> | null;
         if (!answers || typeof answers !== "object") continue;
         const answerEntries = Object.entries(answers);
-        if (answerEntries.length > 0) completedCount++;
+        const answeredQuestionIds = new Set(answerEntries.map(([qId]) => qId));
+
+        if (entry.answered > 0) {
+            playedCount++;
+            if (isLate) latePlayed++;
+        } else {
+            ticketBucket.noShow++;
+            ticketBucket.noShowRevenue += entry.paidAmount ?? 0;
+            if (isLate) lateNoShows++;
+        }
+
+        if (entry.answered > 0 && firstQuestionIds.size > 0) {
+            for (const qId of answeredQuestionIds) {
+                if (firstQuestionIds.has(qId)) {
+                    startedEntries++;
+                    break;
+                }
+            }
+        }
+
+        if (entry.answered > 0 && lastQuestionIds.size > 0) {
+            for (const qId of answeredQuestionIds) {
+                if (lastQuestionIds.has(qId)) {
+                    reachedFinalQuestion++;
+                    break;
+                }
+            }
+        }
+
+        if (questionCount > 0) {
+            if (entry.answered >= questionCount) {
+                ticketBucket.completedAll++;
+            } else if (entry.answered > 0) {
+                ticketBucket.partial++;
+            }
+        }
+
         for (const [qId, a] of answerEntries) {
             totalAnswered++;
             if (a.correct) totalCorrect++;
             if (a.ms > 0) { totalMs += a.ms; msCount++; }
+            qualityBucket.answered++;
+            if (a.correct) qualityBucket.correct++;
+            qualityBucket.totalPoints += a.points;
+            if (a.ms > 0) {
+                qualityBucket.totalMs += a.ms;
+                qualityBucket.msCount++;
+            }
             // Per-question stats
             const existing = questionStatsMap.get(qId) || { total: 0, correct: 0, totalMs: 0, msCount: 0 };
             existing.total++;
@@ -625,7 +737,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
 
     const avgAccuracy = totalAnswered > 0 ? (totalCorrect / totalAnswered) * 100 : 0;
     const avgAnswerTime = msCount > 0 ? totalMs / msCount : 0;
-    const completionRate = entries.length > 0 ? (completedCount / entries.length) * 100 : 0;
+    const completionRate = entries.length > 0 ? (playedCount / entries.length) * 100 : 0;
     const leaveRate = entries.length > 0 ? (leftCount / entries.length) * 100 : 0;
     const winRate = totalRankedEntries > 0 ? (winnersCount / totalRankedEntries) * 100 : 0;
 
@@ -685,6 +797,21 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         avgPrizePool: t._avg.prizePool || 0,
     }));
 
+    const paidTop10 = rankedEntries.filter(
+        (entry) => entry.rank !== null && entry.rank <= 10 &&
+            (entry.purchaseSource === "PAID" || entry.purchaseSource === "DISCOUNTED")
+    ).length;
+    const freeTop10 = rankedEntries.filter(
+        (entry) => entry.rank !== null && entry.rank <= 10 &&
+            entry.purchaseSource !== "PAID" && entry.purchaseSource !== "DISCOUNTED"
+    ).length;
+    const lateTop10 = rankedEntries.filter(
+        (entry) => entry.rank !== null && entry.rank <= 10 && entry.createdAt > entry.game.startsAt
+    ).length;
+    const lateTop3 = rankedEntries.filter(
+        (entry) => entry.rank !== null && entry.rank <= 3 && entry.createdAt > entry.game.startsAt
+    ).length;
+
     return {
         avgAccuracy,
         avgAnswerTime,
@@ -698,6 +825,69 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         totalRankedEntries,
         questions,
         themeParticipation: themeData,
+        behavior: {
+            ticketMix: {
+                paidEntries: ticketTypeStats.paid.entries,
+                freeEntries: ticketTypeStats.free.entries,
+                paidCompletedAll: ticketTypeStats.paid.completedAll,
+                freeCompletedAll: ticketTypeStats.free.completedAll,
+                paidPartial: ticketTypeStats.paid.partial,
+                freePartial: ticketTypeStats.free.partial,
+                paidNoShow: ticketTypeStats.paid.noShow,
+                freeNoShow: ticketTypeStats.free.noShow,
+                paidNoShowRate: ticketTypeStats.paid.entries > 0
+                    ? (ticketTypeStats.paid.noShow / ticketTypeStats.paid.entries) * 100
+                    : 0,
+                freeNoShowRate: ticketTypeStats.free.entries > 0
+                    ? (ticketTypeStats.free.noShow / ticketTypeStats.free.entries) * 100
+                    : 0,
+            },
+            monetization: {
+                paidRevenue: ticketTypeStats.paid.revenue,
+                paidNoShowRevenue: ticketTypeStats.paid.noShowRevenue,
+                paidNoShowRevenueRate: ticketTypeStats.paid.revenue > 0
+                    ? (ticketTypeStats.paid.noShowRevenue / ticketTypeStats.paid.revenue) * 100
+                    : 0,
+            },
+            lateEntry: {
+                entries: lateEntries,
+                rate: entries.length > 0 ? (lateEntries / entries.length) * 100 : 0,
+                played: latePlayed,
+                noShows: lateNoShows,
+                top10: lateTop10,
+                top3: lateTop3,
+            },
+            startLine: {
+                started: startedEntries,
+                startRate: entries.length > 0 ? (startedEntries / entries.length) * 100 : 0,
+                reachedFinalQuestion,
+                finishRateAfterStart: startedEntries > 0 ? (reachedFinalQuestion / startedEntries) * 100 : 0,
+            },
+            answerQuality: {
+                paidAccuracy: answerQuality.paid.answered > 0
+                    ? (answerQuality.paid.correct / answerQuality.paid.answered) * 100
+                    : 0,
+                freeAccuracy: answerQuality.free.answered > 0
+                    ? (answerQuality.free.correct / answerQuality.free.answered) * 100
+                    : 0,
+                paidAvgResponseMs: answerQuality.paid.msCount > 0
+                    ? answerQuality.paid.totalMs / answerQuality.paid.msCount
+                    : 0,
+                freeAvgResponseMs: answerQuality.free.msCount > 0
+                    ? answerQuality.free.totalMs / answerQuality.free.msCount
+                    : 0,
+                paidAvgPointsPerAnswer: answerQuality.paid.answered > 0
+                    ? answerQuality.paid.totalPoints / answerQuality.paid.answered
+                    : 0,
+                freeAvgPointsPerAnswer: answerQuality.free.answered > 0
+                    ? answerQuality.free.totalPoints / answerQuality.free.answered
+                    : 0,
+            },
+            leaderboard: {
+                paidTop10,
+                freeTop10,
+            },
+        },
     };
 }
 
@@ -1047,6 +1237,179 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                 <MiniStat label="Leave Rate" value={`${data.leaveRate.toFixed(1)}%`} color="#EF4444" tooltip="The share of paid entries that left the game before the session was over." />
                 <MiniStat label="Win Rate" value={`${data.winRate.toFixed(2)}%`} color="#FB72FF" tooltip="Rank-1 finishes divided by all ranked paid entries in the selected range." />
                 <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average score across the paid entries included in gameplay analysis." />
+            </div>
+
+            {/* Behavior Signals */}
+            <div className="rounded-2xl border border-white/10 p-6 space-y-6">
+                <div className="flex items-end justify-between gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold text-white font-display">Behavior Signals</h3>
+                        <p className="text-sm text-white/50">
+                            No-shows, late joins, and paid-vs-free quality signals that explain how the lobby really behaved
+                        </p>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <MiniStat
+                        label="Paid No-Show"
+                        value={`${data.behavior.ticketMix.paidNoShowRate.toFixed(1)}%`}
+                        color="#FFC931"
+                        tooltip="Paid or discounted entries that never answered a question."
+                    />
+                    <MiniStat
+                        label="Free No-Show"
+                        value={`${data.behavior.ticketMix.freeNoShowRate.toFixed(1)}%`}
+                        color="#00CFF2"
+                        tooltip="Free entries that never answered a question."
+                    />
+                    <MiniStat
+                        label="Late Entry Rate"
+                        value={`${data.behavior.lateEntry.rate.toFixed(1)}%`}
+                        color="#FB72FF"
+                        tooltip="Entries created after the scheduled game start."
+                    />
+                    <MiniStat
+                        label="Started Q1"
+                        value={`${data.behavior.startLine.startRate.toFixed(1)}%`}
+                        color="#14B985"
+                        tooltip="Share of ticketed entries that answered the first question in their game."
+                    />
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
+                        <h4 className="text-sm font-semibold text-white font-display mb-4">Ticket Intent Split</h4>
+                        <div className="grid grid-cols-3 gap-3 text-center">
+                            <div className="rounded-xl bg-[#FFC931]/10 border border-[#FFC931]/20 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/50">Paid</div>
+                                <div className="mt-2 text-2xl font-bold text-[#FFC931] font-body">{data.behavior.ticketMix.paidEntries}</div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    {data.behavior.ticketMix.paidCompletedAll} finished
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-[#00CFF2]/10 border border-[#00CFF2]/20 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/50">Free</div>
+                                <div className="mt-2 text-2xl font-bold text-[#00CFF2] font-body">{data.behavior.ticketMix.freeEntries}</div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    {data.behavior.ticketMix.freeCompletedAll} finished
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-[#FB72FF]/10 border border-[#FB72FF]/20 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/50">Dead Money</div>
+                                <div className="mt-2 text-2xl font-bold text-[#FB72FF] font-body">
+                                    ${data.behavior.monetization.paidNoShowRevenue.toFixed(2)}
+                                </div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    {data.behavior.monetization.paidNoShowRevenueRate.toFixed(1)}% of paid ticket revenue
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-4 space-y-2 text-sm text-white/60">
+                            <div className="flex items-center justify-between">
+                                <span>Paid partial runs</span>
+                                <span className="font-body text-white">{data.behavior.ticketMix.paidPartial}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Free partial runs</span>
+                                <span className="font-body text-white">{data.behavior.ticketMix.freePartial}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Paid no-shows</span>
+                                <span className="font-body text-white">{data.behavior.ticketMix.paidNoShow}</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                                <span>Free no-shows</span>
+                                <span className="font-body text-white">{data.behavior.ticketMix.freeNoShow}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
+                        <h4 className="text-sm font-semibold text-white font-display mb-4">Late Join Pressure</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Late entries</div>
+                                <div className="mt-2 text-2xl font-bold text-[#FB72FF] font-body">{data.behavior.lateEntry.entries}</div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    {data.behavior.lateEntry.played} played, {data.behavior.lateEntry.noShows} no-showed
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Late leaderboard impact</div>
+                                <div className="mt-2 text-2xl font-bold text-[#FFC931] font-body">{data.behavior.lateEntry.top10}</div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    top 10 finishes, {data.behavior.lateEntry.top3} in top 3
+                                </div>
+                            </div>
+                        </div>
+                        <div className="mt-4 rounded-xl bg-white/5 border border-white/8 p-4">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/60">Free players in top 10</span>
+                                <span className="font-body text-[#00CFF2]">{data.behavior.leaderboard.freeTop10}</span>
+                            </div>
+                            <div className="mt-2 flex items-center justify-between text-sm">
+                                <span className="text-white/60">Paid players in top 10</span>
+                                <span className="font-body text-[#FFC931]">{data.behavior.leaderboard.paidTop10}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
+                        <h4 className="text-sm font-semibold text-white font-display mb-4">Start-Line Friction</h4>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Answered Q1</div>
+                                <div className="mt-2 text-2xl font-bold text-[#14B985] font-body">{data.behavior.startLine.started}</div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    {data.behavior.startLine.startRate.toFixed(1)}% of ticketed entries
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Reached final question</div>
+                                <div className="mt-2 text-2xl font-bold text-[#00CFF2] font-body">{data.behavior.startLine.reachedFinalQuestion}</div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    {data.behavior.startLine.finishRateAfterStart.toFixed(1)}% of starters
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
+                        <h4 className="text-sm font-semibold text-white font-display mb-4">Paid vs Free Answer Quality</h4>
+                        <div className="grid grid-cols-3 gap-3">
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Accuracy gap</div>
+                                <div className="mt-2 text-xl font-bold text-[#14B985] font-body">
+                                    {Math.abs(data.behavior.answerQuality.paidAccuracy - data.behavior.answerQuality.freeAccuracy).toFixed(1)} pts
+                                </div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    Paid {data.behavior.answerQuality.paidAccuracy.toFixed(1)}% vs free {data.behavior.answerQuality.freeAccuracy.toFixed(1)}%
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Avg speed</div>
+                                <div className="mt-2 text-xl font-bold text-[#00CFF2] font-body">
+                                    {(data.behavior.answerQuality.paidAvgResponseMs / 1000).toFixed(1)}s
+                                </div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    Free {(data.behavior.answerQuality.freeAvgResponseMs / 1000).toFixed(1)}s
+                                </div>
+                            </div>
+                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
+                                <div className="text-xs uppercase tracking-wider text-white/40">Points / answer</div>
+                                <div className="mt-2 text-xl font-bold text-[#FFC931] font-body">
+                                    {data.behavior.answerQuality.paidAvgPointsPerAnswer.toFixed(0)}
+                                </div>
+                                <div className="mt-1 text-[11px] text-white/40">
+                                    Free {data.behavior.answerQuality.freeAvgPointsPerAnswer.toFixed(0)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             {/* Score + Rank Distribution */}
