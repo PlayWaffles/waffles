@@ -48,7 +48,7 @@ export async function sendAdminNotificationAction(
     console.log("[AdminNotification] Sending to ALL:", { title, targetUrl });
 
     const users = await prisma.user.findMany({
-      where: { hasGameAccess: true, isBanned: false },
+      where: { isBanned: false },
       select: { id: true },
     });
     const results = await sendBatch({ title, body, targetUrl }, users.map((u) => u.id));
