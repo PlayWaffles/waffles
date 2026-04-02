@@ -197,7 +197,7 @@ export const retention = {
     title: "Don't break your streak! 🔥",
     body: "Keep the fire alive. Play a game today to maintain your status.",
   }),
-}
+};
 
 // ==========================================
 // GROWTH NOTIFICATIONS (Quests)
