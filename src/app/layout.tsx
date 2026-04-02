@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     icon: "/favicon.ico",
   },
   other: {
-    "base:app_id": "69cc9bb31aacdcc17b25514a",
+    "base:app_id": "69cc9bb31aacdcc17b25514a",  
   },
   metadataBase: new URL(env.rootUrl),
 };
@@ -56,6 +56,10 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <head>
+        <meta
+          name="talentapp:project_verification"
+          content="cb7e8f3cc47a4f96fa8ae003b816bb151935001d54d2b59921f406883f8654aec81065f628abf64c5a30798a55236c29f009254a77edfb310033f31589aaa359"
+        />
         {/* Preload onboarding images - browser fetches immediately */}
         <link rel="preload" as="image" href="/logo-onboarding.png" />
         <link

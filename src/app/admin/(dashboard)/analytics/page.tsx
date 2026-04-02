@@ -479,6 +479,16 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         newPlayersWithEntries - newPlayersWithTicketPaid,
         0,
     );
+    const returningPlayersWithTicket = usersWithEntries.filter(
+        (user) => user.createdAt < start,
+    ).length;
+    const returningPlayersWithTicketPaid = usersWithEntries.filter(
+        (user) => user.createdAt < start && user.hasPaid,
+    ).length;
+    const returningPlayersWithTicketFree = Math.max(
+        returningPlayersWithTicket - returningPlayersWithTicketPaid,
+        0,
+    );
     const repeatTicketUsersPaid = usersWithEntries.filter(
         (user) => user.entryCount > 1 && user.hasPaid,
     ).length;
@@ -527,6 +537,9 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         newPlayersWithTicketPaid,
         newPlayersWithTicketFree,
         returningPlayers,
+        returningPlayersWithTicket,
+        returningPlayersWithTicketPaid,
+        returningPlayersWithTicketFree,
         repeatBuyerRate,
         repeatBuyers,
         totalBuyers,
@@ -988,6 +1001,17 @@ function OverviewTab({
                         ]}
                     />
                     <RetentionBar label="Returning" value={retention.returningPlayers} total={retention.newPlayers + retention.returningPlayers} color="#00CFF2" tooltip="Active users in the selected range who were created before that range started." />
+                    <RetentionBar
+                        label="Returning Players With Ticket"
+                        value={retention.returningPlayersWithTicket}
+                        total={retention.returningPlayers}
+                        color="#14B985"
+                        tooltip="Returning players who claimed at least one ticket in the selected range."
+                        segments={[
+                            { value: retention.returningPlayersWithTicketPaid, color: "#14B985", label: "Paid" },
+                            { value: retention.returningPlayersWithTicketFree, color: "#00CFF2", label: "Free" },
+                        ]}
+                    />
                     <RetentionBar
                         label="Repeat Ticket Users"
                         value={retention.repeatBuyers}

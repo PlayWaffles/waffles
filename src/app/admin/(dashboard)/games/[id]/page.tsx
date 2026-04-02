@@ -120,50 +120,57 @@ export default async function GameDetailPage({
 }) {
     const { id } = await params;
 
-    const game = await prisma.game.findUnique({
-        where: { id },
-        select: {
-            id: true,
-            onchainId: true,
-            platform: true,
-            network: true,
-            title: true,
-            description: true,
-            theme: true,
-            coverUrl: true,
-            startsAt: true,
-            endsAt: true,
-            tierPrices: true,
-            prizePool: true,
-            playerCount: true,
-            maxPlayers: true,
-            roundBreakSec: true,
-            isTestnet: true,
-            rankedAt: true,
-            onChainAt: true,
-            _count: {
-                select: {
-                    questions: true,
-                    entries: true,
+    const [game, ticketMix] = await Promise.all([
+        prisma.game.findUnique({
+            where: { id },
+            select: {
+                id: true,
+                onchainId: true,
+                platform: true,
+                network: true,
+                title: true,
+                description: true,
+                theme: true,
+                coverUrl: true,
+                startsAt: true,
+                endsAt: true,
+                tierPrices: true,
+                prizePool: true,
+                playerCount: true,
+                maxPlayers: true,
+                roundBreakSec: true,
+                isTestnet: true,
+                rankedAt: true,
+                onChainAt: true,
+                _count: {
+                    select: {
+                        questions: true,
+                        entries: true,
+                    },
                 },
-            },
-            entries: {
-                orderBy: { score: "desc" },
-                take: 20,
-                select: {
-                    paidAt: true,
-                    purchaseSource: true,
-                    score: true,
-                    rank: true,
-                    prize: true,
-                    claimedAt: true,
-                    user: {
-                        select: { username: true, pfpUrl: true, wallet: true },
+                entries: {
+                    orderBy: { score: "desc" },
+                    take: 20,
+                    select: {
+                        paidAt: true,
+                        purchaseSource: true,
+                        score: true,
+                        rank: true,
+                        prize: true,
+                        claimedAt: true,
+                        user: {
+                            select: { username: true, pfpUrl: true, wallet: true },
+                        },
                     },
                 },
             },
-        },
-    });
+        }),
+        prisma.gameEntry.groupBy({
+            by: ["purchaseSource"],
+            where: { gameId: id },
+            _count: true,
+        }),
+    ]);
 
     if (!game) {
         notFound();
@@ -183,13 +190,15 @@ export default async function GameDetailPage({
     };
 
     const duration = Math.round((game.endsAt.getTime() - game.startsAt.getTime()) / (1000 * 60));
-    const paidEntriesCount = game.entries.filter((entry) => entry.paidAt).length;
-    const freePlayerEntriesCount = game.entries.filter(
+    const paidEntriesCount = ticketMix
+        .filter((entry) => entry.purchaseSource === TicketPurchaseSource.PAID || entry.purchaseSource === TicketPurchaseSource.DISCOUNTED)
+        .reduce((sum, entry) => sum + entry._count, 0);
+    const freePlayerEntriesCount = ticketMix.find(
         (entry) => entry.purchaseSource === TicketPurchaseSource.FREE_PLAYER,
-    ).length;
-    const freeAdminEntriesCount = game.entries.filter(
+    )?._count ?? 0;
+    const freeAdminEntriesCount = ticketMix.find(
         (entry) => entry.purchaseSource === TicketPurchaseSource.FREE_ADMIN,
-    ).length;
+    )?._count ?? 0;
     const freeEntriesCount = freePlayerEntriesCount + freeAdminEntriesCount;
 
     return (
