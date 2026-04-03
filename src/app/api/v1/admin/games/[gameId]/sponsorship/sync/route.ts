@@ -114,7 +114,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
       try {
         const usersToNotify = await prisma.user.findMany({
           where: {
+            hasGameAccess: true,
             isBanned: false,
+            platform: game.platform,
           },
           select: { id: true },
         });

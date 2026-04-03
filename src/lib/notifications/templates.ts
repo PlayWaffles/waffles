@@ -77,8 +77,8 @@ export const preGame = {
 
   /** When the prize pool gets sponsored */
   prizePoolBoost: (gameNumber: number, boostAmount: string, totalPrizePool: string): NotificationTemplate => ({
-    title: `Waffles #${formatGameNum(gameNumber)} Just Got a 2x Boost 🧇`,
-    body: `Prize pool is now $${totalPrizePool}. You're welcome.`,
+    title: `+$${boostAmount} added to Waffles #${formatGameNum(gameNumber)} 🧇`,
+    body: `Prize pool is now $${totalPrizePool}. Tap to see the updated game.`,
   }),
 };
 
