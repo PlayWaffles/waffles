@@ -13,6 +13,9 @@ import { GameHub } from "./client";
 export const metadata: Metadata = {
   title: "Waffles",
   description: "Guess the movie scene. Win real prizes.",
+  other: {
+    "base:app_id": "69cc9bb31aacdcc17b25514a",
+  },
 };
 
 // ==========================================

@@ -38,6 +38,7 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
+import { getStoredChatHistory } from "@/lib/partykit";
 
 // ============================================================
 // HELPERS
@@ -571,7 +572,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
     const [
         entries,
         questionsRaw,
-        chats,
+        gamesInRange,
         // Rank distribution
         rankedEntries,
         // Win rate (rank 1)
@@ -615,23 +616,14 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 game: { select: { title: true } },
             },
         }),
-        prisma.chat.findMany({
-            where: {
-                game: { ...gamePf, startsAt: { gte: start, lte: end } },
-            },
+        prisma.game.findMany({
+            where: { ...gamePf, startsAt: { gte: start, lte: end } },
             select: {
-                text: true,
-                createdAt: true,
-                userId: true,
-                gameId: true,
-                game: {
-                    select: {
-                        startsAt: true,
-                        roundBreakSec: true,
-                    },
-                },
+                id: true,
+                startsAt: true,
+                roundBreakSec: true,
             },
-            take: 20000,
+            take: 500,
         }),
         prisma.gameEntry.findMany({
             where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: { not: null } },
@@ -647,6 +639,36 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             _avg: { prizePool: true },
         }),
     ]);
+
+    const chatsByGame = new Map<
+        string,
+        Array<{ text: string; createdAt: Date; username: string; gameId: string }>
+    >();
+    const storedChatResults = await Promise.all(
+        gamesInRange.map(async (game) => ({
+            gameId: game.id,
+            startsAt: game.startsAt,
+            roundBreakSec: game.roundBreakSec,
+            messages: await getStoredChatHistory(game.id),
+        })),
+    );
+    const gameMetaById = new Map(
+        gamesInRange.map((game) => [
+            game.id,
+            { startsAt: game.startsAt, roundBreakSec: game.roundBreakSec },
+        ]),
+    );
+    for (const result of storedChatResults) {
+        chatsByGame.set(
+            result.gameId,
+            result.messages.map((message) => ({
+                text: message.text,
+                createdAt: new Date(message.ts),
+                username: message.username,
+                gameId: result.gameId,
+            })),
+        );
+    }
 
     const gameQuestions = new Map<string, typeof questionsRaw>();
     for (const question of questionsRaw) {
@@ -673,8 +695,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         const ordered = [...questions].sort((a, b) =>
             a.roundIndex - b.roundIndex || a.orderInRound - b.orderInRound
         );
-        const firstChat = chats.find((chat) => chat.gameId === gameId);
-        const roundBreakSec = firstChat?.game.roundBreakSec ?? 0;
+        const roundBreakSec = gameMetaById.get(gameId)?.roundBreakSec ?? 0;
         let cursorMs = 0;
         const windows: Array<{ round: number; startMs: number; endMs: number }> = [];
 
@@ -872,8 +893,17 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         (entry) => entry.rank !== null && entry.rank <= 3 && entry.createdAt > entry.game.startsAt
     ).length;
 
+    const chats = Array.from(chatsByGame.entries()).flatMap(([gameId, messages]) =>
+        messages.map((message) => ({
+            ...message,
+            game: {
+                startsAt: gameMetaById.get(gameId)?.startsAt ?? start,
+            },
+        })),
+    );
+
     for (const chat of chats) {
-        messagesByPlayer.set(chat.userId, (messagesByPlayer.get(chat.userId) ?? 0) + 1);
+        messagesByPlayer.set(chat.username, (messagesByPlayer.get(chat.username) ?? 0) + 1);
         messagesByGame.set(chat.gameId, (messagesByGame.get(chat.gameId) ?? 0) + 1);
 
         const elapsedMs = chat.createdAt.getTime() - chat.game.startsAt.getTime();

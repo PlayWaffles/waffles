@@ -13,6 +13,7 @@ import {
   handleInit,
   handleTicketPurchased,
   handleUpdateGame,
+  handleChatHistory,
   checkAuth,
 } from "./handlers/http";
 import {
@@ -98,7 +99,7 @@ export default class GameServer implements Party.Server {
     const secret = this.room.env.PARTYKIT_SECRET as string;
 
     // Routes requiring auth
-    const authRoutes = ["init", "ticket-purchased", "update-game"];
+    const authRoutes = ["init", "ticket-purchased", "update-game", "chat-history"];
     if (authRoutes.includes(path || "") && !checkAuth(req, secret)) {
       return Response.json(
         { error: "Unauthorized" },
@@ -134,6 +135,15 @@ export default class GameServer implements Party.Server {
             );
           }
           return await handleUpdateGame(this, req);
+
+        case "chat-history":
+          if (req.method !== "GET") {
+            return Response.json(
+              { error: "Method not allowed" },
+              { status: 405, headers: CORS_HEADERS },
+            );
+          }
+          return await handleChatHistory(this);
 
         default:
           return Response.json(

@@ -5,18 +5,35 @@ import { env } from "@/lib/env";
 
 const SERVICE = "partykit-client";
 
+export interface StoredPartyChatMessage {
+  id: string;
+  text: string;
+  username: string;
+  pfp: string | null;
+  ts: number;
+}
+
 // ==========================================
 // HELPER
 // ==========================================
 
-function partyFetch(gameId: string, path: string, body: unknown) {
+function partyFetch(
+  gameId: string,
+  path: string,
+  options?: {
+    method?: "GET" | "POST";
+    body?: unknown;
+  },
+) {
   const host = env.partykitHost;
+  const method = options?.method ?? "POST";
 
   console.log("[" + SERVICE + "]", "fetch_request", {
     gameId,
     path,
     host,
     room: `game-${gameId}`,
+    method,
   });
 
   return PartySocket.fetch(
@@ -27,12 +44,12 @@ function partyFetch(gameId: string, path: string, body: unknown) {
       path,
     },
     {
-      method: "POST",
+      method,
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${env.partykitSecret}`,
+        ...(method === "POST" ? { "Content-Type": "application/json" } : {}),
       },
-      body: JSON.stringify(body),
+      ...(method === "POST" ? { body: JSON.stringify(options?.body ?? {}) } : {}),
     },
   );
 }
@@ -61,9 +78,12 @@ export async function initGameRoom(
   });
 
   const res = await partyFetch(gameId, "init", {
-    gameId,
-    startsAt: startsAt.toISOString(),
-    endsAt: endsAt.toISOString(),
+    method: "POST",
+    body: {
+      gameId,
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+    },
   });
 
   if (!res.ok) {
@@ -101,7 +121,10 @@ export async function notifyTicketPurchased(
   }
 
   try {
-    const res = await partyFetch(gameId, "ticket-purchased", data);
+    const res = await partyFetch(gameId, "ticket-purchased", {
+      method: "POST",
+      body: data,
+    });
 
     if (res.ok) {
       console.log("[" + SERVICE + "]", "notify_ticket_purchased_success", {
@@ -142,7 +165,10 @@ export async function cleanupGameRoom(gameId: string): Promise<void> {
     console.log("[" + SERVICE + "]", "cleanup_request", { gameId });
 
     const res = await partyFetch(gameId, "cleanup", {
-      reason: "game_deleted",
+      method: "POST",
+      body: {
+        reason: "game_deleted",
+      },
     });
 
     if (res.ok) {
@@ -182,8 +208,11 @@ export async function updateGame(
   });
 
   const res = await partyFetch(gameId, "update-game", {
-    startsAt: startsAt.toISOString(),
-    endsAt: endsAt.toISOString(),
+    method: "POST",
+    body: {
+      startsAt: startsAt.toISOString(),
+      endsAt: endsAt.toISOString(),
+    },
   });
 
   if (!res.ok) {
@@ -197,4 +226,35 @@ export async function updateGame(
   }
 
   console.log("[partykit] update_game_success", { gameId });
+}
+
+export async function getStoredChatHistory(
+  gameId: string,
+): Promise<StoredPartyChatMessage[]> {
+  if (!env.partykitHost || !env.partykitSecret) {
+    return [];
+  }
+
+  try {
+    const res = await partyFetch(gameId, "chat-history", { method: "GET" });
+    if (!res.ok) {
+      console.warn("[partykit] chat_history_failed", {
+        gameId,
+        status: res.status,
+      });
+      return [];
+    }
+
+    const data = (await res.json()) as {
+      messages?: StoredPartyChatMessage[];
+    };
+
+    return Array.isArray(data.messages) ? data.messages : [];
+  } catch (error) {
+    console.error("[partykit] chat_history_error", {
+      gameId,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return [];
+  }
 }

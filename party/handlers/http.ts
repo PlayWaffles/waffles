@@ -1,7 +1,7 @@
 // HTTP API handlers for PartyKit server
 
 import type * as Party from "partykit/server";
-import { CORS_HEADERS, type AlarmPhase } from "../types";
+import { CORS_HEADERS, type AlarmPhase, type StoredChatMessage } from "../types";
 import type { Entrant } from "../../shared/protocol";
 import {
   handleStartAlarm,
@@ -12,7 +12,7 @@ import {
 interface GameServer {
   room: Party.Room;
   entrants: Entrant[];
-  chatHistory: unknown[];
+  chatHistory: StoredChatMessage[];
   getOnlineCount(): number;
   broadcast(msg: unknown): void;
 }
@@ -162,6 +162,25 @@ export async function handleUpdateGame(
   }
 
   return Response.json({ success: true }, { headers: CORS_HEADERS });
+}
+
+// Chat history endpoint - used by admin analytics
+export async function handleChatHistory(server: GameServer): Promise<Response> {
+  const storedMessages = await server.room.storage.list<StoredChatMessage>({
+    prefix: "chat:",
+  });
+
+  const messages = storedMessages.size > 0
+    ? Array.from(storedMessages.values()).sort((a, b) => a.ts - b.ts)
+    : server.chatHistory;
+
+  return Response.json(
+    {
+      messages,
+      count: messages.length,
+    },
+    { headers: CORS_HEADERS },
+  );
 }
 
 export { checkAuth };
