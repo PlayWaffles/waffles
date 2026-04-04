@@ -30,11 +30,22 @@ interface GameFormProps {
     platform: string;
     startsAt: Date;
     endsAt: Date;
+    ticketsOpenAt: Date | null;
     tierPrices: number[];
     roundBreakSec: number;
     maxPlayers: number;
   };
   isEdit?: boolean;
+}
+
+/** Format a Date to `YYYY-MM-DDTHH:mm` for datetime-local inputs */
+function toDatetimeLocal(d: Date): string {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hours = String(d.getHours()).padStart(2, "0");
+  const minutes = String(d.getMinutes()).padStart(2, "0");
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export function GameForm({
@@ -60,22 +71,25 @@ export function GameForm({
   const [maxPlayers, setMaxPlayers] = useState(
     initialData?.maxPlayers?.toString() || "100"
   );
+  const [skipQuestions, setSkipQuestions] = useState(false);
   const [startsAt, setStartsAt] = useState(() => {
     const d = initialData?.startsAt
       ? new Date(initialData.startsAt)
       : new Date(Date.now() + 2 * 60 * 1000);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hours = String(d.getHours()).padStart(2, "0");
-    const minutes = String(d.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return toDatetimeLocal(d);
   });
   // Calculate initial duration if editing
   const initialDuration = initialData?.startsAt && initialData?.endsAt
     ? Math.round((new Date(initialData.endsAt).getTime() - new Date(initialData.startsAt).getTime()) / 60000)
     : 30;
   const [durationMinutes, setDurationMinutes] = useState(initialDuration.toString());
+
+  // Tickets open scheduling
+  const [enableTicketsOpen, setEnableTicketsOpen] = useState(!!initialData?.ticketsOpenAt);
+  const [ticketsOpenAt, setTicketsOpenAt] = useState(() => {
+    if (!initialData?.ticketsOpenAt) return "";
+    return toDatetimeLocal(new Date(initialData.ticketsOpenAt));
+  });
 
   // UI state
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -92,13 +106,7 @@ export function GameForm({
     if (!startsAt || !durationMinutes) return "";
     const start = new Date(startsAt);
     const end = new Date(start.getTime() + parseInt(durationMinutes) * 60000);
-    // Format as local datetime-local string (same format as input)
-    const year = end.getFullYear();
-    const month = String(end.getMonth() + 1).padStart(2, "0");
-    const day = String(end.getDate()).padStart(2, "0");
-    const hours = String(end.getHours()).padStart(2, "0");
-    const minutes = String(end.getMinutes()).padStart(2, "0");
-    return `${year}-${month}-${day}T${hours}:${minutes}`;
+    return toDatetimeLocal(end);
   }, [startsAt, durationMinutes]);
 
   // Display duration text
@@ -150,6 +158,11 @@ export function GameForm({
     // This fixes timezone inconsistency between local and production servers
     formData.set("startsAt", toISOWithTimezone(startsAt));
     formData.set("endsAt", toISOWithTimezone(calculatedEndsAt));
+    formData.set(
+      "ticketsOpenAt",
+      enableTicketsOpen && ticketsOpenAt ? toISOWithTimezone(ticketsOpenAt) : "",
+    );
+    formData.set("skipQuestions", skipQuestions ? "true" : "false");
 
     // For edit mode, submit directly
     if (isEdit) {
@@ -201,6 +214,9 @@ export function GameForm({
       { label: "Title", value: "Waffles#00" },
       { label: "Theme", value: "Movies" },
       { label: "Starts", value: startsAt ? new Date(startsAt).toLocaleString() : "—" },
+      ...(enableTicketsOpen && ticketsOpenAt
+        ? [{ label: "Tickets Open", value: new Date(ticketsOpenAt).toLocaleString() }]
+        : [{ label: "Tickets Open", value: "Immediately" }]),
       { label: "Ticket Price", value: `$${pendingFormData.get("ticketPrice")} USDC` },
     ];
   };
@@ -345,7 +361,7 @@ export function GameForm({
                   return new Date(now.getTime() + (preset.minutes || 0) * 60000);
                 };
                 const presetDate = getPresetTime();
-                const presetValue = `${presetDate.getFullYear()}-${String(presetDate.getMonth() + 1).padStart(2, "0")}-${String(presetDate.getDate()).padStart(2, "0")}T${String(presetDate.getHours()).padStart(2, "0")}:${String(presetDate.getMinutes()).padStart(2, "0")}`;
+                const presetValue = toDatetimeLocal(presetDate);
                 const isActive = startsAt === presetValue;
 
                 return (
@@ -459,6 +475,122 @@ export function GameForm({
           <input type="hidden" name="endsAt" value={calculatedEndsAt} />
         </section>
 
+        {/* Ticket Open Schedule */}
+        <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-[#FFC931]/15">
+                <ClockIcon className="h-5 w-5 text-[#FFC931]" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white">Ticket Sales Window</h3>
+                <p className="text-sm text-white/50">Schedule when tickets become available</p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={enableTicketsOpen}
+                onChange={(e) => {
+                  setEnableTicketsOpen(e.target.checked);
+                  if (!e.target.checked) setTicketsOpenAt("");
+                }}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#14B985]" />
+            </label>
+          </div>
+
+          {enableTicketsOpen && (
+            <>
+              {/* Quick Presets - relative to game start */}
+              <div className="mb-4">
+                <label className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
+                  Open tickets before game starts
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { label: "6h before", hours: 6 },
+                    { label: "12h before", hours: 12 },
+                    { label: "24h before", hours: 24 },
+                    { label: "48h before", hours: 48 },
+                    { label: "1 week", hours: 168 },
+                  ].map((preset) => {
+                    const getPresetValue = () => {
+                      if (!startsAt) return "";
+                      const start = new Date(startsAt);
+                      return toDatetimeLocal(new Date(start.getTime() - preset.hours * 3600000));
+                    };
+                    const presetValue = getPresetValue();
+                    const isActive = ticketsOpenAt === presetValue;
+                    return (
+                      <button
+                        key={preset.label}
+                        type="button"
+                        disabled={!startsAt}
+                        onClick={() => setTicketsOpenAt(presetValue)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          isActive
+                            ? "bg-[#FFC931] text-[#0a0a0b] shadow-lg shadow-[#FFC931]/25"
+                            : "bg-white/5 text-white/70 hover:bg-white/10 hover:text-white border border-white/10"
+                        } disabled:opacity-40 disabled:cursor-not-allowed`}
+                      >
+                        {preset.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Custom time picker */}
+              <div className="mb-4">
+                <label htmlFor="ticketsOpenAt" className="block text-xs font-medium text-white/50 uppercase tracking-wider mb-3">
+                  Or set a custom time
+                </label>
+                <input
+                  type="datetime-local"
+                  id="ticketsOpenAt"
+                  value={ticketsOpenAt}
+                  onChange={(e) => setTicketsOpenAt(e.target.value)}
+                  className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
+                />
+              </div>
+
+              {/* Preview */}
+              {ticketsOpenAt && (
+                <div className="p-4 bg-linear-to-r from-[#FFC931]/10 to-[#14B985]/10 rounded-xl border border-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-[#FFC931] animate-pulse" />
+                    <span className="text-white/60 text-sm">Tickets open:</span>
+                    <span className="font-medium text-white">
+                      {new Date(ticketsOpenAt).toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </span>
+                  </div>
+                  {startsAt && ticketsOpenAt && (
+                    <p className="text-xs text-white/40 mt-1 ml-5">
+                      {(() => {
+                        const diff = new Date(startsAt).getTime() - new Date(ticketsOpenAt).getTime();
+                        const hours = Math.floor(diff / 3600000);
+                        const mins = Math.floor((diff % 3600000) / 60000);
+                        if (hours > 0) return `${hours}h ${mins > 0 ? `${mins}m ` : ""}before game starts`;
+                        return `${mins}m before game starts`;
+                      })()}
+                    </p>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          <input type="hidden" name="ticketsOpenAt" value={enableTicketsOpen ? ticketsOpenAt : ""} />
+        </section>
+
         {/* 4. Pricing & Gameplay - Combined */}
         <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
           <div className="flex items-center gap-3 mb-5">
@@ -545,6 +677,28 @@ export function GameForm({
               />
             </div>
           </div>
+
+          {/* Skip Auto-Questions (create only) */}
+          {!isEdit && (
+            <div className="pt-4 border-t border-white/10">
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={skipQuestions}
+                  onChange={(e) => setSkipQuestions(e.target.checked)}
+                  className="mt-1 h-4 w-4 rounded border-white/20 bg-white/5 text-[#FFC931] focus:ring-[#FFC931]/50"
+                />
+                <span>
+                  <span className="block font-medium text-white text-sm">
+                    Create without questions
+                  </span>
+                  <span className="mt-0.5 block text-xs text-white/45">
+                    Skip auto-filling questions. You can add them manually later from the game detail page.
+                  </span>
+                </span>
+              </label>
+            </div>
+          )}
         </section>
 
         {/* Action Buttons */}

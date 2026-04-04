@@ -51,8 +51,16 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const hasEnded = now >= game.endsAt.getTime();
   const isLive = !hasEnded && now >= game.startsAt.getTime();
 
-  // Timer - countdown to start or end
-  const targetMs = isLive ? game.endsAt.getTime() : game.startsAt.getTime();
+  // Ticket availability
+  const ticketsOpenAt = game.ticketsOpenAt ? new Date(game.ticketsOpenAt).getTime() : null;
+  const ticketsNotYetOpen = ticketsOpenAt !== null && now < ticketsOpenAt;
+
+  // Timer - countdown to ticket open, start, or end
+  const targetMs = ticketsNotYetOpen
+    ? ticketsOpenAt
+    : isLive
+      ? game.endsAt.getTime()
+      : game.startsAt.getTime();
   const countdown = useTimer(targetMs);
 
   // Derived state
@@ -126,13 +134,15 @@ export function NextGameCard({ game }: NextGameCardProps) {
             }
             : { text: "PLAY NOW", disabled: false, href: `/game/${game.id}/live` }
           : { text: "GET TICKET", disabled: false, href: null }
-        : hasTicket
-          ? { text: "WHAT NEXT???", disabled: false, href: ticketSuccessHref }
-          : {
-              text: "GET TICKET",
-              disabled: false,
-              href: null,
-            };
+        : ticketsNotYetOpen
+          ? { text: "TICKETS OPENING SOON", disabled: true, href: null }
+          : hasTicket
+            ? { text: "WHAT NEXT???", disabled: false, href: ticketSuccessHref }
+            : {
+                text: "GET TICKET",
+                disabled: false,
+                href: null,
+              };
 
   const handleButtonClick = () => {
     if (buttonConfig.disabled) return;
@@ -177,7 +187,9 @@ export function NextGameCard({ game }: NextGameCardProps) {
               ? "Game has ended"
               : isLive
                 ? "Ends in"
-                : "Starts in"}
+                : ticketsNotYetOpen
+                  ? "Tickets open in"
+                  : "Starts in"}
           </span>
           <div className="flex items-center gap-2">
             <CountdownUnit value={hours} label="HRS" />

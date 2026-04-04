@@ -57,6 +57,7 @@ export type GameMinAggregateOutputType = {
   launchGroupId: string | null
   startsAt: Date | null
   endsAt: Date | null
+  ticketsOpenAt: Date | null
   prizePool: number | null
   playerCount: number | null
   roundBreakSec: number | null
@@ -83,6 +84,7 @@ export type GameMaxAggregateOutputType = {
   launchGroupId: string | null
   startsAt: Date | null
   endsAt: Date | null
+  ticketsOpenAt: Date | null
   prizePool: number | null
   playerCount: number | null
   roundBreakSec: number | null
@@ -109,6 +111,8 @@ export type GameCountAggregateOutputType = {
   launchGroupId: number
   startsAt: number
   endsAt: number
+  ticketsOpenAt: number
+  ticketOpenNotifsSent: number
   tierPrices: number
   prizePool: number
   playerCount: number
@@ -156,6 +160,7 @@ export type GameMinAggregateInputType = {
   launchGroupId?: true
   startsAt?: true
   endsAt?: true
+  ticketsOpenAt?: true
   prizePool?: true
   playerCount?: true
   roundBreakSec?: true
@@ -182,6 +187,7 @@ export type GameMaxAggregateInputType = {
   launchGroupId?: true
   startsAt?: true
   endsAt?: true
+  ticketsOpenAt?: true
   prizePool?: true
   playerCount?: true
   roundBreakSec?: true
@@ -208,6 +214,8 @@ export type GameCountAggregateInputType = {
   launchGroupId?: true
   startsAt?: true
   endsAt?: true
+  ticketsOpenAt?: true
+  ticketOpenNotifsSent?: true
   tierPrices?: true
   prizePool?: true
   playerCount?: true
@@ -322,6 +330,8 @@ export type GameGroupByOutputType = {
   launchGroupId: string | null
   startsAt: Date
   endsAt: Date
+  ticketsOpenAt: Date | null
+  ticketOpenNotifsSent: string[]
   tierPrices: number[]
   prizePool: number
   playerCount: number
@@ -372,6 +382,8 @@ export type GameWhereInput = {
   launchGroupId?: Prisma.StringNullableFilter<"Game"> | string | null
   startsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   endsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
+  ticketsOpenAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
+  ticketOpenNotifsSent?: Prisma.StringNullableListFilter<"Game">
   tierPrices?: Prisma.FloatNullableListFilter<"Game">
   prizePool?: Prisma.FloatFilter<"Game"> | number
   playerCount?: Prisma.IntFilter<"Game"> | number
@@ -403,6 +415,8 @@ export type GameOrderByWithRelationInput = {
   launchGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
+  ticketsOpenAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  ticketOpenNotifsSent?: Prisma.SortOrder
   tierPrices?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
   playerCount?: Prisma.SortOrder
@@ -438,6 +452,8 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   launchGroupId?: Prisma.StringNullableFilter<"Game"> | string | null
   startsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   endsAt?: Prisma.DateTimeFilter<"Game"> | Date | string
+  ticketsOpenAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
+  ticketOpenNotifsSent?: Prisma.StringNullableListFilter<"Game">
   tierPrices?: Prisma.FloatNullableListFilter<"Game">
   prizePool?: Prisma.FloatFilter<"Game"> | number
   playerCount?: Prisma.IntFilter<"Game"> | number
@@ -469,6 +485,8 @@ export type GameOrderByWithAggregationInput = {
   launchGroupId?: Prisma.SortOrderInput | Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
+  ticketsOpenAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  ticketOpenNotifsSent?: Prisma.SortOrder
   tierPrices?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
   playerCount?: Prisma.SortOrder
@@ -504,6 +522,8 @@ export type GameScalarWhereWithAggregatesInput = {
   launchGroupId?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
   startsAt?: Prisma.DateTimeWithAggregatesFilter<"Game"> | Date | string
   endsAt?: Prisma.DateTimeWithAggregatesFilter<"Game"> | Date | string
+  ticketsOpenAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
+  ticketOpenNotifsSent?: Prisma.StringNullableListFilter<"Game">
   tierPrices?: Prisma.FloatNullableListFilter<"Game">
   prizePool?: Prisma.FloatWithAggregatesFilter<"Game"> | number
   playerCount?: Prisma.IntWithAggregatesFilter<"Game"> | number
@@ -520,7 +540,7 @@ export type GameScalarWhereWithAggregatesInput = {
 
 export type GameCreateInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -531,6 +551,8 @@ export type GameCreateInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -551,7 +573,7 @@ export type GameCreateInput = {
 
 export type GameUncheckedCreateInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -562,6 +584,8 @@ export type GameUncheckedCreateInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -582,6 +606,7 @@ export type GameUncheckedCreateInput = {
 
 export type GameUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
   onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
@@ -592,6 +617,8 @@ export type GameUpdateInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -623,6 +650,8 @@ export type GameUncheckedUpdateInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -643,7 +672,7 @@ export type GameUncheckedUpdateInput = {
 
 export type GameCreateManyInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -654,6 +683,8 @@ export type GameCreateManyInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -670,6 +701,7 @@ export type GameCreateManyInput = {
 
 export type GameUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
   onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
@@ -680,6 +712,8 @@ export type GameUpdateManyMutationInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -707,6 +741,8 @@ export type GameUncheckedUpdateManyInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -719,6 +755,14 @@ export type GameUncheckedUpdateManyInput = {
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type StringNullableListFilter<$PrismaModel = never> = {
+  equals?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel> | null
+  has?: string | Prisma.StringFieldRefInput<$PrismaModel> | null
+  hasEvery?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  hasSome?: string[] | Prisma.ListStringFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
 }
 
 export type FloatNullableListFilter<$PrismaModel = never> = {
@@ -747,6 +791,8 @@ export type GameCountOrderByAggregateInput = {
   launchGroupId?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
+  ticketsOpenAt?: Prisma.SortOrder
+  ticketOpenNotifsSent?: Prisma.SortOrder
   tierPrices?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
   playerCount?: Prisma.SortOrder
@@ -783,6 +829,7 @@ export type GameMaxOrderByAggregateInput = {
   launchGroupId?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
+  ticketsOpenAt?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
@@ -809,6 +856,7 @@ export type GameMinOrderByAggregateInput = {
   launchGroupId?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
+  ticketsOpenAt?: Prisma.SortOrder
   prizePool?: Prisma.SortOrder
   playerCount?: Prisma.SortOrder
   roundBreakSec?: Prisma.SortOrder
@@ -836,6 +884,10 @@ export type GameScalarRelationFilter = {
   isNot?: Prisma.GameWhereInput
 }
 
+export type GameCreateticketOpenNotifsSentInput = {
+  set: string[]
+}
+
 export type GameCreatetierPricesInput = {
   set: number[]
 }
@@ -846,6 +898,11 @@ export type EnumGameNetworkFieldUpdateOperationsInput = {
 
 export type EnumGameThemeFieldUpdateOperationsInput = {
   set?: $Enums.GameTheme
+}
+
+export type GameUpdateticketOpenNotifsSentInput = {
+  set?: string[]
+  push?: string | string[]
 }
 
 export type GameUpdatetierPricesInput = {
@@ -919,7 +976,7 @@ export type GameUpdateOneRequiredWithoutPendingPurchasesNestedInput = {
 
 export type GameCreateWithoutQuestionsInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -930,6 +987,8 @@ export type GameCreateWithoutQuestionsInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -949,7 +1008,7 @@ export type GameCreateWithoutQuestionsInput = {
 
 export type GameUncheckedCreateWithoutQuestionsInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -960,6 +1019,8 @@ export type GameUncheckedCreateWithoutQuestionsInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -995,6 +1056,7 @@ export type GameUpdateToOneWithWhereWithoutQuestionsInput = {
 
 export type GameUpdateWithoutQuestionsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
   onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
@@ -1005,6 +1067,8 @@ export type GameUpdateWithoutQuestionsInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1035,6 +1099,8 @@ export type GameUncheckedUpdateWithoutQuestionsInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1054,7 +1120,7 @@ export type GameUncheckedUpdateWithoutQuestionsInput = {
 
 export type GameCreateWithoutEntriesInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -1065,6 +1131,8 @@ export type GameCreateWithoutEntriesInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -1084,7 +1152,7 @@ export type GameCreateWithoutEntriesInput = {
 
 export type GameUncheckedCreateWithoutEntriesInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -1095,6 +1163,8 @@ export type GameUncheckedCreateWithoutEntriesInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -1130,6 +1200,7 @@ export type GameUpdateToOneWithWhereWithoutEntriesInput = {
 
 export type GameUpdateWithoutEntriesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
   onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
@@ -1140,6 +1211,8 @@ export type GameUpdateWithoutEntriesInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1170,6 +1243,8 @@ export type GameUncheckedUpdateWithoutEntriesInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1189,7 +1264,7 @@ export type GameUncheckedUpdateWithoutEntriesInput = {
 
 export type GameCreateWithoutChatsInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -1200,6 +1275,8 @@ export type GameCreateWithoutChatsInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -1219,7 +1296,7 @@ export type GameCreateWithoutChatsInput = {
 
 export type GameUncheckedCreateWithoutChatsInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -1230,6 +1307,8 @@ export type GameUncheckedCreateWithoutChatsInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -1265,6 +1344,7 @@ export type GameUpdateToOneWithWhereWithoutChatsInput = {
 
 export type GameUpdateWithoutChatsInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
   onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
@@ -1275,6 +1355,8 @@ export type GameUpdateWithoutChatsInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1305,6 +1387,8 @@ export type GameUncheckedUpdateWithoutChatsInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1324,7 +1408,7 @@ export type GameUncheckedUpdateWithoutChatsInput = {
 
 export type GameCreateWithoutPendingPurchasesInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -1335,6 +1419,8 @@ export type GameCreateWithoutPendingPurchasesInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -1354,7 +1440,7 @@ export type GameCreateWithoutPendingPurchasesInput = {
 
 export type GameUncheckedCreateWithoutPendingPurchasesInput = {
   id?: string
-  gameNumber?: number
+  gameNumber: number
   onchainId?: string | null
   platform: $Enums.UserPlatform
   network: $Enums.GameNetwork
@@ -1365,6 +1451,8 @@ export type GameUncheckedCreateWithoutPendingPurchasesInput = {
   launchGroupId?: string | null
   startsAt: Date | string
   endsAt: Date | string
+  ticketsOpenAt?: Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameCreatetierPricesInput | number[]
   prizePool?: number
   playerCount?: number
@@ -1400,6 +1488,7 @@ export type GameUpdateToOneWithWhereWithoutPendingPurchasesInput = {
 
 export type GameUpdateWithoutPendingPurchasesInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
   onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
@@ -1410,6 +1499,8 @@ export type GameUpdateWithoutPendingPurchasesInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1440,6 +1531,8 @@ export type GameUncheckedUpdateWithoutPendingPurchasesInput = {
   launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
   tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
   prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
   playerCount?: Prisma.IntFieldUpdateOperationsInput | number
@@ -1528,6 +1621,8 @@ export type GameSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
+  ticketsOpenAt?: boolean
+  ticketOpenNotifsSent?: boolean
   tierPrices?: boolean
   prizePool?: boolean
   playerCount?: boolean
@@ -1560,6 +1655,8 @@ export type GameSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
+  ticketsOpenAt?: boolean
+  ticketOpenNotifsSent?: boolean
   tierPrices?: boolean
   prizePool?: boolean
   playerCount?: boolean
@@ -1587,6 +1684,8 @@ export type GameSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
+  ticketsOpenAt?: boolean
+  ticketOpenNotifsSent?: boolean
   tierPrices?: boolean
   prizePool?: boolean
   playerCount?: boolean
@@ -1614,6 +1713,8 @@ export type GameSelectScalar = {
   launchGroupId?: boolean
   startsAt?: boolean
   endsAt?: boolean
+  ticketsOpenAt?: boolean
+  ticketOpenNotifsSent?: boolean
   tierPrices?: boolean
   prizePool?: boolean
   playerCount?: boolean
@@ -1628,7 +1729,7 @@ export type GameSelectScalar = {
   updatedAt?: boolean
 }
 
-export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "network" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "isTestnet" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
+export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "network" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "ticketsOpenAt" | "ticketOpenNotifsSent" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "isTestnet" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
 export type GameInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | Prisma.Game$questionsArgs<ExtArgs>
   entries?: boolean | Prisma.Game$entriesArgs<ExtArgs>
@@ -1660,6 +1761,8 @@ export type $GamePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     launchGroupId: string | null
     startsAt: Date
     endsAt: Date
+    ticketsOpenAt: Date | null
+    ticketOpenNotifsSent: string[]
     tierPrices: number[]
     prizePool: number
     playerCount: number
@@ -2111,6 +2214,8 @@ export interface GameFieldRefs {
   readonly launchGroupId: Prisma.FieldRef<"Game", 'String'>
   readonly startsAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly endsAt: Prisma.FieldRef<"Game", 'DateTime'>
+  readonly ticketsOpenAt: Prisma.FieldRef<"Game", 'DateTime'>
+  readonly ticketOpenNotifsSent: Prisma.FieldRef<"Game", 'String[]'>
   readonly tierPrices: Prisma.FieldRef<"Game", 'Float[]'>
   readonly prizePool: Prisma.FieldRef<"Game", 'Float'>
   readonly playerCount: Prisma.FieldRef<"Game", 'Int'>

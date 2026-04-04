@@ -27,11 +27,18 @@ const gameSchema = z.object({
   // to ensure consistent timezone handling between local and production servers.
   startsAt: z.string().transform((str) => new Date(str)),
   endsAt: z.string().transform((str) => new Date(str)),
+  ticketsOpenAt: z
+    .union([z.literal(""), z.string()])
+    .optional()
+    .transform((str) => (str ? new Date(str) : null)),
   ticketPrice: z.coerce.number().min(0, "Ticket price must be non-negative"),
   roundBreakSec: z.coerce
     .number()
     .min(5, "Duration must be at least 5 seconds"),
   maxPlayers: z.coerce.number().min(2, "Must allow at least 2 players"),
+  skipQuestions: z
+    .union([z.literal("true"), z.literal("false"), z.undefined()])
+    .transform((value) => value === "true"),
 });
 
 export type GameActionResult =
@@ -125,9 +132,11 @@ export async function createGameAction(
       formData.get("createOnMultiplePlatforms") ?? "false",
     startsAt: formData.get("startsAt"),
     endsAt: formData.get("endsAt"),
+    ticketsOpenAt: formData.get("ticketsOpenAt") ?? "",
     ticketPrice: formData.get("ticketPrice"),
     roundBreakSec: formData.get("roundBreakSec"),
     maxPlayers: formData.get("maxPlayers"),
+    skipQuestions: formData.get("skipQuestions") ?? "false",
   };
 
   const validation = gameSchema.safeParse(rawData);
@@ -139,23 +148,43 @@ export async function createGameAction(
   }
 
   const data = validation.data;
+
+  if (data.ticketsOpenAt && data.ticketsOpenAt >= data.startsAt) {
+    return {
+      success: false,
+      error: "Tickets must open before the game starts",
+    };
+  }
+
   const platforms = data.createOnMultiplePlatforms
     ? [UserPlatform.FARCASTER, UserPlatform.MINIPAY]
     : [data.platform];
   const launchGroupId = crypto.randomUUID();
-  const selectedTemplates = await getAutoQuestionTemplates();
+  const selectedTemplates = data.skipQuestions
+    ? null
+    : await getAutoQuestionTemplates();
   const createdGames: { id: string; platform: UserPlatform; title: string }[] = [];
   const failures: string[] = [];
+
+  // Derive next game number from highest existing number (avoids gaps from deleted games
+  // more gracefully than count, and the @unique constraint protects against races)
+  const lastGame = await prisma.game.findFirst({
+    orderBy: { gameNumber: "desc" },
+    select: { gameNumber: true },
+  });
+  let nextGameNumber = (lastGame?.gameNumber ?? 0) + 1;
 
   for (const platform of platforms) {
     const network = defaultNetworkForPlatform(platform);
     const onchainId = generateOnchainGameId();
     let gameId: string | null = null;
+    const gameNumber = nextGameNumber++;
 
     try {
       const game = await prisma.game.create({
         data: {
-          title: "Waffles",
+          title: formatGameLabel(gameNumber),
+          gameNumber,
           platform,
           network,
           isTestnet: network !== "BASE_MAINNET",
@@ -164,6 +193,7 @@ export async function createGameAction(
           coverUrl: DEFAULT_GAME_COVER_URL,
           startsAt: data.startsAt,
           endsAt: data.endsAt,
+          ticketsOpenAt: data.ticketsOpenAt,
           tierPrices: [data.ticketPrice],
           prizePool: 0,
           playerCount: 0,
@@ -175,16 +205,12 @@ export async function createGameAction(
       });
       gameId = game.id;
 
-      const title = formatGameLabel(game.gameNumber);
-      await prisma.game.update({
-        where: { id: game.id },
-        data: { title },
-      });
-
       const { initGameRoom } = await import("@/lib/partykit");
       await initGameRoom(game.id, game.startsAt, game.endsAt);
 
-      await assignAutoQuestionsToGame(game.id, selectedTemplates);
+      if (selectedTemplates) {
+        await assignAutoQuestionsToGame(game.id, selectedTemplates);
+      }
 
       const txHash = await createGameOnChain(
         platform,
@@ -209,7 +235,7 @@ export async function createGameAction(
 
       if (usersToNotify.length > 0) {
         const payload = buildPayload(
-          template(game.gameNumber),
+          template(gameNumber),
           undefined,
           "pregame",
         );
@@ -223,11 +249,11 @@ export async function createGameAction(
 
       console.log("[admin-games]", "game_created", {
         gameId: game.id,
-        title,
+        title: game.title,
         theme: DEFAULT_GAME_THEME,
         onchainId,
         txHash,
-        gameNumber: game.gameNumber,
+        gameNumber,
         platform,
         launchGroupId,
         notifiedUsers: usersToNotify.length,
@@ -239,20 +265,20 @@ export async function createGameAction(
         entityType: EntityType.GAME,
         entityId: game.id,
         details: {
-          title,
+          title: game.title,
           platform,
           network,
           theme: DEFAULT_GAME_THEME,
           onchainId,
           txHash,
-          gameNumber: game.gameNumber,
+          gameNumber,
           ticketPrice: data.ticketPrice,
           launchGroupId,
-          autoQuestionCount: AUTO_QUESTION_COUNT,
+          autoQuestionCount: data.skipQuestions ? 0 : AUTO_QUESTION_COUNT,
         },
       });
 
-      createdGames.push({ id: game.id, platform, title });
+      createdGames.push({ id: game.id, platform, title: game.title });
     } catch (error) {
       if (gameId) {
         await prisma.game.delete({ where: { id: gameId } }).catch((cleanupError) => {
@@ -318,9 +344,11 @@ export async function updateGameAction(
     createOnMultiplePlatforms: "false",
     startsAt: formData.get("startsAt"),
     endsAt: formData.get("endsAt"),
+    ticketsOpenAt: formData.get("ticketsOpenAt") ?? "",
     ticketPrice: formData.get("ticketPrice"),
     roundBreakSec: formData.get("roundBreakSec"),
     maxPlayers: formData.get("maxPlayers"),
+    skipQuestions: "false",
   };
 
   const validation = gameSchema.safeParse(rawData);
@@ -337,6 +365,7 @@ export async function updateGameAction(
       where: { id: gameId },
       select: {
         tierPrices: true,
+        ticketsOpenAt: true,
       },
     });
 
@@ -354,6 +383,10 @@ export async function updateGameAction(
     }
 
     // 2. UPDATE DATABASE
+    // Reset sent notifications if ticketsOpenAt changed
+    const ticketsOpenChanged =
+      data.ticketsOpenAt?.getTime() !== existingGame.ticketsOpenAt?.getTime();
+
     const game = await prisma.game.update({
       where: { id: gameId },
       data: {
@@ -363,9 +396,11 @@ export async function updateGameAction(
         coverUrl: DEFAULT_GAME_COVER_URL,
         startsAt: data.startsAt,
         endsAt: data.endsAt,
+        ticketsOpenAt: data.ticketsOpenAt,
         tierPrices: [data.ticketPrice],
         roundBreakSec: data.roundBreakSec,
         maxPlayers: data.maxPlayers,
+        ...(ticketsOpenChanged ? { ticketOpenNotifsSent: [] } : {}),
       },
     });
 

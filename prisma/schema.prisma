@@ -220,7 +220,7 @@ model CompletedQuest {
 
 model Game {
   id         String @id @default(cuid())
-  gameNumber Int    @unique @default(autoincrement()) // Human-readable: WAFFLES #001
+  gameNumber Int    @unique // Human-readable: WAFFLES #001, derived from table count
 
   // -- ON-CHAIN IDENTITY (random bytes32, stored as 0x-prefixed hex string) --
   onchainId String? @unique @db.VarChar(66)
@@ -235,8 +235,12 @@ model Game {
   launchGroupId String? @db.VarChar(36)
 
   // -- TIMING (source of truth for game phase) --
-  startsAt DateTime
-  endsAt   DateTime
+  startsAt      DateTime
+  endsAt        DateTime
+  ticketsOpenAt DateTime? // When tickets become available (null = open immediately on create)
+
+  // -- TICKET OPEN NOTIFICATION TRACKING --
+  ticketOpenNotifsSent String[] @default([]) // Milestones already sent: "3h","1h","30m","15m","5m"
 
   // -- PRICING (flat $1 ticket) --
   tierPrices Float[] @default([1])

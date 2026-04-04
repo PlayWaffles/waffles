@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { prisma } from "@/lib/db";
 import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/lifecycle";
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
+import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 
 /**
  * Roundup ended games that weren't processed by PartyKit alarm.
@@ -58,6 +59,14 @@ async function reconcilePendingPurchasesJob() {
   }
 }
 
+async function ticketOpenNotificationsJob() {
+  try {
+    await sendTicketOpenNotifications();
+  } catch (e) {
+    console.error("[Cron] Ticket open notifications failed:", e);
+  }
+}
+
 /**
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
@@ -69,4 +78,8 @@ export function startCronJobs() {
   // Every minute: retry pending purchase syncs
   cron.schedule("* * * * *", reconcilePendingPurchasesJob);
   console.log("[Cron] Scheduled: reconcile-pending-purchases (every min)");
+
+  // Every minute: send ticket opening countdown notifications
+  cron.schedule("* * * * *", ticketOpenNotificationsJob);
+  console.log("[Cron] Scheduled: ticket-open-notifications (every min)");
 }

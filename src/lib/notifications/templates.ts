@@ -83,6 +83,48 @@ export const preGame = {
 };
 
 // ==========================================
+// TICKET OPENING COUNTDOWN NOTIFICATIONS
+// ==========================================
+
+export const ticketOpen = {
+  /** 3 hours before tickets open */
+  countdown3h: (gameNumber: number): NotificationTemplate => ({
+    title: "Tickets Open in 3 Hours! \u23F3",
+    body: `Waffles #${formatGameNum(gameNumber)} tickets drop soon. Get ready!`,
+  }),
+
+  /** 1 hour before tickets open */
+  countdown1h: (gameNumber: number): NotificationTemplate => ({
+    title: "1 Hour Until Tickets! \uD83D\uDEA8",
+    body: `Waffles #${formatGameNum(gameNumber)} tickets open in 60 minutes. Don't miss out!`,
+  }),
+
+  /** 30 minutes before tickets open */
+  countdown30m: (gameNumber: number): NotificationTemplate => ({
+    title: "30 Minutes to Go! \uD83D\uDD25",
+    body: `Waffles #${formatGameNum(gameNumber)} tickets are almost here. Be the first in line!`,
+  }),
+
+  /** 15 minutes before tickets open */
+  countdown15m: (gameNumber: number): NotificationTemplate => ({
+    title: "15 Minutes! \u26A1",
+    body: `Waffles #${formatGameNum(gameNumber)} tickets open very soon. Stay sharp!`,
+  }),
+
+  /** 5 minutes before tickets open */
+  countdown5m: (gameNumber: number): NotificationTemplate => ({
+    title: "Tickets in 5 Minutes! \uD83E\uDDE8",
+    body: `Waffles #${formatGameNum(gameNumber)} is about to open. Grab yours the second they drop!`,
+  }),
+
+  /** Tickets are now open */
+  nowOpen: (gameNumber: number): NotificationTemplate => ({
+    title: "Tickets Are LIVE! \uD83D\uDEAA",
+    body: `Waffles #${formatGameNum(gameNumber)} tickets are available now. Go go go!`,
+  }),
+};
+
+// ==========================================
 // LIVE GAME NOTIFICATIONS
 // ==========================================
 

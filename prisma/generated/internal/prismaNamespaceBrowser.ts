@@ -188,6 +188,8 @@ export const GameScalarFieldEnum = {
   launchGroupId: 'launchGroupId',
   startsAt: 'startsAt',
   endsAt: 'endsAt',
+  ticketsOpenAt: 'ticketsOpenAt',
+  ticketOpenNotifsSent: 'ticketOpenNotifsSent',
   tierPrices: 'tierPrices',
   prizePool: 'prizePool',
   playerCount: 'playerCount',

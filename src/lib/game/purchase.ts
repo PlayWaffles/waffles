@@ -116,6 +116,7 @@ export async function finalizeTicketPurchase(
         onchainId: true,
         startsAt: true,
         endsAt: true,
+        ticketsOpenAt: true,
         prizePool: true,
         playerCount: true,
         maxPlayers: true,
@@ -126,6 +127,14 @@ export async function finalizeTicketPurchase(
 
     if (!game || !isGameVisibleToPlatform(game, user.platform)) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
+    }
+
+    if (game.ticketsOpenAt && new Date() < game.ticketsOpenAt) {
+      return {
+        success: false,
+        error: "Tickets are not yet available",
+        code: "TICKETS_NOT_OPEN",
+      };
     }
 
     if (!normalizedPayerWallet) {

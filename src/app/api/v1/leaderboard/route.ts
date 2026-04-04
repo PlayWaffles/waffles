@@ -87,17 +87,48 @@ async function handleAllTime(
   page: number,
   platform: UserPlatform,
 ): Promise<NextResponse<LeaderboardResponse>> {
-  const [aggregated, countResult] = await Promise.all([
-    prisma.gameEntry.groupBy({
-      by: ["userId"],
-      where: entryWhere(platform),
-      _sum: { prize: true },
-      orderBy: { _sum: { prize: "desc" } },
-      take: PAGE_SIZE,
-      skip: page * PAGE_SIZE,
-    }),
+  const offset = page * PAGE_SIZE;
+  const [rankedRows, countResult] = await Promise.all([
+    prisma.$queryRaw<Array<{
+      id: string;
+      userId: string;
+      fid: number | null;
+      wallet: string | null;
+      username: string | null;
+      pfpUrl: string | null;
+      prize: number | null;
+      rank: bigint;
+    }>>`
+      WITH leaderboard AS (
+        SELECT
+          u.id,
+          u.id AS "userId",
+          u.fid,
+          u.wallet,
+          u.username,
+          u."pfpUrl",
+          COALESCE(SUM(ge.prize), 0) AS prize,
+          ROW_NUMBER() OVER (
+            ORDER BY
+              COALESCE(SUM(ge.prize), 0) DESC,
+              COUNT(*) FILTER (WHERE COALESCE(ge.prize, 0) > 0) DESC,
+              COALESCE(u.username, '') ASC,
+              u.id ASC
+          ) AS rank
+        FROM "GameEntry" ge
+        JOIN "Game" g ON ge."gameId" = g.id
+        JOIN "User" u ON ge."userId" = u.id
+        WHERE g.platform = ${platform}::"UserPlatform"
+          AND (${platform}::"UserPlatform" = 'MINIPAY'::"UserPlatform" OR g."isTestnet" = false)
+        GROUP BY u.id, u.fid, u.wallet, u.username, u."pfpUrl"
+      )
+      SELECT *
+      FROM leaderboard
+      ORDER BY rank ASC
+      LIMIT ${PAGE_SIZE} OFFSET ${offset}
+    `,
     prisma.$queryRaw<[{ count: bigint }]>`
-      SELECT COUNT(DISTINCT "userId") as count
+      SELECT COUNT(DISTINCT ge."userId") as count
       FROM "GameEntry" ge
       JOIN "Game" g ON ge."gameId" = g.id
       WHERE g.platform = ${platform}::"UserPlatform"
@@ -107,7 +138,7 @@ async function handleAllTime(
 
   const totalPlayers = Number(countResult[0]?.count ?? 0);
 
-  if (aggregated.length === 0) {
+  if (rankedRows.length === 0) {
     return NextResponse.json({
       entries: [],
       hasMore: false,
@@ -115,26 +146,16 @@ async function handleAllTime(
     });
   }
 
-  const userIds = aggregated.map((a) => a.userId);
-  const users = await prisma.user.findMany({
-    where: { id: { in: userIds } },
-    select: { id: true, fid: true, wallet: true, username: true, pfpUrl: true },
-  });
-  const userMap = new Map(users.map((u) => [u.id, u]));
-
-  const entries: LeaderboardEntry[] = aggregated.map((a, i) => {
-    const user = userMap.get(a.userId);
-    return {
-      id: user?.id ?? a.userId,
-      userId: user?.id ?? a.userId,
-      fid: user?.fid ?? null,
-      wallet: user?.wallet ?? null,
-      rank: page * PAGE_SIZE + i + 1,
-      username: user?.username ?? "Unknown",
-      prize: a._sum?.prize ?? 0,
-      pfpUrl: user?.pfpUrl ?? null,
-    };
-  });
+  const entries: LeaderboardEntry[] = rankedRows.map((row) => ({
+    id: row.id,
+    userId: row.userId,
+    fid: row.fid,
+    wallet: row.wallet,
+    rank: Number(row.rank),
+    username: row.username ?? "Unknown",
+    prize: row.prize ?? 0,
+    pfpUrl: row.pfpUrl,
+  }));
 
   return NextResponse.json({
     entries,

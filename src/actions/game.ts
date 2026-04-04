@@ -63,6 +63,7 @@ async function claimFreeTicketForUser(
       isTestnet: true,
       startsAt: true,
       endsAt: true,
+      ticketsOpenAt: true,
       prizePool: true,
       playerCount: true,
       maxPlayers: true,
@@ -76,6 +77,10 @@ async function claimFreeTicketForUser(
 
   if (!isGameVisibleToPlatform(game, user.platform as "FARCASTER" | "MINIPAY")) {
     return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
+  }
+
+  if (game.ticketsOpenAt && new Date() < game.ticketsOpenAt) {
+    return { success: false, error: "Tickets are not yet available", code: "TICKETS_NOT_OPEN" };
   }
 
   if (new Date() >= game.endsAt) {
