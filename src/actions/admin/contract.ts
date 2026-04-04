@@ -111,7 +111,10 @@ export async function withdrawProtocolFeesAction(
       args: [treasuryWallet, accumulatedFees],
     });
 
-    const txHash = await walletClient.writeContract(request);
+    const txHash = await walletClient.writeContract({
+      ...request,
+      account: walletClient.account,
+    });
     const amountFormatted = formatUnits(accumulatedFees, PAYMENT_TOKEN_DECIMALS);
 
     await logAdminAction({
