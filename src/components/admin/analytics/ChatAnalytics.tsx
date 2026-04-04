@@ -19,7 +19,7 @@ export function ChatAnalytics({ data }: ChatAnalyticsProps) {
     const maxKeywordCount = Math.max(...data.topKeywords.map(k => k.count), 1);
 
     return (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 p-5">
@@ -75,14 +75,14 @@ export function ChatAnalytics({ data }: ChatAnalyticsProps) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Messages by Round */}
-                <div className="rounded-2xl border border-white/10 p-6">
+                <div className="min-w-0 rounded-2xl border border-white/10 p-6">
                     <div className="mb-6">
                         <h3 className="text-lg font-semibold text-white font-display">Messages by Round</h3>
                         <p className="text-sm text-white/50">Chat activity during game rounds</p>
                     </div>
-                    <div className="h-64">
+                    <div className="h-64 min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data.messagesByRound} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />

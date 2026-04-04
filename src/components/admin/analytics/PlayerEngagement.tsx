@@ -23,7 +23,7 @@ export function PlayerEngagement({ data }: PlayerEngagementProps) {
     };
 
     return (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 p-5">
@@ -80,7 +80,7 @@ export function PlayerEngagement({ data }: PlayerEngagementProps) {
             </div>
 
             {/* Score Distribution */}
-            <div className="rounded-2xl border border-white/10 p-6">
+            <div className="min-w-0 rounded-2xl border border-white/10 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-lg font-semibold text-white font-display">Score Distribution</h3>
@@ -92,7 +92,7 @@ export function PlayerEngagement({ data }: PlayerEngagementProps) {
                     </div>
                 </div>
 
-                <div className="h-64">
+                <div className="h-64 min-w-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart data={data.scoreDistribution} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />

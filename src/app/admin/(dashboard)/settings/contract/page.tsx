@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useActionState } from "react";
 import Link from "next/link";
 import {
     CurrencyDollarIcon,
@@ -13,7 +14,12 @@ import {
     BanknotesIcon,
     ShieldExclamationIcon,
     LinkIcon,
+    ArrowDownTrayIcon,
 } from "@heroicons/react/24/outline";
+import {
+    withdrawProtocolFeesAction,
+    type WithdrawProtocolFeesResult,
+} from "@/actions/admin/contract";
 
 interface ContractState {
     address: string;
@@ -31,12 +37,18 @@ interface ContractState {
     activeGameCount: number;
     isPaused: boolean;
     settlementWalletConfigured: boolean;
+    adminWalletConfigured: boolean;
+    treasuryWallet: string;
 }
 
 export default function ContractSettingsPage() {
     const [state, setState] = useState<ContractState | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [withdrawState, withdrawAction, withdrawPending] = useActionState<
+        WithdrawProtocolFeesResult | null,
+        FormData
+    >(withdrawProtocolFeesAction, null);
 
     const fetchContractState = async () => {
         setLoading(true);
@@ -60,6 +72,12 @@ export default function ContractSettingsPage() {
     useEffect(() => {
         fetchContractState();
     }, []);
+
+    useEffect(() => {
+        if (withdrawState?.success) {
+            void fetchContractState();
+        }
+    }, [withdrawState]);
 
     const truncateAddress = (addr: string) =>
         `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -133,6 +151,18 @@ export default function ContractSettingsPage() {
                         <p className="text-orange-400 font-medium">Settlement Wallet Not Configured</p>
                         <p className="text-orange-400/70 text-sm">
                             Set <code className="bg-black/30 px-1 rounded">SETTLEMENT_PRIVATE_KEY</code> in your environment variables.
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {!state.adminWalletConfigured && (
+                <div className="p-4 bg-orange-500/10 border border-orange-500/30 rounded-xl flex items-center gap-3">
+                    <ExclamationTriangleIcon className="h-6 w-6 text-orange-400 shrink-0" />
+                    <div>
+                        <p className="text-orange-400 font-medium">Default Admin Wallet Not Configured</p>
+                        <p className="text-orange-400/70 text-sm">
+                            Set <code className="bg-black/30 px-1 rounded">DEFAULT_ADMIN_PRIVATE_KEY</code> or <code className="bg-black/30 px-1 rounded">SUPER_ADMIN_PRIVATE_KEY</code> to enable fee withdrawals.
                         </p>
                     </div>
                 </div>
@@ -233,6 +263,14 @@ export default function ContractSettingsPage() {
                         </a>
                     </div>
 
+                    {/* Treasury Wallet */}
+                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                        <div>
+                            <p className="text-white/50 text-sm mb-1">Treasury Wallet</p>
+                            <p className="text-white font-mono">{state.treasuryWallet}</p>
+                        </div>
+                    </div>
+
                     {/* Chain */}
                     <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
                         <div>
@@ -249,6 +287,60 @@ export default function ContractSettingsPage() {
                             <span className="text-sm font-medium">Connected</span>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <div className="rounded-2xl border border-white/10 p-6">
+                <div className="flex items-start justify-between gap-6">
+                    <div>
+                        <h2 className="text-lg font-semibold text-white font-display">
+                            Withdraw Protocol Fees
+                        </h2>
+                        <p className="mt-2 text-sm text-white/50 max-w-2xl">
+                            Withdraw the full on-chain <code className="bg-black/30 px-1 rounded">accumulatedFees</code> balance to the configured treasury wallet.
+                        </p>
+                    </div>
+                    <form action={withdrawAction} className="shrink-0">
+                        <input type="hidden" name="platform" value="FARCASTER" />
+                        <button
+                            type="submit"
+                            disabled={
+                                withdrawPending ||
+                                !state.adminWalletConfigured ||
+                                Number(state.accumulatedFeesFormatted) <= 0
+                            }
+                            className="inline-flex items-center gap-2 rounded-xl bg-[#14B985] px-4 py-2.5 text-sm font-bold text-black transition-colors hover:bg-[#2cd39d] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                            <ArrowDownTrayIcon className="h-4 w-4" />
+                            {withdrawPending ? "Withdrawing..." : "Withdraw to Treasury"}
+                        </button>
+                    </form>
+                </div>
+
+                <div className="mt-4 grid gap-3 text-sm text-white/60">
+                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+                        Destination: <span className="font-mono text-white">{state.treasuryWallet}</span>
+                    </div>
+                    {withdrawState ? (
+                        <div
+                            className={`rounded-xl border p-4 ${
+                                withdrawState.success
+                                    ? "border-[#14B985]/30 bg-[#14B985]/10 text-[#14B985]"
+                                    : "border-red-500/30 bg-red-500/10 text-red-400"
+                            }`}
+                        >
+                            {withdrawState.success ? (
+                                <div className="space-y-1">
+                                    <p>{withdrawState.message}</p>
+                                    <p className="text-xs break-all">
+                                        Tx: {withdrawState.txHash}
+                                    </p>
+                                </div>
+                            ) : (
+                                <p>{withdrawState.error}</p>
+                            )}
+                        </div>
+                    ) : null}
                 </div>
             </div>
 

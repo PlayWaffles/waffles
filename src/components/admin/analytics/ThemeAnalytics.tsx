@@ -32,7 +32,7 @@ export function ThemeAnalytics({ data }: ThemeAnalyticsProps) {
     const totalPlayers = data.reduce((acc, item) => acc + item.players, 0);
 
     return (
-        <div className="bg-linear-to-br from-[#FB72FF]/5 to-transparent rounded-2xl border border-white/10 p-6">
+        <div className="min-w-0 bg-linear-to-br from-[#FB72FF]/5 to-transparent rounded-2xl border border-white/10 p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-semibold text-white font-display">Theme Performance</h3>
@@ -40,13 +40,13 @@ export function ThemeAnalytics({ data }: ThemeAnalyticsProps) {
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
                 {/* Revenue by Theme Bar Chart */}
-                <div>
+                <div className="min-w-0">
                     <h4 className="text-sm font-medium text-white/50 font-display uppercase tracking-wider mb-4">
                         Revenue by Theme
                     </h4>
-                    <div className="h-64">
+                    <div className="h-64 min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={data} layout="vertical" margin={{ top: 0, right: 0, left: 0, bottom: 0 }}>
                                 <XAxis

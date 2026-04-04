@@ -37,7 +37,7 @@ export function GameInsights({ data }: GameInsightsProps) {
     const paidRate = totalTickets > 0 ? ((data.ticketConversion.paid + data.ticketConversion.redeemed) / totalTickets) * 100 : 0;
 
     return (
-        <div className="space-y-6">
+        <div className="min-w-0 space-y-6">
             {/* Summary Stats */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div className="rounded-2xl border border-white/10 p-5">
@@ -94,7 +94,7 @@ export function GameInsights({ data }: GameInsightsProps) {
             </div>
 
             {/* Ticket Funnel */}
-            <div className="rounded-2xl border border-white/10 p-6">
+            <div className="min-w-0 rounded-2xl border border-white/10 p-6">
                 <div className="flex items-center justify-between mb-6">
                     <div>
                         <h3 className="text-lg font-semibold text-white font-display">Ticket Conversion Funnel</h3>
@@ -106,9 +106,9 @@ export function GameInsights({ data }: GameInsightsProps) {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid min-w-0 grid-cols-1 gap-8 lg:grid-cols-2">
                     {/* Bar Chart */}
-                    <div className="h-64">
+                    <div className="h-64 min-w-0">
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={conversionData} layout="vertical">
                                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />

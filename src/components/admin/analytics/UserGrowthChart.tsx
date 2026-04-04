@@ -30,7 +30,7 @@ export function UserGrowthChart({ dailyData, statusData }: UserGrowthChartProps)
     const [viewMode, setViewMode] = useState<"cumulative" | "daily">("cumulative");
 
     return (
-        <div className="bg-linear-to-br from-[#00CFF2]/5 to-transparent rounded-2xl border border-white/10 p-6">
+        <div className="min-w-0 bg-linear-to-br from-[#00CFF2]/5 to-transparent rounded-2xl border border-white/10 p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-semibold text-white font-display">User Growth</h3>
@@ -58,9 +58,9 @@ export function UserGrowthChart({ dailyData, statusData }: UserGrowthChartProps)
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-3">
                 {/* Main Chart */}
-                <div className="lg:col-span-2 h-72">
+                <div className="h-72 min-w-0 lg:col-span-2">
                     <ResponsiveContainer width="100%" height="100%">
                         {viewMode === "cumulative" ? (
                             <AreaChart data={dailyData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>

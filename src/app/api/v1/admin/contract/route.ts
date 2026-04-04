@@ -41,6 +41,8 @@ interface ContractState {
   activeGameCount: number;
   isPaused: boolean;
   settlementWalletConfigured: boolean;
+  adminWalletConfigured: boolean;
+  treasuryWallet: string;
 }
 
 /**
@@ -100,6 +102,7 @@ export async function GET(request: NextRequest) {
 
     // Check if wallet is configured
     const isConfigured = !!env.operatorPrivateKey && !!env.settlerPrivateKey;
+    const isAdminWalletConfigured = !!env.defaultAdminPrivateKey;
     // let address = null;
     // let balance = null;
 
@@ -122,6 +125,8 @@ export async function GET(request: NextRequest) {
       activeGameCount: Number(activeGameCount),
       isPaused,
       settlementWalletConfigured: isConfigured,
+      adminWalletConfigured: isAdminWalletConfigured,
+      treasuryWallet: env.nextPublicTreasuryWallet,
     };
 
     return NextResponse.json(state);

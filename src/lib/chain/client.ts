@@ -37,6 +37,24 @@ export function getPublicClient(target: ChainTarget) {
 // ============================================================================
 
 /**
+ * Get the default admin wallet client for cold-wallet admin operations.
+ * @throws Error if DEFAULT_ADMIN_PRIVATE_KEY or SUPER_ADMIN_PRIVATE_KEY is not set
+ */
+export function getDefaultAdminWalletClient(target: ChainTarget) {
+  const privateKey = env.defaultAdminPrivateKey;
+  if (!privateKey) {
+    throw new Error(
+      "DEFAULT_ADMIN_PRIVATE_KEY or SUPER_ADMIN_PRIVATE_KEY environment variable not set",
+    );
+  }
+  return createWalletClient({
+    account: privateKeyToAccount(privateKey as `0x${string}`),
+    chain: getPlatformChain(target),
+    transport: http(getPlatformRpcUrl(target)),
+  });
+}
+
+/**
  * Get the operator wallet client for game creation and sales closure.
  * @throws Error if OPERATOR_PRIVATE_KEY is not set
  */

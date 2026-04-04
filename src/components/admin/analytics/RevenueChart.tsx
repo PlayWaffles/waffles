@@ -21,7 +21,7 @@ interface RevenueChartProps {
 
 export function RevenueChart({ data }: RevenueChartProps) {
     return (
-        <div className="bg-linear-to-br from-[#FFC931]/5 to-transparent rounded-2xl border border-white/10 p-6">
+        <div className="min-w-0 bg-linear-to-br from-[#FFC931]/5 to-transparent rounded-2xl border border-white/10 p-6">
             <div className="flex items-center justify-between mb-6">
                 <div>
                     <h3 className="text-lg font-semibold text-white font-display">Revenue Over Time</h3>
@@ -29,7 +29,7 @@ export function RevenueChart({ data }: RevenueChartProps) {
                 </div>
             </div>
 
-            <div className="h-80">
+            <div className="h-80 min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                         <defs>

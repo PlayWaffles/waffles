@@ -29,8 +29,6 @@ const navigation = [
     { name: "Question Bank", href: "/admin/questions", icon: ArchiveBoxIcon },
     { name: "Users", href: "/admin/users", icon: UsersIcon },
     { name: "Notifications", href: "/admin/notifications", icon: BellIcon },
-    { name: "Invite Codes", href: "/admin/invite-codes", icon: TicketIcon },
-    { name: "Quests", href: "/admin/quests", icon: StarIcon },
     { name: "Tickets", href: "/admin/tickets", icon: RectangleGroupIcon },
     { name: "Media Library", href: "/admin/media", icon: PhotoIcon },
     { name: "Analytics", href: "/admin/analytics", icon: ChartBarIcon },

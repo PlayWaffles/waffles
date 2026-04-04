@@ -15,6 +15,8 @@ const envSchema = z.object({
   AUTH_SECRET: z.string().optional(),
 
   // Chain role keys (server-only, optional - only needed for admin operations)
+  DEFAULT_ADMIN_PRIVATE_KEY: z.string().optional(),
+  SUPER_ADMIN_PRIVATE_KEY: z.string().optional(),
   OPERATOR_PRIVATE_KEY: z.string().optional(),
   SETTLER_PRIVATE_KEY: z.string().optional(),
 
@@ -108,6 +110,8 @@ const getEnv = () => {
     NEYNAR_API_KEY: process.env.NEYNAR_API_KEY,
     DATABASE_URL: process.env.DATABASE_URL,
     AUTH_SECRET: process.env.AUTH_SECRET,
+    DEFAULT_ADMIN_PRIVATE_KEY: process.env.DEFAULT_ADMIN_PRIVATE_KEY,
+    SUPER_ADMIN_PRIVATE_KEY: process.env.SUPER_ADMIN_PRIVATE_KEY,
     OPERATOR_PRIVATE_KEY: process.env.OPERATOR_PRIVATE_KEY,
     SETTLER_PRIVATE_KEY: process.env.SETTLER_PRIVATE_KEY,
     PARTYKIT_SECRET: process.env.PARTYKIT_SECRET,
@@ -176,6 +180,7 @@ const getEnv = () => {
         neynarApiKey: "",
         databaseUrl: "",
         authSecret: undefined,
+        defaultAdminPrivateKey: undefined,
         operatorPrivateKey: undefined,
         settlerPrivateKey: undefined,
         partykitSecret: "",
@@ -239,6 +244,8 @@ const getEnv = () => {
     databaseUrl: data.DATABASE_URL,
     authSecret: data.AUTH_SECRET,
     // Chain role keys
+    defaultAdminPrivateKey:
+      data.DEFAULT_ADMIN_PRIVATE_KEY || data.SUPER_ADMIN_PRIVATE_KEY,
     operatorPrivateKey: data.OPERATOR_PRIVATE_KEY,
     settlerPrivateKey: data.SETTLER_PRIVATE_KEY,
     // PartyKit
