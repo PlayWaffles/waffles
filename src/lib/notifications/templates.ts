@@ -30,6 +30,12 @@ export const preGame = {
     body: "Tickets are available now. Grab yours before the rush!",
   }),
 
+  /** When a new game is announced but tickets open later */
+  gameScheduled: (gameNumber: number): NotificationTemplate => ({
+    title: `Waffles #${formatGameNum(gameNumber)} Announced! 📣`,
+    body: "A new game is coming. Stay tuned for when tickets drop!",
+  }),
+
   /** 24 hours before game starts */
   countdown24h: (gameNumber: number): NotificationTemplate => ({
     title: "24 Hours Left ⏳",

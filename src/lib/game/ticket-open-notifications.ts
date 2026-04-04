@@ -58,7 +58,7 @@ export async function sendTicketOpenNotifications() {
   await Promise.all(
     platforms.map(async (platform) => {
       const users = await prisma.user.findMany({
-        where: { hasGameAccess: true, isBanned: false, platform },
+        where: { isBanned: false, platform },
         select: { id: true },
       });
       usersByPlatform.set(platform, users.map((u) => u.id));

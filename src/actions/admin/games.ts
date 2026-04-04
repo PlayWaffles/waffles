@@ -219,14 +219,16 @@ export async function createGameAction(
         data.ticketPrice,
       );
 
-      const template = (await import("@/lib/notifications/templates")).preGame
-        .gameOpen;
+      const templates = await import("@/lib/notifications/templates");
       const { sendBatch } = await import("@/lib/notifications");
-      const { buildPayload } = await import("@/lib/notifications/templates");
+
+      // If tickets open later, announce the game; otherwise tell users tickets are live
+      const notifTemplate = data.ticketsOpenAt
+        ? templates.preGame.gameScheduled(gameNumber)
+        : templates.preGame.gameOpen(gameNumber);
 
       const usersToNotify = await prisma.user.findMany({
         where: {
-          hasGameAccess: true,
           isBanned: false,
           platform,
         },
@@ -234,8 +236,8 @@ export async function createGameAction(
       });
 
       if (usersToNotify.length > 0) {
-        const payload = buildPayload(
-          template(gameNumber),
+        const payload = templates.buildPayload(
+          notifTemplate,
           undefined,
           "pregame",
         );

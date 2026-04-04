@@ -55,7 +55,6 @@ export async function POST(
     const users = await prisma.user.findMany({
       where: {
         platform: game.platform,
-        hasGameAccess: true,
         isBanned: false,
       },
       select: { id: true },

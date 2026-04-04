@@ -416,7 +416,6 @@ export async function finalizeTicketPurchase(
     if (newCount === playerThreshold) {
       void prisma.user.findMany({
         where: {
-          hasGameAccess: true,
           isBanned: false,
           entries: { none: { gameId } },
         },

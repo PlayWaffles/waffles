@@ -104,7 +104,7 @@ export async function createQuestAction(
         );
 
         const activeUsers = await prisma.user.findMany({
-          where: { hasGameAccess: true, isBanned: false },
+          where: { isBanned: false },
           select: { id: true },
         });
         const notificationResults = await sendBatch(payload, activeUsers.map((u) => u.id));

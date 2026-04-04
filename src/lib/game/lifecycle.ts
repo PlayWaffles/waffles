@@ -341,7 +341,7 @@ export async function sendResultNotifications(gameId: string) {
   }
 
   const allEntries = await prisma.gameEntry.findMany({
-    where: { gameId, user: { hasGameAccess: true, isBanned: false } },
+    where: { gameId, user: { isBanned: false } },
     select: {
       userId: true,
       rank: true,
