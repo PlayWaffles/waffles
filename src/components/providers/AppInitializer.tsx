@@ -297,9 +297,11 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const handleOnboardingComplete = useCallback(async () => {
     if (runtime === "farcaster") {
       try {
+        console.log("[onboarding] Calling sdk.actions.addMiniApp()");
         await sdk.actions.addMiniApp();
-      } catch {
-        // User rejected or domain mismatch — continue onboarding either way
+        console.log("[onboarding] addMiniApp() resolved (user accepted)");
+      } catch (err) {
+        console.log("[onboarding] addMiniApp() rejected:", err instanceof Error ? err.message : err);
       }
       setNotificationNudgeDismissed(true);
     } else {
@@ -477,6 +479,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     }
 
     const handleNotificationsEnabled = () => {
+      console.log("[sdk-event] notificationsEnabled");
       setNotificationNudgeDismissed(true);
       setNotificationNudgeError(null);
       setIsEnablingNotifications(false);
@@ -488,6 +491,11 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     }: {
       notificationDetails?: { token?: string; url?: string };
     }) => {
+      console.log("[sdk-event] miniAppAdded", {
+        hasNotificationDetails: Boolean(notificationDetails),
+        hasToken: Boolean(notificationDetails?.token),
+        hasUrl: Boolean(notificationDetails?.url),
+      });
       if (!notificationDetails) {
         return;
       }
@@ -495,6 +503,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     };
 
     const handleMiniAppAddRejected = () => {
+      console.log("[sdk-event] miniAppAddRejected");
       setNotificationNudgeDismissed(true);
       setNotificationNudgeError(null);
       setIsEnablingNotifications(false);

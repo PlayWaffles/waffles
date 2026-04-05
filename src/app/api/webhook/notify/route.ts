@@ -13,12 +13,16 @@ import {
 export async function POST(request: NextRequest) {
   const requestJson = await request.text();
 
+  console.log("[Webhook] Received POST /api/webhook/notify", {
+    contentLength: requestJson.length,
+  });
+
   let data: Awaited<ReturnType<typeof parseWebhookEvent>>;
   try {
     data = await parseWebhookEvent(requestJson, verifyAppKeyWithNeynar);
   } catch (e: unknown) {
     const error = e as ParseWebhookEvent.ErrorType;
-    console.error("[Webhook] Verification failed:", error.name);
+    console.error("[Webhook] Verification failed:", error.name, error.message);
     return NextResponse.json(
       { success: false, error: error.name },
       { status: 400 },
@@ -26,16 +30,29 @@ export async function POST(request: NextRequest) {
   }
 
   const { fid, appFid, event } = data;
+  const hasNotifDetails = "notificationDetails" in event;
+
+  console.log("[Webhook] Verified event:", {
+    fid,
+    appFid,
+    event: event.event,
+    hasNotificationDetails: hasNotifDetails,
+  });
 
   const result = await handleWebhookEvent({
     fid,
     appFid,
     event: event.event,
-    notificationDetails:
-      "notificationDetails" in event ? event.notificationDetails : undefined,
+    notificationDetails: hasNotifDetails ? event.notificationDetails : undefined,
   });
 
-  // Send welcome notification after responding (don't block)
+  console.log("[Webhook] Handler result:", {
+    fid,
+    event: event.event,
+    success: result.success,
+    shouldSendWelcome: result.shouldSendWelcome,
+  });
+
   if (result.shouldSendWelcome) {
     sendWelcomeNotification(fid).catch(console.error);
   }
