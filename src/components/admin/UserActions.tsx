@@ -32,6 +32,7 @@ export function UserActions({ user }: UserActionsProps) {
     const [loading, setLoading] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
+    const [tempPassword, setTempPassword] = useState<string | null>(null);
 
     // Clear messages after 3 seconds
     const showMessage = (type: 'success' | 'error', message: string) => {
@@ -105,6 +106,7 @@ export function UserActions({ user }: UserActionsProps) {
         setLoading(null);
 
         if (result.success) {
+            setTempPassword(result.tempPassword ?? null);
             showMessage('success', 'User promoted to admin');
         } else {
             showMessage('error', result.error);
@@ -185,7 +187,7 @@ export function UserActions({ user }: UserActionsProps) {
                 {/* Promote to Admin */}
                 {user.role !== "ADMIN" && (
                     <div className="pt-4 border-t border-white/10">
-                        <p className="text-xs text-white/30 mb-2">⚠️ Danger Zone</p>
+                        <p className="text-xs text-white/30 mb-2">Danger Zone</p>
                         <button
                             onClick={handlePromoteToAdmin}
                             disabled={isLoading}
@@ -194,6 +196,36 @@ export function UserActions({ user }: UserActionsProps) {
                             {loading === 'promote' && <Spinner />}
                             Promote to Admin
                         </button>
+                    </div>
+                )}
+
+                {/* Temporary Password (shown once after promotion) */}
+                {tempPassword && (
+                    <div className="pt-4 border-t border-white/10">
+                        <div className="p-4 rounded-xl bg-[#FFC931]/10 border border-[#FFC931]/30">
+                            <p className="text-sm font-semibold text-[#FFC931] mb-1">Temporary Password</p>
+                            <p className="text-xs text-white/50 mb-3">
+                                Share this with the new admin. They should change it after first login.
+                            </p>
+                            <div className="flex items-center gap-2">
+                                <code className="flex-1 px-3 py-2 bg-black/40 rounded-lg text-sm font-mono text-white select-all break-all">
+                                    {tempPassword}
+                                </code>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(tempPassword);
+                                        showMessage('success', 'Password copied');
+                                    }}
+                                    className="shrink-0 px-3 py-2 bg-white/10 text-white/70 text-xs rounded-lg hover:bg-white/20 transition-colors font-medium"
+                                >
+                                    Copy
+                                </button>
+                            </div>
+                            <p className="text-xs text-white/30 mt-2">
+                                Username: <span className="font-mono text-white/50">@{user.username}</span>
+                            </p>
+                        </div>
                     </div>
                 )}
             </div>

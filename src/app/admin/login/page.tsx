@@ -103,6 +103,7 @@ function LoginForm() {
                                             type="text"
                                             id="username"
                                             name="username"
+                                            autoComplete="username"
                                             required
                                             disabled={isPending}
                                             className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931]/50 transition-all duration-200 disabled:opacity-50"
@@ -124,6 +125,7 @@ function LoginForm() {
                                             type="password"
                                             id="password"
                                             name="password"
+                                            autoComplete="current-password"
                                             required
                                             disabled={isPending}
                                             className="w-full pl-12 pr-4 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white placeholder-white/30 focus:outline-none focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931]/50 transition-all duration-200 disabled:opacity-50"

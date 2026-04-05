@@ -1,8 +1,9 @@
 "use server";
 
 import { z } from "zod";
+import { randomBytes } from "crypto";
 import { prisma } from "@/lib/db";
-import { requireAdminSession } from "@/lib/admin-auth";
+import { requireAdminSession, hashPassword } from "@/lib/admin-auth";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 
@@ -16,7 +17,7 @@ const adjustQuotaSchema = z.object({
 });
 
 export type UserActionResult =
-  | { success: true }
+  | { success: true; tempPassword?: string }
   | { success: false; error: string };
 
 /**
@@ -273,9 +274,12 @@ export async function promoteToAdminAction(
       return { success: false, error: "User is already an admin" };
     }
 
+    const tempPassword = randomBytes(12).toString("base64url");
+    const hashedPassword = await hashPassword(tempPassword);
+
     const user = await prisma.user.update({
       where: { id: userId },
-      data: { role: "ADMIN" },
+      data: { role: "ADMIN", password: hashedPassword },
     });
 
     await logAdminAction({
@@ -289,7 +293,7 @@ export async function promoteToAdminAction(
     revalidatePath("/admin/users");
     revalidatePath(`/admin/users/${userId}`);
 
-    return { success: true };
+    return { success: true, tempPassword };
   } catch (error) {
     console.error("Promote to admin error:", error);
     return { success: false, error: "Failed to promote user" };
