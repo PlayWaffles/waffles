@@ -1,6 +1,9 @@
 import { prisma } from "@/lib/db";
 import { sendBatchToFids } from "./adapters/farcaster";
+import { logNotification } from "./log";
 import type { BatchResult, NotificationPayload } from "./types";
+
+const EMPTY_RESULT: BatchResult = { total: 0, success: 0, failed: 0, invalidTokens: 0, rateLimited: 0, durationMs: 0 };
 
 /**
  * Send a batch notification to a list of user IDs.
@@ -12,7 +15,7 @@ export async function sendBatch(
   userIds: string[],
 ): Promise<BatchResult> {
   if (userIds.length === 0) {
-    return { total: 0, success: 0, failed: 0, invalidTokens: 0, rateLimited: 0, durationMs: 0 };
+    return EMPTY_RESULT;
   }
 
   // Single query: fetch only Farcaster users with fids (MiniPay has no notifications)
@@ -22,5 +25,16 @@ export async function sendBatch(
   });
 
   const fids = farcasterUsers.map((u) => u.fid!);
-  return sendBatchToFids(payload, fids);
+  const result = await sendBatchToFids(payload, fids);
+
+  logNotification("batch", payload, {
+    recipientCount: userIds.length,
+    success: result.success,
+    failed: result.failed,
+    invalidTokens: result.invalidTokens,
+    rateLimited: result.rateLimited,
+    durationMs: result.durationMs,
+  });
+
+  return result;
 }

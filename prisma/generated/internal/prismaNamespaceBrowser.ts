@@ -63,6 +63,7 @@ export const ModelName = {
   Chat: 'Chat',
   PendingPurchase: 'PendingPurchase',
   NotificationToken: 'NotificationToken',
+  NotificationLog: 'NotificationLog',
   AuditLog: 'AuditLog',
   InviteCode: 'InviteCode'
 } as const
@@ -314,6 +315,25 @@ export const NotificationTokenScalarFieldEnum = {
 } as const
 
 export type NotificationTokenScalarFieldEnum = (typeof NotificationTokenScalarFieldEnum)[keyof typeof NotificationTokenScalarFieldEnum]
+
+
+export const NotificationLogScalarFieldEnum = {
+  id: 'id',
+  channel: 'channel',
+  title: 'title',
+  body: 'body',
+  targetUrl: 'targetUrl',
+  recipientCount: 'recipientCount',
+  userId: 'userId',
+  success: 'success',
+  failed: 'failed',
+  invalidTokens: 'invalidTokens',
+  rateLimited: 'rateLimited',
+  durationMs: 'durationMs',
+  createdAt: 'createdAt'
+} as const
+
+export type NotificationLogScalarFieldEnum = (typeof NotificationLogScalarFieldEnum)[keyof typeof NotificationLogScalarFieldEnum]
 
 
 export const AuditLogScalarFieldEnum = {

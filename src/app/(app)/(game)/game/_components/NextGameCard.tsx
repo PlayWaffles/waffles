@@ -135,7 +135,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
             : { text: "PLAY NOW", disabled: false, href: `/game/${game.id}/live` }
           : { text: "GET TICKET", disabled: false, href: null }
         : ticketsNotYetOpen
-          ? { text: `TICKETS OPEN IN ${hours}:${minutes}:${seconds}`, disabled: true, href: null }
+          ? { text: "TICKETS OPENING SOON", disabled: true, href: null }
           : hasTicket
             ? { text: "WHAT NEXT???", disabled: false, href: ticketSuccessHref }
             : {

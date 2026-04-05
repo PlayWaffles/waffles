@@ -78,6 +78,11 @@ export type PendingPurchase = Prisma.PendingPurchaseModel
  */
 export type NotificationToken = Prisma.NotificationTokenModel
 /**
+ * Model NotificationLog
+ * 
+ */
+export type NotificationLog = Prisma.NotificationLogModel
+/**
  * Model AuditLog
  * 
  */

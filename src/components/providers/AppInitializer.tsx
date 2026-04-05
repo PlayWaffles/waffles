@@ -295,7 +295,14 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   ]);
 
   const handleOnboardingComplete = useCallback(async () => {
-    if (runtime !== "farcaster") {
+    if (runtime === "farcaster") {
+      try {
+        await sdk.actions.addMiniApp();
+      } catch {
+        // User rejected or domain mismatch — continue onboarding either way
+      }
+      setNotificationNudgeDismissed(true);
+    } else {
       onboardingAuthInProgressRef.current = true;
       try {
         const walletAddress = await connectWallet();

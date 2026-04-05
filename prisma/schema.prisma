@@ -483,6 +483,29 @@ model NotificationToken {
   @@index([token])
 }
 
+model NotificationLog {
+  id        String   @id @default(cuid())
+  channel   String   @db.VarChar(20)  // "batch" | "single"
+  title     String   @db.VarChar(100)
+  body      String   @db.VarChar(500)
+  targetUrl String   @db.VarChar(1024)
+
+  // Audience
+  recipientCount Int // How many users were targeted
+  userId         String? // For single-user sends
+
+  // Results
+  success       Int @default(0)
+  failed        Int @default(0)
+  invalidTokens Int @default(0)
+  rateLimited   Int @default(0)
+  durationMs    Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 // ==========================================
 // 6. ADMIN AUDIT LOG
 // ==========================================
