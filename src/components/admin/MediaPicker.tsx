@@ -160,7 +160,6 @@ export function MediaPicker({ label, name, accept = "all", onSelect, selectedUrl
 
             {selectedUrl ? (
                 <div className="relative group">
-                    {/* Compact image preview with better styling */}
                     <div className="relative w-full h-40 bg-black/30 rounded-xl overflow-hidden border border-white/10 hover:border-white/20 transition-colors">
                         <Image
                             src={selectedUrl}
@@ -169,11 +168,9 @@ export function MediaPicker({ label, name, accept = "all", onSelect, selectedUrl
                             className="object-cover"
                             unoptimized
                         />
-                        {/* Gradient overlay for better button visibility */}
                         <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
 
-                    {/* Action buttons */}
                     <div className="absolute bottom-3 left-3 right-3 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                             type="button"
@@ -194,34 +191,56 @@ export function MediaPicker({ label, name, accept = "all", onSelect, selectedUrl
             ) : (
                 <div
                     ref={dropZoneRef}
-                    tabIndex={0}
-                    onClick={() => !isUploading && setIsOpen(true)}
-                    onKeyDown={(e) => e.key === "Enter" && !isUploading && setIsOpen(true)}
-                    className={`w-full border border-dashed rounded-xl p-5 text-center transition-all group cursor-pointer focus:outline-none focus:ring-2 focus:ring-[#FFC931]/50 ${isUploading
-                            ? "border-[#FFC931] bg-[#FFC931]/10"
-                            : uploadError
-                                ? "border-red-500/50"
-                                : "border-white/20 hover:border-[#FFC931]/50 hover:bg-white/5"
-                        }`}
+                    className="flex items-stretch rounded-xl border border-white/10 overflow-hidden"
                 >
-                    {isUploading ? (
-                        <div className="flex items-center justify-center gap-3">
-                            <div className="h-6 w-6 border-2 border-[#FFC931]/30 border-t-[#FFC931] rounded-full animate-spin" />
-                            <span className="text-sm text-[#FFC931]">Uploading...</span>
-                        </div>
-                    ) : (
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 rounded-xl bg-white/5 group-hover:bg-[#FFC931]/10 group-focus:bg-[#FFC931]/10 transition-colors">
-                                <PhotoIcon className="h-6 w-6 text-white/40 group-hover:text-[#FFC931] group-focus:text-[#FFC931] transition-colors" />
-                            </div>
-                            <div className="text-left">
-                                <div className="text-sm font-medium text-white">Add Image</div>
-                                <div className="text-xs text-white/50">Paste image (⌘V) or click to browse</div>
-                            </div>
-                        </div>
-                    )}
+                    {/* Add Image button */}
+                    <button
+                        type="button"
+                        onClick={() => !isUploading && setIsOpen(true)}
+                        disabled={isUploading}
+                        className="flex items-center gap-2 px-4 py-3 bg-white/5 border-r border-white/10 hover:bg-white/10 transition-colors shrink-0 disabled:opacity-50"
+                    >
+                        {isUploading ? (
+                            <div className="h-5 w-5 border-2 border-[#FFC931]/30 border-t-[#FFC931] rounded-full animate-spin" />
+                        ) : (
+                            <PhotoIcon className="h-5 w-5 text-white/50" />
+                        )}
+                        <span className="text-sm font-medium text-white/80">
+                            {isUploading ? "Uploading..." : "Add Image"}
+                        </span>
+                    </button>
+
+                    {/* URL / paste input */}
+                    <input
+                        type="text"
+                        placeholder="Add image from URL or paste from clipboard"
+                        className="flex-1 px-4 py-3 bg-transparent text-sm text-white placeholder-white/30 focus:outline-none min-w-0"
+                        onPaste={async (e) => {
+                            const items = e.clipboardData?.items;
+                            if (!items) return;
+
+                            for (const item of Array.from(items)) {
+                                if (item.type.startsWith("image/")) {
+                                    e.preventDefault();
+                                    const file = item.getAsFile();
+                                    if (file) await uploadFile(file);
+                                    return;
+                                }
+                            }
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                                e.preventDefault();
+                                const value = (e.target as HTMLInputElement).value.trim();
+                                if (value) onSelect(value);
+                            }
+                        }}
+                    />
+
                     {uploadError && (
-                        <p className="text-xs text-red-400 mt-2">{uploadError}</p>
+                        <div className="flex items-center px-3">
+                            <span className="text-xs text-red-400">{uploadError}</span>
+                        </div>
                     )}
                 </div>
             )}
