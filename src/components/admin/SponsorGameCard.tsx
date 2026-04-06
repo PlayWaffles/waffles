@@ -24,6 +24,7 @@ import {
     useTokenBalance,
     useTokenAllowance,
     useContractToken,
+    usePlatformFee,
 } from "@/hooks/waffleContractHooks";
 import {
     PAYMENT_TOKEN_DECIMALS,
@@ -183,6 +184,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
         data: totalPrizePool,
         refetch: refetchPrizePool,
     } = useGetTotalPrizePool(onchainId, target);
+    const { data: platformFeePermyriad } = usePlatformFee(target);
     const {
         data: balance,
         refetch: refetchBalance,
@@ -205,6 +207,31 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
         ? parseFloat(formatUnits(totalPrizePool as bigint, PAYMENT_TOKEN_DECIMALS)).toFixed(2)
         : "0.00";
     const allowanceBigInt = typeof allowance === "bigint" ? allowance : BigInt(0);
+    const feePermyriadBigInt = typeof platformFeePermyriad === "bigint"
+        ? platformFeePermyriad
+        : BigInt(2000);
+    const sponsorshipFeeUnits = amountInUnits > BigInt(0)
+        ? (amountInUnits * feePermyriadBigInt) / BigInt(10000)
+        : BigInt(0);
+    const sponsorshipNetUnits = amountInUnits > sponsorshipFeeUnits
+        ? amountInUnits - sponsorshipFeeUnits
+        : BigInt(0);
+    const projectedPrizePoolUnits = typeof totalPrizePool === "bigint"
+        ? totalPrizePool + sponsorshipNetUnits
+        : sponsorshipNetUnits;
+    const feePercent = Number(feePermyriadBigInt) / 100;
+    const formattedGrossAmount = amountInUnits > BigInt(0)
+        ? formatUsdAmount(formatUnits(amountInUnits, PAYMENT_TOKEN_DECIMALS))
+        : "0.00";
+    const formattedSponsorshipFee = formatUsdAmount(
+        formatUnits(sponsorshipFeeUnits, PAYMENT_TOKEN_DECIMALS),
+    );
+    const formattedNetSponsorship = formatUsdAmount(
+        formatUnits(sponsorshipNetUnits, PAYMENT_TOKEN_DECIMALS),
+    );
+    const formattedProjectedPrizePool = formatUsdAmount(
+        formatUnits(projectedPrizePoolUnits, PAYMENT_TOKEN_DECIMALS),
+    );
     const effectiveChainId = liveWalletChainId ?? wagmiChainId;
     const isOnCorrectChain = isConnected && effectiveChainId === targetChain.id;
     const needsApproval = amountInUnits > BigInt(0) && allowanceBigInt < amountInUnits;
@@ -562,7 +589,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
             setAmount("");
             setStep("success");
             setSuccessMessage(
-                `${gameTitle} prize pool increased by $${formatUsdAmount(amount)}.`,
+                `${gameTitle} prize pool increased by $${formattedNetSponsorship}.`,
             );
             router.refresh();
         } catch (error) {
@@ -701,6 +728,26 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                                     </button>
                                 </div>
                             )}
+                        </div>
+
+                        <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-3">
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/50">You spend</span>
+                                <span className="font-body text-white">${formattedGrossAmount}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/50">Protocol charge ({feePercent.toFixed(0)}%)</span>
+                                <span className="font-body text-white/80">-${formattedSponsorshipFee}</span>
+                            </div>
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/50">Actually added to prize pool</span>
+                                <span className="font-body text-[#14B985]">${formattedNetSponsorship}</span>
+                            </div>
+                            <div className="h-px bg-white/10" />
+                            <div className="flex items-center justify-between text-sm">
+                                <span className="text-white/50">Projected pool after sponsor</span>
+                                <span className="font-body text-[#FFC931]">${formattedProjectedPrizePool}</span>
+                            </div>
                         </div>
 
                         <button

@@ -308,8 +308,12 @@ async function sendBatchToFids(
   }
 
   const tokenGroups = groupTokensByUrl(users);
+  const totalTokens = tokenGroups.reduce(
+    (sum, group) => sum + group.tokens.length,
+    0,
+  );
   const results: BatchResult = {
-    total: users.length,
+    total: totalTokens,
     success: 0,
     failed: 0,
     invalidTokens: 0,
