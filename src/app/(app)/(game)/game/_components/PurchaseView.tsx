@@ -79,8 +79,8 @@ export function PurchaseView({
   }, []);
 
   const tiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
-    { key: "free", label: "FREE", price: "$0", sublabel: "Play only" },
     { key: "paid", label: "PAID", price: `$${currentPrice}`, sublabel: "Prize eligible" },
+    { key: "free", label: "FREE", price: "$0", sublabel: "Play only" },
   ];
 
   return (

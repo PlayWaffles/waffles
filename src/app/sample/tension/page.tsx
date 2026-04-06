@@ -212,7 +212,7 @@ function TensionOption({
         opacity: hasSelection && !isSelected ? 0 : 1,
         x: hasSelection && !isSelected ? getExitX() : tremorX,
         y: tremorY,
-        scale: isStamping ? 0.93 : isSelected ? 1.08 : 1,
+        scale: isStamping ? 0.93 : isSelected ? 1.03 : 1,
       }}
       transition={
         hasSelection && !isSelected
@@ -249,8 +249,8 @@ function TensionOption({
         tabIndex={-1}
         variant="filled"
         colorTheme={color.theme}
-        width={400}
-        height={57}
+        width={340}
+        height={53}
         fontSize={15}
         onClick={handleTap}
         disabled={disabled}
@@ -384,8 +384,8 @@ function AnswererAvatars({
 
   return (
     <motion.div
-      className="relative mx-4"
-      style={{ minHeight: 58 }}
+      className="relative mx-4 overflow-hidden"
+      style={{ minHeight: 65 }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
@@ -396,8 +396,8 @@ function AnswererAvatars({
           {answerers.slice(-6).map((player) => (
             <motion.div
               key={player.id}
-              className="relative flex-shrink-0 overflow-visible"
-              style={{ width: 50, height: 50 }}
+              className="relative overflow-visible"
+              style={{ width: 50, height: 50, flexShrink: 0 }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 20 }}
@@ -427,10 +427,10 @@ function AnswererAvatars({
               <motion.div
                 className="absolute rounded-full flex items-center justify-center"
                 style={{
-                  width: 16,
-                  height: 16,
-                  bottom: 2,
-                  right: 2,
+                  width: 14,
+                  height: 14,
+                  bottom: -1,
+                  right: -1,
                   backgroundColor: player.correct ? "#14B985" : "#FF4444",
                   boxShadow: "0 0 0 2px #1e1e1e",
                 }}
@@ -456,14 +456,15 @@ function AnswererAvatars({
         {overflow > 0 && (
           <motion.div
             key={`overflow-${overflow}`}
-            className="rounded-full flex items-center justify-center flex-shrink-0 font-body"
+            className="rounded-full flex items-center justify-center font-body"
             style={{
               width: 50,
               height: 50,
+              flexShrink: 0,
               backgroundColor: "rgba(255,255,255,0.08)",
               border: "2px solid rgba(255,255,255,0.15)",
               color: "rgba(255,255,255,0.6)",
-              fontSize: overflow >= 10 ? 18 : 20,
+              fontSize: overflow >= 10 ? 12 : 14,
             }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -749,6 +750,69 @@ export default function TensionSamplePage() {
       {/* Pressure vignette */}
       <PressureVignette intensity={pressure} />
 
+      {/* Waffles header — matches live game */}
+      {gameStarted && (
+        <header className="sticky top-0 left-0 shrink-0 z-40 flex items-center justify-between w-full max-w-xl h-[52px] bg-[#191919] border-b border-b-[#FFFFFF12] px-4 py-3">
+          <div className="flex items-center gap-2">
+            {/* Logo */}
+            <motion.div
+              whileHover={{ rotate: [0, -5, 5, -3, 3, 0] }}
+              whileTap={{ scale: 0.9 }}
+              transition={{ duration: 0.4, ease: "easeInOut" as const }}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="Waffles"
+                className="w-[30px] h-[24px] object-contain"
+              />
+            </motion.div>
+
+            {/* Live indicator */}
+            <motion.span
+              className="flex items-center gap-1.5"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+            >
+              <motion.span
+                className="w-2 h-2 rounded-full bg-[#FC1919]"
+                animate={{
+                  scale: [1, 1.3, 1],
+                  boxShadow: [
+                    "0 0 6px rgba(252, 25, 25, 0.8), 0 0 12px rgba(252, 25, 25, 0.4)",
+                    "0 0 10px rgba(252, 25, 25, 1), 0 0 20px rgba(252, 25, 25, 0.6)",
+                    "0 0 6px rgba(252, 25, 25, 0.8), 0 0 12px rgba(252, 25, 25, 0.4)",
+                  ],
+                }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" as const }}
+              />
+              <motion.span
+                className="text-[#FC1919] text-[18px] font-body leading-[92%] tracking-[-0.03em]"
+                animate={{ opacity: [1, 0.7, 1] }}
+                transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" as const }}
+              >
+                Live
+              </motion.span>
+            </motion.span>
+          </div>
+
+          {/* Leave game button */}
+          <motion.button
+            className="flex items-center bg-white/10 rounded-full px-3 py-1.5 h-[28px] font-body"
+            whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.2)", scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+              <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            <span className="text-[16px] leading-[100%] text-white">
+              leave game
+            </span>
+          </motion.button>
+        </header>
+      )}
 
       {/* Start screen */}
       {!gameStarted && (
@@ -782,7 +846,7 @@ export default function TensionSamplePage() {
       {/* Game area */}
       {gameStarted && question && (
         <motion.div
-          className="w-full max-w-xl mx-auto flex-1 flex flex-col justify-between"
+          className="w-full max-w-xl mx-auto flex-1 flex flex-col relative"
           key={question.id}
           initial={{ opacity: 0 }}
           animate={
@@ -793,16 +857,36 @@ export default function TensionSamplePage() {
           transition={screenShake ? { duration: 0.4 } : { duration: 0.3 }}
         >
           {/* Question header with timer */}
+          {/* Header — matches real game QuestionCardHeader */}
           <motion.div
-            className="flex items-center justify-between px-4 mb-2"
+            className="w-full flex items-center justify-between px-3 py-2"
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
           >
+            {/* Question counter */}
             <div className="flex items-center gap-2">
-              <span className="font-display text-xs text-[#99A0AE]">
-                Q{questionIndex + 1}/{questions.length}
-              </span>
+              <motion.span
+                className="font-body text-white text-[18px] leading-none tracking-tight"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+              >
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={questionIndex}
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 8 }}
+                    transition={{ duration: 0.2 }}
+                    className="inline-block"
+                  >
+                    {String(questionIndex + 1).padStart(2, "0")}
+                  </motion.span>
+                </AnimatePresence>
+                /{String(questions.length).padStart(2, "0")}
+              </motion.span>
+
               <AnimatePresence mode="wait">
                 {streakBroken ? (
                   <StreakBreak key="break" show />
@@ -812,35 +896,53 @@ export default function TensionSamplePage() {
               </AnimatePresence>
             </div>
 
-            <div className="flex items-center gap-3">
-              <TensionTimerTube remaining={seconds} duration={question.durationSec} />
+            {/* Timer */}
+            <motion.div
+              className="flex items-center gap-2"
+              initial={{ opacity: 0, x: 10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.3, delay: 0.15 }}
+            >
+              <motion.div
+                className="relative overflow-hidden"
+                animate={
+                  isLowTime ? { scale: [1, 1.1, 1] } : {}
+                }
+                transition={
+                  isLowTime ? { duration: 0.5, repeat: Infinity } : undefined
+                }
+              >
+                <AnimatePresence mode="popLayout">
+                  <motion.span
+                    key={seconds}
+                    className="font-body text-[18px] inline-block"
+                    style={{
+                      color: seconds === 0 ? "#FF6B6B" : isLowTime ? "#FF6B6B" : "#ffffff",
+                    }}
+                    initial={{ opacity: 0, y: -12, scale: 1.2 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 12, scale: 0.8 }}
+                    transition={{ duration: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
+                  >
+                    {seconds >= 60
+                      ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`
+                      : `0:${String(seconds).padStart(2, "0")}`}
+                  </motion.span>
+                </AnimatePresence>
+              </motion.div>
 
-              {/* Timer number */}
-              <AnimatePresence mode="popLayout">
-                <motion.span
-                  key={seconds}
-                  className="font-body text-lg w-6 text-center"
-                  style={{
-                    color: isLowTime
-                      ? "#FF4444"
-                      : isMedTime
-                        ? "#FF8844"
-                        : "white",
-                  }}
-                  initial={{ scale: 1.3, opacity: 0, y: -8 }}
-                  animate={{ scale: 1, opacity: 1, y: 0 }}
-                  exit={{ scale: 0.7, opacity: 0, y: 8 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  {seconds}
-                </motion.span>
-              </AnimatePresence>
-            </div>
+              <motion.div
+                animate={isLowTime ? { scale: [1, 1.05, 1] } : {}}
+                transition={isLowTime ? { duration: 0.4, repeat: Infinity } : undefined}
+              >
+                <TensionTimerTube remaining={seconds} duration={question.durationSec} />
+              </motion.div>
+            </motion.div>
           </motion.div>
 
           {/* Question text */}
           <motion.div
-            className="relative mx-auto mb-4 flex items-center justify-center w-full max-w-[306px] font-body font-normal text-[36px] leading-[0.92] text-center tracking-[-0.03em] text-white px-4"
+            className="relative mx-auto mb-4 flex items-center justify-center w-full font-body font-normal text-[36px] leading-[0.92] text-center tracking-[-0.03em] text-white px-4"
             initial={{ opacity: 0, y: 20, scale: 0.95 }}
             animate={{
               opacity: 1,
@@ -883,19 +985,17 @@ export default function TensionSamplePage() {
           )}
 
           {/* Answerer PFPs — right below the question/image */}
-          <div className="mb-1" style={{ minHeight: 58 }}>
-            <AnswererAvatars
-              answerers={answerers}
-              hasAnswered={selectedIndex !== null}
-            />
-          </div>
+          <AnswererAvatars
+            answerers={answerers}
+            hasAnswered={selectedIndex !== null}
+          />
 
           {/* Options */}
           <motion.ul
             className="w-full flex flex-col gap-2 px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ staggerChildren: 0.1, delayChildren: 0.3 }}
+            transition={{ duration: 0.3 }}
           >
             {question.options.map((opt, idx) => (
               <motion.div
@@ -921,65 +1021,36 @@ export default function TensionSamplePage() {
             ))}
           </motion.ul>
 
-          {/* Post-answer / Time's up — also at bottom */}
-          <div className="px-4 pb-6">
-            <AnimatePresence>
-              {showDistribution && selectedIndex !== null && (
-                <motion.div
-                  className="flex flex-col items-center gap-3"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+          {/* Post-answer / Time's up — overlays the options area */}
+          <AnimatePresence>
+            {(showDistribution || (seconds === 0 && selectedIndex === null)) && (
+              <motion.div
+                className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex flex-col items-center gap-2 z-20"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ type: "spring", stiffness: 400, damping: 20 }}
+              >
+                <motion.p
+                  className="font-body text-lg"
+                  style={{ color: answerMsg?.color ?? (selectedIndex !== null ? "#14B985" : "#FF4444") }}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  animate={{ scale: [1, 1.15, 1], opacity: 1 }}
+                  transition={{ duration: 0.4 }}
                 >
-                  <motion.p
-                    className="font-body text-xl"
-                    style={{ color: answerMsg?.color ?? "#14B985" }}
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: [1, 1.15, 1], opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    {answerMsg?.text ?? "LOCKED IN"}
-                  </motion.p>
-                  <motion.button
-                    className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
-                    onClick={handleNext}
-                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    NEXT QUESTION
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <AnimatePresence>
-              {seconds === 0 && selectedIndex === null && (
-                <motion.div
-                  className="flex flex-col items-center gap-3"
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                  {answerMsg?.text ?? (selectedIndex !== null ? "LOCKED IN" : "TIME'S UP")}
+                </motion.p>
+                <motion.button
+                  className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
+                  onClick={handleNext}
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  <motion.p
-                    className="font-body text-xl text-[#FF4444]"
-                    initial={{ scale: 0.5, opacity: 0 }}
-                    animate={{ scale: [1, 1.15, 1], opacity: 1 }}
-                    transition={{ duration: 0.4 }}
-                  >
-                    {answerMsg?.text ?? "TIME'S UP"}
-                  </motion.p>
-                  <motion.button
-                    className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
-                    onClick={handleNext}
-                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
-                    whileTap={{ scale: 0.97 }}
-                  >
-                    NEXT QUESTION
-                  </motion.button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
+                  NEXT QUESTION
+                </motion.button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
       )}
 
