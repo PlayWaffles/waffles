@@ -1,5 +1,7 @@
-export type ChainPlatform = "FARCASTER" | "MINIPAY";
+export type ChainPlatform = "FARCASTER" | "MINIPAY" | "BASE_APP";
 
 export function assertChainPlatform(platform: string): ChainPlatform {
-  return platform === "MINIPAY" ? "MINIPAY" : "FARCASTER";
+  if (platform === "MINIPAY") return "MINIPAY";
+  if (platform === "BASE_APP") return "BASE_APP";
+  return "FARCASTER";
 }

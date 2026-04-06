@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import { prisma } from "@/lib/db";
 import { cache } from "react";
+import type { UserPlatform } from "@prisma";
 import { env } from "@/lib/env";
 import { buildJoinedOGUrl } from "@/lib/og";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
@@ -14,7 +15,7 @@ interface SuccessPageProps {
 }
 
 // Cache game data fetch
-const getGameInfo = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+const getGameInfo = cache(async (gameId: string, platform: UserPlatform) => {
     const game = await prisma.game.findFirst({
         where: { id: gameId, ...gameWhere(platform) },
         select: {

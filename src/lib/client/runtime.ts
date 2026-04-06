@@ -42,7 +42,9 @@ export async function getAppRuntime(): Promise<AppRuntime> {
 }
 
 export function runtimeToPlatform(runtime: AppRuntime): UserPlatform {
-  return runtime === "minipay" ? "MINIPAY" : "FARCASTER";
+  if (runtime === "farcaster") return "FARCASTER";
+  if (runtime === "minipay") return "MINIPAY";
+  return "BASE_APP";
 }
 
 export function setRuntimePlatformCookie(platform: UserPlatform) {

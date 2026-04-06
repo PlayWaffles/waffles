@@ -65,7 +65,7 @@ type InspectedPurchase = {
 };
 
 async function inspectPaidTicketPurchase(txHash: string): Promise<InspectedPurchase | null> {
-  const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY"];
+  const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY", "BASE_APP"];
 
   for (const platform of platforms) {
     for (const network of getReconcileTargets(platform)) {
@@ -117,7 +117,7 @@ async function findUserForPlatform(platform: ChainPlatform, userQuery: string) {
 }
 
 function getReconcileTargets(platform: ChainPlatform): GameNetwork[] {
-  if (platform === "FARCASTER") {
+  if (platform === "FARCASTER" || platform === "BASE_APP") {
     return ["BASE_MAINNET", "BASE_SEPOLIA"];
   }
 
@@ -618,7 +618,7 @@ export async function reconcilePaidTicketToUserAction(
     };
   }
 
-  if (inspected.platform !== "FARCASTER") {
+  if (inspected.platform !== "FARCASTER" && inspected.platform !== "BASE_APP") {
     return {
       success: false,
       error: "Username resolution is only supported for Farcaster purchases.",

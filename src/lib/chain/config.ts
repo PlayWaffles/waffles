@@ -49,6 +49,9 @@ export function getWaffleContractAddress(
   target: ChainTarget,
 ): `0x${string}` {
   const { platform } = resolveChainTarget(target);
+  if (platform === "BASE_APP") {
+    return env.nextPublicWaffleContractAddressBaseApp;
+  }
   return platform === "MINIPAY"
     ? env.nextPublicWaffleContractAddressMiniPay
     : env.nextPublicWaffleContractAddressFarcaster;
@@ -56,6 +59,9 @@ export function getWaffleContractAddress(
 
 export function getPaymentTokenAddress(target: ChainTarget): `0x${string}` {
   const { platform, network } = resolveChainTarget(target);
+  if (platform === "BASE_APP") {
+    return env.nextPublicPaymentTokenAddressBaseApp;
+  }
   if (platform === "MINIPAY") {
     return env.nextPublicPaymentTokenAddressMiniPay;
   }

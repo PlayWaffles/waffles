@@ -6,6 +6,7 @@ const PLATFORMS = [
     { value: "", label: "All" },
     { value: "FARCASTER", label: "Farcaster" },
     { value: "MINIPAY", label: "MiniPay" },
+    { value: "BASE_APP", label: "Base App" },
 ] as const;
 
 export function PlatformFilter() {

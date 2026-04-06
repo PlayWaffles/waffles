@@ -6,6 +6,7 @@ import { minipayNotifier } from "./minipay";
 const notifiers: Record<UserPlatform, PlatformNotifier> = {
   [UserPlatform.FARCASTER]: farcasterNotifier,
   [UserPlatform.MINIPAY]: minipayNotifier,
+  [UserPlatform.BASE_APP]: minipayNotifier,
 };
 
 export function getNotifier(platform: UserPlatform): PlatformNotifier {

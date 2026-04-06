@@ -75,6 +75,7 @@ enum UserRole {
 enum UserPlatform {
   FARCASTER
   MINIPAY
+  BASE_APP
 }
 
 model UserWallet {

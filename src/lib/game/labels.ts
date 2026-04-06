@@ -10,7 +10,13 @@ export function formatAdminGameLabel(
   if (!platform) return baseTitle;
 
   const platformLabel =
-    platform === "MINIPAY" ? "MiniPay" : platform === "FARCASTER" ? "Farcaster" : platform;
+    platform === "MINIPAY"
+      ? "MiniPay"
+      : platform === "FARCASTER"
+        ? "Farcaster"
+        : platform === "BASE_APP"
+          ? "Base App"
+          : platform;
 
   return `${baseTitle} • ${platformLabel}`;
 }

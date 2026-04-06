@@ -18,7 +18,7 @@ import type { ChainTarget } from "@/lib/chain/network";
  * };
  * ```
  */
-export function useCorrectChain(target: ChainTarget = "FARCASTER") {
+export function useCorrectChain(target: ChainTarget = "BASE_APP") {
   const currentChainId = useChainId();
   const { switchChainAsync } = useSwitchChain();
   const chain = getPlatformChain(target);

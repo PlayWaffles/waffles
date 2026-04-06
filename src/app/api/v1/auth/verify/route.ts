@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { verifyWalletSignature, type ApiError } from "@/lib/auth";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 interface VerifyBody {
   address?: string;
@@ -17,7 +18,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const auth = await verifyWalletSignature(body.address, body.signature);
+    const platform = await resolveRuntimePlatform(request);
+    const auth = await verifyWalletSignature(body.address, body.signature, platform);
     if (!auth) {
       return NextResponse.json<ApiError>(
         { error: "Invalid signature", code: "INVALID_SIGNATURE" },

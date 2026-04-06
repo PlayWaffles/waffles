@@ -55,7 +55,7 @@ export function normalizeAddress(address: string) {
 
 export function buildSignInMessage(address: string, nonce: string) {
   return [
-    "Sign in to Waffles on Celo MiniPay.",
+    "Sign in to Waffles.",
     "",
     `Address: ${normalizeAddress(address)}`,
     `Nonce: ${nonce}`,
@@ -167,10 +167,10 @@ async function ensureUser(
   throw new Error("Failed to create user");
 }
 
-function ensureUserByWallet(address: string) {
+function ensureUserByWallet(address: string, platform: UserPlatform) {
   return ensureUser(
     { wallet: normalizeAddress(address) },
-    { platform: UserPlatform.MINIPAY, wallet: normalizeAddress(address) },
+    { platform, wallet: normalizeAddress(address) },
   );
 }
 
@@ -218,7 +218,10 @@ async function touchUserLoginStreak(userId: string) {
   });
 }
 
-export async function createNonce(address: string) {
+export async function createNonce(
+  address: string,
+  _platform: UserPlatform = UserPlatform.BASE_APP,
+) {
   const normalizedAddress = normalizeAddress(address);
   const nonce = crypto.randomUUID();
   const token = await signPayload(
@@ -234,7 +237,11 @@ export async function createNonce(address: string) {
   };
 }
 
-export async function verifyWalletSignature(address: string, signature: string) {
+export async function verifyWalletSignature(
+  address: string,
+  signature: string,
+  platform: UserPlatform = UserPlatform.BASE_APP,
+) {
   const normalizedAddress = normalizeAddress(address);
   const nonceToken = await readCookieToken(NONCE_COOKIE);
 
@@ -267,13 +274,13 @@ export async function verifyWalletSignature(address: string, signature: string) 
     return null;
   }
 
-  const user = await ensureUserByWallet(normalizedAddress);
+  const user = await ensureUserByWallet(normalizedAddress, platform);
   await touchUserLoginStreak(user.id);
   const session = await signPayload(
     {
       type: JWT_TYPE_SESSION,
       userId: user.id,
-      platform: UserPlatform.MINIPAY,
+      platform,
       address: normalizedAddress,
     },
     `${SESSION_TTL_SECONDS}s`,
@@ -284,7 +291,7 @@ export async function verifyWalletSignature(address: string, signature: string) 
 
   return {
     userId: user.id,
-    platform: UserPlatform.MINIPAY,
+    platform,
     address: normalizedAddress,
   };
 }
@@ -333,7 +340,8 @@ export async function getAuthFromRequest(
       payload.type !== JWT_TYPE_SESSION ||
       typeof payload.userId !== "string" ||
       (payload.platform !== UserPlatform.MINIPAY &&
-        payload.platform !== UserPlatform.FARCASTER)
+        payload.platform !== UserPlatform.FARCASTER &&
+        payload.platform !== UserPlatform.BASE_APP)
     ) {
       return null;
     }

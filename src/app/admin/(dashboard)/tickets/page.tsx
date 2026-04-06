@@ -66,11 +66,13 @@ type PendingPurchaseRow = {
 };
 
 function getChainScanWindow(platform: ChainPlatform) {
-    return platform === "FARCASTER" ? BASE_MAINNET_SCAN_WINDOW : DEFAULT_SCAN_WINDOW;
+    return platform === "FARCASTER" || platform === "BASE_APP"
+        ? BASE_MAINNET_SCAN_WINDOW
+        : DEFAULT_SCAN_WINDOW;
 }
 
 function getLogBlockChunk(platform: ChainPlatform) {
-    return platform === "FARCASTER"
+    return platform === "FARCASTER" || platform === "BASE_APP"
         ? BASE_MAINNET_LOG_BLOCK_CHUNK
         : DEFAULT_LOG_BLOCK_CHUNK;
 }
@@ -232,7 +234,7 @@ async function getPendingPurchases() {
 }
 
 async function getRecentOnchainMismatches(): Promise<OnchainMismatchRow[]> {
-    const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY"];
+    const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY", "BASE_APP"];
     const allRows = await Promise.all(platforms.map((platform) => getPlatformMismatches(platform)));
 
     return allRows

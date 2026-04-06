@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const userPlatformSchema = z.enum(["FARCASTER", "MINIPAY"]);
+export const userPlatformSchema = z.enum(["FARCASTER", "MINIPAY", "BASE_APP"]);
 
 // --- Common Schemas ---
 export const fidSchema = z.coerce
@@ -56,11 +56,14 @@ export const syncUserSchema = z.object({
     });
   }
 
-  if (value.platform === "MINIPAY" && !value.wallet?.trim()) {
+  if (
+    (value.platform === "MINIPAY" || value.platform === "BASE_APP") &&
+    !value.wallet?.trim()
+  ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ["wallet"],
-      message: "Wallet address is required for MiniPay users.",
+      message: "Wallet address is required for wallet-based users.",
     });
   }
 });

@@ -36,6 +36,10 @@ export default function LiveGameScreen({ game }: { game: LiveGameData }) {
     hasAnswered,
     isSubmitting,
     score,
+    answerResult,
+    streak,
+    streakBroken,
+    selectedAnswerIndex,
     nextRoundNumber,
     isLastRound,
     gameEndsAt,
@@ -94,6 +98,10 @@ export default function LiveGameScreen({ game }: { game: LiveGameData }) {
             onAnswer={submitAnswer}
             hasAnswered={hasAnswered || isSubmitting}
             onMediaReady={onMediaReady}
+            answerResult={answerResult}
+            streak={streak}
+            streakBroken={streakBroken}
+            selectedIndex={selectedAnswerIndex}
           />
           <CheerOverlay />
         </>

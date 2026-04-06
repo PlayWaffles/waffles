@@ -15,6 +15,7 @@ import { useCorrectChain } from "@/hooks/useCorrectChain";
 import {
   getAppRuntime,
   isMiniPayRuntime,
+  runtimeToPlatform,
   type AppRuntime,
 } from "@/lib/client/runtime";
 
@@ -71,7 +72,10 @@ export function WalletBalance() {
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const [runtime, setRuntime] = useState<AppRuntime>("browser");
-  const platform = runtime === "minipay" || isMiniPayRuntime() ? "MINIPAY" : "FARCASTER";
+  const platform =
+    runtime === "minipay" || isMiniPayRuntime()
+      ? "MINIPAY"
+      : runtimeToPlatform(runtime);
   const { ensureCorrectChain, isOnCorrectChain } = useCorrectChain(platform);
 
   useEffect(() => {

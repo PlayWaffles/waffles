@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import type { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { RealtimeProvider } from "@/components/providers/RealtimeProvider";
@@ -41,7 +42,7 @@ export interface LiveGameData {
 // DATA FETCHING
 // ==========================================
 
-const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+const getGame = cache(async (gameId: string, platform: UserPlatform) => {
   const game = await prisma.game.findFirst({
     where: { id: gameId, ...gameWhere(platform) },
     select: {

@@ -113,6 +113,7 @@ type Action =
     payload: { questionId: string; player: Entrant };
   }
   | { type: "INCREMENT_ANSWERED" }
+  | { type: "SEED_ANSWERERS"; payload: { questionId: string; players: Entrant[] } }
   | { type: "RESET" };
 
 function reducer(state: RealtimeState, action: Action): RealtimeState {
@@ -184,6 +185,21 @@ function reducer(state: RealtimeState, action: Action): RealtimeState {
         ...state,
         entry: { ...state.entry, answered: state.entry.answered + 1 },
       };
+
+    case "SEED_ANSWERERS": {
+      if (state.currentQuestionId !== action.payload.questionId) return state;
+
+      // Merge DB backfill with any WebSocket arrivals already in state,
+      // keeping existing entries (WS is more recent) and appending new ones.
+      const existing = new Set(state.questionAnswerers.map((p) => p.username));
+      const newPlayers = action.payload.players.filter(
+        (p) => !existing.has(p.username),
+      );
+      return {
+        ...state,
+        questionAnswerers: [...state.questionAnswerers, ...newPlayers].slice(0, 20),
+      };
+    }
 
     case "RESET":
       return initialState;

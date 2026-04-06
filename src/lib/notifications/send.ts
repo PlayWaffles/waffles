@@ -28,6 +28,7 @@ export async function sendToUser(
       result = await sendToFid(user.fid, payload);
       break;
     case "MINIPAY":
+    case "BASE_APP":
       result = { state: "no_token" };
       break;
   }

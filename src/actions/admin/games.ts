@@ -149,6 +149,13 @@ export async function createGameAction(
 
   const data = validation.data;
 
+  if (data.platform === UserPlatform.BASE_APP) {
+    return {
+      success: false,
+      error: "Base App shares Farcaster games. Create or edit the Farcaster game instead.",
+    };
+  }
+
   if (data.ticketsOpenAt && data.ticketsOpenAt >= data.startsAt) {
     return {
       success: false,
@@ -362,6 +369,13 @@ export async function updateGameAction(
     };
   }
   const data = validation.data;
+
+  if (data.platform === UserPlatform.BASE_APP) {
+    return {
+      success: false,
+      error: "Base App shares Farcaster games. Edit the Farcaster game instead.",
+    };
+  }
 
   try {
     const existingGame = await prisma.game.findUnique({

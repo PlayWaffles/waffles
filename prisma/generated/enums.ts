@@ -19,7 +19,8 @@ export type UserRole = (typeof UserRole)[keyof typeof UserRole]
 
 export const UserPlatform = {
   FARCASTER: 'FARCASTER',
-  MINIPAY: 'MINIPAY'
+  MINIPAY: 'MINIPAY',
+  BASE_APP: 'BASE_APP'
 } as const
 
 export type UserPlatform = (typeof UserPlatform)[keyof typeof UserPlatform]

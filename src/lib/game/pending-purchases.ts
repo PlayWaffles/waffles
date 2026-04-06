@@ -20,7 +20,7 @@ export async function registerPendingPurchase(input: {
   txHash: string;
   userId: string;
   gameId: string;
-  platform: "FARCASTER" | "MINIPAY";
+  platform: "FARCASTER" | "MINIPAY" | "BASE_APP";
   payerWallet: string;
   expectedAmount: number;
 }) {

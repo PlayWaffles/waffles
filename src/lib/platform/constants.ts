@@ -4,7 +4,7 @@ export const PLATFORM_COOKIE = "waffles_platform";
 export const PLATFORM_HEADER = "x-waffles-platform";
 
 // Hardcoded to avoid importing the Prisma enum value into the client bundle
-const VALID_PLATFORMS = new Set<string>(["FARCASTER", "MINIPAY"]);
+const VALID_PLATFORMS = new Set<string>(["FARCASTER", "MINIPAY", "BASE_APP"]);
 
 export function parsePlatform(
   value: string | null | undefined,

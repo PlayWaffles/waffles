@@ -45,7 +45,13 @@ export function OnchainKitProvider({ children }: Props) {
     return null;
   }
 
-  const chain = getPlatformChain(runtime === "minipay" ? "MINIPAY" : "FARCASTER");
+  const chain = getPlatformChain(
+    runtime === "farcaster"
+      ? "FARCASTER"
+      : runtime === "minipay"
+        ? "MINIPAY"
+        : "BASE_APP",
+  );
   const activeWagmiConfig =
     runtime === "farcaster"
       ? farcasterWagmiConfig

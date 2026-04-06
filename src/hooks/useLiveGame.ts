@@ -16,6 +16,13 @@ import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { playSound, stopAllAudio } from "@/lib/sounds";
 import { useUser } from "@/hooks/useUser";
 import { authenticatedFetch } from "@/lib/client/runtime";
+import {
+  getSpeedTier,
+  getAnswerFeedback,
+  getTimeoutFeedback,
+  resetFeedbackMessages,
+  type AnswerResult,
+} from "@/lib/game/tension";
 import type {
   LiveGameData,
   LiveGameQuestion,
@@ -49,6 +56,12 @@ export interface UseLiveGameReturn {
   hasAnswered: boolean;
   isSubmitting: boolean;
   score: number;
+
+  // Tension feedback (set after answer, cleared on next question)
+  answerResult: AnswerResult | null;
+  streak: number;
+  streakBroken: boolean;
+  selectedAnswerIndex: number | null;
 
   // Break state
   nextRoundNumber: number;
@@ -127,6 +140,13 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
   const [timerTarget, setTimerTarget] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mediaReady, setMediaReady] = useState(false);
+
+  // Tension feedback state
+  const [answerResult, setAnswerResult] = useState<AnswerResult | null>(null);
+  const [streak, setStreak] = useState(0);
+  const [streakBroken, setStreakBroken] = useState(false);
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
+  const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs
   const questionStartRef = useRef(Date.now());
@@ -219,6 +239,10 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
   const advanceToNext = useCallback(() => {
     // Stop any playing sound effects before transitioning
     stopAllAudio();
+    // Clear feedback state for the next question
+    setAnswerResult(null);
+    setSelectedAnswerIndex(null);
+    setStreakBroken(false);
 
     const nextIdx = currentQuestionIndex + 1;
 
@@ -289,10 +313,25 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
           void refetchEntry();
         }
         setIsSubmitting(false);
+
+        // Show timeout feedback, then advance
+        const feedback = getTimeoutFeedback();
+        setAnswerResult({
+          isCorrect: false,
+          speedTier: "timeout",
+          feedback,
+          pointsEarned: 0,
+        });
+        setStreakBroken(streak >= 2);
+        setStreak(0);
+        feedbackTimerRef.current = setTimeout(advanceToNext, 2000);
+        return;
       }
 
-      // Move to next question or break
-      advanceToNext();
+      // Already answered — feedback timer is running, or advance now
+      if (!feedbackTimerRef.current) {
+        advanceToNext();
+      }
     }
   }, [
     phase,
@@ -326,23 +365,55 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     prevSecondsRef.current = seconds;
   }, [seconds, phase]);
 
-  // Stop all sound effects when question changes or phase ends
+  // Stop all sound effects and clear feedback timer when question changes or phase ends
   useEffect(() => {
-    // Cleanup on question change or unmount
     return () => {
       stopAllAudio();
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current);
+        feedbackTimerRef.current = null;
+      }
     };
   }, [currentQuestion?.id, phase]);
 
-  // Set current question in context (for real-time answerer filtering)
+  // Set current question in context and backfill answerers from DB
   useEffect(() => {
+    let cancelled = false;
+
     if (phase === "question" && game.questions[currentQuestionIndex]) {
+      const questionId = game.questions[currentQuestionIndex].id;
       dispatch({
         type: "SET_CURRENT_QUESTION",
-        payload: game.questions[currentQuestionIndex].id,
+        payload: questionId,
       });
+
+      // Backfill answerers from DB (non-blocking)
+      authenticatedFetch(
+        `/api/v1/games/${game.id}/answerers?questionId=${questionId}`,
+      )
+        .then((res) => (res.ok ? res.json() : []))
+        .then((players: { username: string; pfpUrl: string | null }[]) => {
+          if (!cancelled && players.length > 0) {
+            dispatch({
+              type: "SEED_ANSWERERS",
+              payload: {
+                questionId,
+                players: players.map((p) => ({
+                  username: p.username,
+                  pfpUrl: p.pfpUrl,
+                  timestamp: Date.now(),
+                })),
+              },
+            });
+          }
+        })
+        .catch(() => {});
     }
-  }, [currentQuestionIndex, phase, dispatch, game.questions]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentQuestionIndex, phase, dispatch, game.questions, game.id]);
 
   // ==========================================
   // ACTIONS
@@ -350,6 +421,9 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 
   const startGame = useCallback(() => {
     if (phase !== "countdown") return;
+
+    // Reset feedback messages for the new game session
+    resetFeedbackMessages();
 
     // Find first unanswered question
     const firstUnansweredIdx = game.questions.findIndex(
@@ -375,6 +449,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     async (selectedIndex: number) => {
       if (!currentQuestion || hasAnswered || isSubmitting) return;
 
+      setSelectedAnswerIndex(selectedIndex);
       setIsSubmitting(true);
       const timeMs = Date.now() - questionStartRef.current;
 
@@ -398,14 +473,36 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
         void refetchEntry();
       }
 
+      // Compute tension feedback
+      const speedTier = getSpeedTier(timeMs, currentQuestion.durationSec);
+      const isCorrect = result.success && result.isCorrect;
+      const newStreak = isCorrect ? streak + 1 : 0;
+      const wasBroken = !isCorrect && streak >= 2;
+
+      setStreakBroken(wasBroken);
+      setStreak(newStreak);
+      const feedback = getAnswerFeedback(speedTier, newStreak, isCorrect);
+      setAnswerResult({
+        isCorrect,
+        speedTier,
+        feedback,
+        pointsEarned: result.pointsEarned,
+      });
+
       setIsSubmitting(false);
-      advanceToNext();
+
+      // Show feedback for 2s, then advance
+      feedbackTimerRef.current = setTimeout(() => {
+        feedbackTimerRef.current = null;
+        advanceToNext();
+      }, 2000);
     },
     [
       game.id,
       currentQuestion,
       hasAnswered,
       isSubmitting,
+      streak,
       refetchEntry,
       advanceToNext,
     ],
@@ -434,6 +531,10 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     hasAnswered,
     isSubmitting,
     score,
+    answerResult,
+    streak,
+    streakBroken,
+    selectedAnswerIndex,
     nextRoundNumber,
     isLastRound,
     gameEndsAt: game.endsAt,
@@ -450,6 +551,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 
 interface SubmitResult {
   success: boolean;
+  isCorrect: boolean;
   pointsEarned: number;
   totalScore: number;
 }
@@ -473,12 +575,13 @@ async function submitAnswerToServer(
         }),
       });
       const result = (await response.json()) as
-        | { success: true; pointsEarned: number; totalScore: number }
+        | { success: true; isCorrect: boolean; pointsEarned: number; totalScore: number }
         | { success: false; error: string };
 
       if (result.success) {
         return {
           success: true,
+          isCorrect: result.isCorrect,
           pointsEarned: result.pointsEarned,
           totalScore: result.totalScore,
         };
@@ -490,5 +593,5 @@ async function submitAnswerToServer(
       await new Promise((r) => setTimeout(r, Math.pow(2, i) * 1000));
     }
   }
-  return { success: false, pointsEarned: 0, totalScore: 0 };
+  return { success: false, isCorrect: false, pointsEarned: 0, totalScore: 0 };
 }

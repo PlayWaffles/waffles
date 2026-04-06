@@ -1,20 +1,38 @@
 import type { UserPlatform } from "@prisma";
 import type { Prisma } from "@prisma";
 
+export function sharesBaseMainnetGames(platform: UserPlatform): boolean {
+  return platform === "FARCASTER" || platform === "BASE_APP";
+}
+
+export function gamePlatformsForPlatform(platform: UserPlatform): UserPlatform[] {
+  return sharesBaseMainnetGames(platform)
+    ? ["FARCASTER", "BASE_APP"]
+    : [platform];
+}
+
 export function excludesTestnet(platform: UserPlatform): boolean {
-  return platform === "FARCASTER";
+  return sharesBaseMainnetGames(platform);
 }
 
 export function isGameVisibleToPlatform(
   game: { platform: UserPlatform; isTestnet: boolean },
   platform: UserPlatform,
 ): boolean {
-  return game.platform === platform && (!game.isTestnet || !excludesTestnet(platform));
+  return (
+    gamePlatformsForPlatform(platform).includes(game.platform) &&
+    (!game.isTestnet || !excludesTestnet(platform))
+  );
 }
 
 /** Prisma where fragment: scope a Game query to a platform */
 export function gameWhere(platform: UserPlatform): Prisma.GameWhereInput {
-  return excludesTestnet(platform) ? { platform, isTestnet: false } : { platform };
+  const platforms = gamePlatformsForPlatform(platform);
+  const platformWhere =
+    platforms.length === 1 ? { platform } : { platform: { in: platforms } };
+  return excludesTestnet(platform)
+    ? { ...platformWhere, isTestnet: false }
+    : platformWhere;
 }
 
 /** Prisma where fragment: scope a GameEntry query to a platform's games */

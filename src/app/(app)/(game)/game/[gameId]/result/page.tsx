@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { Metadata } from "next";
+import type { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import ResultPageClient from "./client";
 import { buildJoinedOGUrl, buildPrizeOGUrl, buildScoreOGUrl } from "@/lib/og";
@@ -14,14 +15,14 @@ interface ResultPageProps {
 }
 
 // Fetch game info
-const getGame = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+const getGame = cache(async (gameId: string, platform: UserPlatform) => {
   return prisma.game.findFirst({
     where: { id: gameId, ...gameWhere(platform) },
   });
 });
 
 // Fetch top 3 entries for leaderboard display
-const getTop3Entries = cache(async (gameId: string, platform: "FARCASTER" | "MINIPAY") => {
+const getTop3Entries = cache(async (gameId: string, platform: UserPlatform) => {
   return prisma.gameEntry.findMany({
     where: { gameId, game: gameWhere(platform) },
     orderBy: { score: "desc" },

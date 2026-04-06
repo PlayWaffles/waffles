@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Prisma, TicketPurchaseSource } from "@prisma";
+import { Prisma, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getScore } from "@/lib/game/scoring";
@@ -46,7 +46,7 @@ export type FreeTicketResult =
 
 type ClaimFreeTicketUser = {
   id: string;
-  platform: string;
+  platform: UserPlatform;
   username: string | null;
   pfpUrl: string | null;
   wallet?: string | null;
@@ -76,7 +76,7 @@ async function claimFreeTicketForUser(
     return { success: false, error: "Game not found", code: "NOT_FOUND" };
   }
 
-  if (!isGameVisibleToPlatform(game, user.platform as "FARCASTER" | "MINIPAY")) {
+  if (!isGameVisibleToPlatform(game, user.platform)) {
     return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
   }
 
@@ -263,8 +263,8 @@ export async function leaveGame(
     }
 
     if (!isGameVisibleToPlatform(
-      { ...entry.game, platform: user.platform as "FARCASTER" | "MINIPAY" },
-      user.platform as "FARCASTER" | "MINIPAY",
+      { ...entry.game, platform: user.platform },
+      user.platform,
     )) {
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
     }

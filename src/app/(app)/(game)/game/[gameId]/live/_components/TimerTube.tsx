@@ -21,21 +21,18 @@ interface TimerTubeProps {
 export function TimerTube({ remaining, duration }: TimerTubeProps) {
   const clipPathId = useId();
 
-  // Calculate percentage based on full duration (0% remaining = 100% progress)
-  const calculateProgress = () => {
-    if (duration <= 0) return 100;
-    const progress = Math.min(
-      100,
-      Math.max(0, ((duration - remaining) / duration) * 100)
-    );
-    return progress;
-  };
-
-  const progress = calculateProgress();
-  const clipWidth = 78 * (1 - progress / 100);
+  // Progress with easeIn curve — accelerates as time runs out
+  const rawProgress = duration > 0 ? (duration - remaining) / duration : 1;
+  const easedProgress =
+    remaining <= 5
+      ? rawProgress +
+        (1 - rawProgress) * Math.pow(1 - remaining / 5, 2) * 0.15
+      : rawProgress;
+  const clipWidth = 78 * (1 - Math.min(1, easedProgress));
 
   // Low time state for visual feedback
   const isLowTime = remaining <= 3;
+  const isMedTime = remaining <= 5 && remaining > 3;
   const isTimeUp = remaining === 0;
 
   return (
@@ -45,26 +42,26 @@ export function TimerTube({ remaining, duration }: TimerTubeProps) {
       viewBox="0 0 78 12"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      // Combined shake + pulse when low time
+      // Combined shake + pulse when low time, subtle pulse for medium time
       animate={
         isTimeUp
-          ? { scale: 1, x: 0, opacity: 0.5 }
+          ? { scale: 1, x: 0, opacity: 0.4, rotate: 0 }
           : isLowTime
             ? {
-              scale: [1, 1.08, 1],
-              x: [-1, 1, -1, 1, 0],
-              rotate: [-1, 1, -1, 1, 0],
+              scale: [1, 1.12, 1, 1.08, 1],
+              x: [-1.5, 1.5, -1, 1, 0],
+              rotate: [-1.5, 1.5, -1, 1, 0],
             }
-            : { scale: 1, x: 0, rotate: 0 }
+            : isMedTime
+              ? { scale: [1, 1.04, 1] }
+              : { scale: 1, x: 0, rotate: 0 }
       }
       transition={
         isLowTime
-          ? {
-            duration: 0.4,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }
-          : { duration: 0.2 }
+          ? { duration: 0.35, repeat: Infinity, ease: "easeInOut" }
+          : isMedTime
+            ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.2 }
       }
     >
       <defs>

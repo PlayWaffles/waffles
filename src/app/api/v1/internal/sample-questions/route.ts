@@ -5,7 +5,7 @@ import { NextResponse } from "next/server";
  * GET /api/v1/internal/sample-questions
  *
  * Returns random question templates for the sample tension page.
- * Strips correctIndex so it's not exposed to the client.
+ * Includes correctIndex so the client can give real answer feedback.
  */
 export async function GET() {
   // Fetch 5 random questions from the most-used pool (top 50 by usageCount)
@@ -14,12 +14,13 @@ export async function GET() {
       id: string;
       content: string;
       options: string[];
+      correctIndex: number;
       durationSec: number;
       mediaUrl: string | null;
       theme: string;
     }[]
   >(
-    `SELECT id, content, options, "durationSec", "mediaUrl", theme
+    `SELECT id, content, options, "correctIndex", "durationSec", "mediaUrl", theme
      FROM (
        SELECT * FROM "QuestionTemplate"
        ORDER BY "usageCount" DESC

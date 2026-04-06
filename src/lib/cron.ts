@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/lifecycle";
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
+import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
 
 /**
  * Roundup ended games that weren't processed by PartyKit alarm.
@@ -14,8 +15,6 @@ async function roundupGames() {
       where: { endsAt: { lt: new Date() }, rankedAt: null },
       select: { id: true, onchainId: true },
     });
-
-    if (!games.length) return;
 
     let ranked = 0;
     let published = 0;
@@ -41,6 +40,12 @@ async function roundupGames() {
     }
 
     console.log(`[Cron] Roundup done: ${ranked} ranked, ${published} published`);
+
+    const scheduled = await ensureNextAutoScheduledGames();
+    const created = scheduled.filter((result) => result.created).length;
+    if (created > 0) {
+      console.log(`[Cron] Auto-scheduled ${created} next game(s)`);
+    }
   } catch (e) {
     console.error("[Cron] Roundup failed:", e);
   }

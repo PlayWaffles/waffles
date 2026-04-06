@@ -25,6 +25,7 @@ interface SampleQuestion {
   id: string;
   content: string;
   options: string[];
+  correctIndex: number;
   durationSec: number;
   mediaUrl: string | null;
   theme: string;
@@ -744,7 +745,7 @@ export default function TensionSamplePage() {
     if (!question) return;
     const ratio = seconds / question.durationSec;
     const tier = ratio > 0.6 ? "fast" : ratio > 0.3 ? "mid" : seconds > 0 ? "slow" : "timeout";
-    const correct = Math.random() > 0.4; // ~60% chance correct in demo
+    const correct = question.correctIndex === index;
     setSpeedTier(tier);
 
     if (correct) {

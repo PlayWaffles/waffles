@@ -2,9 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { z } from "zod";
-import { UserPlatform } from "@prisma";
+import { Prisma, UserPlatform } from "@prisma";
 import { resolveRuntimePlatform } from "@/lib/platform/server";
-import { entryWhere, gameWhere, isGameVisibleToPlatform } from "@/lib/platform/query";
+import {
+  entryWhere,
+  gameWhere,
+  isGameVisibleToPlatform,
+  sharesBaseMainnetGames,
+} from "@/lib/platform/query";
 
 // ============================================
 // CONFIGURATION
@@ -88,6 +93,9 @@ async function handleAllTime(
   platform: UserPlatform,
 ): Promise<NextResponse<LeaderboardResponse>> {
   const offset = page * PAGE_SIZE;
+  const allTimeWhere = sharesBaseMainnetGames(platform)
+    ? Prisma.sql`g.platform IN ('FARCASTER'::"UserPlatform", 'BASE_APP'::"UserPlatform") AND g."isTestnet" = false`
+    : Prisma.sql`g.platform = ${platform}::"UserPlatform"`;
   const [rankedRows, countResult] = await Promise.all([
     prisma.$queryRaw<Array<{
       id: string;
@@ -118,8 +126,7 @@ async function handleAllTime(
         FROM "GameEntry" ge
         JOIN "Game" g ON ge."gameId" = g.id
         JOIN "User" u ON ge."userId" = u.id
-        WHERE g.platform = ${platform}::"UserPlatform"
-          AND (${platform}::"UserPlatform" = 'MINIPAY'::"UserPlatform" OR g."isTestnet" = false)
+        WHERE ${allTimeWhere}
         GROUP BY u.id, u.fid, u.wallet, u.username, u."pfpUrl"
       )
       SELECT *
@@ -131,8 +138,7 @@ async function handleAllTime(
       SELECT COUNT(DISTINCT ge."userId") as count
       FROM "GameEntry" ge
       JOIN "Game" g ON ge."gameId" = g.id
-      WHERE g.platform = ${platform}::"UserPlatform"
-        AND (${platform}::"UserPlatform" = 'MINIPAY'::"UserPlatform" OR g."isTestnet" = false)
+      WHERE ${allTimeWhere}
     `,
   ]);
 

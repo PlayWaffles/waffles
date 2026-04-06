@@ -17,7 +17,7 @@ const ticketPurchasedEvent = parseAbiItem(
   "event TicketPurchased(bytes32 indexed gameId, address indexed buyer, uint256 amount)",
 );
 
-type RecoveryPlatform = Extract<UserPlatform, "FARCASTER" | "MINIPAY">;
+type RecoveryPlatform = Extract<UserPlatform, "FARCASTER" | "MINIPAY" | "BASE_APP">;
 
 type RecentPurchase = {
   txHash: `0x${string}`;
@@ -37,17 +37,24 @@ function getRecoveryTargets(
     ];
   }
 
+  if (platform === "BASE_APP") {
+    return [
+      { platform, network: "BASE_MAINNET" },
+      { platform, network: "BASE_SEPOLIA" },
+    ];
+  }
+
   return [{ platform, network: "CELO_SEPOLIA" }];
 }
 
 function getRecoveryScanWindow(platform: RecoveryPlatform) {
-  return platform === "FARCASTER"
+  return platform === "FARCASTER" || platform === "BASE_APP"
     ? BASE_MAINNET_RECOVERY_SCAN_WINDOW
     : DEFAULT_RECOVERY_SCAN_WINDOW;
 }
 
 function getLogBlockChunk(platform: RecoveryPlatform) {
-  return platform === "FARCASTER"
+  return platform === "FARCASTER" || platform === "BASE_APP"
     ? BASE_MAINNET_LOG_BLOCK_CHUNK
     : DEFAULT_LOG_BLOCK_CHUNK;
 }

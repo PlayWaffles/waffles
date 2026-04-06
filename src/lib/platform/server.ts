@@ -21,7 +21,7 @@ export function parseCookieHeader(cookieHeader: string | null | undefined, name:
 
 export async function resolveRuntimePlatform(
   request?: Request,
-  fallback: UserPlatform = UserPlatform.FARCASTER,
+  fallback: UserPlatform = UserPlatform.BASE_APP,
 ): Promise<UserPlatform> {
   const headerPlatform = parsePlatform(request?.headers.get(PLATFORM_HEADER));
   if (headerPlatform) {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createNonce, type ApiError } from "@/lib/auth";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 export async function GET(request: Request) {
   try {
@@ -14,7 +15,8 @@ export async function GET(request: Request) {
       );
     }
 
-    const nonce = await createNonce(address);
+    const platform = await resolveRuntimePlatform(request);
+    const nonce = await createNonce(address, platform);
     return NextResponse.json(nonce);
   } catch (error) {
     console.error("GET /api/v1/auth/nonce Error:", error);
