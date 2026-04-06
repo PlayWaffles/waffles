@@ -40,3 +40,9 @@ export function buildProductionEntryWhere(platform?: string) {
 export function calculateProtocolRevenue(grossAmount: number | null | undefined) {
     return (grossAmount || 0) * PLATFORM_FEE_RATE;
 }
+
+export function calculatePrizePoolContribution(grossAmount: number | null | undefined) {
+    const gross = grossAmount || 0;
+    const net = gross - calculateProtocolRevenue(gross);
+    return Math.round(net * 1_000_000) / 1_000_000;
+}

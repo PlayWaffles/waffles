@@ -94,6 +94,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
       }
     }
 
+    const onchainGame = (await publicClient.readContract({
+      address: contractAddress,
+      abi: waffleGameAbi,
+      functionName: "getGame",
+      args: [game.onchainId as `0x${string}`],
+    })) as {
+      ticketRevenue: bigint;
+      sponsoredAmount: bigint;
+    };
+
     const onchainTotalPrizePool = (await publicClient.readContract({
       address: contractAddress,
       abi: waffleGameAbi,
@@ -101,11 +111,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
       args: [game.onchainId as `0x${string}`],
     })) as bigint;
 
-    const syncedPrizePool = Number(formatUnits(onchainTotalPrizePool, PAYMENT_TOKEN_DECIMALS));
+    const syncedGrossPrizePool = Number(
+      formatUnits(
+        onchainGame.ticketRevenue + onchainGame.sponsoredAmount,
+        PAYMENT_TOKEN_DECIMALS,
+      ),
+    );
+    const syncedNetPrizePool = Number(
+      formatUnits(onchainTotalPrizePool, PAYMENT_TOKEN_DECIMALS),
+    );
 
     await prisma.game.update({
       where: { id: game.id },
-      data: { prizePool: syncedPrizePool },
+      data: { prizePool: syncedNetPrizePool },
     });
 
     let notificationResults: Awaited<ReturnType<typeof sendBatch>> | null = null;
@@ -125,7 +143,7 @@ export async function POST(request: NextRequest, context: RouteContext) {
             preGame.prizePoolBoost(
               game.gameNumber,
               boostAmount,
-              syncedPrizePool.toFixed(2),
+              syncedNetPrizePool.toFixed(2),
             ),
             game.id,
             "pregame",
@@ -150,7 +168,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
         gameTitle: game.title,
         txHash: body.txHash ?? null,
         previousPrizePool: game.prizePool,
-        syncedPrizePool,
+        syncedPrizePool: syncedNetPrizePool,
+        syncedGrossPrizePool,
+        syncedNetPrizePool,
         sponsoredNetAmount:
           typeof sponsoredNetAmount === "bigint" ? String(sponsoredNetAmount) : null,
         notificationResults,
@@ -160,7 +180,9 @@ export async function POST(request: NextRequest, context: RouteContext) {
     return NextResponse.json({
       success: true,
       gameId: game.id,
-      prizePool: syncedPrizePool,
+      prizePool: syncedNetPrizePool,
+      grossPrizePool: syncedGrossPrizePool,
+      netPrizePool: syncedNetPrizePool,
       previousPrizePool: game.prizePool,
       txHash: body.txHash ?? null,
       notified: notificationResults?.success ?? 0,

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { GameNetwork } from "@/lib/chain/network";
 import { normalizeAddress } from "@/lib/auth";
+import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { resolveUserByWalletForPlatform } from "@/lib/user-wallets";
 import { unlockReferralRewards } from "./shared";
 
@@ -252,6 +253,8 @@ export async function recoverRecentPurchasesForUser(params: {
     }
 
     await prisma.$transaction(async (tx) => {
+      const prizePoolContribution = calculatePrizePoolContribution(purchase.paidAmount);
+
       await tx.gameEntry.create({
         data: {
           gameId: game.id,
@@ -268,7 +271,7 @@ export async function recoverRecentPurchasesForUser(params: {
         where: { id: game.id },
         data: {
           playerCount: { increment: 1 },
-          prizePool: { increment: purchase.paidAmount },
+          prizePool: { increment: prizePoolContribution },
         },
       });
 

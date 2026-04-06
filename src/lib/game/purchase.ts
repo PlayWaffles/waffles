@@ -15,6 +15,7 @@ import {
   resolveCanonicalFarcasterUser,
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
+import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { unlockReferralRewards } from "./shared";
 import { areTicketsClosedForGame } from "./ticket-window";
 
@@ -96,6 +97,7 @@ export async function finalizeTicketPurchase(
   }
 
   const normalizedPayerWallet = normalizeAddress(payerWallet);
+  const prizePoolContribution = calculatePrizePoolContribution(paidAmount);
 
   console.log("[game-actions]", {
     stage: "purchase-start",
@@ -355,7 +357,7 @@ export async function finalizeTicketPurchase(
         where: { id: gameId },
         data: {
           playerCount: { increment: 1 },
-          prizePool: { increment: verifiedPaidAmount },
+          prizePool: { increment: prizePoolContribution },
         },
         select: { prizePool: true, playerCount: true },
       });
