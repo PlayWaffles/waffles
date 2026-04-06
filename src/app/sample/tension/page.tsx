@@ -883,7 +883,7 @@ export default function TensionSamplePage() {
           )}
 
           {/* Answerer PFPs — right below the question/image */}
-          <div className="mb-3" style={{ minHeight: 58 }}>
+          <div className="mb-1" style={{ minHeight: 58 }}>
             <AnswererAvatars
               answerers={answerers}
               hasAnswered={selectedIndex !== null}
