@@ -58,34 +58,64 @@ const MOCK_PLAYERS = [
 
 // Dynamic feedback messages based on speed and streak
 const answerFeedback = {
-  fast: [
+  fast_correct: [
     "LIGHTNING FAST",
     "SPEED DEMON",
     "NO HESITATION",
-    "YOU DIDN'T EVEN READ IT",
     "CALM DOWN GENIUS",
     "OK SHOWOFF",
-    "EITHER YOU'RE SMART OR LUCKY",
-    "SUSPICIOUSLY FAST",
+    "BUILT DIFFERENT",
+    "TOO EASY FOR YOU HUH",
+    "SCARY GOOD",
   ],
-  mid: [
+  fast_wrong: [
+    "FAST AND WRONG LMAO",
+    "SPEEDRUNNING FAILURE",
+    "YOU DIDN'T EVEN READ IT",
+    "CONFIDENCE OF A CEO, IQ OF A GOLDFISH",
+    "QUICK TO EMBARRASS YOURSELF",
+    "ALL SPEED NO BRAIN",
+    "FASTEST L I'VE EVER SEEN",
+    "AT LEAST YOU'RE FAST AT BEING WRONG",
+  ],
+  mid_correct: [
     "SOLID I GUESS",
+    "NOT BAD",
+    "STEADY HANDS",
+    "GOT THERE EVENTUALLY",
+    "TOOK YOUR TIME BUT OK",
+    "CALCULATED",
+    "YOU THOUGHT ABOUT IT AND IT WORKED",
+    "RESPECTABLE",
+  ],
+  mid_wrong: [
+    "ALL THAT THINKING FOR NOTHING",
     "MID EFFORT MID RESULTS",
-    "TOOK YOU LONG ENOUGH",
     "YOUR WIFI LAGGING OR YOUR BRAIN?",
     "AVERAGE ANSWER FROM AN AVERAGE PLAYER",
-    "NOT TERRIBLE NOT GREAT",
     "ROOM TEMPERATURE IQ SPEED",
-    "YOU THOUGHT ABOUT IT HUH",
+    "YOU THOUGHT ABOUT IT AND STILL MISSED",
+    "OVERTHINKING IS YOUR SPORT",
+    "THE AUDACITY TO BE SLOW AND WRONG",
   ],
-  slow: [
+  slow_correct: [
+    "JUST IN TIME",
+    "CUTTING IT CLOSE",
+    "BARELY MADE IT BUT YOU MADE IT",
+    "PHEW",
+    "THE DRAMA WAS UNNECESSARY BUT OK",
+    "CLUTCH",
+    "SWEAT WAS DRIPPING",
+    "YOU LOVE THE PRESSURE HUH",
+  ],
+  slow_wrong: [
     "GRANDMA TYPES FASTER",
     "WERE YOU ASLEEP?",
-    "BARELY MADE IT LMAO",
+    "ALL THAT TIME AND STILL WRONG",
     "THE TIMER WAS BEGGING YOU",
     "THAT WAS PAINFUL TO WATCH",
-    "DID YOU GOOGLE IT AND STILL TAKE THIS LONG?",
-    "SLOWPOKE",
+    "DID YOU GOOGLE IT AND STILL GET IT WRONG?",
+    "SLOWPOKE AND WRONG",
     "EVEN THE BOTS BEAT YOU",
   ],
   streak: [
@@ -123,18 +153,24 @@ function pickUnique(pool: readonly string[]): string {
   return pick;
 }
 
-function getAnswerMessage(speed: SpeedTier, streak: number): { text: string; color: string } {
-  if (streak >= 3) {
+function getAnswerMessage(speed: SpeedTier, streak: number, correct: boolean): { text: string; color: string } {
+  if (streak >= 3 && correct) {
     return { text: pickUnique(answerFeedback.streak), color: "#FF4444" };
   }
   if (speed === "fast") {
-    return { text: pickUnique(answerFeedback.fast), color: "#14B985" };
+    return correct
+      ? { text: pickUnique(answerFeedback.fast_correct), color: "#14B985" }
+      : { text: pickUnique(answerFeedback.fast_wrong), color: "#FF6B6B" };
   }
   if (speed === "mid") {
-    return { text: pickUnique(answerFeedback.mid), color: "#FFC931" };
+    return correct
+      ? { text: pickUnique(answerFeedback.mid_correct), color: "#FFC931" }
+      : { text: pickUnique(answerFeedback.mid_wrong), color: "#FF6B6B" };
   }
   if (speed === "slow") {
-    return { text: pickUnique(answerFeedback.slow), color: "#FF6B6B" };
+    return correct
+      ? { text: pickUnique(answerFeedback.slow_correct), color: "#14B985" }
+      : { text: pickUnique(answerFeedback.slow_wrong), color: "#FF6B6B" };
   }
   return { text: pickUnique(answerFeedback.timeout), color: "#FF4444" };
 }
@@ -379,8 +415,6 @@ function AnswererAvatars({
   answerers: AnswererEntry[];
   hasAnswered: boolean;
 }) {
-  if (answerers.length === 0 && !hasAnswered) return null;
-
   const visible = answerers.slice(-5);
   const overflow = answerers.length - visible.length;
 
@@ -410,7 +444,7 @@ function AnswererAvatars({
                 className="absolute inset-0 rounded-full"
                 style={{ border: `2px solid ${player.correct ? "#14B985" : "#FF4444"}` }}
                 initial={{ scale: 1, opacity: 0.8 }}
-                animate={{ scale: 1.5, opacity: 0 }}
+                animate={{ scale: 1.25, opacity: 0 }}
                 transition={{ duration: 0.6, ease: "easeOut" }}
               />
 
@@ -466,7 +500,7 @@ function AnswererAvatars({
               backgroundColor: "rgba(255,255,255,0.08)",
               border: "2px solid rgba(255,255,255,0.15)",
               color: "rgba(255,255,255,0.6)",
-              fontSize: overflow >= 10 ? 12 : 14,
+              fontSize: overflow >= 10 ? 20 : 22,
             }}
             initial={{ scale: 0, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -706,16 +740,24 @@ export default function TensionSamplePage() {
   // Handle answer selection
   const handleAnswer = (index: number) => {
     setSelectedIndex(index);
-    setStreakBroken(false);
-    setStreak((s) => s + 1);
     if (timerRef.current) clearInterval(timerRef.current);
 
     // Compute speed tier based on remaining time
     if (!question) return;
     const ratio = seconds / question.durationSec;
     const tier = ratio > 0.6 ? "fast" : ratio > 0.3 ? "mid" : seconds > 0 ? "slow" : "timeout";
+    const correct = Math.random() > 0.4; // ~60% chance correct in demo
     setSpeedTier(tier);
-    setAnswerMsg(getAnswerMessage(tier, streak + 1));
+
+    if (correct) {
+      setStreakBroken(false);
+      setStreak((s) => s + 1);
+      setAnswerMsg(getAnswerMessage(tier, streak + 1, true));
+    } else {
+      if (streak >= 2) setStreakBroken(true);
+      setStreak(0);
+      setAnswerMsg(getAnswerMessage(tier, 0, false));
+    }
 
     // Show next button after a beat
     setTimeout(() => {
