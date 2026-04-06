@@ -281,7 +281,7 @@ function TensionTimerTube({
 // ANSWERER AVATARS (compact PFP row beside the question)
 // =============================================================================
 
-type AnswererEntry = { username: string; pfp: string; id: number };
+type AnswererEntry = { username: string; pfp: string; id: number; correct: boolean };
 
 function AnswererAvatars({
   answerers,
@@ -292,63 +292,100 @@ function AnswererAvatars({
 }) {
   if (answerers.length === 0 && !hasAnswered) return null;
 
-  const visible = answerers.slice(-3);
+  const visible = answerers.slice(-5);
   const overflow = answerers.length - visible.length;
-
-  const label = overflow > 0
-    ? `and ${overflow} ${overflow === 1 ? "other" : "others"} answered`
-    : answerers.length > 0
-      ? "answered"
-      : "";
 
   return (
     <motion.div
-      className="flex items-center gap-2.5 justify-center"
+      className="relative mx-4"
+      style={{ minHeight: 58 }}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.3 }}
     >
       {/* PFP row */}
-      <div className="flex">
+      <div className="flex gap-1.5 justify-center flex-nowrap pr-4">
         <AnimatePresence>
           {answerers.slice(-6).map((player) => (
             <motion.div
               key={player.id}
-              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5BB1B] to-[#FF6B35] overflow-hidden border-2 border-[#1e1e1e] flex-shrink-0"
+              className="relative flex-shrink-0 overflow-visible"
+              style={{ width: 50, height: 50 }}
               initial={{ scale: 0, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: "spring", stiffness: 500, damping: 20 }}
               title={player.username}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={player.pfp}
-                alt=""
-                className="w-full h-full object-cover"
-                loading="eager"
+              {/* Pulse ring */}
+              <motion.div
+                className="absolute inset-0 rounded-full"
+                style={{ border: `2px solid ${player.correct ? "#14B985" : "#FF4444"}` }}
+                initial={{ scale: 1, opacity: 0.8 }}
+                animate={{ scale: 1.5, opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
               />
+
+              {/* PFP */}
+              <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-[#F5BB1B] to-[#FF6B35]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={player.pfp}
+                  alt=""
+                  className="w-full h-full object-cover"
+                  loading="eager"
+                />
+              </div>
+
+              {/* Result badge inside PFP */}
+              <motion.div
+                className="absolute rounded-full flex items-center justify-center"
+                style={{
+                  width: 16,
+                  height: 16,
+                  bottom: 2,
+                  right: 2,
+                  backgroundColor: player.correct ? "#14B985" : "#FF4444",
+                  boxShadow: "0 0 0 2px #1e1e1e",
+                }}
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 600, damping: 15, delay: 0.2 }}
+              >
+                {player.correct ? (
+                  <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
+                    <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                ) : (
+                  <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                    <path d="M1 1L7 7M7 1L1 7" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                  </svg>
+                )}
+              </motion.div>
             </motion.div>
           ))}
         </AnimatePresence>
-      </div>
 
-      {/* Names label */}
-      {label && (
-        <motion.span
-          key={label}
-          className="font-display text-[11px] flex-shrink-0"
-          style={{ color: hasAnswered ? "#14B985" : "#FF6B6B" }}
-          initial={{ opacity: 0, x: -5 }}
-          animate={{ opacity: hasAnswered ? 1 : [1, 0.5, 1], x: 0 }}
-          transition={
-            !hasAnswered
-              ? { opacity: { duration: 1, repeat: Infinity }, x: { duration: 0.2 } }
-              : { duration: 0.2 }
-          }
-        >
-          {label}
-        </motion.span>
-      )}
+        {/* +N overflow circle */}
+        {overflow > 0 && (
+          <motion.div
+            key={`overflow-${overflow}`}
+            className="rounded-full flex items-center justify-center flex-shrink-0 font-body"
+            style={{
+              width: 50,
+              height: 50,
+              backgroundColor: "rgba(255,255,255,0.08)",
+              border: "2px solid rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.6)",
+              fontSize: overflow >= 10 ? 18 : 20,
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+          >
+            +{overflow}
+          </motion.div>
+        )}
+      </div>
     </motion.div>
   );
 }
@@ -528,7 +565,6 @@ export default function TensionSamplePage() {
   // Simulate other players answering (one at a time with PFPs)
   useEffect(() => {
     if (!gameStarted) return;
-    if (seconds <= 0) return;
 
     setAnswerers([]);
     playerIndexRef.current = 0;
@@ -540,7 +576,7 @@ export default function TensionSamplePage() {
       const player = MOCK_PLAYERS[idx];
       setAnswerers((prev) => [
         ...prev,
-        { ...player, id: Date.now() + idx },
+        { ...player, id: Date.now() + idx, correct: Math.random() > 0.4 },
       ]);
       playSound("click");
       playerIndexRef.current = idx + 1;
@@ -564,7 +600,6 @@ export default function TensionSamplePage() {
     setStreakBroken(false);
     setStreak((s) => s + 1);
     if (timerRef.current) clearInterval(timerRef.current);
-    if (botTimerRef.current) clearTimeout(botTimerRef.current);
 
     // Compute speed tier based on remaining time
     if (!question) return;
