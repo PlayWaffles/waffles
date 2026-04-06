@@ -171,6 +171,7 @@ function TensionOption({
   disabled,
   tremor,
   speed,
+  buttonWidth,
 }: {
   option: string;
   index: number;
@@ -179,6 +180,7 @@ function TensionOption({
   disabled: boolean;
   tremor: number;
   speed: SpeedTier;
+  buttonWidth: number;
 }) {
   const [isStamping, setIsStamping] = useState(false);
 
@@ -212,7 +214,7 @@ function TensionOption({
         opacity: hasSelection && !isSelected ? 0 : 1,
         x: hasSelection && !isSelected ? getExitX() : tremorX,
         y: tremorY,
-        scale: isStamping ? 0.93 : isSelected ? 1.03 : 1,
+        scale: isStamping ? 0.93 : isSelected ? 1.08 : 1,
       }}
       transition={
         hasSelection && !isSelected
@@ -249,7 +251,7 @@ function TensionOption({
         tabIndex={-1}
         variant="filled"
         colorTheme={color.theme}
-        width={340}
+        width={buttonWidth}
         height={53}
         fontSize={15}
         onClick={handleTap}
@@ -578,6 +580,22 @@ export default function TensionSamplePage() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const botTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const playerIndexRef = useRef(0);
+  const optionsRef = useRef<HTMLUListElement>(null);
+  const [buttonWidth, setButtonWidth] = useState(340);
+
+  // Measure options container width for responsive PixelButton
+  useEffect(() => {
+    const measure = () => {
+      if (optionsRef.current) {
+        const w = optionsRef.current.clientWidth;
+        // Round down to nearest 4 (PixelButton requirement)
+        setButtonWidth(Math.floor(w / 4) * 4);
+      }
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   // Fetch questions from DB
   const fetchQuestions = useCallback(async () => {
@@ -992,6 +1010,7 @@ export default function TensionSamplePage() {
 
           {/* Options */}
           <motion.ul
+            ref={optionsRef}
             className="w-full flex flex-col gap-2 px-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -1016,6 +1035,7 @@ export default function TensionSamplePage() {
                   disabled={seconds === 0}
                   tremor={tremor}
                   speed={selectedIndex === idx ? speedTier : null}
+                  buttonWidth={buttonWidth}
                 />
               </motion.div>
             ))}
