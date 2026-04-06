@@ -4,6 +4,7 @@ import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
+import { areTicketsClosedForGame } from "@/lib/game/ticket-window";
 import { TicketPurchaseSource } from "@prisma";
 import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser } from "@/lib/notifications";
@@ -290,8 +291,8 @@ export async function issueFreeTicketAction(
     return { success: false, error: "Game not found" };
   }
 
-  if (new Date() >= game.endsAt) {
-    return { success: false, error: "Cannot issue a free ticket after the game ends" };
+  if (areTicketsClosedForGame(game)) {
+    return { success: false, error: "Cannot issue a free ticket after ticket sales close" };
   }
 
   const user = await findUserForPlatform(game.platform, userQuery);

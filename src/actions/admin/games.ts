@@ -166,13 +166,14 @@ export async function createGameAction(
   const createdGames: { id: string; platform: UserPlatform; title: string }[] = [];
   const failures: string[] = [];
 
-  // Derive next game number from highest existing number (avoids gaps from deleted games
-  // more gracefully than count, and the @unique constraint protects against races)
-  const lastGame = await prisma.game.findFirst({
+  // Derive next game number from highest existing Base mainnet game number
+  // (testnet games don't count toward the public numbering sequence)
+  const lastMainnetGame = await prisma.game.findFirst({
+    where: { network: "BASE_MAINNET" },
     orderBy: { gameNumber: "desc" },
     select: { gameNumber: true },
   });
-  let nextGameNumber = (lastGame?.gameNumber ?? 0) + 1;
+  let nextGameNumber = (lastMainnetGame?.gameNumber ?? 0) + 1;
 
   for (const platform of platforms) {
     const network = defaultNetworkForPlatform(platform);

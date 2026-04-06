@@ -51,6 +51,12 @@ export function QuestionTemplateForm({
     const [resetKey, setResetKey] = useState(0);
     const [mediaUrl, setMediaUrl] = useState(defaultValues.mediaUrl || "");
     const [soundUrl, setSoundUrl] = useState(defaultValues.soundUrl || "");
+    const [options, setOptions] = useState<[string, string, string, string]>([
+        defaultValues.options?.[0] ?? "",
+        defaultValues.options?.[1] ?? "",
+        defaultValues.options?.[2] ?? "",
+        defaultValues.options?.[3] ?? "",
+    ]);
 
     const [state, formAction] = useActionState<TemplateActionResult | null, FormData>(
         action,
@@ -67,6 +73,7 @@ export function QuestionTemplateForm({
                 setResetKey((prev) => prev + 1);
                 setMediaUrl("");
                 setSoundUrl("");
+                setOptions(["", "", "", ""]);
             }
         }
     }, [state?.success, redirectOnSuccess, router]);
@@ -74,6 +81,29 @@ export function QuestionTemplateForm({
     const defaultCorrectLetter = defaultValues.correctIndex !== undefined
         ? String.fromCharCode(65 + defaultValues.correctIndex)
         : undefined;
+
+    /**
+     * Parse pasted text like:
+     *   A) The Wolf of Wall Street
+     *   B) The Great Gatsby
+     *   C) The Aviator
+     *   D) Moulin Rouge!
+     *
+     * Supports formats: "A)", "A.", "A -", "A:", or just newline-separated lines.
+     */
+    function parseOptions(text: string): [string, string, string, string] | null {
+        // Split into lines, strip labels, and collect
+        const lines = text.split(/\n/).map((l) => l.trim()).filter(Boolean);
+
+        // Strip leading labels like "A)", "A.", "A -", "A:", "1)", "1." etc.
+        const stripped = lines.map((l) => l.replace(/^[A-Da-d1-4][).\-:]\s*/, "").trim());
+
+        if (stripped.length === 4 && stripped.every(Boolean)) {
+            return stripped as [string, string, string, string];
+        }
+
+        return null;
+    }
 
     return (
         <form ref={formRef} action={formAction} className="space-y-6">
@@ -170,7 +200,20 @@ export function QuestionTemplateForm({
                                 type="text"
                                 name={`option${letter}`}
                                 required
-                                defaultValue={defaultValues.options?.[idx]}
+                                value={options[idx]}
+                                onChange={(e) => {
+                                    const next = [...options] as [string, string, string, string];
+                                    next[idx] = e.target.value;
+                                    setOptions(next);
+                                }}
+                                onPaste={(e) => {
+                                    const text = e.clipboardData.getData("text");
+                                    const parsed = parseOptions(text);
+                                    if (parsed) {
+                                        e.preventDefault();
+                                        setOptions(parsed);
+                                    }
+                                }}
                                 placeholder={`Option ${letter}`}
                                 className="w-full px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-white text-sm placeholder-white/30 focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
                             />

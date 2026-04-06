@@ -18,7 +18,9 @@ export const POST = withAuth(async (_request: NextRequest, auth, params) => {
             ? 403
             : result.code === "INVALID_INPUT"
               ? 400
-              : result.code === "GAME_ENDED" || result.code === "GAME_FULL"
+              : result.code === "GAME_ENDED" ||
+                  result.code === "GAME_FULL" ||
+                  result.code === "TICKETS_CLOSED"
                 ? 409
                 : 500;
 

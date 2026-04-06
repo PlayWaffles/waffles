@@ -12,9 +12,13 @@ export type AlarmPhase =
   // Pre-game countdown notifications
   | "24h"
   | "12h"
+  | "6h"
   | "3h"
   | "1h"
+  | "30min"
+  | "15min"
   | "5min"
+  | "1min"
   // Game lifecycle
   | "start" // Game goes live
   | "gameEnd"; // Game ends, trigger settlement

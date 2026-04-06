@@ -1,0 +1,882 @@
+"use client";
+
+/**
+ * Sample page: Question Tension Redesign
+ *
+ * Demonstrates the emotional redesign of the question/answer experience.
+ * Visit /sample/tension to preview.
+ *
+ * Key changes from current design:
+ * 1. Point-of-no-return stamp on answer selection (lateral slide-away)
+ * 2. Progressive timer pressure (vignette, tremor, acceleration)
+ * 3. Live PFP avatars beside question as players answer (social pressure)
+ */
+
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { PixelButton } from "@/components/ui/PixelButton";
+import { playSound } from "@/lib/sounds";
+
+// =============================================================================
+// TYPES & CONSTANTS
+// =============================================================================
+
+interface SampleQuestion {
+  id: string;
+  content: string;
+  options: string[];
+  durationSec: number;
+  mediaUrl: string | null;
+  theme: string;
+}
+
+const TOTAL_PLAYERS = 32;
+
+// Mock player profiles for the answerer feed
+const MOCK_PLAYERS = [
+  { username: "vitalik.eth", pfp: "https://i.pravatar.cc/80?u=vitalik" },
+  { username: "alice", pfp: "https://i.pravatar.cc/80?u=alice" },
+  { username: "0xbob", pfp: "https://i.pravatar.cc/80?u=0xbob" },
+  { username: "trivia_queen", pfp: "https://i.pravatar.cc/80?u=queen" },
+  { username: "degen.fc", pfp: "https://i.pravatar.cc/80?u=degen" },
+  { username: "chad", pfp: "https://i.pravatar.cc/80?u=chad" },
+  { username: "ser_punts", pfp: "https://i.pravatar.cc/80?u=punts" },
+  { username: "moonboy", pfp: "https://i.pravatar.cc/80?u=moon" },
+  { username: "0xjane", pfp: "https://i.pravatar.cc/80?u=jane" },
+  { username: "quizmaster", pfp: "https://i.pravatar.cc/80?u=quiz" },
+  { username: "anon_42", pfp: "https://i.pravatar.cc/80?u=anon42" },
+  { username: "wagmi.eth", pfp: "https://i.pravatar.cc/80?u=wagmi" },
+  { username: "speedrun", pfp: "https://i.pravatar.cc/80?u=speed" },
+  { username: "big_brain", pfp: "https://i.pravatar.cc/80?u=brain" },
+  { username: "0xcarl", pfp: "https://i.pravatar.cc/80?u=carl" },
+  { username: "farcaster_og", pfp: "https://i.pravatar.cc/80?u=farcasterog" },
+];
+
+// =============================================================================
+// COLOR THEMES (matching app)
+// =============================================================================
+
+const optionColors = [
+  { name: "gold", theme: "gold" as const, accent: "#FFC931" },
+  { name: "purple", theme: "purple" as const, accent: "#B01BF5" },
+  { name: "cyan", theme: "cyan" as const, accent: "#1B8FF5" },
+  { name: "green", theme: "green" as const, accent: "#4CAF50" },
+];
+
+// =============================================================================
+// TENSION OPTION COMPONENT
+// =============================================================================
+
+const speedFeedback = {
+  fast: { label: "FAST", color: "#14B985" },
+  mid: { label: "OK", color: "#FFC931" },
+  slow: { label: "SLOW", color: "#FF6B6B" },
+  timeout: { label: "MISSED", color: "#FF4444" },
+} as const;
+
+type SpeedTier = keyof typeof speedFeedback | null;
+
+function TensionOption({
+  option,
+  index,
+  selectedIndex,
+  onSelect,
+  disabled,
+  tremor,
+  speed,
+}: {
+  option: string;
+  index: number;
+  selectedIndex: number | null;
+  onSelect: (i: number) => void;
+  disabled: boolean;
+  tremor: number;
+  speed: SpeedTier;
+}) {
+  const [isStamping, setIsStamping] = useState(false);
+
+  const isSelected = selectedIndex === index;
+  const hasSelection = selectedIndex !== null;
+  const color = optionColors[index % optionColors.length];
+  const fb = speed ? speedFeedback[speed] : null;
+
+  const handleTap = () => {
+    if (disabled || hasSelection) return;
+    setIsStamping(true);
+    playSound("answerSubmit");
+    setTimeout(() => {
+      onSelect(index);
+    }, 100);
+  };
+
+  const getExitX = () => {
+    if (!hasSelection || isSelected) return 0;
+    return index < selectedIndex! ? -120 : 120;
+  };
+
+  const tremorX = tremor > 0 && !hasSelection ? (Math.random() - 0.5) * tremor * 2 : 0;
+  const tremorY = tremor > 0 && !hasSelection ? (Math.random() - 0.5) * tremor * 1.5 : 0;
+
+  return (
+    <motion.li
+      className="mx-auto flex justify-center relative"
+      style={{ zIndex: isSelected ? 10 : 1 }}
+      animate={{
+        opacity: hasSelection && !isSelected ? 0 : 1,
+        x: hasSelection && !isSelected ? getExitX() : tremorX,
+        y: tremorY,
+        scale: isStamping ? 0.93 : isSelected ? 1.08 : 1,
+      }}
+      transition={
+        hasSelection && !isSelected
+          ? {
+              opacity: { duration: 0.25, delay: Math.abs(index - selectedIndex!) * 0.05 },
+              x: { type: "spring", stiffness: 300, damping: 20, delay: Math.abs(index - selectedIndex!) * 0.04 },
+            }
+          : isSelected
+            ? { scale: { type: "spring", stiffness: 600, damping: 15 } }
+            : { x: { duration: 0 }, y: { duration: 0 }, scale: { type: "spring", stiffness: 400, damping: 25 } }
+      }
+    >
+      {/* Speed tag on the selected button */}
+      <AnimatePresence>
+        {isSelected && fb && (
+          <motion.span
+            className="absolute -top-2 -right-2 z-20 px-2 py-0.5 rounded-full font-display text-[9px] font-bold tracking-wider"
+            style={{
+              backgroundColor: fb.color,
+              color: "#1E1E1E",
+              boxShadow: `0 0 12px ${fb.color}80`,
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 15, delay: 0.3 }}
+          >
+            {fb.label}
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <PixelButton
+        aria-pressed={isSelected}
+        tabIndex={-1}
+        variant="filled"
+        colorTheme={color.theme}
+        width={344}
+        height={57}
+        fontSize={15}
+        onClick={handleTap}
+        disabled={disabled}
+      >
+        {option}
+      </PixelButton>
+    </motion.li>
+  );
+}
+
+
+// =============================================================================
+// TENSION TIMER TUBE
+// =============================================================================
+
+function TensionTimerTube({
+  remaining,
+  duration,
+}: {
+  remaining: number;
+  duration: number;
+}) {
+  // Progress accelerates as time runs low
+  const rawProgress = duration > 0 ? (duration - remaining) / duration : 1;
+  // Apply easeIn curve to make it feel like it's accelerating
+  const easedProgress =
+    remaining <= 5
+      ? rawProgress + (1 - rawProgress) * Math.pow(1 - remaining / 5, 2) * 0.15
+      : rawProgress;
+  const clipWidth = 78 * (1 - Math.min(1, easedProgress));
+
+  const isLowTime = remaining <= 3;
+  const isMedTime = remaining <= 5 && remaining > 3;
+  const isTimeUp = remaining === 0;
+
+  // Color shifts: orange → red → deep red
+  const fillColor = isTimeUp
+    ? "#8B1A1A"
+    : isLowTime
+      ? "#CC2222"
+      : isMedTime
+        ? "#E85535"
+        : "#F96F49";
+
+  return (
+    <motion.svg
+      width="78"
+      height="12"
+      viewBox="0 0 78 12"
+      fill="none"
+      animate={
+        isTimeUp
+          ? { scale: 1, x: 0, opacity: 0.4, rotate: 0 }
+          : isLowTime
+            ? {
+                scale: [1, 1.12, 1, 1.08, 1],
+                x: [-1.5, 1.5, -1, 1, 0],
+                rotate: [-1.5, 1.5, -1, 1, 0],
+              }
+            : isMedTime
+              ? {
+                  scale: [1, 1.04, 1],
+                }
+              : { scale: 1, x: 0, rotate: 0 }
+      }
+      transition={
+        isLowTime
+          ? { duration: 0.35, repeat: Infinity, ease: "easeInOut" }
+          : isMedTime
+            ? { duration: 0.6, repeat: Infinity, ease: "easeInOut" }
+            : { duration: 0.2 }
+      }
+    >
+      {/* Background (unfilled) */}
+      <rect x="0" y="0" width="78" height="12" rx="6" ry="6" fill="#E9DCCB" />
+
+      {/* Fill (animated clip) */}
+      <g>
+        <clipPath id="tension-timer-clip">
+          <motion.rect
+            x="0"
+            y="0"
+            height="12"
+            animate={{ width: clipWidth }}
+            transition={{ duration: 1, ease: "linear" }}
+          />
+        </clipPath>
+        <g clipPath="url(#tension-timer-clip)">
+          <rect
+            x="0"
+            y="0"
+            width="78"
+            height="12"
+            rx="6"
+            ry="6"
+            fill={fillColor}
+          />
+          {/* Highlight */}
+          <rect
+            x="3"
+            y="2"
+            width="72"
+            height="5"
+            rx="2.5"
+            fill="white"
+            opacity="0.2"
+          />
+        </g>
+      </g>
+    </motion.svg>
+  );
+}
+
+// =============================================================================
+// ANSWERER AVATARS (compact PFP row beside the question)
+// =============================================================================
+
+type AnswererEntry = { username: string; pfp: string; id: number };
+
+function AnswererAvatars({
+  answerers,
+  hasAnswered,
+}: {
+  answerers: AnswererEntry[];
+  hasAnswered: boolean;
+}) {
+  if (answerers.length === 0 && !hasAnswered) return null;
+
+  const visible = answerers.slice(-3);
+  const overflow = answerers.length - visible.length;
+
+  const label = overflow > 0
+    ? `and ${overflow} ${overflow === 1 ? "other" : "others"} answered`
+    : answerers.length > 0
+      ? "answered"
+      : "";
+
+  return (
+    <motion.div
+      className="flex items-center gap-2.5 justify-center"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      {/* PFP row */}
+      <div className="flex">
+        <AnimatePresence>
+          {answerers.slice(-6).map((player) => (
+            <motion.div
+              key={player.id}
+              className="w-10 h-10 rounded-full bg-gradient-to-br from-[#F5BB1B] to-[#FF6B35] overflow-hidden border-2 border-[#1e1e1e] flex-shrink-0"
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              title={player.username}
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={player.pfp}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
+
+      {/* Names label */}
+      {label && (
+        <motion.span
+          key={label}
+          className="font-display text-[11px] flex-shrink-0"
+          style={{ color: hasAnswered ? "#14B985" : "#FF6B6B" }}
+          initial={{ opacity: 0, x: -5 }}
+          animate={{ opacity: hasAnswered ? 1 : [1, 0.5, 1], x: 0 }}
+          transition={
+            !hasAnswered
+              ? { opacity: { duration: 1, repeat: Infinity }, x: { duration: 0.2 } }
+              : { duration: 0.2 }
+          }
+        >
+          {label}
+        </motion.span>
+      )}
+    </motion.div>
+  );
+}
+
+// =============================================================================
+// STREAK FIRE
+// =============================================================================
+
+function StreakFire({ streak }: { streak: number }) {
+  if (streak < 2) return null;
+
+  return (
+    <motion.div
+      className="flex items-center gap-1"
+      initial={{ scale: 0, opacity: 0, rotate: -15 }}
+      animate={{ scale: 1, opacity: 1, rotate: 0 }}
+      transition={{ type: "spring", stiffness: 600, damping: 12 }}
+      key={streak}
+    >
+      <motion.span
+        className="text-lg"
+        animate={{ scale: [1, 1.3, 1], rotate: [0, -8, 8, 0] }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+      >
+        🔥
+      </motion.span>
+      <motion.span
+        className="font-body text-[18px]"
+        style={{
+          color: streak >= 5 ? "#FF4444" : streak >= 3 ? "#FFC931" : "#FF8844",
+          textShadow: `0 0 ${streak * 4}px ${streak >= 5 ? "#FF444480" : streak >= 3 ? "#FFC93180" : "#FF884480"}`,
+        }}
+        animate={{ scale: [1, 1.15, 1] }}
+        transition={{ duration: 0.3, delay: 0.15 }}
+      >
+        x{streak}
+      </motion.span>
+    </motion.div>
+  );
+}
+
+// =============================================================================
+// STREAK BREAK (shatter animation when streak ends)
+// =============================================================================
+
+function StreakBreak({ show }: { show: boolean }) {
+  if (!show) return null;
+
+  return (
+    <motion.div
+      className="flex items-center gap-1"
+      initial={{ scale: 1, opacity: 1 }}
+      animate={{ scale: 0.3, opacity: 0, y: 30, rotate: 25 }}
+      transition={{ duration: 0.5, ease: "easeIn" }}
+    >
+      <span className="text-lg">🔥</span>
+      <span className="font-body text-[18px] text-[#FF4444]">x0</span>
+    </motion.div>
+  );
+}
+
+// =============================================================================
+// VIGNETTE OVERLAY (progressive edge darkening)
+// =============================================================================
+
+function PressureVignette({ intensity }: { intensity: number }) {
+  if (intensity <= 0) return null;
+
+  return (
+    <motion.div
+      className="fixed inset-0 pointer-events-none z-50"
+      style={{
+        background: `radial-gradient(ellipse at center, transparent ${70 - intensity * 30}%, rgba(0,0,0,${intensity * 0.6}) 100%)`,
+      }}
+      animate={{ opacity: intensity }}
+      transition={{ duration: 0.5 }}
+    />
+  );
+}
+
+// =============================================================================
+// MAIN SAMPLE PAGE
+// =============================================================================
+
+export default function TensionSamplePage() {
+  const [questions, setQuestions] = useState<SampleQuestion[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [questionIndex, setQuestionIndex] = useState(0);
+  const [seconds, setSeconds] = useState(10);
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [answerers, setAnswerers] = useState<AnswererEntry[]>([]);
+  const [showDistribution, setShowDistribution] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
+  const [speedTier, setSpeedTier] = useState<SpeedTier>(null);
+  const [streak, setStreak] = useState(0);
+  const [streakBroken, setStreakBroken] = useState(false);
+  const [screenShake, setScreenShake] = useState(false);
+
+  const question = questions[questionIndex] ?? null;
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const botTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const playerIndexRef = useRef(0);
+
+  // Fetch questions from DB
+  const fetchQuestions = useCallback(async () => {
+    setLoading(true);
+    setFetchError(null);
+    try {
+      const res = await fetch("/api/v1/internal/sample-questions?count=5");
+      if (!res.ok) throw new Error("Failed to fetch questions");
+      const data = await res.json();
+      const formatted: SampleQuestion[] = data.map(
+        (q: SampleQuestion) => ({
+          ...q,
+          content: q.content.toUpperCase(),
+        })
+      );
+      setQuestions(formatted);
+    } catch (e) {
+      setFetchError(e instanceof Error ? e.message : "Failed to load");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // Pressure intensity: 0 at >5s, ramps to 1 at 0s
+  const pressure = seconds <= 5 ? 1 - seconds / 5 : 0;
+  // Tremor: 0 until 4s, ramps to 3px at 0s
+  const tremor = seconds <= 4 ? (1 - seconds / 4) * 3 : 0;
+
+  const startQuestion = useCallback(
+    (qIdx: number, qs: SampleQuestion[] = questions) => {
+      const q = qs[qIdx];
+      if (!q) return;
+      setQuestionIndex(qIdx);
+      setSeconds(q.durationSec);
+      setSelectedIndex(null);
+      setAnswerers([]);
+      setShowDistribution(false);
+      setSpeedTier(null);
+      setStreakBroken(false);
+      playerIndexRef.current = 0;
+    },
+    [questions]
+  );
+
+  // Timer countdown
+  useEffect(() => {
+    if (!gameStarted) return;
+    if (seconds <= 0) return;
+    if (selectedIndex !== null) return; // stop timer when answered
+
+    timerRef.current = setInterval(() => {
+      setSeconds((s) => {
+        if (s <= 1) {
+          playSound("timeUp");
+          // Screen shake + streak break on timeout
+          setScreenShake(true);
+          setTimeout(() => setScreenShake(false), 500);
+          setStreak((prev) => {
+            if (prev >= 2) setStreakBroken(true);
+            return 0;
+          });
+          return 0;
+        }
+        if (s === 4) playSound("timerFinal");
+        return s - 1;
+      });
+    }, 1000);
+
+    return () => {
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, [gameStarted, seconds <= 0, selectedIndex !== null]);
+
+  // Simulate other players answering (one at a time with PFPs)
+  useEffect(() => {
+    if (!gameStarted) return;
+    if (seconds <= 0) return;
+
+    setAnswerers([]);
+    playerIndexRef.current = 0;
+
+    const addPlayer = () => {
+      const idx = playerIndexRef.current;
+      if (idx >= MOCK_PLAYERS.length) return;
+
+      const player = MOCK_PLAYERS[idx];
+      setAnswerers((prev) => [
+        ...prev,
+        { ...player, id: Date.now() + idx },
+      ]);
+      playSound("click");
+      playerIndexRef.current = idx + 1;
+
+      // Schedule next player with random delay (faster as time goes on)
+      const delay = 800 + Math.random() * 1200;
+      botTimerRef.current = setTimeout(addPlayer, delay);
+    };
+
+    // First player answers after 1-2s
+    botTimerRef.current = setTimeout(addPlayer, 1000 + Math.random() * 1000);
+
+    return () => {
+      if (botTimerRef.current) clearTimeout(botTimerRef.current);
+    };
+  }, [gameStarted, questionIndex]);
+
+  // Handle answer selection
+  const handleAnswer = (index: number) => {
+    setSelectedIndex(index);
+    setStreakBroken(false);
+    setStreak((s) => s + 1);
+    if (timerRef.current) clearInterval(timerRef.current);
+    if (botTimerRef.current) clearTimeout(botTimerRef.current);
+
+    // Compute speed tier based on remaining time
+    if (!question) return;
+    const ratio = seconds / question.durationSec;
+    setSpeedTier(
+      ratio > 0.6 ? "fast" : ratio > 0.3 ? "mid" : seconds > 0 ? "slow" : "timeout"
+    );
+
+    // Show next button after a beat
+    setTimeout(() => {
+      setShowDistribution(true);
+    }, 600);
+  };
+
+  // Advance to next question
+  const handleNext = () => {
+    const nextIdx = (questionIndex + 1) % questions.length;
+    startQuestion(nextIdx);
+  };
+
+  // Start game
+  const handleStart = async () => {
+    await fetchQuestions();
+  };
+
+  // After questions load, start the game
+  useEffect(() => {
+    if (questions.length > 0 && !gameStarted) {
+      setGameStarted(true);
+      startQuestion(0, questions);
+    }
+  }, [questions, gameStarted, startQuestion]);
+
+  // Reset
+  const handleReset = () => {
+    setGameStarted(false);
+    setQuestions([]);
+    setQuestionIndex(0);
+    setSeconds(10);
+    setSelectedIndex(null);
+    setAnswerers([]);
+    setShowDistribution(false);
+    setSpeedTier(null);
+    setStreak(0);
+    setStreakBroken(false);
+    setScreenShake(false);
+    playerIndexRef.current = 0;
+  };
+
+  const isLowTime = seconds <= 3 && seconds > 0;
+  const isMedTime = seconds <= 5 && seconds > 3;
+
+  return (
+    <div className="app-background h-dvh flex flex-col items-center relative overflow-hidden">
+      {/* Pressure vignette */}
+      <PressureVignette intensity={pressure} />
+
+      {/* Header */}
+      <div className="w-full max-w-lg mx-auto px-4 pt-6 pb-2">
+        <div className="flex items-center justify-between mb-2">
+          <span className="font-display text-xs text-[#99A0AE] tracking-wide uppercase">
+            Sample: Question Tension
+          </span>
+          {gameStarted && (
+            <button
+              onClick={handleReset}
+              className="font-display text-xs text-[#99A0AE] hover:text-white transition-colors"
+            >
+              RESET
+            </button>
+          )}
+        </div>
+
+        {/* Comparison legend */}
+        {!gameStarted && (
+          <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
+            <p className="font-display text-sm text-white/70 leading-relaxed">
+              This demo shows the redesigned question experience with tension
+              mechanics. Compare against the current flat spring-bounce
+              treatment.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-display text-[#99A0AE] uppercase tracking-wider">
+              <span className="px-2 py-1 rounded bg-white/5">Stamp commit</span>
+              <span className="px-2 py-1 rounded bg-white/5">Pressure vignette</span>
+              <span className="px-2 py-1 rounded bg-white/5">Option tremor</span>
+              <span className="px-2 py-1 rounded bg-white/5">Player feed</span>
+              <span className="px-2 py-1 rounded bg-white/5">Social doubt</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Start screen */}
+      {!gameStarted && (
+        <motion.div
+          className="flex-1 flex flex-col items-center justify-center gap-6 px-4"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+        >
+          <motion.button
+            className="px-8 py-4 rounded-xl bg-white text-[#1E1E1E] font-body text-2xl border-[5px] border-t-0 border-l-0 border-[#00CFF2] disabled:opacity-50"
+            onClick={handleStart}
+            disabled={loading}
+            whileHover={loading ? undefined : { scale: 1.05, y: -2 }}
+            whileTap={loading ? undefined : { scale: 0.97 }}
+          >
+            {loading ? "LOADING..." : "START DEMO"}
+          </motion.button>
+          {fetchError && (
+            <p className="font-display text-xs text-[#FF6B6B] text-center">
+              {fetchError}
+            </p>
+          )}
+          <p className="font-display text-xs text-[#99A0AE] text-center max-w-xs">
+            Pulls 5 random questions from the database.
+            <br />
+            Watch the edges darken and options tremble as time runs low.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Game area */}
+      {gameStarted && question && (
+        <motion.div
+          className="w-full max-w-lg mx-auto flex-1 flex flex-col justify-between"
+          key={question.id}
+          initial={{ opacity: 0 }}
+          animate={
+            screenShake
+              ? { opacity: 1, x: [0, -6, 6, -4, 4, -2, 2, 0], y: [0, 3, -3, 2, -2, 1, -1, 0] }
+              : { opacity: 1, x: 0, y: 0 }
+          }
+          transition={screenShake ? { duration: 0.4 } : { duration: 0.3 }}
+        >
+          {/* Question header with timer */}
+          <motion.div
+            className="flex items-center justify-between px-4 mb-2"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="flex items-center gap-2">
+              <span className="font-display text-xs text-[#99A0AE]">
+                Q{questionIndex + 1}/{questions.length}
+              </span>
+              <AnimatePresence mode="wait">
+                {streakBroken ? (
+                  <StreakBreak key="break" show />
+                ) : (
+                  <StreakFire key="fire" streak={streak} />
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <TensionTimerTube remaining={seconds} duration={question.durationSec} />
+
+              {/* Timer number */}
+              <AnimatePresence mode="popLayout">
+                <motion.span
+                  key={seconds}
+                  className="font-body text-lg w-6 text-center"
+                  style={{
+                    color: isLowTime
+                      ? "#FF4444"
+                      : isMedTime
+                        ? "#FF8844"
+                        : "white",
+                  }}
+                  initial={{ scale: 1.3, opacity: 0, y: -8 }}
+                  animate={{ scale: 1, opacity: 1, y: 0 }}
+                  exit={{ scale: 0.7, opacity: 0, y: 8 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {seconds}
+                </motion.span>
+              </AnimatePresence>
+            </div>
+          </motion.div>
+
+          {/* Question text */}
+          <motion.div
+            className="relative mx-auto mb-4 flex items-center justify-center w-full max-w-[306px] font-body font-normal text-[36px] leading-[0.92] text-center tracking-[-0.03em] text-white px-4"
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              textShadow: isLowTime
+                ? [
+                    "0 0 0px rgba(255,68,68,0)",
+                    "0 0 25px rgba(255,68,68,0.5)",
+                    "0 0 0px rgba(255,68,68,0)",
+                  ]
+                : "0 0 0px rgba(255,68,68,0)",
+            }}
+            transition={
+              isLowTime
+                ? { textShadow: { duration: 0.6, repeat: Infinity } }
+                : { duration: 0.4, ease: [0.25, 0.46, 0.45, 0.94] }
+            }
+          >
+            {question.content}
+          </motion.div>
+
+          {/* Media image */}
+          {question.mediaUrl && (
+            <motion.figure
+              className="mx-auto mb-4 flex justify-center w-full px-4"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+            >
+              <div className="relative w-full aspect-video rounded-[10px] overflow-hidden bg-[#17171a] border border-[#313136] shadow-[0_8px_0_#000]">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={question.mediaUrl}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            </motion.figure>
+          )}
+
+          {/* Answerer PFPs — right below the question/image */}
+          <div className="mb-3">
+            <AnswererAvatars
+              answerers={answerers}
+              hasAnswered={selectedIndex !== null}
+            />
+          </div>
+
+          {/* Options */}
+          <motion.ul
+            className="w-full flex flex-col gap-2 px-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ staggerChildren: 0.1, delayChildren: 0.3 }}
+          >
+            {question.options.map((opt, idx) => (
+              <motion.div
+                key={idx}
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  duration: 0.35,
+                  delay: 0.3 + idx * 0.1,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+              >
+                <TensionOption
+                  option={opt}
+                  index={idx}
+                  selectedIndex={selectedIndex}
+                  onSelect={handleAnswer}
+                  disabled={seconds === 0}
+                  tremor={tremor}
+                  speed={selectedIndex === idx ? speedTier : null}
+                />
+              </motion.div>
+            ))}
+          </motion.ul>
+
+          {/* Post-answer / Time's up — also at bottom */}
+          <div className="px-4 pb-6">
+            <AnimatePresence>
+              {showDistribution && selectedIndex !== null && (
+                <motion.div
+                  className="flex justify-center"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  <motion.button
+                    className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
+                    onClick={handleNext}
+                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    NEXT QUESTION
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <AnimatePresence>
+              {seconds === 0 && selectedIndex === null && (
+                <motion.div
+                  className="flex flex-col items-center gap-3"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
+                >
+                  <p className="font-body text-xl text-[#FF4444]">
+                    TIME&apos;S UP
+                  </p>
+                  <motion.button
+                    className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
+                    onClick={handleNext}
+                    whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
+                    whileTap={{ scale: 0.97 }}
+                  >
+                    NEXT QUESTION
+                  </motion.button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+
+    </div>
+  );
+}

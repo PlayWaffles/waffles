@@ -16,6 +16,7 @@ import {
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
 import { unlockReferralRewards } from "./shared";
+import { areTicketsClosedForGame } from "./ticket-window";
 
 export type PurchaseResult =
   | { success: true; entryId: string }
@@ -134,6 +135,14 @@ export async function finalizeTicketPurchase(
         success: false,
         error: "Tickets are not yet available",
         code: "TICKETS_NOT_OPEN",
+      };
+    }
+
+    if (areTicketsClosedForGame(game)) {
+      return {
+        success: false,
+        error: "Ticket sales have closed",
+        code: "TICKETS_CLOSED",
       };
     }
 

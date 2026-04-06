@@ -38,9 +38,16 @@ const COUNTDOWN_PHASES: CountdownPhase[] = [
   {
     phase: "12h",
     offsetMs: 12 * 60 * 60 * 1000,
-    nextPhase: "3h",
+    nextPhase: "6h",
     title: "12 Hours to Go 🌗",
     body: "Tickets are selling fast. Don't get left behind!",
+  },
+  {
+    phase: "6h",
+    offsetMs: 6 * 60 * 60 * 1000,
+    nextPhase: "3h",
+    title: "6 Hours to Go 👀",
+    body: "Waffles is getting close. Claim your spot before the rush.",
   },
   {
     phase: "3h",
@@ -52,16 +59,37 @@ const COUNTDOWN_PHASES: CountdownPhase[] = [
   {
     phase: "1h",
     offsetMs: 1 * 60 * 60 * 1000,
-    nextPhase: "5min",
+    nextPhase: "30min",
     title: "1 Hour Remaining 🚨",
     body: "This is your last chance to join. Hurry!",
   },
   {
+    phase: "30min",
+    offsetMs: 30 * 60 * 1000,
+    nextPhase: "15min",
+    title: "30 Minutes Left ⏰",
+    body: "Half an hour to go. Get in now and get ready.",
+  },
+  {
+    phase: "15min",
+    offsetMs: 15 * 60 * 1000,
+    nextPhase: "5min",
+    title: "15 Minutes Left ⚡",
+    body: "Final warning. Waffles starts soon.",
+  },
+  {
     phase: "5min",
     offsetMs: 5 * 60 * 1000,
-    nextPhase: "start",
+    nextPhase: "1min",
     title: "Starting in 5 Minutes! 🧨",
     body: "Game on! Get your ticket immediately or miss out.",
+  },
+  {
+    phase: "1min",
+    offsetMs: 1 * 60 * 1000,
+    nextPhase: "start",
+    title: "1 Minute Left 🚀",
+    body: "This is it. Waffles is about to begin.",
   },
 ];
 

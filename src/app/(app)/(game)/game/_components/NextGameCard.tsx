@@ -12,6 +12,7 @@ import { useTimer } from "@/hooks/useTimer";
 import { springs } from "@/lib/animations";
 import type { GameWithQuestionCount } from "@/lib/game";
 import { formatGameLabel } from "@/lib/game/labels";
+import { getTicketCloseTime } from "@/lib/game/ticket-window";
 
 import { BuyTicketModal } from "./BuyTicketModal";
 
@@ -50,21 +51,25 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const now = Date.now();
   const hasEnded = now >= game.endsAt.getTime();
   const isLive = !hasEnded && now >= game.startsAt.getTime();
+  const ticketsCloseAt = getTicketCloseTime(game.endsAt).getTime();
 
   // Ticket availability
   const ticketsOpenAt = game.ticketsOpenAt ? new Date(game.ticketsOpenAt).getTime() : null;
   const ticketsNotYetOpen = ticketsOpenAt !== null && now < ticketsOpenAt;
+  const hasTicket = !!entry?.hasTicket;
+  const ticketsClosed = !hasTicket && now >= ticketsCloseAt;
 
-  // Timer - countdown to ticket open, start, or end
+  // Timer - countdown to ticket open, close, start, or end
   const targetMs = ticketsNotYetOpen
     ? ticketsOpenAt
-    : isLive
+    : ticketsClosed
+      ? game.startsAt.getTime()
+      : !hasTicket
+        ? ticketsCloseAt
+        : isLive
       ? game.endsAt.getTime()
       : game.startsAt.getTime();
   const countdown = useTimer(targetMs);
-
-  // Derived state
-  const hasTicket = !!entry?.hasTicket;
 
   // Check if player has answered all questions (finished playing)
   const hasFinishedAnswering =
@@ -133,9 +138,11 @@ export function NextGameCard({ game }: NextGameCardProps) {
               href: `/game/${game.id}/live`,
             }
             : { text: "PLAY NOW", disabled: false, href: `/game/${game.id}/live` }
-          : { text: "GET TICKET", disabled: false, href: null }
+          : { text: "TICKETS CLOSED", disabled: true, href: null }
         : ticketsNotYetOpen
           ? { text: "TICKETS OPENING SOON", disabled: true, href: null }
+          : ticketsClosed
+            ? { text: "TICKETS CLOSED", disabled: true, href: null }
           : hasTicket
             ? { text: "WHAT NEXT???", disabled: false, href: ticketSuccessHref }
             : {
@@ -185,11 +192,15 @@ export function NextGameCard({ game }: NextGameCardProps) {
           <span className="font-display text-[10px] uppercase tracking-[0.18em] text-white/35 mb-2">
             {hasEnded
               ? "Game has ended"
+              : ticketsClosed
+                ? "Ticket sales closed"
               : isLive
                 ? "Ends in"
                 : ticketsNotYetOpen
                   ? "Tickets open in"
-                  : "Starts in"}
+                  : !hasTicket
+                    ? "Tickets close in"
+                    : "Starts in"}
           </span>
           <div className="flex items-center gap-2">
             <CountdownUnit value={hours} label="HRS" />

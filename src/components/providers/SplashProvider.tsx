@@ -1,7 +1,9 @@
 "use client";
 
-import { createContext, useContext, useState, useCallback, ReactNode } from "react";
+import { createContext, useContext, useState, useCallback, useRef, ReactNode } from "react";
 import { SplashScreen } from "../SplashScreen";
+
+const MIN_SPLASH_MS = 2000;
 
 interface SplashContextValue {
     showSplash: boolean;
@@ -22,14 +24,22 @@ export function useSplash() {
  * SplashProvider - Shows splash screen until explicitly dismissed or timeout.
  *
  * The splash is dismissed when:
- * 1. AppInitializer calls hideSplash() after initialization, OR
+ * 1. AppInitializer calls hideSplash() after initialization AND at least 2s have passed, OR
  * 2. The max duration (5s) elapses as a safety fallback
  */
 export function SplashProvider({ children }: { children: ReactNode }) {
     const [showSplash, setShowSplash] = useState(true);
+    const mountedAt = useRef(Date.now());
 
     const hideSplash = useCallback(() => {
-        setShowSplash(false);
+        const elapsed = Date.now() - mountedAt.current;
+        const remaining = MIN_SPLASH_MS - elapsed;
+
+        if (remaining <= 0) {
+            setShowSplash(false);
+        } else {
+            setTimeout(() => setShowSplash(false), remaining);
+        }
     }, []);
 
     return (

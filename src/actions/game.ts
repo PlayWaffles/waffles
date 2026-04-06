@@ -11,6 +11,7 @@ import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { hasPlayableTicket } from "@/lib/tickets";
+import { areTicketsClosedForGame } from "@/lib/game/ticket-window";
 import {
   finalizeTicketPurchase,
   type PurchaseInput,
@@ -83,8 +84,8 @@ async function claimFreeTicketForUser(
     return { success: false, error: "Tickets are not yet available", code: "TICKETS_NOT_OPEN" };
   }
 
-  if (new Date() >= game.endsAt) {
-    return { success: false, error: "Game has ended", code: "GAME_ENDED" };
+  if (areTicketsClosedForGame(game)) {
+    return { success: false, error: "Ticket sales have closed", code: "TICKETS_CLOSED" };
   }
 
   try {

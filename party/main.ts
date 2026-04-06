@@ -178,9 +178,13 @@ export default class GameServer implements Party.Server {
       // Countdown phases
       case "24h":
       case "12h":
+      case "6h":
       case "3h":
       case "1h":
+      case "30min":
+      case "15min":
       case "5min":
+      case "1min":
         await handleCountdownAlarm(this, phase);
         break;
       case "start":

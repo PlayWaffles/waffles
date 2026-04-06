@@ -11,15 +11,24 @@ import {
 } from "@/lib/notifications/webhook";
 
 export async function POST(request: NextRequest) {
-  const requestJson = await request.text();
+  const rawBody = await request.text();
+  let requestData: unknown = rawBody;
+
+  try {
+    requestData = JSON.parse(rawBody);
+  } catch {
+    // Keep raw text as a fallback for non-JSON payloads.
+  }
 
   console.log("[Webhook] Received POST /api/webhook/notify", {
-    contentLength: requestJson.length,
+    contentLength: rawBody.length,
+    contentType: request.headers.get("content-type"),
+    parsedAsJson: typeof requestData === "object" && requestData !== null,
   });
 
   let data: Awaited<ReturnType<typeof parseWebhookEvent>>;
   try {
-    data = await parseWebhookEvent(requestJson, verifyAppKeyWithNeynar);
+    data = await parseWebhookEvent(requestData, verifyAppKeyWithNeynar);
   } catch (e: unknown) {
     const error = e as ParseWebhookEvent.ErrorType;
     console.error("[Webhook] Verification failed:", error.name, error.message);
