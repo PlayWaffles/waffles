@@ -8,6 +8,9 @@ import {
     BanknotesIcon,
     TicketIcon,
     MagnifyingGlassIcon,
+    BellIcon,
+    CheckCircleIcon,
+    XCircleIcon,
 } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import { getGamePhase } from "@/lib/types";
@@ -100,7 +103,7 @@ async function getRecentActivity(platform?: string) {
     const gamePf = buildProductionGameWhere(platform);
     const entryPf = buildProductionEntryWhere(platform);
 
-    const [games, users, ticketBuys] = await Promise.all([
+    const [games, users, ticketBuys, notificationLogs] = await Promise.all([
         prisma.game.findMany({
             where: gamePf,
             take: 3,
@@ -152,9 +155,24 @@ async function getRecentActivity(platform?: string) {
                 },
             },
         }),
+        prisma.auditLog.findMany({
+            where: { action: "SEND_NOTIFICATION" },
+            take: 5,
+            orderBy: { createdAt: "desc" },
+            select: {
+                id: true,
+                createdAt: true,
+                details: true,
+                admin: {
+                    select: {
+                        username: true,
+                    },
+                },
+            },
+        }),
     ]);
 
-    return { games, users, ticketBuys };
+    return { games, users, ticketBuys, notificationLogs };
 }
 
 export default async function AdminDashboard({
@@ -247,7 +265,7 @@ export default async function AdminDashboard({
             </div>
 
             {/* Recent Activity Section */}
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 font-display">
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 font-display">
                 {/* Recent Games */}
                 <div className="bg-linear-to-br from-[#FB72FF]/5 to-transparent border border-white/10 rounded-2xl overflow-hidden">
                     <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
@@ -320,6 +338,9 @@ export default async function AdminDashboard({
                         )}
                     </div>
                 </div>
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 font-display">
 
                 {/* Recent Ticket Buys */}
                 <div className="bg-linear-to-br from-[#14B985]/5 to-transparent border border-white/10 rounded-2xl overflow-hidden font-display">
@@ -364,6 +385,78 @@ export default async function AdminDashboard({
                                     </div>
                                 </div>
                             ))
+                        )}
+                    </div>
+                </div>
+
+                {/* Notification Logs */}
+                <div className="bg-linear-to-br from-[#FFC931]/5 to-transparent border border-white/10 rounded-2xl overflow-hidden font-display">
+                    <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                        <h2 className="text-lg font-semibold text-white font-body">Notification Logs</h2>
+                        <Link href="/admin/notifications" className="text-sm text-[#FFC931] hover:underline">View all</Link>
+                    </div>
+                    <div className="divide-y divide-white/10">
+                        {activity.notificationLogs.length === 0 ? (
+                            <div className="p-6 text-center text-white/50">No notification logs yet</div>
+                        ) : (
+                            activity.notificationLogs.map((log) => {
+                                const details = log.details as {
+                                    title?: string;
+                                    body?: string;
+                                    results?: { success?: number; failed?: number; total?: number };
+                                } | null;
+                                const success = details?.results?.success ?? 0;
+                                const failed = details?.results?.failed ?? 0;
+                                const total = details?.results?.total ?? 0;
+
+                                return (
+                                    <div key={log.id} className="px-6 py-4 hover:bg-white/3 transition-colors">
+                                        <div className="flex items-start justify-between gap-4">
+                                            <div className="min-w-0">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="h-8 w-8 rounded-xl bg-[#FFC931]/15 flex items-center justify-center shrink-0">
+                                                        <BellIcon className="h-4 w-4 text-[#FFC931]" />
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="font-medium text-white truncate">
+                                                            {details?.title || "Notification"}
+                                                        </p>
+                                                        <p className="text-xs text-white/50 truncate mt-1">
+                                                            {details?.body || "No preview available"}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <div className="mt-3 flex flex-wrap items-center gap-2">
+                                                    <span className="text-xs text-white/50">
+                                                        {log.admin?.username || "Admin"}
+                                                    </span>
+                                                    <span className="text-white/20">•</span>
+                                                    <span className="text-xs text-white/50">
+                                                        {new Date(log.createdAt).toLocaleString()}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="shrink-0 text-right">
+                                                <div className="flex items-center justify-end gap-3">
+                                                    <span className="inline-flex items-center gap-1 text-xs text-[#14B985]">
+                                                        <CheckCircleIcon className="h-4 w-4" />
+                                                        {success}
+                                                    </span>
+                                                    {failed > 0 && (
+                                                        <span className="inline-flex items-center gap-1 text-xs text-red-400">
+                                                            <XCircleIcon className="h-4 w-4" />
+                                                            {failed}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                                <p className="mt-1 text-xs text-white/40">
+                                                    {total > 0 ? `${total} targeted` : "No totals logged"}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })
                         )}
                     </div>
                 </div>

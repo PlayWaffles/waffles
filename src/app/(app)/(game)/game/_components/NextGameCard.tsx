@@ -130,7 +130,9 @@ export function NextGameCard({ game }: NextGameCardProps) {
               href: `/game/${game.id}/live`,
             }
             : { text: "PLAY NOW", disabled: false, href: `/game/${game.id}/live` }
-          : { text: "TICKETS CLOSED", disabled: true, href: null }
+          : ticketsClosed
+            ? { text: "TICKETS CLOSED", disabled: true, href: null }
+            : { text: "GET TICKET", disabled: false, href: null }
         : ticketsNotYetOpen
           ? { text: "TICKETS OPENING SOON", disabled: true, href: null }
           : ticketsClosed
@@ -184,15 +186,9 @@ export function NextGameCard({ game }: NextGameCardProps) {
           <span className="font-display text-[10px] uppercase tracking-[0.18em] text-white/35 mb-2">
             {hasEnded
               ? "Game has ended"
-              : ticketsClosed
-                ? "Ticket sales closed"
               : isLive
                 ? "Game ends in"
-                : ticketsNotYetOpen
-                  ? "Tickets open in"
-                  : !hasTicket
-                    ? "Tickets close in"
-                    : "Game starts in"}
+                : "Game starts in"}
           </span>
           <div className="flex items-center gap-2">
             <CountdownUnit value={hours} label="HRS" />

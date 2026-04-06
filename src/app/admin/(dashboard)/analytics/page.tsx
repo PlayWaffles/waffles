@@ -568,6 +568,7 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
 async function getGameplayData(start: Date, end: Date, platform?: string) {
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
+    const now = new Date();
 
     const [
         entries,
@@ -580,6 +581,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         totalRankedEntries,
         // Theme participation
         themeParticipation,
+        currentOrNextGame,
     ] = await Promise.all([
         prisma.gameEntry.findMany({
             where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } } },
@@ -638,7 +640,71 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             _count: true,
             _avg: { prizePool: true },
         }),
+        prisma.game.findFirst({
+            where: { ...gamePf, endsAt: { gt: now } },
+            orderBy: { startsAt: "asc" },
+            select: {
+                id: true,
+                title: true,
+                platform: true,
+                network: true,
+                startsAt: true,
+                endsAt: true,
+            },
+        }),
     ]);
+
+    const previousComparableGame = currentOrNextGame
+        ? await prisma.game.findFirst({
+            where: {
+                ...gamePf,
+                platform: currentOrNextGame.platform,
+                network: currentOrNextGame.network,
+                endsAt: { lt: currentOrNextGame.startsAt },
+            },
+            orderBy: { endsAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                startsAt: true,
+                endsAt: true,
+            },
+        })
+        : null;
+
+    const [currentComparableEntries, previousComparableEntries] = currentOrNextGame
+        ? await Promise.all([
+            prisma.gameEntry.findMany({
+                where: { gameId: currentOrNextGame.id, ...gpf },
+                select: {
+                    userId: true,
+                    purchaseSource: true,
+                },
+            }),
+            previousComparableGame
+                ? prisma.gameEntry.findMany({
+                    where: { gameId: previousComparableGame.id, ...gpf },
+                    select: {
+                        userId: true,
+                        purchaseSource: true,
+                        answered: true,
+                    },
+                })
+                : Promise.resolve([]),
+        ])
+        : [[], []];
+
+    const priorCurrentCohortUsers = currentOrNextGame
+        ? await prisma.gameEntry.findMany({
+            where: {
+                ...gpf,
+                userId: { in: currentComparableEntries.map((entry) => entry.userId) },
+                game: { startsAt: { lt: currentOrNextGame.startsAt } },
+            },
+            select: { userId: true },
+            distinct: ["userId"],
+        })
+        : [];
 
     const chatsByGame = new Map<
         string,
@@ -952,6 +1018,78 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         .slice(0, 20)
         .map(([word, count]) => ({ word, count }));
 
+    const isPaidSource = (purchaseSource: string) =>
+        purchaseSource === "PAID" || purchaseSource === "DISCOUNTED";
+
+    const paidCurrentUsers = new Set(
+        currentComparableEntries
+            .filter((entry) => isPaidSource(entry.purchaseSource))
+            .map((entry) => entry.userId),
+    );
+    const freeCurrentUsers = new Set(
+        currentComparableEntries
+            .filter((entry) => !isPaidSource(entry.purchaseSource))
+            .map((entry) => entry.userId),
+    );
+    const previousParticipants = new Set(
+        previousComparableEntries
+            .filter((entry) => entry.answered > 0)
+            .map((entry) => entry.userId),
+    );
+    const previousPaidUsers = new Set(
+        previousComparableEntries
+            .filter((entry) => isPaidSource(entry.purchaseSource))
+            .map((entry) => entry.userId),
+    );
+    const previousFreeUsers = new Set(
+        previousComparableEntries
+            .filter((entry) => !isPaidSource(entry.purchaseSource))
+            .map((entry) => entry.userId),
+    );
+    const priorAnyTicketUsers = new Set(priorCurrentCohortUsers.map((entry) => entry.userId));
+
+    const summarizeCurrentCohort = (currentUsers: Set<string>, previousSameTypeUsers: Set<string>) => {
+        const count = currentUsers.size;
+        let playedLastGame = 0;
+        let sameTypeLastGame = 0;
+        let firstTime = 0;
+
+        for (const userId of currentUsers) {
+            if (previousParticipants.has(userId)) playedLastGame++;
+            if (previousSameTypeUsers.has(userId)) sameTypeLastGame++;
+            if (!priorAnyTicketUsers.has(userId)) firstTime++;
+        }
+
+        return {
+            count,
+            playedLastGame,
+            playedLastGameRate: count > 0 ? (playedLastGame / count) * 100 : 0,
+            sameTypeLastGame,
+            sameTypeLastGameRate: count > 0 ? (sameTypeLastGame / count) * 100 : 0,
+            firstTime,
+            firstTimeRate: count > 0 ? (firstTime / count) * 100 : 0,
+        };
+    };
+
+    let previousFreeToPaid = 0;
+    for (const userId of previousFreeUsers) {
+        if (paidCurrentUsers.has(userId)) previousFreeToPaid++;
+    }
+
+    const currentTicketCohorts = currentOrNextGame && previousComparableGame
+        ? {
+            currentGameTitle: currentOrNextGame.title,
+            previousGameTitle: previousComparableGame.title,
+            paid: summarizeCurrentCohort(paidCurrentUsers, previousPaidUsers),
+            free: summarizeCurrentCohort(freeCurrentUsers, previousFreeUsers),
+            previousFreeToPaid,
+            previousFreeToPaidRate: previousFreeUsers.size > 0
+                ? (previousFreeToPaid / previousFreeUsers.size) * 100
+                : 0,
+            previousFreeCount: previousFreeUsers.size,
+        }
+        : null;
+
     return {
         avgAccuracy,
         avgAnswerTime,
@@ -965,6 +1103,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         totalRankedEntries,
         questions,
         themeParticipation: themeData,
+        currentTicketCohorts,
         behavior: {
             ticketMix: {
                 paidEntries: ticketTypeStats.paid.entries,
@@ -1389,6 +1528,59 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                 <MiniStat label="Leave Rate" value={`${data.leaveRate.toFixed(1)}%`} color="#EF4444" tooltip="The share of paid entries that left the game before the session was over." />
                 <MiniStat label="Win Rate" value={`${data.winRate.toFixed(2)}%`} color="#FB72FF" tooltip="Rank-1 finishes divided by all ranked paid entries in the selected range." />
                 <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average score across the paid entries included in gameplay analysis." />
+            </div>
+
+            <div className="rounded-2xl border border-white/10 p-6 space-y-6">
+                <div className="flex items-end justify-between gap-4">
+                    <div>
+                        <h3 className="text-lg font-semibold text-white font-display">Current Ticket Cohorts</h3>
+                        <p className="text-sm text-white/50">
+                            Repeat, first-time, and free-to-paid conversion signals for the current ticket-selling game
+                        </p>
+                    </div>
+                    {data.currentTicketCohorts ? (
+                        <div className="text-right text-xs text-white/40">
+                            <div>{data.currentTicketCohorts.currentGameTitle}</div>
+                            <div>vs {data.currentTicketCohorts.previousGameTitle}</div>
+                        </div>
+                    ) : null}
+                </div>
+
+                {data.currentTicketCohorts ? (
+                    <>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                            <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
+                                <h4 className="text-sm font-semibold text-white font-display mb-4">Paid Cohort</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <MiniStat label="Current Paid" value={data.currentTicketCohorts.paid.count.toLocaleString()} color="#FFC931" tooltip="Current paid or discounted ticket holders in the live or next game." />
+                                    <MiniStat label="Played Last Game" value={`${data.currentTicketCohorts.paid.playedLastGameRate.toFixed(1)}%`} color="#14B985" tooltip="Current paid ticket holders who answered at least one question in the previous comparable game." />
+                                    <MiniStat label="Paid Last Game" value={`${data.currentTicketCohorts.paid.sameTypeLastGameRate.toFixed(1)}%`} color="#00CFF2" tooltip="Current paid ticket holders who also held a paid ticket in the previous comparable game." />
+                                    <MiniStat label="First Ticket Ever" value={`${data.currentTicketCohorts.paid.firstTimeRate.toFixed(1)}%`} color="#FB72FF" tooltip="Current paid ticket holders with no earlier ticket history, free or paid." />
+                                </div>
+                            </div>
+
+                            <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
+                                <h4 className="text-sm font-semibold text-white font-display mb-4">Free Cohort</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <MiniStat label="Current Free" value={data.currentTicketCohorts.free.count.toLocaleString()} color="#00CFF2" tooltip="Current free-ticket holders in the live or next game." />
+                                    <MiniStat label="Played Last Game" value={`${data.currentTicketCohorts.free.playedLastGameRate.toFixed(1)}%`} color="#14B985" tooltip="Current free-ticket holders who answered at least one question in the previous comparable game." />
+                                    <MiniStat label="Free Last Game" value={`${data.currentTicketCohorts.free.sameTypeLastGameRate.toFixed(1)}%`} color="#00CFF2" tooltip="Current free-ticket holders who also had a free ticket in the previous comparable game." />
+                                    <MiniStat label="First Ticket Ever" value={`${data.currentTicketCohorts.free.firstTimeRate.toFixed(1)}%`} color="#FB72FF" tooltip="Current free-ticket holders with no earlier ticket history, free or paid." />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <MiniStat label="Prev Free Cohort" value={data.currentTicketCohorts.previousFreeCount.toLocaleString()} color="#00CFF2" tooltip="Free-ticket holders in the previous comparable game." />
+                            <MiniStat label="Free → Paid" value={data.currentTicketCohorts.previousFreeToPaid.toLocaleString()} color="#FFC931" tooltip="Previous free-ticket holders who now hold a paid ticket in the current game." />
+                            <MiniStat label="Free → Paid Rate" value={`${data.currentTicketCohorts.previousFreeToPaidRate.toFixed(1)}%`} color="#14B985" tooltip="Share of the previous free cohort that converted into paid tickets for the current game." />
+                        </div>
+                    </>
+                ) : (
+                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5 text-sm text-white/50">
+                        No live or upcoming game pair is available yet for current-ticket cohort analytics.
+                    </div>
+                )}
             </div>
 
             {/* Behavior Signals */}
