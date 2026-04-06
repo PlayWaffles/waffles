@@ -617,14 +617,12 @@ export default function TensionSamplePage() {
   const optionsRef = useRef<HTMLUListElement>(null);
   const [buttonWidth, setButtonWidth] = useState(340);
 
-  // Measure options container width for responsive PixelButton
+  // Compute button width from screen width minus padding (px-4 = 16px each side)
   useEffect(() => {
     const measure = () => {
-      if (optionsRef.current) {
-        const w = optionsRef.current.clientWidth;
-        // Round down to nearest 4 (PixelButton requirement)
-        setButtonWidth(Math.floor(w / 4) * 4);
-      }
+      const w = window.innerWidth;
+      // Subtract padding (32px) and round down to nearest 4
+      setButtonWidth(Math.floor((Math.min(w, 576) - 32) / 4) * 4);
     };
     measure();
     window.addEventListener("resize", measure);

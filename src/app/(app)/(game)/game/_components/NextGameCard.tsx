@@ -59,16 +59,8 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const hasTicket = !!entry?.hasTicket;
   const ticketsClosed = !hasTicket && now >= ticketsCloseAt;
 
-  // Timer - countdown to ticket open, close, start, or end
-  const targetMs = ticketsNotYetOpen
-    ? ticketsOpenAt
-    : ticketsClosed
-      ? game.startsAt.getTime()
-      : !hasTicket
-        ? ticketsCloseAt
-        : isLive
-      ? game.endsAt.getTime()
-      : game.startsAt.getTime();
+  // Timer - always count to game start before kickoff, then to game end once live
+  const targetMs = isLive ? game.endsAt.getTime() : game.startsAt.getTime();
   const countdown = useTimer(targetMs);
 
   // Check if player has answered all questions (finished playing)
@@ -195,12 +187,12 @@ export function NextGameCard({ game }: NextGameCardProps) {
               : ticketsClosed
                 ? "Ticket sales closed"
               : isLive
-                ? "Ends in"
+                ? "Game ends in"
                 : ticketsNotYetOpen
                   ? "Tickets open in"
                   : !hasTicket
                     ? "Tickets close in"
-                    : "Starts in"}
+                    : "Game starts in"}
           </span>
           <div className="flex items-center gap-2">
             <CountdownUnit value={hours} label="HRS" />

@@ -7,11 +7,8 @@ import { NextResponse } from "next/server";
  * Returns random question templates for the sample tension page.
  * Strips correctIndex so it's not exposed to the client.
  */
-export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const count = Math.min(parseInt(searchParams.get("count") || "5", 10), 10);
-
-  // Fetch random questions using Postgres RANDOM()
+export async function GET() {
+  // Fetch 5 random questions from the most-used pool (top 50 by usageCount)
   const templates = await prisma.$queryRawUnsafe<
     {
       id: string;
@@ -23,10 +20,13 @@ export async function GET(request: Request) {
     }[]
   >(
     `SELECT id, content, options, "durationSec", "mediaUrl", theme
-     FROM "QuestionTemplate"
+     FROM (
+       SELECT * FROM "QuestionTemplate"
+       ORDER BY "usageCount" DESC
+       LIMIT 50
+     ) AS top
      ORDER BY RANDOM()
-     LIMIT $1`,
-    count
+     LIMIT 5`
   );
 
   return NextResponse.json(templates);
