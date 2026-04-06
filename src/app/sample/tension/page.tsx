@@ -56,6 +56,93 @@ const MOCK_PLAYERS = [
 // COLOR THEMES (matching app)
 // =============================================================================
 
+// Dynamic feedback messages based on speed and streak
+const answerFeedback = {
+  fast: [
+    "LIGHTNING FAST",
+    "SPEED DEMON",
+    "NO HESITATION",
+    "YOU DIDN'T EVEN READ IT",
+    "CALM DOWN GENIUS",
+    "OK SHOWOFF",
+    "EITHER YOU'RE SMART OR LUCKY",
+    "SUSPICIOUSLY FAST",
+  ],
+  mid: [
+    "SOLID I GUESS",
+    "MID EFFORT MID RESULTS",
+    "TOOK YOU LONG ENOUGH",
+    "YOUR WIFI LAGGING OR YOUR BRAIN?",
+    "AVERAGE ANSWER FROM AN AVERAGE PLAYER",
+    "NOT TERRIBLE NOT GREAT",
+    "ROOM TEMPERATURE IQ SPEED",
+    "YOU THOUGHT ABOUT IT HUH",
+  ],
+  slow: [
+    "GRANDMA TYPES FASTER",
+    "WERE YOU ASLEEP?",
+    "BARELY MADE IT LMAO",
+    "THE TIMER WAS BEGGING YOU",
+    "THAT WAS PAINFUL TO WATCH",
+    "DID YOU GOOGLE IT AND STILL TAKE THIS LONG?",
+    "SLOWPOKE",
+    "EVEN THE BOTS BEAT YOU",
+  ],
+  streak: [
+    "OK RELAX",
+    "UNSTOPPABLE FR",
+    "SOMEONE'S BEEN STUDYING",
+    "SAVE SOME WINS FOR THE REST OF US",
+    "ARE YOU CHEATING?",
+    "DISGUSTING STREAK",
+    "MAIN CHARACTER ENERGY",
+    "YOU'RE COOKED... IN A GOOD WAY",
+  ],
+  timeout: [
+    "HELLO? ANYONE HOME?",
+    "YOU JUST STOOD THERE",
+    "FREE POINTS AND YOU STILL MISSED",
+    "THE SCREEN WAS RIGHT THERE",
+    "DID YOU FALL ASLEEP?",
+    "EVEN A RANDOM TAP WOULD'VE BEEN BETTER",
+    "YOUR PHONE DIED OR YOUR BRAIN?",
+    "AFK DIFF",
+    "LITERALLY JUST TAP SOMETHING",
+    "YOU LET THE CLOCK WIN",
+  ],
+} as const;
+
+const usedMessages = new Set<string>();
+
+function pickUnique(pool: readonly string[]): string {
+  const available = pool.filter((m) => !usedMessages.has(m));
+  const pick = available.length > 0
+    ? available[Math.floor(Math.random() * available.length)]
+    : pool[Math.floor(Math.random() * pool.length)];
+  usedMessages.add(pick);
+  return pick;
+}
+
+function getAnswerMessage(speed: SpeedTier, streak: number): { text: string; color: string } {
+  if (streak >= 3) {
+    return { text: pickUnique(answerFeedback.streak), color: "#FF4444" };
+  }
+  if (speed === "fast") {
+    return { text: pickUnique(answerFeedback.fast), color: "#14B985" };
+  }
+  if (speed === "mid") {
+    return { text: pickUnique(answerFeedback.mid), color: "#FFC931" };
+  }
+  if (speed === "slow") {
+    return { text: pickUnique(answerFeedback.slow), color: "#FF6B6B" };
+  }
+  return { text: pickUnique(answerFeedback.timeout), color: "#FF4444" };
+}
+
+function getTimeoutMessage(): { text: string; color: string } {
+  return { text: pickUnique(answerFeedback.timeout), color: "#FF4444" };
+}
+
 const optionColors = [
   { name: "gold", theme: "gold" as const, accent: "#FFC931" },
   { name: "purple", theme: "purple" as const, accent: "#B01BF5" },
@@ -484,6 +571,7 @@ export default function TensionSamplePage() {
   const [streak, setStreak] = useState(0);
   const [streakBroken, setStreakBroken] = useState(false);
   const [screenShake, setScreenShake] = useState(false);
+  const [answerMsg, setAnswerMsg] = useState<{ text: string; color: string } | null>(null);
 
   const question = questions[questionIndex] ?? null;
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -528,6 +616,7 @@ export default function TensionSamplePage() {
       setShowDistribution(false);
       setSpeedTier(null);
       setStreakBroken(false);
+      setAnswerMsg(null);
       playerIndexRef.current = 0;
     },
     [questions]
@@ -543,8 +632,9 @@ export default function TensionSamplePage() {
       setSeconds((s) => {
         if (s <= 1) {
           playSound("timeUp");
-          // Screen shake + streak break on timeout
+          // Screen shake + streak break + roast on timeout
           setScreenShake(true);
+          setAnswerMsg(getTimeoutMessage());
           setTimeout(() => setScreenShake(false), 500);
           setStreak((prev) => {
             if (prev >= 2) setStreakBroken(true);
@@ -604,9 +694,9 @@ export default function TensionSamplePage() {
     // Compute speed tier based on remaining time
     if (!question) return;
     const ratio = seconds / question.durationSec;
-    setSpeedTier(
-      ratio > 0.6 ? "fast" : ratio > 0.3 ? "mid" : seconds > 0 ? "slow" : "timeout"
-    );
+    const tier = ratio > 0.6 ? "fast" : ratio > 0.3 ? "mid" : seconds > 0 ? "slow" : "timeout";
+    setSpeedTier(tier);
+    setAnswerMsg(getAnswerMessage(tier, streak + 1));
 
     // Show next button after a beat
     setTimeout(() => {
@@ -646,6 +736,8 @@ export default function TensionSamplePage() {
     setStreak(0);
     setStreakBroken(false);
     setScreenShake(false);
+    setAnswerMsg(null);
+    usedMessages.clear();
     playerIndexRef.current = 0;
   };
 
@@ -657,40 +749,6 @@ export default function TensionSamplePage() {
       {/* Pressure vignette */}
       <PressureVignette intensity={pressure} />
 
-      {/* Header */}
-      <div className="w-full max-w-lg mx-auto px-4 pt-6 pb-2">
-        <div className="flex items-center justify-between mb-2">
-          <span className="font-display text-xs text-[#99A0AE] tracking-wide uppercase">
-            Sample: Question Tension
-          </span>
-          {gameStarted && (
-            <button
-              onClick={handleReset}
-              className="font-display text-xs text-[#99A0AE] hover:text-white transition-colors"
-            >
-              RESET
-            </button>
-          )}
-        </div>
-
-        {/* Comparison legend */}
-        {!gameStarted && (
-          <div className="mb-4 p-3 rounded-xl bg-white/5 border border-white/10">
-            <p className="font-display text-sm text-white/70 leading-relaxed">
-              This demo shows the redesigned question experience with tension
-              mechanics. Compare against the current flat spring-bounce
-              treatment.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2 text-[10px] font-display text-[#99A0AE] uppercase tracking-wider">
-              <span className="px-2 py-1 rounded bg-white/5">Stamp commit</span>
-              <span className="px-2 py-1 rounded bg-white/5">Pressure vignette</span>
-              <span className="px-2 py-1 rounded bg-white/5">Option tremor</span>
-              <span className="px-2 py-1 rounded bg-white/5">Player feed</span>
-              <span className="px-2 py-1 rounded bg-white/5">Social doubt</span>
-            </div>
-          </div>
-        )}
-      </div>
 
       {/* Start screen */}
       {!gameStarted && (
@@ -825,7 +883,7 @@ export default function TensionSamplePage() {
           )}
 
           {/* Answerer PFPs — right below the question/image */}
-          <div className="mb-3">
+          <div className="mb-3" style={{ minHeight: 58 }}>
             <AnswererAvatars
               answerers={answerers}
               hasAnswered={selectedIndex !== null}
@@ -868,12 +926,20 @@ export default function TensionSamplePage() {
             <AnimatePresence>
               {showDistribution && selectedIndex !== null && (
                 <motion.div
-                  className="flex justify-center"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ delay: 0.5 }}
+                  className="flex flex-col items-center gap-3"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 >
+                  <motion.p
+                    className="font-body text-xl"
+                    style={{ color: answerMsg?.color ?? "#14B985" }}
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [1, 1.15, 1], opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {answerMsg?.text ?? "LOCKED IN"}
+                  </motion.p>
                   <motion.button
                     className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
                     onClick={handleNext}
@@ -894,9 +960,14 @@ export default function TensionSamplePage() {
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ type: "spring", stiffness: 400, damping: 20 }}
                 >
-                  <p className="font-body text-xl text-[#FF4444]">
-                    TIME&apos;S UP
-                  </p>
+                  <motion.p
+                    className="font-body text-xl text-[#FF4444]"
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: [1, 1.15, 1], opacity: 1 }}
+                    transition={{ duration: 0.4 }}
+                  >
+                    {answerMsg?.text ?? "TIME'S UP"}
+                  </motion.p>
                   <motion.button
                     className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
                     onClick={handleNext}
