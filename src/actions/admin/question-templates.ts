@@ -6,7 +6,6 @@ import { requireAdminSession } from "@/lib/admin-auth";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { GameTheme, Difficulty } from "@prisma";
-import { getGamePhase } from "@/lib/types";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 
 // ==========================================
@@ -351,11 +350,7 @@ export async function assignToGameAction(
       return { success: false, error: "Game not found" };
     }
 
-    const phase = getGamePhase(game);
-    if (phase === "LIVE") {
-      return { success: false, error: "Cannot add questions to a live game" };
-    }
-    if (phase === "ENDED") {
+    if (game.endsAt <= new Date()) {
       return { success: false, error: "Cannot add questions to an ended game" };
     }
 
