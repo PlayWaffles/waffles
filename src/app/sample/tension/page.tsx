@@ -162,7 +162,7 @@ function TensionOption({
         tabIndex={-1}
         variant="filled"
         colorTheme={color.theme}
-        width={344}
+        width={400}
         height={57}
         fontSize={15}
         onClick={handleTap}
@@ -724,7 +724,7 @@ export default function TensionSamplePage() {
       {/* Game area */}
       {gameStarted && question && (
         <motion.div
-          className="w-full max-w-lg mx-auto flex-1 flex flex-col justify-between"
+          className="w-full max-w-xl mx-auto flex-1 flex flex-col justify-between"
           key={question.id}
           initial={{ opacity: 0 }}
           animate={
