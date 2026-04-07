@@ -130,6 +130,20 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       providers?: InjectedProviderDebug[];
     }) | undefined;
 
+    console.log("[runtime-debug]", {
+      stage: "context-detected",
+      runtime,
+      context: runtime === "minipay" ? "minipay" : "browser",
+      isMiniPayRuntime: runtime === "minipay",
+    });
+
+    console.log("[runtime-debug]", {
+      stage: "ethereum-minipay-flag",
+      runtime,
+      isMiniPay: Boolean(injectedEthereum?.isMiniPay),
+      rawValue: injectedEthereum?.isMiniPay ?? null,
+    });
+
     console.log("[wallet-debug]", {
       stage: "runtime-wallets",
       runtime,

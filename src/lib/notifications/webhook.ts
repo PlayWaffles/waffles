@@ -1,6 +1,7 @@
 import { saveToken, deleteToken } from "./tokens";
 import { sendToFid } from "./adapters/farcaster";
 import { LOG_PREFIX } from "./constants";
+import { shouldSkipNotifications } from "./guards";
 import type { NotificationDetails, WebhookEventType } from "./types";
 
 export interface WebhookEventData {
@@ -55,6 +56,11 @@ export async function handleWebhookEvent(data: WebhookEventData): Promise<{
  * Send welcome notification (called AFTER webhook response)
  */
 export async function sendWelcomeNotification(fid: number): Promise<void> {
+  if (shouldSkipNotifications()) {
+    console.info(`${LOG_PREFIX} Welcome skipped in local dev: fid=${fid}`);
+    return;
+  }
+
   try {
     const { onboarding, buildPayload } = await import("./templates");
     const payload = buildPayload(onboarding.welcome());

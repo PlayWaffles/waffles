@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { sendToFid } from "./adapters/farcaster";
 import { logNotification } from "./log";
+import { shouldSkipNotifications } from "./guards";
 import type { NotificationPayload, SendResult } from "./types";
 
 /**
@@ -10,6 +11,14 @@ export async function sendToUser(
   userId: string,
   payload: NotificationPayload,
 ): Promise<SendResult> {
+  if (shouldSkipNotifications()) {
+    console.info("[notifications] skipped single notification in local dev", {
+      userId,
+      title: payload.title,
+    });
+    return { state: "no_token" };
+  }
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { platform: true, fid: true },

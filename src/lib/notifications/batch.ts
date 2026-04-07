@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { sendBatchToFids } from "./adapters/farcaster";
 import { logNotification } from "./log";
+import { shouldSkipNotifications } from "./guards";
 import type { BatchResult, NotificationPayload } from "./types";
 
 const EMPTY_RESULT: BatchResult = { total: 0, success: 0, failed: 0, invalidTokens: 0, rateLimited: 0, durationMs: 0 };
@@ -15,6 +16,14 @@ export async function sendBatch(
   userIds: string[],
 ): Promise<BatchResult> {
   if (userIds.length === 0) {
+    return EMPTY_RESULT;
+  }
+
+  if (shouldSkipNotifications()) {
+    console.info("[notifications] skipped batch notification in local dev", {
+      recipients: userIds.length,
+      title: payload.title,
+    });
     return EMPTY_RESULT;
   }
 

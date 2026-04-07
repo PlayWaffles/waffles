@@ -17,8 +17,9 @@ export function buildGamePlatformWhere(platform?: string) {
     return pf.platform ? { game: pf } : {};
 }
 
-export function buildProductionGameWhere(platform?: string) {
-    const prefersTestnetGames = env.rootUrl.includes("localhost");
+export function buildAdminGameWhere(platform?: string) {
+    const prefersTestnetGames =
+        process.env.NODE_ENV !== "production" && env.rootUrl.includes("localhost");
     const pf = buildPlatformWhere(platform);
     if (pf.platform) {
         const platforms = gamePlatformsForPlatform(pf.platform);
@@ -40,6 +41,31 @@ export function buildProductionGameWhere(platform?: string) {
                 { platform: UserPlatform.BASE_APP, isTestnet: true },
             ],
         };
+    }
+
+    return {
+        OR: [
+            { platform: UserPlatform.MINIPAY },
+            { platform: UserPlatform.FARCASTER, isTestnet: false },
+            { platform: UserPlatform.BASE_APP, isTestnet: false },
+        ],
+    };
+}
+
+export function buildAdminEntryWhere(platform?: string) {
+    const gameWhere = buildAdminGameWhere(platform);
+    return { game: gameWhere };
+}
+
+export function buildProductionGameWhere(platform?: string) {
+    const pf = buildPlatformWhere(platform);
+    if (pf.platform) {
+        const platforms = gamePlatformsForPlatform(pf.platform);
+        const platformWhere =
+            platforms.length === 1 ? { platform: pf.platform } : { platform: { in: platforms } };
+        return excludesTestnet(pf.platform)
+            ? { ...platformWhere, isTestnet: false }
+            : platformWhere;
     }
 
     return {

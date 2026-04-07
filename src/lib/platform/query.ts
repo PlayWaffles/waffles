@@ -3,7 +3,7 @@ import type { Prisma } from "@prisma";
 import { env } from "@/lib/env";
 
 function prefersTestnetGames() {
-  return env.rootUrl.includes("localhost");
+  return process.env.NODE_ENV !== "production" && env.rootUrl.includes("localhost");
 }
 
 export function sharesBaseMainnetGames(platform: UserPlatform): boolean {
