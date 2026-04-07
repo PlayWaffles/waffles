@@ -107,6 +107,10 @@ export default function LeaveGameDrawer({
         throw new Error(result.error || "Failed to leave game");
       }
 
+      console.info("[posthog]", "client_capture", {
+        event: "game_left",
+        properties: { game_id: gameId },
+      });
       posthog.capture("game_left", { game_id: gameId });
       notify.success("You've left the game");
       setIsLeaveGameDrawerOpen(false);

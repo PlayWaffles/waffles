@@ -7,3 +7,9 @@ posthog.init(process.env.NEXT_PUBLIC_POSTHOG_TOKEN!, {
   defaults: '2026-01-30',
   debug: process.env.NODE_ENV === "development",
 });
+
+console.info("[posthog]", "client_initialized", {
+  apiHost: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+  hasToken: Boolean(process.env.NEXT_PUBLIC_POSTHOG_TOKEN),
+  debug: process.env.NODE_ENV === "development",
+});

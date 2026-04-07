@@ -127,7 +127,13 @@ export default function ProfilePage() {
               backgroundColor: "rgba(255, 255, 255, 0.2)",
             }}
             whileTap={{ scale: 0.9 }}
-            onClick={() => { posthog.capture("invite_friends_opened"); setInviteOpen(true); }}
+            onClick={() => {
+              console.info("[posthog]", "client_capture", {
+                event: "invite_friends_opened",
+              });
+              posthog.capture("invite_friends_opened");
+              setInviteOpen(true);
+            }}
             aria-label="Invite Friends"
             className={cn(
               "box-border flex flex-row justify-center items-center p-2 gap-2 w-[34px] h-[34px] bg-white/13 rounded-[900px] transition-all duration-200",
@@ -153,7 +159,13 @@ export default function ProfilePage() {
 
         {/* Invite Button */}
         <motion.div variants={itemVariants} className="shrink-0">
-          <InviteFriendsButton onInvite={() => { posthog.capture("invite_friends_opened"); setInviteOpen(true); }} />
+          <InviteFriendsButton onInvite={() => {
+            console.info("[posthog]", "client_capture", {
+              event: "invite_friends_opened",
+            });
+            posthog.capture("invite_friends_opened");
+            setInviteOpen(true);
+          }} />
         </motion.div>
 
         {/* Stats Section */}

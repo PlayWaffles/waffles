@@ -18,6 +18,11 @@ export async function captureServerEvent(params: {
 }) {
   const posthog = createPostHogClient();
   try {
+    console.info("[posthog]", "server_capture", {
+      event: params.event,
+      distinctId: params.distinctId,
+      properties: params.properties,
+    });
     posthog.capture(params);
     await posthog.shutdown();
   } catch (error) {

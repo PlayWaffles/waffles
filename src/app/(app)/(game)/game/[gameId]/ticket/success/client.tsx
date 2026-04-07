@@ -117,6 +117,15 @@ export function TicketSuccessClient({
             });
 
             if (result.shared || result.copied) {
+                console.info("[posthog]", "client_capture", {
+                    event: "ticket_shared",
+                    properties: {
+                        game_id: gameId,
+                        theme,
+                        prize_pool: prizePool,
+                        method: result.shared ? "share" : "copy",
+                    },
+                });
                 posthog.capture("ticket_shared", {
                     game_id: gameId,
                     theme,

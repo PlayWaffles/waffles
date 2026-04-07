@@ -70,9 +70,17 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   // Identify user in PostHog once user data is available
   useEffect(() => {
     if (!user?.id) {
+      console.info("[posthog]", "client_reset");
       posthog.reset();
       return;
     }
+    console.info("[posthog]", "client_identify", {
+      distinctId: user.id,
+      platform: user.platform,
+      username: user.username ?? null,
+      fid: user.fid ?? null,
+      wallet: user.wallet ?? null,
+    });
     posthog.identify(user.id, {
       platform: user.platform,
       username: user.username ?? undefined,
