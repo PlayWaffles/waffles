@@ -40,6 +40,7 @@ interface PurchaseViewProps {
   potentialPayout: number;
   selectedTier: TicketTier;
   onSelectTier: (tier: TicketTier) => void;
+  hasUsedFreeTicket?: boolean;
   isLoading: boolean;
   isError: boolean;
   step: PurchaseStep;
@@ -55,6 +56,7 @@ export function PurchaseView({
   potentialPayout,
   selectedTier,
   onSelectTier,
+  hasUsedFreeTicket = false,
   isLoading,
   isError,
   step,
@@ -78,10 +80,14 @@ export function PurchaseView({
     };
   }, []);
 
-  const tiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
+  const allTiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
     { key: "paid", label: "PAID", price: `$${currentPrice}`, sublabel: "Prize eligible" },
     { key: "free", label: "FREE", price: "$0", sublabel: "Play only" },
   ];
+
+  const tiers = hasUsedFreeTicket
+    ? allTiers.filter((t) => t.key !== "free")
+    : allTiers;
 
   return (
     <>

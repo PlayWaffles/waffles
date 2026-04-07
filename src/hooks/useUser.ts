@@ -22,6 +22,7 @@ export interface UserData {
   isBanned: boolean;
   createdAt: Date;
   invitesCount: number;
+  hasUsedFreeTicket: boolean;
 }
 
 // ==========================================

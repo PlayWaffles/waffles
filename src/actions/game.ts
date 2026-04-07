@@ -84,6 +84,21 @@ async function claimFreeTicketForUser(
     return { success: false, error: "Tickets are not yet available", code: "TICKETS_NOT_OPEN" };
   }
 
+  // Block free ticket if user has previously played a game with a free ticket
+  const priorFreeEntry = await prisma.gameEntry.findFirst({
+    where: {
+      userId: user.id,
+      gameId: { not: gameId },
+      purchaseSource: TicketPurchaseSource.FREE_PLAYER,
+      answered: { gt: 0 },
+    },
+    select: { id: true },
+  });
+
+  if (priorFreeEntry) {
+    return { success: false, error: "Free ticket no longer available", code: "FREE_TICKET_USED" };
+  }
+
   if (areTicketsClosedForGame(game)) {
     return { success: false, error: "Ticket sales have closed", code: "TICKETS_CLOSED" };
   }

@@ -10,6 +10,7 @@ import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
 import { GameTheme, UserPlatform } from "@prisma";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
+import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
 import { rankGame, publishResults } from "@/lib/game/lifecycle";
 import { defaultNetworkForPlatform } from "@/lib/chain";
 
@@ -173,20 +174,11 @@ export async function createGameAction(
   const createdGames: { id: string; platform: UserPlatform; title: string }[] = [];
   const failures: string[] = [];
 
-  // Derive next game number from highest existing Base mainnet game number
-  // (testnet games don't count toward the public numbering sequence)
-  const lastMainnetGame = await prisma.game.findFirst({
-    where: { network: "BASE_MAINNET" },
-    orderBy: { gameNumber: "desc" },
-    select: { gameNumber: true },
-  });
-  let nextGameNumber = (lastMainnetGame?.gameNumber ?? 0) + 1;
-
   for (const platform of platforms) {
     const network = defaultNetworkForPlatform(platform);
     const onchainId = generateOnchainGameId();
     let gameId: string | null = null;
-    const gameNumber = nextGameNumber++;
+    const gameNumber = await getNextGameNumberForNetwork(network);
 
     try {
       const game = await prisma.game.create({

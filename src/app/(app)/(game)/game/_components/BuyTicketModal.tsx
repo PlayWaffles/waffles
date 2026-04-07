@@ -62,6 +62,7 @@ export function BuyTicketModal({
   const { refetchEntry } = useRealtime();
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
+  const hasUsedFreeTicket = user?.hasUsedFreeTicket ?? false;
   const [selectedTier, setSelectedTier] = useState<TicketTier>("paid");
   const [freeStep, setFreeStep] = useState<PurchaseStep>("idle");
   const [freeLoading, setFreeLoading] = useState(false);
@@ -419,6 +420,7 @@ export function BuyTicketModal({
             potentialPayout={potentialPayout}
             selectedTier={selectedTier}
             onSelectTier={setSelectedTier}
+            hasUsedFreeTicket={hasUsedFreeTicket}
             isLoading={isLoading}
             isError={isError}
             step={step as PurchaseStep}

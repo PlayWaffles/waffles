@@ -4,6 +4,7 @@ import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
 import { defaultNetworkForPlatform } from "@/lib/chain";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
+import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
 import { initGameRoom } from "@/lib/partykit";
 import { sendBatch } from "@/lib/notifications";
 import { preGame, buildPayload } from "@/lib/notifications/templates";
@@ -85,20 +86,11 @@ async function assignAutoQuestionsToGame(
   await recalculateGameRounds(gameId);
 }
 
-async function getNextGameNumber() {
-  const lastGame = await prisma.game.findFirst({
-    orderBy: { gameNumber: "desc" },
-    select: { gameNumber: true },
-  });
-
-  return (lastGame?.gameNumber ?? 0) + 1;
-}
-
 export async function createAutoScheduledGame(input: AutoCreateGameInput) {
   const templates = await getAutoQuestionTemplates();
   const network = defaultNetworkForPlatform(input.platform);
   const onchainId = generateOnchainGameId();
-  const gameNumber = await getNextGameNumber();
+  const gameNumber = await getNextGameNumberForNetwork(network);
   let gameId: string | null = null;
 
   try {

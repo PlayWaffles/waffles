@@ -221,7 +221,7 @@ model CompletedQuest {
 
 model Game {
   id         String @id @default(cuid())
-  gameNumber Int    @unique // Human-readable: WAFFLES #001, derived from table count
+  gameNumber Int // Human-readable: WAFFLES #001, scoped per network
 
   // -- ON-CHAIN IDENTITY (random bytes32, stored as 0x-prefixed hex string) --
   onchainId String? @unique @db.VarChar(66)
@@ -277,6 +277,7 @@ model Game {
 
   // -- INDEXES --
   @@unique([launchGroupId, platform])
+  @@unique([network, gameNumber])
   @@index([platform, startsAt])
   @@index([platform, endsAt])
   @@index([startsAt])
