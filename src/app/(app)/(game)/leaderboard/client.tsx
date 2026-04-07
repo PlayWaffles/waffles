@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback } from "react";
-import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import posthog from "posthog-js";
@@ -29,7 +28,7 @@ interface APIResponse {
 // ============================================
 // CONSTANTS
 // ============================================
-const CROWN_HEIGHT = 180;
+const HEADER_SCROLL_HEIGHT = 80;
 
 // ============================================
 // COMPONENT
@@ -52,7 +51,6 @@ export default function LeaderboardClient() {
   const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [crownOpacity, setCrownOpacity] = useState(1);
   const [isSticky, setIsSticky] = useState(false);
   const [gameTitle, setGameTitle] = useState("Game");
   const [gameNumber, setGameNumber] = useState<number | null>(null);
@@ -125,7 +123,6 @@ export default function LeaderboardClient() {
   // Initial fetch + refetch on param change
   useEffect(() => {
     setPage(0);
-    setCrownOpacity(1);
     scrollRef.current?.scrollTo(0, 0);
     fetchPage(0, true);
   }, [fetchPage]);
@@ -146,8 +143,7 @@ export default function LeaderboardClient() {
   // ── Handlers ──────────────────────────────────
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
     const y = e.currentTarget.scrollTop;
-    setCrownOpacity(Math.max(0, Math.min(1, 1 - y / CROWN_HEIGHT)));
-    setIsSticky(y >= CROWN_HEIGHT);
+    setIsSticky(y >= HEADER_SCROLL_HEIGHT);
   }, []);
 
   // ── Navigation ────────────────────────────────
@@ -165,26 +161,6 @@ export default function LeaderboardClient() {
   // ── Render ────────────────────────────────────
   return (
     <div ref={scrollRef} onScroll={handleScroll} className="flex-1 overflow-y-auto flex flex-col px-3">
-
-      {/* Crown Image */}
-      <div
-        className="pt-6 grid place-items-center transition-opacity duration-150 relative z-0"
-        style={{
-          opacity: crownOpacity,
-          pointerEvents: crownOpacity < 0.1 ? "none" : "auto",
-          marginBottom: "-60px",
-        }}
-      >
-        <Image
-          src="/images/chest-crown.png"
-          alt=""
-          width={320}
-          height={260}
-          priority
-          className="h-[180px] w-auto"
-          style={{ transform: `scale(${0.95 + crownOpacity * 0.05})` }}
-        />
-      </div>
 
       {/* Sticky Header */}
       <motion.header
