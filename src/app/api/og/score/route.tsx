@@ -17,7 +17,6 @@ export const runtime = "nodejs";
  * - username: string (required)
  * - pfpUrl: string (optional)
  * - gameNumber: number (required)
- * - category: string (required)
  * - rank: number (optional)
  */
 export async function GET(request: Request) {
@@ -28,7 +27,6 @@ export async function GET(request: Request) {
     const username = searchParams.get("username") || "Player";
     const pfpUrlParam = searchParams.get("pfpUrl");
     const gameNumber = parseInt(searchParams.get("gameNumber") || "1", 10);
-    const category = searchParams.get("category") || "Trivia";
     const rankParam = searchParams.get("rank");
     const rank = rankParam ? parseInt(rankParam, 10) : null;
 
@@ -77,9 +75,9 @@ export async function GET(request: Request) {
                 <img
                     src={logoImage}
                     alt="Waffles"
-                    width={100}
-                    height={20}
-                    style={{ position: "absolute", top: 50 }}
+                    width={160}
+                    height={32}
+                    style={{ position: "absolute", top: 40 }}
                 />
 
                 {/* Main Content - Centered & Clean */}
@@ -91,21 +89,21 @@ export async function GET(request: Request) {
                         gap: 20,
                     }}
                 >
-                    {/* User Identity - Small & Subtle */}
+                    {/* User Identity */}
                     <div
                         style={{
                             display: "flex",
                             alignItems: "center",
-                            gap: 12,
+                            gap: 16,
                         }}
                     >
                         <div
                             style={{
-                                width: 48,
-                                height: 48,
+                                width: 64,
+                                height: 64,
                                 borderRadius: "50%",
                                 background: "#2A2A2A",
-                                border: "2px solid rgba(255, 255, 255, 0.2)",
+                                border: "3px solid rgba(255, 255, 255, 0.2)",
                                 overflow: "hidden",
                                 display: "flex",
                                 alignItems: "center",
@@ -116,12 +114,12 @@ export async function GET(request: Request) {
                                 <img
                                     src={safePfpUrl}
                                     alt=""
-                                    width={48}
-                                    height={48}
+                                    width={64}
+                                    height={64}
                                     style={{ objectFit: "cover" }}
                                 />
                             ) : (
-                                <span style={{ fontSize: 22, color: "rgba(255,255,255,0.6)" }}>
+                                <span style={{ fontSize: 30, color: "rgba(255,255,255,0.6)" }}>
                                     {username[0]?.toUpperCase() ?? "?"}
                                 </span>
                             )}
@@ -129,7 +127,7 @@ export async function GET(request: Request) {
                         <span
                             style={{
                                 fontFamily: "EditUndo",
-                                fontSize: 32,
+                                fontSize: 44,
                                 color: COLORS.white,
                                 textTransform: "uppercase",
                                 letterSpacing: "-0.02em",
@@ -151,7 +149,7 @@ export async function GET(request: Request) {
                         <span
                             style={{
                                 fontFamily: "Brockmann",
-                                fontSize: 24,
+                                fontSize: 36,
                                 color: COLORS.grayLabel,
                                 letterSpacing: "0.2em",
                                 textTransform: "uppercase",
@@ -162,7 +160,7 @@ export async function GET(request: Request) {
                         <span
                             style={{
                                 fontFamily: "EditUndo",
-                                fontSize: 160,
+                                fontSize: 200,
                                 color: COLORS.gold,
                                 lineHeight: 0.9,
                                 letterSpacing: "-0.03em",
@@ -173,11 +171,11 @@ export async function GET(request: Request) {
                         <span
                             style={{
                                 fontFamily: "Brockmann",
-                                fontSize: 28,
+                                fontSize: 40,
                                 color: "rgba(255, 201, 49, 0.6)",
                                 letterSpacing: "0.15em",
                                 textTransform: "uppercase",
-                                marginTop: 8,
+                                marginTop: 10,
                             }}
                         >
                             points
@@ -197,7 +195,7 @@ export async function GET(request: Request) {
                             <span
                                 style={{
                                     fontFamily: "Brockmann",
-                                    fontSize: 20,
+                                    fontSize: 28,
                                     color: COLORS.grayLabel,
                                 }}
                             >
@@ -206,7 +204,7 @@ export async function GET(request: Request) {
                             <span
                                 style={{
                                     fontFamily: "EditUndo",
-                                    fontSize: 32,
+                                    fontSize: 44,
                                     color: rank <= 3 ? "#14B985" : COLORS.white,
                                 }}
                             >
@@ -229,48 +227,30 @@ export async function GET(request: Request) {
                     }}
                 >
                     {/* Game Info */}
-                    <div
+                    <span
                         style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 2,
+                            fontFamily: "EditUndo",
+                            fontSize: 30,
+                            color: COLORS.white,
+                            opacity: 0.8,
                         }}
                     >
-                        <span
-                            style={{
-                                fontFamily: "EditUndo",
-                                fontSize: 22,
-                                color: COLORS.white,
-                                opacity: 0.8,
-                            }}
-                        >
-                            {gameName}
-                        </span>
-                        <span
-                            style={{
-                                fontFamily: "Brockmann",
-                                fontSize: 16,
-                                color: COLORS.grayLabel,
-                                textTransform: "capitalize",
-                            }}
-                        >
-                            {category}
-                        </span>
-                    </div>
+                        {gameName}
+                    </span>
 
                     {/* Play CTA */}
                     <div
                         style={{
                             display: "flex",
-                            padding: "12px 24px",
-                            border: `1.5px solid ${COLORS.goldAlt}`,
+                            padding: "14px 32px",
+                            border: `2px solid ${COLORS.goldAlt}`,
                             borderRadius: 100,
                         }}
                     >
                         <span
                             style={{
                                 fontFamily: "EditUndo",
-                                fontSize: 16,
+                                fontSize: 24,
                                 color: COLORS.goldAlt,
                             }}
                         >
