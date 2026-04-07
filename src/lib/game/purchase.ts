@@ -452,7 +452,7 @@ export async function finalizeTicketPurchase(
       purchaseSource: entry.purchaseSource,
     });
 
-    void captureServerEvent({
+    await captureServerEvent({
       distinctId: purchaseUser.id,
       event: "ticket_purchase_completed",
       properties: {

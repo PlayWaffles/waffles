@@ -157,7 +157,7 @@ async function claimFreeTicketForUser(
         console.error("[game-actions]", "free_ticket_partykit_error", err),
       );
 
-      void captureServerEvent({
+      await captureServerEvent({
         distinctId: user.id,
         event: "free_ticket_claimed",
         properties: {

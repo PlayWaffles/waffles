@@ -43,6 +43,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_ONCHAINKIT_API_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_ONCHAINKIT_API_KEY is required"),
+  NEXT_PUBLIC_POSTHOG_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
   NEXT_PUBLIC_BASE_MAINNET_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
@@ -128,6 +130,8 @@ const getEnv = () => {
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     NEXT_PUBLIC_ONCHAINKIT_API_KEY: process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
+    NEXT_PUBLIC_POSTHOG_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_TOKEN,
+    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_BASE_MAINNET_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL,
     NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL:
@@ -201,6 +205,8 @@ const getEnv = () => {
         cloudinaryApiKey: "",
         cloudinaryApiSecret: "",
         nextPublicOnchainkitApiKey: "",
+        nextPublicPosthogToken: undefined,
+        nextPublicPosthogHost: undefined,
         nextPublicBaseMainnetRpcUrl: "https://mainnet.base.org",
         nextPublicBaseSepoliaRpcUrl: "https://sepolia.base.org",
         nextPublicBaseBuilderCode: undefined,
@@ -273,6 +279,8 @@ const getEnv = () => {
     cloudinaryApiSecret: data.CLOUDINARY_API_SECRET,
     // Client-side
     nextPublicOnchainkitApiKey: data.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
+    nextPublicPosthogToken: data.NEXT_PUBLIC_POSTHOG_TOKEN,
+    nextPublicPosthogHost: data.NEXT_PUBLIC_POSTHOG_HOST,
     nextPublicBaseMainnetRpcUrl:
       data.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
     nextPublicBaseSepoliaRpcUrl:

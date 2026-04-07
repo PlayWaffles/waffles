@@ -7823,7 +7823,7 @@ snapshots:
       eth-json-rpc-filters: 6.0.1
       eventemitter3: 5.0.4
       keccak: 3.0.4
-      preact: 10.24.2
+      preact: 10.29.1
       sha.js: 2.4.12
     transitivePeerDependencies:
       - supports-color
