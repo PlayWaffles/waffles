@@ -16,8 +16,12 @@ export function getPostHogClient(): PostHog {
   return posthogClient;
 }
 
-export async function shutdownPostHog(): Promise<void> {
-  if (posthogClient) {
-    await posthogClient.shutdown();
-  }
+export async function captureServerEvent(params: {
+  distinctId: string;
+  event: string;
+  properties?: Record<string, unknown>;
+}) {
+  const posthog = getPostHogClient();
+  posthog.capture(params);
+  await posthog.flush();
 }

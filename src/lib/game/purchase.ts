@@ -16,7 +16,7 @@ import {
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { captureServerEvent } from "@/lib/posthog-server";
 import { unlockReferralRewards } from "./shared";
 import { areTicketsClosedForGame } from "./ticket-window";
 
@@ -452,8 +452,7 @@ export async function finalizeTicketPurchase(
       purchaseSource: entry.purchaseSource,
     });
 
-    const posthog = getPostHogClient();
-    posthog.capture({
+    void captureServerEvent({
       distinctId: purchaseUser.id,
       event: "ticket_purchase_completed",
       properties: {
@@ -464,7 +463,14 @@ export async function finalizeTicketPurchase(
         platform: purchaseUser.platform,
         tx_hash: txHash,
       },
-    });
+    }).catch((err) =>
+      console.error("[game-actions]", "posthog_capture_error", {
+        event: "ticket_purchase_completed",
+        gameId,
+        userId: purchaseUser.id,
+        error: err instanceof Error ? err.message : String(err),
+      }),
+    );
 
     return { success: true, entryId: entry.id };
   } catch (error) {

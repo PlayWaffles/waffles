@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { rankGame, publishResults } from "@/lib/game/lifecycle";
 import { env } from "@/lib/env";
-import { getPostHogClient } from "@/lib/posthog-server";
+import { captureServerEvent } from "@/lib/posthog-server";
 
 const SERVICE = "roundup-api";
 
@@ -123,8 +123,7 @@ export async function POST(
       winnersCount: rankResult.prizesDistributed,
     });
 
-    const posthog = getPostHogClient();
-    posthog.capture({
+    await captureServerEvent({
       distinctId: gameId,
       event: "game_completed",
       properties: {
