@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { Tabs, LeaderboardTabKey } from "./_components/Tabs";
@@ -21,6 +21,8 @@ interface APIResponse {
   totalPlayers: number;
   gameTitle?: string;
   gameNumber?: number;
+  prevGameId?: string;
+  nextGameId?: string;
 }
 
 // ============================================
@@ -33,6 +35,7 @@ const CROWN_HEIGHT = 180;
 // ============================================
 export default function LeaderboardClient() {
   // ── URL Params ────────────────────────────────
+  const router = useRouter();
   const searchParams = useSearchParams();
   const gameId = searchParams.get("gameId");
   const tab = searchParams.get("tab");
@@ -52,6 +55,8 @@ export default function LeaderboardClient() {
   const [isSticky, setIsSticky] = useState(false);
   const [gameTitle, setGameTitle] = useState("Game");
   const [gameNumber, setGameNumber] = useState<number | null>(null);
+  const [prevGameId, setPrevGameId] = useState<string | undefined>();
+  const [nextGameId, setNextGameId] = useState<string | undefined>();
 
   // ── Refs ──────────────────────────────────────
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -91,6 +96,8 @@ export default function LeaderboardClient() {
         setEntries(data.entries);
         setGameTitle(data.gameTitle ?? "Game");
         setGameNumber(data.gameNumber ?? null);
+        setPrevGameId(data.prevGameId);
+        setNextGameId(data.nextGameId);
       } else {
         setEntries(prev => [...prev, ...data.entries]);
       }
@@ -136,6 +143,11 @@ export default function LeaderboardClient() {
     setIsSticky(y >= CROWN_HEIGHT);
   }, []);
 
+  // ── Navigation ────────────────────────────────
+  const navigateGame = useCallback((targetGameId: string) => {
+    router.push(`/leaderboard?gameId=${targetGameId}`, { scroll: false });
+  }, [router]);
+
   // ── Computed ──────────────────────────────────
   const isEmpty = entries.length === 0;
   const showTop3 = entries.length >= 3;
@@ -180,7 +192,13 @@ export default function LeaderboardClient() {
       >
         <h1 className="text-center font-body text-[36px] tracking-[1px]">LEADERBOARD</h1>
         <div className="mt-4 flex justify-center">
-          <Tabs activeTab={activeTab} gameNumber={gameId ? gameNumber : null} />
+          <Tabs
+            activeTab={activeTab}
+            gameNumber={gameNumber}
+            prevGameId={activeTab === "current" ? prevGameId : undefined}
+            nextGameId={activeTab === "current" ? nextGameId : undefined}
+            onNavigateGame={navigateGame}
+          />
         </div>
         <p className="mt-3 text-center text-muted font-display text-sm">{subtitle}</p>
       </motion.header>

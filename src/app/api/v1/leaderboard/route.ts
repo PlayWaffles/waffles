@@ -37,6 +37,8 @@ interface LeaderboardResponse {
   totalPlayers: number;
   gameTitle?: string;
   gameNumber?: number;
+  prevGameId?: string;
+  nextGameId?: string;
 }
 
 // ============================================
@@ -200,7 +202,7 @@ async function handleGame(
 
   const game = await prisma.game.findUnique({
     where: { id: targetGameId },
-    select: { title: true, gameNumber: true, platform: true, isTestnet: true },
+    select: { title: true, gameNumber: true, platform: true, isTestnet: true, endsAt: true },
   });
 
   if (!game || !isGameVisibleToPlatform(game, platform)) {
@@ -211,11 +213,32 @@ async function handleGame(
     });
   }
 
+  // Fetch adjacent games for prev/next navigation
+  const platformGamesWhere = gameWhere(platform);
+  const [prevGame, nextGame] = await Promise.all([
+    prisma.game.findFirst({
+      where: {
+        ...platformGamesWhere,
+        endsAt: { lt: game.endsAt! },
+      },
+      orderBy: { endsAt: "desc" },
+      select: { id: true },
+    }),
+    prisma.game.findFirst({
+      where: {
+        ...platformGamesWhere,
+        endsAt: { gt: game.endsAt! },
+      },
+      orderBy: { endsAt: "asc" },
+      select: { id: true },
+    }),
+  ]);
+
+  const scoreFilter = { gameId: targetGameId, score: { gt: 0 } };
+
   const [players, total] = await prisma.$transaction([
     prisma.gameEntry.findMany({
-      where: {
-        gameId: targetGameId,
-      },
+      where: scoreFilter,
       select: {
         prize: true,
         score: true,
@@ -234,9 +257,7 @@ async function handleGame(
       skip: page * PAGE_SIZE,
     }),
     prisma.gameEntry.count({
-      where: {
-        gameId: targetGameId,
-      },
+      where: scoreFilter,
     }),
   ]);
 
@@ -247,6 +268,8 @@ async function handleGame(
       totalPlayers: 0,
       gameTitle: game?.title ?? "Game",
       gameNumber: game?.gameNumber ?? 1,
+      prevGameId: prevGame?.id,
+      nextGameId: nextGame?.id,
     });
   }
 
@@ -268,5 +291,7 @@ async function handleGame(
     totalPlayers: total,
     gameTitle: game?.title ?? "Game",
     gameNumber: game?.gameNumber ?? undefined,
+    prevGameId: prevGame?.id,
+    nextGameId: nextGame?.id,
   });
 }

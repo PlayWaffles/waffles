@@ -1,7 +1,8 @@
 "use client";
 
-import { useCallback, } from "react";
+import { useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
+import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { PixelButton } from "@/components/ui/PixelButton";
 import { motion } from "framer-motion";
 
@@ -10,9 +11,12 @@ type TabKey = "current" | "allTime";
 interface TabsProps {
   activeTab: TabKey;
   gameNumber?: number | null;
+  prevGameId?: string;
+  nextGameId?: string;
+  onNavigateGame?: (gameId: string) => void;
 }
 
-export function Tabs({ activeTab, gameNumber }: TabsProps) {
+export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigateGame }: TabsProps) {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -36,9 +40,21 @@ export function Tabs({ activeTab, gameNumber }: TabsProps) {
     <motion.div
       initial={{ y: 10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="inline-flex justify-center gap-3 items-center"
+      className="inline-flex justify-center gap-2 items-center"
       role="tablist"
     >
+      {/* Prev game arrow */}
+      {activeTab === "current" && (
+        <button
+          onClick={() => prevGameId && onNavigateGame?.(prevGameId)}
+          disabled={!prevGameId}
+          className="p-1.5 rounded-lg transition-colors disabled:opacity-20 enabled:hover:bg-white/10 enabled:active:scale-90"
+          aria-label="Previous game"
+        >
+          <ChevronLeftIcon className="w-5 h-5" />
+        </button>
+      )}
+
       {tabs.map(({ key, label }) => {
         const isActive = activeTab === key;
         return (
@@ -63,6 +79,18 @@ export function Tabs({ activeTab, gameNumber }: TabsProps) {
           </div>
         );
       })}
+
+      {/* Next game arrow */}
+      {activeTab === "current" && (
+        <button
+          onClick={() => nextGameId && onNavigateGame?.(nextGameId)}
+          disabled={!nextGameId}
+          className="p-1.5 rounded-lg transition-colors disabled:opacity-20 enabled:hover:bg-white/10 enabled:active:scale-90"
+          aria-label="Next game"
+        >
+          <ChevronRightIcon className="w-5 h-5" />
+        </button>
+      )}
     </motion.div>
   );
 }
