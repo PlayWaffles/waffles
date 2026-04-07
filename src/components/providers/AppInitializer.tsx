@@ -11,6 +11,7 @@ import {
 import sdk from "@farcaster/miniapp-sdk";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
+import posthog from "posthog-js";
 
 import { OnboardingOverlay } from "../OnboardingOverlay";
 import { WaffleButton } from "../buttons/WaffleButton";
@@ -65,6 +66,17 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     const walletScope = address?.toLowerCase();
     return getOnboardingKey(runtime, walletScope);
   }, [runtime, user?.id, address]);
+
+  // Identify user in PostHog once user data is available
+  useEffect(() => {
+    if (!user?.id) return;
+    posthog.identify(user.id, {
+      platform: user.platform,
+      username: user.username ?? undefined,
+      fid: user.fid ?? undefined,
+      wallet: user.wallet ?? undefined,
+    });
+  }, [user?.id, user?.platform, user?.username, user?.fid, user?.wallet]);
 
   useEffect(() => {
     let mounted = true;

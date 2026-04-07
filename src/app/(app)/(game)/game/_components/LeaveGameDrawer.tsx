@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
+import posthog from "posthog-js";
 import { notify } from "@/components/ui/Toaster";
 import { playSound } from "@/lib/sounds";
 import { leaveGame } from "@/actions/game";
@@ -106,6 +107,7 @@ export default function LeaveGameDrawer({
         throw new Error(result.error || "Failed to leave game");
       }
 
+      posthog.capture("game_left", { game_id: gameId });
       notify.success("You've left the game");
       setIsLeaveGameDrawerOpen(false);
       router.push("/game");

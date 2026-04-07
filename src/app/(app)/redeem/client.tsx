@@ -5,6 +5,8 @@ import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, useAnimation, AnimatePresence } from "framer-motion";
 
+import posthog from "posthog-js";
+
 import { useUser } from "@/hooks/useUser";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
 import { redeemInviteCodeAction, type ValidateReferralResult } from "@/actions/invite";
@@ -90,6 +92,11 @@ export default function InvitePageClient() {
       setError(null);
       playSound("codeValid");
 
+      posthog.capture("invite_code_redeemed", {
+        inviter_id: result.inviterId || null,
+        invitee_id: result.inviteeId,
+      });
+
       // Celebration animation on key
       keyControls.start({
         scale: [1, 1.2, 1],
@@ -105,6 +112,10 @@ export default function InvitePageClient() {
       setStatus("failed");
       setError(result.error);
       playSound("codeInvalid");
+
+      posthog.capture("invite_code_failed", {
+        error: result.error,
+      });
       // Shake the input on error
       triggerShake(inputControls);
       // Wiggle the key

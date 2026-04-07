@@ -340,6 +340,7 @@ export async function assignToGameAction(
       where: { id: gameId },
       select: {
         id: true,
+        isTestnet: true,
         startsAt: true,
         endsAt: true,
         questions: { select: { templateId: true, roundIndex: true } },
@@ -403,10 +404,12 @@ export async function assignToGameAction(
       });
 
       // Batch update usage counts
-      await tx.questionTemplate.updateMany({
-        where: { id: { in: newTemplateIds } },
-        data: { usageCount: { increment: 1 } },
-      });
+      if (!game.isTestnet) {
+        await tx.questionTemplate.updateMany({
+          where: { id: { in: newTemplateIds } },
+          data: { usageCount: { increment: 1 } },
+        });
+      }
     });
 
     // Recalculate round distribution for all questions

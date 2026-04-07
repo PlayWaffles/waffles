@@ -14,6 +14,7 @@ import {
     getGoogleCalendarUrl,
     downloadICS
 } from "@/lib/calendar";
+import posthog from "posthog-js";
 import { shareTextOrCopy } from "@/lib/share";
 import { useUser } from "@/hooks/useUser";
 
@@ -115,7 +116,14 @@ export function TicketSuccessClient({
                 url: frameUrl,
             });
 
-            if (!result.shared && !result.copied) {
+            if (result.shared || result.copied) {
+                posthog.capture("ticket_shared", {
+                    game_id: gameId,
+                    theme,
+                    prize_pool: prizePool,
+                    method: result.shared ? "share" : "copy",
+                });
+            } else {
                 console.log("User cancelled the share action");
             }
         } catch (error) {

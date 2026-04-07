@@ -49,3 +49,4 @@ llm-context.txt
 .partykit/
 
 backups
+.env.local

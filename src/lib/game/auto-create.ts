@@ -56,6 +56,7 @@ async function getAutoQuestionTemplates() {
 async function assignAutoQuestionsToGame(
   gameId: string,
   templates: AutoQuestionTemplate[],
+  countUsage: boolean,
 ) {
   await prisma.$transaction(async (tx) => {
     await tx.question.createMany({
@@ -73,14 +74,16 @@ async function assignAutoQuestionsToGame(
       })),
     });
 
-    await Promise.all(
-      templates.map((template) =>
-        tx.questionTemplate.update({
-          where: { id: template.id },
-          data: { usageCount: { increment: 1 } },
-        }),
-      ),
-    );
+    if (countUsage) {
+      await Promise.all(
+        templates.map((template) =>
+          tx.questionTemplate.update({
+            where: { id: template.id },
+            data: { usageCount: { increment: 1 } },
+          }),
+        ),
+      );
+    }
   });
 
   await recalculateGameRounds(gameId);
@@ -118,7 +121,7 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
     gameId = game.id;
 
     await initGameRoom(game.id, game.startsAt, game.endsAt);
-    await assignAutoQuestionsToGame(game.id, templates);
+    await assignAutoQuestionsToGame(game.id, templates, !game.isTestnet);
     const txHash = await createGameOnChain(
       input.platform,
       network,

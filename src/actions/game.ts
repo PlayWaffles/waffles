@@ -17,6 +17,7 @@ import {
   type PurchaseInput,
   type PurchaseResult,
 } from "@/lib/game/purchase";
+import { getPostHogClient } from "@/lib/posthog-server";
 
 /**
  * Records a ticket purchase after on-chain transaction succeeds.
@@ -155,6 +156,19 @@ async function claimFreeTicketForUser(
       }).catch((err) =>
         console.error("[game-actions]", "free_ticket_partykit_error", err),
       );
+
+      const posthog = getPostHogClient();
+      posthog.capture({
+        distinctId: user.id,
+        event: "free_ticket_claimed",
+        properties: {
+          game_id: gameId,
+          entry_id: result.entryId,
+          platform: user.platform,
+          player_count: result.playerCount,
+          prize_pool: game.prizePool,
+        },
+      });
     }
 
     return { success: true, entryId: result.entryId };

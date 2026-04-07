@@ -16,6 +16,7 @@ import {
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
+import { getPostHogClient } from "@/lib/posthog-server";
 import { unlockReferralRewards } from "./shared";
 import { areTicketsClosedForGame } from "./ticket-window";
 
@@ -449,6 +450,20 @@ export async function finalizeTicketPurchase(
       userId: purchaseUser.id,
       paidAmount: entry.paidAmount,
       purchaseSource: entry.purchaseSource,
+    });
+
+    const posthog = getPostHogClient();
+    posthog.capture({
+      distinctId: purchaseUser.id,
+      event: "ticket_purchase_completed",
+      properties: {
+        game_id: gameId,
+        entry_id: entry.id,
+        paid_amount: entry.paidAmount,
+        prize_pool_contribution: prizePoolContribution,
+        platform: purchaseUser.platform,
+        tx_hash: txHash,
+      },
     });
 
     return { success: true, entryId: entry.id };

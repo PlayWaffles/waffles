@@ -81,6 +81,7 @@ async function assignAutoQuestionsToGame(
     mediaUrl: string | null;
     soundUrl: string | null;
   }[],
+  countUsage: boolean,
 ) {
   await prisma.$transaction(async (tx) => {
     await tx.question.createMany({
@@ -98,14 +99,16 @@ async function assignAutoQuestionsToGame(
       })),
     });
 
-    await Promise.all(
-      templates.map((template) =>
-        tx.questionTemplate.update({
-          where: { id: template.id },
-          data: { usageCount: { increment: 1 } },
-        }),
-      ),
-    );
+    if (countUsage) {
+      await Promise.all(
+        templates.map((template) =>
+          tx.questionTemplate.update({
+            where: { id: template.id },
+            data: { usageCount: { increment: 1 } },
+          }),
+        ),
+      );
+    }
   });
 
   await recalculateGameRounds(gameId);
@@ -209,7 +212,7 @@ export async function createGameAction(
       await initGameRoom(game.id, game.startsAt, game.endsAt);
 
       if (selectedTemplates) {
-        await assignAutoQuestionsToGame(game.id, selectedTemplates);
+        await assignAutoQuestionsToGame(game.id, selectedTemplates, !game.isTestnet);
       }
 
       const txHash = await createGameOnChain(
