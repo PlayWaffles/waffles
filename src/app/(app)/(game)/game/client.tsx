@@ -1,9 +1,11 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
+import posthog from "posthog-js";
 import {
   QuestionMarkCircleIcon,
   ChevronRightIcon,
@@ -62,6 +64,21 @@ export function GameHub({ game }: GameHubProps) {
     const url = params.toString() ? `${pathname}?${params.toString()}` : pathname;
     router.replace(url, { scroll: false });
   };
+
+  // Track game lobby view
+  const hasTrackedView = useRef<string | null>(null);
+  useEffect(() => {
+    if (game && hasTrackedView.current !== game.id) {
+      hasTrackedView.current = game.id;
+      posthog.capture("game_viewed", {
+        game_id: game.id,
+        game_number: game.gameNumber,
+        theme: game.theme,
+        prize_pool: game.prizePool,
+        player_count: game.playerCount,
+      });
+    }
+  }, [game]);
 
   // Recovery: Check for pending purchases that failed to sync
   usePendingPurchaseRecovery(

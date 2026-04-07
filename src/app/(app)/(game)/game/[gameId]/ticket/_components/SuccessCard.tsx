@@ -36,7 +36,7 @@ export const SuccessCard = ({
 
       await shareTextOrCopy({
         title: "Waffles",
-        text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
+        text: `$${prizePool.toLocaleString()} prize pool. ${theme} trivia. I'm in — are you?\n\nGrab a ticket before it starts 🧇`,
         url: frameUrl,
       });
     } catch (error) {

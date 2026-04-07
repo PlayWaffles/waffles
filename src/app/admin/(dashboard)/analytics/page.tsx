@@ -627,6 +627,27 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
     const gpf = buildProductionEntryWhere(platform);
     const now = new Date();
 
+    const latestFiveEndedGames = await prisma.game.findMany({
+        where: {
+            ...gamePf,
+            endsAt: { lt: now },
+        },
+        orderBy: { endsAt: "desc" },
+        select: { id: true },
+        take: 5,
+    });
+    const latestFiveEndedGameIds = latestFiveEndedGames.map((game) => game.id);
+    const answeredPlayersAcrossLastFiveGames = latestFiveEndedGameIds.length > 0
+        ? await prisma.gameEntry.groupBy({
+            by: ["userId"],
+            where: {
+                ...gpf,
+                gameId: { in: latestFiveEndedGameIds },
+                answered: { gt: 0 },
+            },
+        }).then((rows) => rows.length)
+        : 0;
+
     const [
         entries,
         questionsRaw,
@@ -1192,6 +1213,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         leaveRate,
         winRate,
         avgScore: scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0,
+        answeredPlayersAcrossLastFiveGames,
         totalPlayers: entries.length,
         scoreDistribution,
         rankDistribution,
@@ -1623,13 +1645,14 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
     return (
         <div className="space-y-6">
             {/* Top-line gameplay KPIs */}
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <MiniStat label="Accuracy" value={`${data.avgAccuracy.toFixed(1)}%`} color="#14B985" tooltip="Correct answers divided by all submitted answers in the selected range." />
                 <MiniStat label="Avg Speed" value={`${(data.avgAnswerTime / 1000).toFixed(1)}s`} color="#00CFF2" tooltip="Average answer latency across all tracked answers in the selected range." />
                 <MiniStat label="Completion" value={`${data.completionRate.toFixed(1)}%`} color="#FFC931" tooltip="The share of paid entries that submitted at least one answer." />
                 <MiniStat label="Leave Rate" value={`${data.leaveRate.toFixed(1)}%`} color="#EF4444" tooltip="The share of paid entries that left the game before the session was over." />
                 <MiniStat label="Win Rate" value={`${data.winRate.toFixed(2)}%`} color="#FB72FF" tooltip="Rank-1 finishes divided by all ranked paid entries in the selected range." />
                 <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average score across the paid entries included in gameplay analysis." />
+                <MiniStat label="Answered / Last 5" value={data.answeredPlayersAcrossLastFiveGames.toLocaleString()} color="#14B985" tooltip="Unique players who answered at least one question across the latest 5 ended games, including both free and paid tickets." />
             </div>
 
             <div className="rounded-2xl border border-white/10 p-6 space-y-6">

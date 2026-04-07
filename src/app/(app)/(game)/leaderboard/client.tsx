@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
+import posthog from "posthog-js";
 
 import { Tabs, LeaderboardTabKey } from "./_components/Tabs";
 import { Top3 } from "./_components/Top3";
@@ -98,6 +99,12 @@ export default function LeaderboardClient() {
         setGameNumber(data.gameNumber ?? null);
         setPrevGameId(data.prevGameId);
         setNextGameId(data.nextGameId);
+        posthog.capture("leaderboard_viewed", {
+          tab: gameId ? "game" : activeTab,
+          game_id: gameId ?? undefined,
+          game_number: data.gameNumber,
+          total_players: data.totalPlayers,
+        });
       } else {
         setEntries(prev => [...prev, ...data.entries]);
       }

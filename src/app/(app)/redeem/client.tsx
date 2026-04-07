@@ -8,6 +8,7 @@ import { motion, useAnimation, AnimatePresence } from "framer-motion";
 import { useUser } from "@/hooks/useUser";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
 import { redeemInviteCodeAction, type ValidateReferralResult } from "@/actions/invite";
+import posthog from "posthog-js";
 import {
   shakeX,
   triggerShake,
@@ -89,6 +90,11 @@ export default function InvitePageClient() {
       setStatus("success");
       setError(null);
       playSound("codeValid");
+
+      posthog.capture("referral_redeemed", {
+        code: code.trim().toUpperCase(),
+        source: initialCode ? "url" : "manual",
+      });
 
       // Celebration animation on key
       keyControls.start({

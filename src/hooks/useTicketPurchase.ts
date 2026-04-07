@@ -20,6 +20,7 @@ import {
 } from "@/lib/chain";
 import { useCorrectChain } from "./useCorrectChain";
 import { useUser } from "./useUser";
+import posthog from "posthog-js";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import { wagmiConfig } from "@/lib/wagmi/config";
@@ -328,6 +329,14 @@ export function useTicketPurchase(
     }
 
     setState({ step: "pending" });
+
+    posthog.capture("ticket_purchase_started", {
+      game_id: gameId,
+      platform,
+      network,
+      price,
+      needs_approval: needsApproval,
+    });
 
     try {
       await ensureCorrectChain();

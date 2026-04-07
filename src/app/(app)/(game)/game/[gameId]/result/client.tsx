@@ -26,6 +26,7 @@ import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
 import { useUser } from "@/hooks/useUser";
 import { shareTextOrCopy } from "@/lib/share";
 import { authenticatedFetch } from "@/lib/client/runtime";
+import posthog from "posthog-js";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain";
 
@@ -318,8 +319,8 @@ export default function ResultPageClient({
       });
       const embedUrl = `${env.rootUrl}/game/${gameId}/result?${shareParams.toString()}`;
       const shareText = hasPrize
-        ? `Just won $${userScore.prize.toLocaleString()} on Waffles! 🧇🏆`
-        : `Just scored ${userScore.score.toLocaleString()} points on Waffles #${String(gameNumber).padStart(3, "0")}! 🧇`;
+        ? `Just took home $${userScore.prize.toLocaleString()} from Waffles #${String(gameNumber).padStart(3, "0")} 🏆\n\nThink you can beat me? Next game is waiting 🧇`
+        : `${userScore.score.toLocaleString()} pts on Waffles #${String(gameNumber).padStart(3, "0")} — not bad for a few minutes of trivia\n\nCome try to top it 🧇`;
 
       const result = await shareTextOrCopy({
         title: "Waffles",
@@ -330,6 +331,14 @@ export default function ResultPageClient({
       if (result.shared || result.copied) {
         playSound("purchase");
         notify.success(result.shared ? "Shared to Farcaster! 🎉" : "Result link copied!");
+        posthog.capture("score_shared", {
+          game_id: gameId,
+          game_number: gameNumber,
+          score: userScore.score,
+          prize: userScore.prize,
+          has_prize: hasPrize,
+          method: result.shared ? "share" : "copy",
+        });
       } else {
         notify.info("Share cancelled");
       }
@@ -401,6 +410,12 @@ export default function ResultPageClient({
           refetchEntry();
           playSound("purchase");
           notify.success("Prize claimed! 🎉");
+          posthog.capture("prize_claimed", {
+            game_id: gameId,
+            game_number: gameNumber,
+            prize_amount: userScore?.prize,
+            tx_hash: txHash,
+          });
           return;
         }
 
@@ -502,6 +517,12 @@ export default function ResultPageClient({
 
     setClaimState("fetching");
     setClaimError(null);
+
+    posthog.capture("prize_claim_started", {
+      game_id: gameId,
+      game_number: gameNumber,
+      prize_amount: userScore?.prize,
+    });
 
     try {
       // 1. Fetch merkle proof

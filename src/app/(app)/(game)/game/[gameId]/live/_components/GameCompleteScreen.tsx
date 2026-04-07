@@ -11,6 +11,7 @@ import { env } from "@/lib/env";
 import { FlashIcon } from "@/components/icons";
 import { shareTextOrCopy } from "@/lib/share";
 import { useUser } from "@/hooks/useUser";
+import posthog from "posthog-js";
 
 interface GameCompleteScreenProps {
     score: number;
@@ -45,11 +46,20 @@ export default function GameCompleteScreen({
             });
             const embedUrl = `${env.rootUrl}/game/${gameId}/result?${shareParams.toString()}`;
 
-            await shareTextOrCopy({
+            const result = await shareTextOrCopy({
                 title: "Waffles",
-                text: `I scored ${score.toLocaleString()} points in Waffles #${String(gameNumber).padStart(3, "0")}! 🧇`,
+                text: `Just dropped ${score.toLocaleString()} pts in Waffles #${String(gameNumber).padStart(3, "0")} 🧇\n\nLive trivia, real prizes — who's next?`,
                 url: embedUrl,
             });
+            if (result.shared || result.copied) {
+                posthog.capture("score_shared", {
+                    game_id: gameId,
+                    game_number: gameNumber,
+                    score,
+                    method: result.shared ? "share" : "copy",
+                    source: "game_complete",
+                });
+            }
         } catch (e) {
             console.error("Share failed:", e);
         }

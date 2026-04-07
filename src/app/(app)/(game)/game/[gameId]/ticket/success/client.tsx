@@ -16,6 +16,7 @@ import {
 } from "@/lib/calendar";
 import posthog from "posthog-js";
 import { shareTextOrCopy } from "@/lib/share";
+
 import { useUser } from "@/hooks/useUser";
 
 interface TicketSuccessClientProps {
@@ -91,12 +92,20 @@ export function TicketSuccessClient({
         const url = getGoogleCalendarUrl(calendarEvent);
         window.open(url, "_blank", "noopener,noreferrer");
         setShowCalendarOptions(false);
-    }, [calendarEvent]);
+        posthog.capture("calendar_added", {
+            game_id: gameId,
+            provider: "google",
+        });
+    }, [calendarEvent, gameId]);
 
     const handleAddToApple = useCallback(() => {
         downloadICS(calendarEvent);
         setShowCalendarOptions(false);
-    }, [calendarEvent]);
+        posthog.capture("calendar_added", {
+            game_id: gameId,
+            provider: "apple",
+        });
+    }, [calendarEvent, gameId]);
 
     const shareTicket = useCallback(async () => {
         try {
@@ -112,7 +121,7 @@ export function TicketSuccessClient({
 
             const result = await shareTextOrCopy({
                 title: "Waffles",
-                text: `I just joined the next Waffles game! 🧇\n\nTheme: ${theme}\nPrize Pool: $${prizePool.toLocaleString()}\n\nJoin me!`,
+                text: `$${prizePool.toLocaleString()} prize pool. ${theme} trivia. I'm in — are you?\n\nGrab a ticket before it starts 🧇`,
                 url: frameUrl,
             });
 

@@ -12,6 +12,7 @@
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { track } from "@vercel/analytics";
+import posthog from "posthog-js";
 import { useTimer } from "@/hooks/useTimer";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { playSound, stopAllAudio } from "@/lib/sounds";
@@ -450,6 +451,12 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
         questionCount: game.questions.length,
         theme: game.theme,
       });
+      posthog.capture("game_play_started", {
+        game_id: game.id,
+        game_number: game.gameNumber,
+        question_count: game.questions.length,
+        theme: game.theme,
+      });
     }
 
     setCurrentQuestionIndex(firstUnansweredIdx);
@@ -499,6 +506,17 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
         speedTier,
         feedback,
         pointsEarned: result.pointsEarned,
+      });
+
+      posthog.capture("question_answered", {
+        game_id: game.id,
+        game_number: game.gameNumber,
+        question_index: currentQuestionIndex,
+        is_correct: isCorrect,
+        time_taken_ms: timeMs,
+        speed_tier: speedTier,
+        points_earned: result.pointsEarned,
+        streak: newStreak,
       });
 
       setIsSubmitting(false);
