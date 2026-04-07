@@ -1,6 +1,6 @@
 import { UserPlatform } from "@prisma";
 import { excludesTestnet, gamePlatformsForPlatform } from "@/lib/platform/query";
-import { env } from "@/lib/env";
+import { isLocalDevelopmentDeployment } from "@/lib/deployment";
 
 export type PlatformWhere = { platform: UserPlatform } | Record<string, never>;
 export const PLATFORM_FEE_RATE = 0.2;
@@ -18,8 +18,7 @@ export function buildGamePlatformWhere(platform?: string) {
 }
 
 export function buildAdminGameWhere(platform?: string) {
-    const prefersTestnetGames =
-        process.env.NODE_ENV !== "production" && env.rootUrl.includes("localhost");
+    const prefersTestnetGames = isLocalDevelopmentDeployment();
     const pf = buildPlatformWhere(platform);
     if (pf.platform) {
         const platforms = gamePlatformsForPlatform(pf.platform);

@@ -1,9 +1,9 @@
 import type { UserPlatform } from "@prisma";
 import type { Prisma } from "@prisma";
-import { env } from "@/lib/env";
+import { isLocalDevelopmentDeployment } from "@/lib/deployment";
 
 function prefersTestnetGames() {
-  return process.env.NODE_ENV !== "production" && env.rootUrl.includes("localhost");
+  return isLocalDevelopmentDeployment();
 }
 
 export function sharesBaseMainnetGames(platform: UserPlatform): boolean {
