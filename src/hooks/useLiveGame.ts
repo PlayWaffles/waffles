@@ -11,6 +11,7 @@
  */
 
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { track } from "@vercel/analytics";
 import { useTimer } from "@/hooks/useTimer";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { playSound, stopAllAudio } from "@/lib/sounds";
@@ -98,6 +99,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 
   // Track if initial entry fetch is complete (determines when we can pick starting phase)
   const [entryLoaded, setEntryLoaded] = useState(false);
+  const hasTrackedPlayStartRef = useRef(false);
 
   // Fetch entry from server using the authenticated session
   const refetchEntry = useCallback(async () => {
@@ -440,10 +442,20 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       return;
     }
 
+    if (!hasTrackedPlayStartRef.current) {
+      hasTrackedPlayStartRef.current = true;
+      track("game_play_started", {
+        gameId: game.id,
+        gameNumber: game.gameNumber,
+        questionCount: game.questions.length,
+        theme: game.theme,
+      });
+    }
+
     setCurrentQuestionIndex(firstUnansweredIdx);
     setMediaReady(false);
     setPhase("question");
-  }, [phase, game.questions, answeredIds, isGameEnded]);
+  }, [phase, game.id, game.gameNumber, game.questions, game.theme, answeredIds, isGameEnded]);
 
   const submitAnswer = useCallback(
     async (selectedIndex: number) => {

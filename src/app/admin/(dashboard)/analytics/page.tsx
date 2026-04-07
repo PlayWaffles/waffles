@@ -75,6 +75,13 @@ interface RevenueEntryWithGame {
     };
 }
 
+interface GameScoreAggregate {
+    gameId: string;
+    _avg: {
+        score: number | null;
+    };
+}
+
 const FREE_TICKET_SOURCES = [
     TicketPurchaseSource.FREE_ADMIN,
     TicketPurchaseSource.FREE_PLAYER,
@@ -135,6 +142,34 @@ function summarizeRevenueByGame(entries: RevenueEntryWithGame[]) {
         .sort((a, b) => b.revenue - a.revenue);
 }
 
+function attachAverageScores<
+    T extends {
+        id: string;
+        title: string;
+        theme: string;
+        playerCount: number;
+        ticketCount: number;
+        revenue: number;
+        startsAt: Date;
+        endsAt: Date;
+    },
+>(games: T[], scoreAggregates: GameScoreAggregate[]) {
+    const scoreMap = new Map(
+        scoreAggregates.map((row) => [row.gameId, row._avg.score ?? 0]),
+    );
+
+    return games.map((game) => ({
+        id: game.id,
+        title: game.title,
+        theme: game.theme,
+        status: getGamePhase(game),
+        playerCount: game.playerCount,
+        ticketCount: game.ticketCount,
+        revenue: game.revenue,
+        avgScore: scoreMap.get(game.id) ?? 0,
+    }));
+}
+
 // ============================================================
 // 1. CORE DASHBOARD (The "first dashboard" metrics)
 // ============================================================
@@ -190,6 +225,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         dailySignups,
         // Revenue entries for chart + summaries
         revenueEntries,
+        gameScoreAverages,
     ] = await Promise.all([
         // Active players in period
         prisma.user.count({
@@ -286,6 +322,11 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
                 },
             },
         }),
+        prisma.gameEntry.groupBy({
+            by: ["gameId"],
+            where: { ...claimedTicketWhere, answered: { gt: 0 } },
+            _avg: { score: true },
+        }),
     ]);
 
     // Compute average answer speed from JSON
@@ -377,16 +418,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         // Chart data
         revenueChartData,
         // Game performance table
-        gamePerformance: gamesWithRevenue.map((g) => ({
-            id: g.id,
-            title: g.title,
-            theme: g.theme,
-            status: getGamePhase(g),
-            playerCount: g.playerCount,
-            ticketCount: g.ticketCount,
-            revenue: g.revenue,
-            avgScore: 0,
-        })),
+        gamePerformance: attachAverageScores(gamesWithRevenue, gameScoreAverages),
     };
 }
 
@@ -735,6 +767,36 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         string,
         Array<{ text: string; createdAt: Date; username: string; gameId: string }>
     >();
+    const dbChatsInRange = await prisma.chat.findMany({
+        where: {
+            gameId: { in: gamesInRange.map((game) => game.id) },
+        },
+        orderBy: { createdAt: "asc" },
+        select: {
+            gameId: true,
+            text: true,
+            createdAt: true,
+            user: {
+                select: {
+                    username: true,
+                },
+            },
+        },
+    });
+    const dbChatsByGame = new Map<
+        string,
+        Array<{ text: string; createdAt: Date; username: string; gameId: string }>
+    >();
+    for (const chat of dbChatsInRange) {
+        const existing = dbChatsByGame.get(chat.gameId) ?? [];
+        existing.push({
+            text: chat.text,
+            createdAt: chat.createdAt,
+            username: chat.user.username ?? "Unknown",
+            gameId: chat.gameId,
+        });
+        dbChatsByGame.set(chat.gameId, existing);
+    }
     const storedChatResults = await Promise.all(
         gamesInRange.map(async (game) => ({
             gameId: game.id,
@@ -750,14 +812,18 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         ]),
     );
     for (const result of storedChatResults) {
-        chatsByGame.set(
-            result.gameId,
-            result.messages.map((message) => ({
+        const fallbackMessages = dbChatsByGame.get(result.gameId) ?? [];
+        const messages = result.messages.length > 0
+            ? result.messages.map((message) => ({
                 text: message.text,
                 createdAt: new Date(message.ts),
                 username: message.username,
                 gameId: result.gameId,
-            })),
+            }))
+            : fallbackMessages;
+        chatsByGame.set(
+            result.gameId,
+            messages,
         );
     }
 
@@ -915,12 +981,16 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
 
     // Score distribution
     const scoreBuckets = [
-        { range: "0-100", min: 0, max: 100 },
-        { range: "101-300", min: 101, max: 300 },
-        { range: "301-500", min: 301, max: 500 },
-        { range: "501-700", min: 501, max: 700 },
-        { range: "701-900", min: 701, max: 900 },
-        { range: "901+", min: 901, max: Infinity },
+        { range: "0-9,999", min: 0, max: 9_999 },
+        { range: "10k-19k", min: 10_000, max: 19_999 },
+        { range: "20k-29k", min: 20_000, max: 29_999 },
+        { range: "30k-39k", min: 30_000, max: 39_999 },
+        { range: "40k-49k", min: 40_000, max: 49_999 },
+        { range: "50k-59k", min: 50_000, max: 59_999 },
+        { range: "60k-69k", min: 60_000, max: 69_999 },
+        { range: "70k-79k", min: 70_000, max: 79_999 },
+        { range: "80k-89k", min: 80_000, max: 89_999 },
+        { range: "90k+", min: 90_000, max: Infinity },
     ];
     const scoreDistribution = scoreBuckets.map(({ range, min, max }) => ({
         range,
@@ -1233,6 +1303,7 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         unclaimedPrizeAmount,
         // Daily breakdown
         dailyEntries,
+        topGameScoreAverages,
         // Lifetime value
         lifetimeRevenue,
     ] = await Promise.all([
@@ -1262,6 +1333,21 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
                     },
                 },
             },
+        }),
+        prisma.gameEntry.groupBy({
+            by: ["gameId"],
+            where: {
+                ...gpf,
+                answered: { gt: 0 },
+                OR: [
+                    { paidAt: { not: null, gte: start, lte: end } },
+                    {
+                        purchaseSource: { in: [...FREE_TICKET_SOURCES] },
+                        createdAt: { gte: start, lte: end },
+                    },
+                ],
+            },
+            _avg: { score: true },
         }),
         prisma.gameEntry.aggregate({ where: { paidAt: { not: null }, ...gpf }, _sum: { paidAmount: true } }),
     ]);
@@ -1321,16 +1407,7 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         totalPrizesClaimed: totalPrizesClaimed._sum.prize || 0,
         unclaimedPrizes: unclaimedPrizeAmount._sum.prize || 0,
         chartData,
-        topGames: topGames.map((g) => ({
-            id: g.id,
-            title: g.title,
-            theme: g.theme,
-            status: getGamePhase(g),
-            playerCount: g.playerCount,
-            ticketCount: g.ticketCount,
-            revenue: g.revenue,
-            avgScore: 0,
-        })),
+        topGames: attachAverageScores(topGames, topGameScoreAverages),
         sparkline: chartData.slice(-7).map((d) => d.revenue),
     };
 }

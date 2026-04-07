@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
 import { verifyMessage } from "viem";
 import { createClient as createQuickAuthClient } from "@farcaster/quick-auth";
+import { track } from "@vercel/analytics/server";
 
 // Module-level singleton — avoids re-initialization per request
 const farcasterAuthClient = createQuickAuthClient();
@@ -144,13 +145,22 @@ async function ensureUser(
 
   for (let i = 0; i < MAX_RETRIES; i++) {
     try {
-      return await prisma.user.create({
+      const user = await prisma.user.create({
         data: {
           ...createData,
           inviteCode: generateInviteCode(),
         } as Prisma.UserCreateInput,
         select: USER_PROFILE_SELECT,
       });
+
+      void track("signup_completed", {
+        userId: user.id,
+        platform: user.platform,
+        hasWallet: Boolean(user.wallet),
+        hasFid: Boolean(user.fid),
+      }).catch(() => {});
+
+      return user;
     } catch (error) {
       const isInviteCodeCollision =
         error instanceof Prisma.PrismaClientKnownRequestError &&
