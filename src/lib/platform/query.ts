@@ -1,5 +1,10 @@
 import type { UserPlatform } from "@prisma";
 import type { Prisma } from "@prisma";
+import { env } from "@/lib/env";
+
+function prefersTestnetGames() {
+  return env.rootUrl.includes("localhost");
+}
 
 export function sharesBaseMainnetGames(platform: UserPlatform): boolean {
   return platform === "FARCASTER" || platform === "BASE_APP";
@@ -12,7 +17,7 @@ export function gamePlatformsForPlatform(platform: UserPlatform): UserPlatform[]
 }
 
 export function excludesTestnet(platform: UserPlatform): boolean {
-  return sharesBaseMainnetGames(platform);
+  return sharesBaseMainnetGames(platform) && !prefersTestnetGames();
 }
 
 export function isGameVisibleToPlatform(
@@ -30,9 +35,11 @@ export function gameWhere(platform: UserPlatform): Prisma.GameWhereInput {
   const platforms = gamePlatformsForPlatform(platform);
   const platformWhere =
     platforms.length === 1 ? { platform } : { platform: { in: platforms } };
-  return excludesTestnet(platform)
-    ? { ...platformWhere, isTestnet: false }
-    : platformWhere;
+  if (sharesBaseMainnetGames(platform) && prefersTestnetGames()) {
+    return { ...platformWhere, isTestnet: true };
+  }
+
+  return excludesTestnet(platform) ? { ...platformWhere, isTestnet: false } : platformWhere;
 }
 
 /** Prisma where fragment: scope a GameEntry query to a platform's games */

@@ -1,5 +1,6 @@
 import { UserPlatform } from "@prisma";
 import { excludesTestnet, gamePlatformsForPlatform } from "@/lib/platform/query";
+import { env } from "@/lib/env";
 
 export type PlatformWhere = { platform: UserPlatform } | Record<string, never>;
 export const PLATFORM_FEE_RATE = 0.2;
@@ -17,14 +18,28 @@ export function buildGamePlatformWhere(platform?: string) {
 }
 
 export function buildProductionGameWhere(platform?: string) {
+    const prefersTestnetGames = env.rootUrl.includes("localhost");
     const pf = buildPlatformWhere(platform);
     if (pf.platform) {
         const platforms = gamePlatformsForPlatform(pf.platform);
         const platformWhere =
             platforms.length === 1 ? { platform: pf.platform } : { platform: { in: platforms } };
+        if (prefersTestnetGames && (pf.platform === UserPlatform.FARCASTER || pf.platform === UserPlatform.BASE_APP)) {
+            return { ...platformWhere, isTestnet: true };
+        }
         return excludesTestnet(pf.platform)
             ? { ...platformWhere, isTestnet: false }
             : platformWhere;
+    }
+
+    if (prefersTestnetGames) {
+        return {
+            OR: [
+                { platform: UserPlatform.MINIPAY },
+                { platform: UserPlatform.FARCASTER, isTestnet: true },
+                { platform: UserPlatform.BASE_APP, isTestnet: true },
+            ],
+        };
     }
 
     return {

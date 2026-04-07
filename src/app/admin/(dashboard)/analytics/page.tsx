@@ -39,6 +39,7 @@ import {
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
 import { getStoredChatHistory } from "@/lib/partykit";
+import { TicketPurchaseSource } from "@prisma";
 
 // ============================================================
 // HELPERS
@@ -71,6 +72,28 @@ interface RevenueEntryWithGame {
         playerCount: number;
         startsAt: Date;
         endsAt: Date;
+    };
+}
+
+const FREE_TICKET_SOURCES = [
+    TicketPurchaseSource.FREE_ADMIN,
+    TicketPurchaseSource.FREE_PLAYER,
+] as const;
+
+function buildClaimedTicketWhere(
+    start: Date,
+    end: Date,
+    gpf: Record<string, unknown>,
+) {
+    return {
+        ...gpf,
+        OR: [
+            { paidAt: { not: null, gte: start, lte: end } },
+            {
+                purchaseSource: { in: [...FREE_TICKET_SOURCES] },
+                createdAt: { gte: start, lte: end },
+            },
+        ],
     };
 }
 
@@ -123,6 +146,8 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
+    const claimedTicketWhere = buildClaimedTicketWhere(start, end, gpf);
+    const previousClaimedTicketWhere = buildClaimedTicketWhere(previousStart, start, gpf);
 
     // Helper to build date range for daily aggregation
     const buildDailyMap = (startDate: Date, endDate: Date) => {
@@ -144,17 +169,17 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         // Total signups vs onboarded (hasGameAccess)
         totalSignups,
         onboardedUsers,
-        // Purchase activation
+        // Ticket activation
         totalGamesInPeriod,
         totalEntriesInPeriod,
         previousEntriesInPeriod,
-        // Purchase → completion (answered > 0)
+        // Ticket claim → completion (answered > 0)
         completedEntries,
         // Entries with leftAt set (left during game)
         leftEntries,
-        // New users who reached first purchase in period
+        // New users who reached first ticket in period
         activatedUsers,
-        // Average score across all entries
+        // Average score across all ticketed entries
         avgScoreResult,
         // Average answer speed (need to compute from JSON)
         entriesWithAnswers,
@@ -207,13 +232,13 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         // Games in period
         prisma.game.count({ where: { ...gamePf, startsAt: { gte: start, lte: end } } }),
         // Total entries (ticket purchases) in period
-        prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, ...gpf } }),
+        prisma.gameEntry.count({ where: claimedTicketWhere }),
         // Previous period entries
-        prisma.gameEntry.count({ where: { paidAt: { not: null, gte: previousStart, lt: start }, ...gpf } }),
+        prisma.gameEntry.count({ where: previousClaimedTicketWhere }),
         // Completed entries (answered at least 1 question)
-        prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, answered: { gt: 0 }, ...gpf } }),
+        prisma.gameEntry.count({ where: { ...claimedTicketWhere, answered: { gt: 0 } } }),
         // Left entries
-        prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, leftAt: { not: null }, ...gpf } }),
+        prisma.gameEntry.count({ where: { ...claimedTicketWhere, leftAt: { not: null } } }),
         // D1: new users in period who also have an entry
         prisma.user.count({
             where: {
@@ -224,12 +249,12 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         }),
         // Average score
         prisma.gameEntry.aggregate({
-            where: { paidAt: { not: null, gte: start, lte: end }, answered: { gt: 0 }, ...gpf },
+            where: { ...claimedTicketWhere, answered: { gt: 0 } },
             _avg: { score: true },
         }),
         // Entries with answers for speed computation
         prisma.gameEntry.findMany({
-            where: { paidAt: { not: null, gte: start, lte: end }, answered: { gt: 0 }, ...gpf },
+            where: { ...claimedTicketWhere, answered: { gt: 0 } },
             select: { answers: true },
             take: 5000,
         }),
@@ -1417,7 +1442,7 @@ function OverviewTab({
                 <KPICard
                     title="Purchase → Play"
                     value={`${data.purchaseToCompletionRate.toFixed(1)}%`}
-                    tooltip="The share of paid entries that answered at least one question. This shows how many buyers actually engage after checkout."
+                    tooltip="The share of claimed tickets, free or paid, that answered at least one question. This shows how many ticketed players actually engage after entry."
                     icon={<ArrowTrendingUpIcon className="h-5 w-5 text-[#FB72FF]" />}
                     subtitle={`${data.leaveRate.toFixed(1)}% leave rate`}
                     glowVariant="pink"
@@ -1441,7 +1466,7 @@ function OverviewTab({
 
             {/* Secondary KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average final score across paid entries with answer data in the selected range." />
+                <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average final score across ticketed entries, free or paid, with answer data in the selected range." />
                 <MiniStat label="Avg Answer Speed" value={`${(data.avgAnswerSpeed / 1000).toFixed(1)}s`} color="#00CFF2" tooltip="Average time taken to answer a question, based on stored per-answer latency in milliseconds." />
                 <MiniStat label="Fee / Game" value={`$${data.revenuePerGame.toFixed(2)}`} color="#14B985" tooltip="Average protocol revenue generated per ended game in the selected range." />
                 <MiniStat label="Claim Rate" value={`${data.claimRate.toFixed(1)}%`} color="#FB72FF" tooltip="The share of prize-winning entries that have already claimed their payouts." />
