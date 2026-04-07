@@ -40,7 +40,7 @@ export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigate
     <motion.div
       initial={{ y: 10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="inline-flex justify-center gap-2 items-center"
+      className="flex w-full items-center gap-2"
       role="tablist"
     >
       {/* Prev game arrow */}
@@ -65,8 +65,8 @@ export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigate
               onClick={() => handleTabChange(key)}
               tabIndex={isActive ? 0 : -1}
               variant={isActive ? "filled" : "outline"}
-              width={140}
-              height={40}
+              width={168}
+              height={44}
             >
               {label}
             </PixelButton>

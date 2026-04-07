@@ -166,15 +166,15 @@ export default function LeaderboardClient() {
       <motion.header
         initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="sticky top-0 z-30 -mx-3 px-3 pt-8 pb-6"
+        className="sticky top-0 z-30 -mx-3 px-3 pt-2 pb-6"
         style={{
           background: isSticky
             ? "linear-gradient(to bottom, #0A0A0C 0%, #0A0A0C 70%, transparent 100%)"
-            : "linear-gradient(to bottom, transparent 0%, #0A0A0C 30%, #0A0A0C 70%, transparent 100%)",
+            : "transparent",
         }}
       >
         <h1 className="text-center font-body text-[36px] tracking-[1px]">LEADERBOARD</h1>
-        <div className="mt-4 flex justify-center">
+        <div className="mt-4">
           <Tabs
             activeTab={activeTab}
             gameNumber={gameNumber}
