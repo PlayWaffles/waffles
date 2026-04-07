@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { ChevronLeftIcon, ChevronRightIcon } from "@heroicons/react/24/outline";
 import { PixelButton } from "@/components/ui/PixelButton";
@@ -19,6 +19,25 @@ interface TabsProps {
 export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigateGame }: TabsProps) {
   const router = useRouter();
   const pathname = usePathname();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [buttonWidth, setButtonWidth] = useState(148);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const measure = () => {
+      const arrowSpace = activeTab === "current" ? 72 : 0; // 2 arrows ~36px each
+      const gap = 8; // gap-2
+      const available = el.clientWidth - arrowSpace - gap;
+      // Round down to nearest 4 (PixelButton grid requirement)
+      const perButton = Math.floor(available / 2 / 4) * 4;
+      setButtonWidth(Math.max(120, Math.min(perButton, 180)));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [activeTab]);
 
   const currentLabel = gameNumber
     ? `WAFFLES #${gameNumber.toString().padStart(3, "0")}`
@@ -38,9 +57,10 @@ export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigate
 
   return (
     <motion.div
+      ref={containerRef}
       initial={{ y: 10, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      className="flex w-full items-center gap-2"
+      className="flex w-full items-center justify-center gap-2"
       role="tablist"
     >
       {/* Prev game arrow */}
@@ -65,7 +85,7 @@ export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigate
               onClick={() => handleTabChange(key)}
               tabIndex={isActive ? 0 : -1}
               variant={isActive ? "filled" : "outline"}
-              width={168}
+              width={buttonWidth}
               height={44}
             >
               {label}

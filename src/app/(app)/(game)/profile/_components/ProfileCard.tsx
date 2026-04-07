@@ -27,7 +27,7 @@ export function ProfileCard({
       }}
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.995 }}
-      className="relative box-border flex flex-col items-center p-3 gap-3 w-full max-w-[361px] h-[152px] mx-auto overflow-hidden group"
+      className="relative box-border flex flex-col items-center p-3 gap-3 w-full h-[152px] overflow-hidden group"
       style={{
         borderRadius: "16px",
         border: "1px solid rgba(255, 255, 255, 0.08)",
