@@ -56,7 +56,33 @@ describe("Prize Distribution Algorithm", () => {
     expect(result.allocations[0].tier).toBe("podium");
   });
 
-  it("uses the top-3 bracket for 2-9 paid entrants", () => {
+  it("uses winner-take-all for up to four paid entrants", () => {
+    const result = calculatePrizeDistribution(createPlayers(4), 4);
+    const winners = result.allocations.filter((allocation) => allocation.prize > 0);
+
+    expect(winners).toHaveLength(1);
+    expect(winners[0].prize).toBeCloseTo(3.2, 6);
+  });
+
+  it("uses the top-3 bracket for 5-9 paid entrants", () => {
+    const result = calculatePrizeDistribution(createPlayers(5), 5);
+    const winners = result.allocations.filter((allocation) => allocation.prize > 0);
+
+    expect(winners).toHaveLength(3);
+    expect(winners[0].prize).toBeCloseTo(2, 6);
+    expect(winners[1].prize).toBeCloseTo(1.2, 6);
+    expect(winners[2].prize).toBeCloseTo(0.8, 6);
+  });
+
+  it("keeps a single winner when only two paid entrants exist", () => {
+    const result = calculatePrizeDistribution(createPlayers(2), 2);
+    const winners = result.allocations.filter((allocation) => allocation.prize > 0);
+
+    expect(winners).toHaveLength(1);
+    expect(winners[0].prize).toBeCloseTo(1.6, 6);
+  });
+
+  it("still pays three winners for larger small-bracket games", () => {
     const result = calculatePrizeDistribution(createPlayers(9), 9);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
 
@@ -64,15 +90,6 @@ describe("Prize Distribution Algorithm", () => {
     expect(winners[0].prize).toBeCloseTo(3.6, 6);
     expect(winners[1].prize).toBeCloseTo(2.16, 6);
     expect(winners[2].prize).toBeCloseTo(1.44, 6);
-  });
-
-  it("normalizes the top-3 bracket when only two paid entrants exist", () => {
-    const result = calculatePrizeDistribution(createPlayers(2), 2);
-    const winners = result.allocations.filter((allocation) => allocation.prize > 0);
-
-    expect(winners).toHaveLength(2);
-    expect(winners[0].prize).toBeCloseTo(1 * (0.5 / 0.8), 6);
-    expect(winners[1].prize).toBeCloseTo(1 * (0.3 / 0.8), 6);
   });
 
   it("uses the top-5 bracket for 10-39 paid entrants", () => {

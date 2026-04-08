@@ -5,8 +5,8 @@
  * number of paid entrants. A 20% platform fee is deducted before distribution.
  *
  * Brackets:
- * - 1 paid entrant: top 1 gets 100%
- * - 2-9 paid entrants: top 3 get 50% / 30% / 20%
+ * - 1-4 paid entrants: top 1 gets 100%
+ * - 5-9 paid entrants: top 3 get 50% / 30% / 20%
  * - 10-39 paid entrants: top 5 get 50% / 20% / 15% / 7.5% / 7.5%
  * - 40+ paid entrants: top 10 get
  *   50% / 15% / 10% / 5% / 5% / 3% / 3% / 2% / 2% / 2%
@@ -132,7 +132,7 @@ export function calculatePrizeDistribution(
 // ============================================================================
 
 function getScheduleForPaidEntrants(paidEntrants: number): number[] {
-  if (paidEntrants <= 1) return [...BRACKET_SCHEDULES.solo];
+  if (paidEntrants <= 4) return [...BRACKET_SCHEDULES.solo];
   if (paidEntrants < 10) return [...BRACKET_SCHEDULES.small];
   if (paidEntrants < 40) return [...BRACKET_SCHEDULES.medium];
   return [...BRACKET_SCHEDULES.large];
