@@ -426,12 +426,19 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
 // 2. RETENTION ANALYTICS
 // ============================================================
 
-async function getRetentionData(start: Date, end: Date, platform?: string) {
+async function getRetentionData(
+    start: Date,
+    end: Date,
+    platform?: string,
+    range?: string,
+) {
     const now = new Date();
+    const isAllTime = range === "all";
     const pf = buildPlatformWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
 
     const [
+        lifetimeUsers,
         // DAU / WAU / MAU
         dauUsers,
         wauUsers,
@@ -447,6 +454,7 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         // Users with last session info
         usersWithLastEntry,
     ] = await Promise.all([
+        prisma.user.count({ where: pf }),
         // DAU: unique users with paid entry in last 24h
         prisma.user.count({
             where: {
@@ -562,6 +570,19 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
     ).length;
     const repeatTicketUsersFree = Math.max(repeatBuyers - repeatTicketUsersPaid, 0);
 
+    const playerBaseTotal = isAllTime ? lifetimeUsers : newPlayersInPeriod + returningPlayers;
+    const resolvedNewPlayers = isAllTime ? lifetimeUsers : newPlayersInPeriod;
+    const resolvedReturningPlayers = isAllTime ? repeatBuyers : returningPlayers;
+    const resolvedReturningPlayersWithTicket = isAllTime
+        ? repeatBuyers
+        : returningPlayersWithTicket;
+    const resolvedReturningPlayersWithTicketPaid = isAllTime
+        ? repeatTicketUsersPaid
+        : returningPlayersWithTicketPaid;
+    const resolvedReturningPlayersWithTicketFree = isAllTime
+        ? repeatTicketUsersFree
+        : returningPlayersWithTicketFree;
+
     // Streak distribution buckets
     const streakBuckets = [
         { range: "1", min: 1, max: 1 },
@@ -600,14 +621,16 @@ async function getRetentionData(start: Date, end: Date, platform?: string) {
         wau: wauUsers,
         mau: mauUsers,
         dauWauRatio: wauUsers > 0 ? ((dauUsers / wauUsers) * 100) : 0,
-        newPlayers: newPlayersInPeriod,
+        isAllTime,
+        playerBaseTotal,
+        newPlayers: resolvedNewPlayers,
         newPlayersWithTicket: newPlayersWithEntries,
         newPlayersWithTicketPaid,
         newPlayersWithTicketFree,
-        returningPlayers,
-        returningPlayersWithTicket,
-        returningPlayersWithTicketPaid,
-        returningPlayersWithTicketFree,
+        returningPlayers: resolvedReturningPlayers,
+        returningPlayersWithTicket: resolvedReturningPlayersWithTicket,
+        returningPlayersWithTicketPaid: resolvedReturningPlayersWithTicketPaid,
+        returningPlayersWithTicketFree: resolvedReturningPlayersWithTicketFree,
         repeatBuyerRate,
         repeatBuyers,
         totalBuyers,
@@ -1468,7 +1491,13 @@ export default async function AnalyticsPage({
             <AnalyticsTabs currentTab={activeTab} />
 
             <Suspense fallback={<AnalyticsSkeleton />}>
-                <AnalyticsContent start={start} end={end} activeTab={activeTab} platform={platform} />
+                <AnalyticsContent
+                    start={start}
+                    end={end}
+                    activeTab={activeTab}
+                    platform={platform}
+                    range={range || "7d"}
+                />
             </Suspense>
         </div>
     );
@@ -1479,16 +1508,18 @@ async function AnalyticsContent({
     end,
     activeTab,
     platform,
+    range,
 }: {
     start: Date;
     end: Date;
     activeTab: AnalyticsTab;
     platform?: string;
+    range: string;
 }) {
     if (activeTab === "overview") {
         const [data, retention] = await Promise.all([
             getCoreDashboard(start, end, platform),
-            getRetentionData(start, end, platform),
+            getRetentionData(start, end, platform, range),
         ]);
         return <OverviewTab data={data} retention={retention} />;
     }
@@ -1499,7 +1530,7 @@ async function AnalyticsContent({
     if (activeTab === "players") {
         const [revenue, retention] = await Promise.all([
             getRevenueData(start, end, platform),
-            getRetentionData(start, end, platform),
+            getRetentionData(start, end, platform, range),
         ]);
         return <RevenueRetentionTab revenue={revenue} retention={retention} />;
     }
@@ -1593,25 +1624,45 @@ function OverviewTab({
                     </div>
                 </div>
                 <div className="space-y-3">
-                    <RetentionBar label="New Players" value={retention.newPlayers} total={retention.newPlayers + retention.returningPlayers} color="#14B985" tooltip="Users created in the selected range who were also active during that same range." />
+                    <RetentionBar
+                        label="New Players"
+                        value={retention.newPlayers}
+                        total={retention.playerBaseTotal}
+                        color="#14B985"
+                        tooltip={retention.isAllTime
+                            ? "Lifetime signups for this platform."
+                            : "Users created in the selected range who were also active during that same range."}
+                    />
                     <RetentionBar
                         label="New Players With Ticket"
                         value={retention.newPlayersWithTicket}
                         total={retention.newPlayers}
                         color="#FB72FF"
-                        tooltip="New players created in the selected range who claimed at least one ticket in that same range."
+                        tooltip={retention.isAllTime
+                            ? "Lifetime signups who have ever claimed at least one ticket, free or paid."
+                            : "New players created in the selected range who claimed at least one ticket in that same range."}
                         segments={[
                             { value: retention.newPlayersWithTicketPaid, color: "#14B985", label: "Paid" },
                             { value: retention.newPlayersWithTicketFree, color: "#00CFF2", label: "Free" },
                         ]}
                     />
-                    <RetentionBar label="Returning" value={retention.returningPlayers} total={retention.newPlayers + retention.returningPlayers} color="#00CFF2" tooltip="Active users in the selected range who were created before that range started." />
+                    <RetentionBar
+                        label="Returning"
+                        value={retention.returningPlayers}
+                        total={retention.playerBaseTotal}
+                        color="#00CFF2"
+                        tooltip={retention.isAllTime
+                            ? "Lifetime users who came back for more than one ticket."
+                            : "Active users in the selected range who were created before that range started."}
+                    />
                     <RetentionBar
                         label="Returning Players With Ticket"
                         value={retention.returningPlayersWithTicket}
                         total={retention.returningPlayers}
                         color="#14B985"
-                        tooltip="Returning players who claimed at least one ticket in the selected range."
+                        tooltip={retention.isAllTime
+                            ? "Returning users split by whether they ever held a paid ticket or only free tickets."
+                            : "Returning players who claimed at least one ticket in the selected range."}
                         segments={[
                             { value: retention.returningPlayersWithTicketPaid, color: "#14B985", label: "Paid" },
                             { value: retention.returningPlayersWithTicketFree, color: "#00CFF2", label: "Free" },
