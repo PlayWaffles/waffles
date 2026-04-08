@@ -78,9 +78,11 @@ export async function handleMessage(
           {
             type: "answered",
             questionIndex: msg.q,
+            questionId: msg.questionId,
             username: player.username,
             pfp: player.pfp,
             ts: Date.now(),
+            correct: msg.correct ?? null,
           },
           [sender.id],
         );

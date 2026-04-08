@@ -138,8 +138,8 @@ export function QuestionOption({
         variant="filled"
         colorTheme={colorTheme}
         width={buttonWidth}
-        height={48}
-        fontSize={14}
+        height={53}
+        fontSize={15}
         onClick={handleTap}
         disabled={disabled}
       >

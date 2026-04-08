@@ -31,6 +31,7 @@ export const GET = withAuth(async (request: NextRequest, auth, params) => {
     },
     select: {
       updatedAt: true,
+      answers: true,
       user: {
         select: {
           username: true,
@@ -43,9 +44,15 @@ export const GET = withAuth(async (request: NextRequest, auth, params) => {
   });
 
   return NextResponse.json(
-    answerers.map((e) => ({
-      username: e.user.username ?? "anon",
-      pfpUrl: e.user.pfpUrl,
-    })),
+    answerers.map((e) => {
+      const answers = e.answers as Record<string, { correct?: boolean }> | null;
+      const answer = answers?.[questionId];
+
+      return {
+        username: e.user.username ?? "anon",
+        pfpUrl: e.user.pfpUrl,
+        correct: typeof answer?.correct === "boolean" ? answer.correct : null,
+      };
+    }),
   );
 });

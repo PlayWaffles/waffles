@@ -64,6 +64,7 @@ export interface UseLiveGameReturn {
   streak: number;
   streakBroken: boolean;
   selectedAnswerIndex: number | null;
+  showAdvancePrompt: boolean;
 
   // Break state
   nextRoundNumber: number;
@@ -76,6 +77,7 @@ export interface UseLiveGameReturn {
   // Actions
   startGame: () => void;
   submitAnswer: (index: number) => Promise<void>;
+  advanceAfterReveal: () => void;
   onMediaReady: () => void;
 }
 
@@ -84,7 +86,7 @@ export interface UseLiveGameReturn {
 // ==========================================
 
 export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
-  const { dispatch } = useRealtime();
+  const { dispatch, sendAnswer } = useRealtime();
   const { user } = useUser();
 
   // ==========================================
@@ -149,6 +151,8 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
   const [streak, setStreak] = useState(0);
   const [streakBroken, setStreakBroken] = useState(false);
   const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(null);
+  const [lockedSeconds, setLockedSeconds] = useState<number | null>(null);
+  const [showAdvancePrompt, setShowAdvancePrompt] = useState(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs
@@ -201,6 +205,12 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     }
   }, [phase, entryLoaded, isGameEnded, hasCompletedAllQuestions]);
 
+  useEffect(() => {
+    if (phase === "question" && isGameEnded) {
+      setPhase("complete");
+    }
+  }, [phase, isGameEnded]);
+
   // Auto-transition from waiting to complete when game ends
   useEffect(() => {
     if (phase !== "waiting") return;
@@ -245,6 +255,8 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     // Clear feedback state for the next question
     setAnswerResult(null);
     setSelectedAnswerIndex(null);
+    setLockedSeconds(null);
+    setShowAdvancePrompt(false);
     setStreakBroken(false);
 
     const nextIdx = currentQuestionIndex + 1;
@@ -296,6 +308,9 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       // Auto-submit timeout if not answered
       if (!hasAnswered && !isSubmitting && currentQuestion) {
         setIsSubmitting(true);
+        setLockedSeconds(0);
+        setTimerTarget(0);
+        setShowAdvancePrompt(false);
         const timeMs = currentQuestion.durationSec * 1000;
         const result = await submitAnswerToServer(
           game.id,
@@ -327,13 +342,11 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
         });
         setStreakBroken(streak >= 2);
         setStreak(0);
-        feedbackTimerRef.current = setTimeout(advanceToNext, 2000);
+        feedbackTimerRef.current = setTimeout(() => {
+          feedbackTimerRef.current = null;
+          setShowAdvancePrompt(true);
+        }, 600);
         return;
-      }
-
-      // Already answered — feedback timer is running, or advance now
-      if (!feedbackTimerRef.current) {
-        advanceToNext();
       }
     }
   }, [
@@ -346,7 +359,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     isSubmitting,
     currentQuestion,
     refetchEntry,
-    advanceToNext,
+    streak,
   ]);
 
   // ==========================================
@@ -395,7 +408,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
         `/api/v1/games/${game.id}/answerers?questionId=${questionId}`,
       )
         .then((res) => (res.ok ? res.json() : []))
-        .then((players: { username: string; pfpUrl: string | null }[]) => {
+        .then((players: { username: string; pfpUrl: string | null; correct: boolean | null }[]) => {
           if (!cancelled && players.length > 0) {
             dispatch({
               type: "SEED_ANSWERERS",
@@ -405,6 +418,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
                   username: p.username,
                   pfpUrl: p.pfpUrl,
                   timestamp: Date.now(),
+                  correct: p.correct ?? null,
                 })),
               },
             });
@@ -460,6 +474,8 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     }
 
     setCurrentQuestionIndex(firstUnansweredIdx);
+    setLockedSeconds(null);
+    setShowAdvancePrompt(false);
     setMediaReady(false);
     setPhase("question");
   }, [phase, game.id, game.gameNumber, game.questions, game.theme, answeredIds, isGameEnded]);
@@ -471,6 +487,17 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       setSelectedAnswerIndex(selectedIndex);
       setIsSubmitting(true);
       const timeMs = Date.now() - questionStartRef.current;
+      const isCorrectSelection = selectedIndex === currentQuestion.correctIndex;
+      setLockedSeconds(seconds);
+      setTimerTarget(0);
+      setShowAdvancePrompt(false);
+      sendAnswer(
+        currentQuestionIndex,
+        currentQuestion.id,
+        selectedIndex,
+        timeMs,
+        isCorrectSelection,
+      );
 
       // Submit to server
       const result = await submitAnswerToServer(
@@ -521,30 +548,38 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 
       setIsSubmitting(false);
 
-      // Show feedback for 2s, then advance
+      // Show the reveal beat, then wait for explicit advance
       feedbackTimerRef.current = setTimeout(() => {
         feedbackTimerRef.current = null;
-        advanceToNext();
-      }, 2000);
+        setShowAdvancePrompt(true);
+      }, 600);
     },
     [
       game.id,
+      currentQuestionIndex,
       currentQuestion,
       hasAnswered,
       isSubmitting,
+      seconds,
       streak,
       refetchEntry,
-      advanceToNext,
+      sendAnswer,
     ],
   );
 
   const onMediaReady = useCallback(() => {
     if (!mediaReady && currentQuestion && phase === "question") {
       setMediaReady(true);
+      setLockedSeconds(null);
       questionStartRef.current = Date.now();
       setTimerTarget(Date.now() + currentQuestion.durationSec * 1000);
     }
   }, [mediaReady, currentQuestion, phase]);
+
+  const advanceAfterReveal = useCallback(() => {
+    if (phase !== "question") return;
+    advanceToNext();
+  }, [advanceToNext, phase]);
 
   // ==========================================
   // RETURN
@@ -552,9 +587,9 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 
   return {
     phase,
-    secondsRemaining: mediaReady
-      ? seconds
-      : (currentQuestion?.durationSec ?? 0),
+    secondsRemaining:
+      lockedSeconds ??
+      (mediaReady ? seconds : (currentQuestion?.durationSec ?? 0)),
     currentQuestion,
     questionNumber: currentQuestionIndex + 1,
     totalQuestions: game.questions.length,
@@ -565,12 +600,14 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     streak,
     streakBroken,
     selectedAnswerIndex,
+    showAdvancePrompt,
     nextRoundNumber,
     isLastRound,
     gameEndsAt: game.endsAt,
     gameId: game.id,
     startGame,
     submitAnswer,
+    advanceAfterReveal,
     onMediaReady,
   };
 }

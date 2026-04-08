@@ -40,12 +40,14 @@ export default function LiveGameScreen({ game }: { game: LiveGameData }) {
     streak,
     streakBroken,
     selectedAnswerIndex,
+    showAdvancePrompt,
     nextRoundNumber,
     isLastRound,
     gameEndsAt,
     gameId,
     startGame,
     submitAnswer,
+    advanceAfterReveal,
     onMediaReady,
   } = useLiveGame(game);
 
@@ -102,6 +104,8 @@ export default function LiveGameScreen({ game }: { game: LiveGameData }) {
             streak={streak}
             streakBroken={streakBroken}
             selectedIndex={selectedAnswerIndex}
+            showAdvancePrompt={showAdvancePrompt}
+            onAdvance={advanceAfterReveal}
           />
           <CheerOverlay />
         </>

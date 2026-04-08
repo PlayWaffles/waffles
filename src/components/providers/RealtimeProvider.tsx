@@ -27,7 +27,7 @@ import {
 import { useRouter } from "next/navigation";
 import usePartySocket from "partysocket/react";
 import { env } from "@/lib/env";
-import type { Message, ChatItem, Entrant } from "@shared/protocol";
+import type { Message, ChatItem, Entrant, QuestionAnswerer } from "@shared/protocol";
 import { useUser } from "@/hooks/useUser";
 import { authenticatedFetch } from "@/lib/client/runtime";
 
@@ -74,7 +74,7 @@ interface RealtimeState {
 
   // Live game question tracking
   currentQuestionId: string | null;
-  questionAnswerers: Entrant[];
+  questionAnswerers: QuestionAnswerer[];
 }
 
 const initialState: RealtimeState = {
@@ -110,10 +110,10 @@ type Action =
   | { type: "SET_CURRENT_QUESTION"; payload: string | null }
   | {
     type: "ADD_ANSWERER";
-    payload: { questionId: string; player: Entrant };
+    payload: { questionId: string; player: QuestionAnswerer };
   }
   | { type: "INCREMENT_ANSWERED" }
-  | { type: "SEED_ANSWERERS"; payload: { questionId: string; players: Entrant[] } }
+  | { type: "SEED_ANSWERERS"; payload: { questionId: string; players: QuestionAnswerer[] } }
   | { type: "RESET" };
 
 function reducer(state: RealtimeState, action: Action): RealtimeState {
@@ -225,8 +225,10 @@ interface RealtimeContextValue {
   sendChat: (text: string) => boolean;
   sendAnswer: (
     questionIndex: number,
+    questionId: string,
     answerIndex: number,
-    timeMs: number
+    timeMs: number,
+    correct: boolean | null
   ) => void;
   sendCheer: () => void;
   refetchEntry: () => Promise<void>;
@@ -311,11 +313,12 @@ export function RealtimeProvider({
             dispatch({
               type: "ADD_ANSWERER",
               payload: {
-                questionId: String(msg.questionIndex),
-                player: {
-                  username: msg.username,
-                  pfpUrl: msg.pfp,
+                  questionId: msg.questionId ?? String(msg.questionIndex),
+                  player: {
+                    username: msg.username,
+                    pfpUrl: msg.pfp,
                   timestamp: msg.ts,
+                  correct: msg.correct ?? null,
                 },
               },
             });
@@ -447,13 +450,21 @@ export function RealtimeProvider({
   }, [socket]);
 
   const sendAnswer = useCallback(
-    (questionIndex: number, answerIndex: number, timeMs: number) => {
+    (
+      questionIndex: number,
+      questionId: string,
+      answerIndex: number,
+      timeMs: number,
+      correct: boolean | null,
+    ) => {
       if (socket.readyState === WebSocket.OPEN) {
         const msg: Message = {
           type: "submit",
           q: questionIndex,
+          questionId,
           a: answerIndex,
           ms: timeMs,
+          correct,
         };
         socket.send(JSON.stringify(msg));
       }

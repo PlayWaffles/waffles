@@ -8,16 +8,15 @@
  * streak tracking, and post-answer roast messages.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { QuestionCardHeader } from "./QuestionCardHeader";
 import { QuestionOption } from "./QuestionOption";
-import { playSound } from "@/lib/sounds";
-import { PlayerAvatarStack } from "../../../_components/PlayerAvatarStack";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import type { LiveGameQuestion } from "../page";
 import type { AnswerResult } from "@/lib/game/tension";
+import type { QuestionAnswerer } from "@shared/protocol";
 
 // ==========================================
 // ANIMATION VARIANTS
@@ -63,10 +62,7 @@ const optionContainerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.3,
-    },
+    transition: { duration: 0.3 },
   },
 };
 
@@ -89,6 +85,156 @@ function PressureVignette({ intensity }: { intensity: number }) {
   );
 }
 
+function AnswererAvatars() {
+  const answerers = useRealtime().state.questionAnswerers;
+  const [displayed, setDisplayed] = useState<QuestionAnswerer[]>([]);
+  const pendingRef = useRef<QuestionAnswerer[]>([]);
+  const queuedNamesRef = useRef(new Set<string>());
+  const processingRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const displayedNames = new Set(displayed.map((player) => player.username));
+
+    for (const player of answerers) {
+      if (displayedNames.has(player.username) || queuedNamesRef.current.has(player.username)) {
+        continue;
+      }
+      pendingRef.current.push(player);
+      queuedNamesRef.current.add(player.username);
+    }
+
+    const revealNext = () => {
+      const next = pendingRef.current.shift();
+      if (!next) {
+        processingRef.current = false;
+        timerRef.current = null;
+        return;
+      }
+
+      queuedNamesRef.current.delete(next.username);
+      setDisplayed((current) => [...current, next]);
+      timerRef.current = setTimeout(revealNext, 180);
+    };
+
+    if (!processingRef.current && pendingRef.current.length > 0) {
+      processingRef.current = true;
+      revealNext();
+    }
+  }, [answerers, displayed]);
+
+  useEffect(() => {
+    return () => {
+      pendingRef.current = [];
+      queuedNamesRef.current.clear();
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, []);
+
+  if (displayed.length === 0) return null;
+
+  const visible = displayed.slice(-5);
+  const overflow = displayed.length - visible.length;
+
+  return (
+    <motion.div
+      className="relative mx-4 overflow-hidden"
+      style={{ minHeight: 65 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div className="flex gap-1.5 justify-center flex-nowrap pr-4">
+        <AnimatePresence>
+          {visible.map((player) => (
+            <motion.div
+              key={player.username}
+              className="relative overflow-visible"
+              style={{ width: 50, height: 50, flexShrink: 0 }}
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 500, damping: 20 }}
+              title={player.username}
+            >
+              <motion.div
+                className="absolute inset-0 rounded-[6px]"
+                style={{ border: "2px solid rgba(255,255,255,0.45)" }}
+                initial={{ scale: 1, opacity: 0.8 }}
+                animate={{ scale: 1.25, opacity: 0 }}
+                transition={{ duration: 0.6, ease: "easeOut" }}
+              />
+
+              <div className="w-full h-full rounded-[6px] overflow-hidden bg-gradient-to-br from-[#F5BB1B] to-[#FF6B35]">
+                {player.pfpUrl ? (
+                  <Image
+                    src={player.pfpUrl}
+                    alt=""
+                    width={50}
+                    height={50}
+                    className="w-full h-full object-cover"
+                    sizes="50px"
+                  />
+                ) : (
+                  <div className="w-full h-full" />
+                )}
+              </div>
+              {player.correct !== null ? (
+                <motion.div
+                  className="absolute rounded-[4px] flex items-center justify-center"
+                  style={{
+                    width: 14,
+                    height: 14,
+                    bottom: -1,
+                    right: -1,
+                    backgroundColor: player.correct ? "#14B985" : "#FF4444",
+                    boxShadow: "0 0 0 2px #1e1e1e",
+                  }}
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 600, damping: 15, delay: 0.2 }}
+                >
+                  {player.correct ? (
+                    <svg width="9" height="7" viewBox="0 0 10 8" fill="none">
+                      <path d="M1 4L3.5 6.5L9 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  ) : (
+                    <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+                      <path d="M1 1L7 7M7 1L1 7" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                  )}
+                </motion.div>
+              ) : null}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+
+        {overflow > 0 ? (
+          <motion.div
+            key={`overflow-${overflow}`}
+            className="rounded-[6px] flex items-center justify-center font-body"
+            style={{
+              width: 50,
+              height: 50,
+              flexShrink: 0,
+              backgroundColor: "rgba(255,255,255,0.08)",
+              border: "2px solid rgba(255,255,255,0.15)",
+              color: "rgba(255,255,255,0.6)",
+              fontSize: overflow >= 10 ? 20 : 22,
+            }}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 500, damping: 20 }}
+          >
+            +{overflow}
+          </motion.div>
+        ) : null}
+      </div>
+    </motion.div>
+  );
+}
+
 // ==========================================
 // PROPS
 // ==========================================
@@ -105,6 +251,8 @@ interface QuestionViewProps {
   streak: number;
   streakBroken: boolean;
   selectedIndex: number | null;
+  showAdvancePrompt: boolean;
+  onAdvance: () => void;
 }
 
 // ==========================================
@@ -123,9 +271,10 @@ export default function QuestionView({
   streak,
   streakBroken,
   selectedIndex,
+  showAdvancePrompt,
+  onAdvance,
 }: QuestionViewProps) {
   const [mediaLoaded, setMediaLoaded] = useState(!question.mediaUrl);
-  const answerers = useRealtime().state.questionAnswerers;
   const isLowTime = seconds <= 3 && seconds > 0;
   const isTimeUp = seconds === 0;
   const [buttonWidth, setButtonWidth] = useState(296);
@@ -156,7 +305,6 @@ export default function QuestionView({
   const handleSelect = (index: number) => {
     if (hasAnswered) return;
     onAnswer(index);
-    playSound("answerSubmit");
   };
 
   // Pressure intensity: 0 at >5s, ramps to 1 at 0s
@@ -170,7 +318,7 @@ export default function QuestionView({
 
   return (
     <motion.div
-      className="w-full max-w-lg mx-auto mt-2 relative"
+      className="w-full max-w-xl mx-auto flex-1 flex flex-col relative"
       variants={containerVariants}
       initial="hidden"
       animate={
@@ -194,24 +342,26 @@ export default function QuestionView({
         streakBroken={streakBroken}
       />
 
-      <section className="mx-auto w-full max-w-lg px-4 relative" aria-live="polite">
+      <section className="w-full flex flex-col relative" aria-live="polite">
         {/* Question Content with urgency glow */}
         <motion.div
-          className="relative mx-auto mb-4 flex items-center justify-center w-full max-w-[306px] font-body font-normal text-[36px] leading-[0.92] text-center tracking-[-0.03em] text-white"
+          className="relative mx-auto mb-4 flex items-center justify-center w-full font-body font-normal text-[36px] leading-[0.92] text-center tracking-[-0.03em] text-white px-4"
           variants={questionTextVariants}
           animate={
             isLowTime
               ? {
                   textShadow: [
-                    "0 0 0px rgba(255,107,107,0)",
-                    "0 0 20px rgba(255,107,107,0.6)",
-                    "0 0 0px rgba(255,107,107,0)",
+                    "0 0 0px rgba(255,68,68,0)",
+                    "0 0 25px rgba(255,68,68,0.5)",
+                    "0 0 0px rgba(255,68,68,0)",
                   ],
                 }
               : {}
           }
           transition={
-            isLowTime ? { duration: 0.8, repeat: Infinity } : undefined
+            isLowTime
+              ? { textShadow: { duration: 0.6, repeat: Infinity } }
+              : undefined
           }
         >
           {question.content}
@@ -221,7 +371,7 @@ export default function QuestionView({
         <AnimatePresence>
           {question.mediaUrl && (
             <motion.figure
-              className="mx-auto mb-4 flex justify-center w-full"
+              className="mx-auto mb-4 flex justify-center w-full px-4"
               variants={mediaVariants}
               initial="hidden"
               animate="visible"
@@ -253,47 +403,37 @@ export default function QuestionView({
 
         {/* Real-time answerers — between question/media and options */}
         <AnimatePresence>
-          {answerers.length > 0 && (
-            <motion.div
-              key="answerers"
-              initial={{ opacity: 0, y: 20, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              transition={{
-                type: "spring",
-                stiffness: 400,
-                damping: 25,
-              }}
-              className="mb-3"
-            >
-              <motion.div
-                key={answerers.length}
-                animate={{ scale: [1, 1.02, 1] }}
-                transition={{ duration: 0.3 }}
-              >
-                <PlayerAvatarStack actionText="just answered" />
-              </motion.div>
-            </motion.div>
-          )}
+          <AnswererAvatars />
         </AnimatePresence>
 
-        {/* Options with tension effects */}
         <motion.ul
-          className="mx-auto mb-2 flex w-full flex-col gap-2"
+          className="w-full flex flex-col gap-2 px-4"
           variants={optionContainerVariants}
+          initial="hidden"
+          animate="visible"
         >
           {question.options.map((opt, idx) => (
-            <QuestionOption
+            <motion.div
               key={idx}
-              option={opt}
-              index={idx}
-              selectedOptionIndex={selectedIndex}
-              onSelect={handleSelect}
-              disabled={hasAnswered || isTimeUp}
-              tremor={tremor}
-              speedTier={answerResult?.speedTier ?? null}
-              buttonWidth={buttonWidth}
-            />
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{
+                duration: 0.35,
+                delay: 0.3 + idx * 0.1,
+                ease: [0.25, 0.46, 0.45, 0.94],
+              }}
+            >
+              <QuestionOption
+                option={opt}
+                index={idx}
+                selectedOptionIndex={selectedIndex}
+                onSelect={handleSelect}
+                disabled={hasAnswered || isTimeUp}
+                tremor={tremor}
+                speedTier={answerResult?.speedTier ?? null}
+                buttonWidth={buttonWidth}
+              />
+            </motion.div>
           ))}
         </motion.ul>
 
@@ -316,38 +456,16 @@ export default function QuestionView({
               >
                 {answerResult.feedback.text}
               </motion.p>
-              {answerResult.pointsEarned > 0 && (
-                <motion.p
-                  className="font-display text-sm text-white/60"
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
+              {showAdvancePrompt ? (
+                <motion.button
+                  className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
+                  onClick={onAdvance}
+                  whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
+                  whileTap={{ scale: 0.97 }}
                 >
-                  +{answerResult.pointsEarned.toLocaleString()} pts
-                </motion.p>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Timeout feedback (no selection made) */}
-        <AnimatePresence>
-          {!answerResult && isTimeUp && selectedIndex === null && (
-            <motion.div
-              className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex flex-col items-center z-20"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ type: "spring", stiffness: 400, damping: 20 }}
-            >
-              <motion.p
-                className="font-body text-lg text-[#FF4444]"
-                initial={{ scale: 0.5, opacity: 0 }}
-                animate={{ scale: [1, 1.15, 1], opacity: 1 }}
-                transition={{ duration: 0.4 }}
-              >
-                TIME&apos;S UP
-              </motion.p>
+                  {questionNumber >= totalQuestions ? "FINAL SCORE???" : "NEXT QUESTION"}
+                </motion.button>
+              ) : null}
             </motion.div>
           )}
         </AnimatePresence>

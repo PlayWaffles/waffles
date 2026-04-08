@@ -20,6 +20,7 @@ import {
   handleStartAlarm,
   handleGameEndAlarm,
   handleCountdownAlarm,
+  handleLiveJoinAlarm,
 } from "./handlers/alarms";
 import {
   handleConnect,
@@ -186,6 +187,11 @@ export default class GameServer implements Party.Server {
       case "5min":
       case "1min":
         await handleCountdownAlarm(this, phase);
+        break;
+      case "live60m":
+      case "live30m":
+      case "live10m":
+        await handleLiveJoinAlarm(this, phase);
         break;
       case "start":
         await handleStartAlarm(this, roomId);

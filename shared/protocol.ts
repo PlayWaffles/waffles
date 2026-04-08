@@ -29,6 +29,10 @@ export interface Entrant {
   timestamp: number;
 }
 
+export interface QuestionAnswerer extends Entrant {
+  correct: boolean | null;
+}
+
 // ==========================================
 // MESSAGE TYPES
 // ==========================================
@@ -75,14 +79,16 @@ export type Message =
   | {
       type: "answered";
       questionIndex: number;
+      questionId?: string;
       username: string;
       pfp: string | null;
       ts: number;
+      correct: boolean | null;
     }
   | { type: "cheer" }
 
   // === PLAYER ACTIONS (Client → Server) ===
-  | { type: "submit"; q: number; a: number; ms: number }; // questionIndex, answerIndex, timeMs
+  | { type: "submit"; q: number; questionId?: string; a: number; ms: number; correct?: boolean | null }; // questionIndex, answerIndex, timeMs
 
 // ==========================================
 // TYPE GUARDS

@@ -7,6 +7,7 @@ import {
   handleStartAlarm,
   getFirstCountdownPhase,
   getAlarmTimeForPhase,
+  scheduleNextLiveOrEndAlarm,
 } from "./alarms";
 
 interface GameServer {
@@ -69,7 +70,9 @@ export async function handleInit(
   } else {
     console.log("[PartyKit]", "init_immediate_start");
     // Game already started or about to - trigger start handler
-    await handleStartAlarm(server as any, server.room.id);
+    if (endsAt > now) {
+      await handleStartAlarm(server as any, server.room.id);
+    }
   }
 
   return Response.json(
@@ -157,6 +160,13 @@ export async function handleUpdateGame(
       await server.room.storage.setAlarm(alarmTime);
       console.log("[PartyKit]", "update_alarm_rescheduled", {
         phase: firstPhase,
+      });
+    }
+  } else if (endsAt > now) {
+    const nextPhase = await scheduleNextLiveOrEndAlarm(server as any, endsAt, now);
+    if (nextPhase) {
+      console.log("[PartyKit]", "update_alarm_rescheduled", {
+        phase: nextPhase,
       });
     }
   }

@@ -19,6 +19,10 @@ export type AlarmPhase =
   | "15min"
   | "5min"
   | "1min"
+  // Live join reminders
+  | "live60m"
+  | "live30m"
+  | "live10m"
   // Game lifecycle
   | "start" // Game goes live
   | "gameEnd"; // Game ends, trigger settlement

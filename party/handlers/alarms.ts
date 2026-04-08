@@ -23,6 +23,16 @@ interface CountdownPhase {
   body: string;
 }
 
+interface LiveJoinPhase {
+  phase: AlarmPhase;
+  offsetBeforeTicketCloseMs: number; // Time before late-entry closes
+  nextPhase: AlarmPhase;
+  title: string;
+  body: string;
+}
+
+const TICKET_CLOSE_BUFFER_MS = 5 * 60 * 1000;
+
 /**
  * Countdown phases in chronological order (earliest to latest)
  * Each phase sends a notification and schedules the next
@@ -94,6 +104,39 @@ const COUNTDOWN_PHASES: CountdownPhase[] = [
 ];
 
 /**
+ * Live-game reminder phases in chronological order (earliest to latest).
+ * These are scheduled off the late-entry close time so reminders stay aligned
+ * with the actual join window, not the final game end.
+ */
+const LIVE_JOIN_PHASES: LiveJoinPhase[] = [
+  {
+    phase: "live60m",
+    offsetBeforeTicketCloseMs: 60 * 60 * 1000,
+    nextPhase: "live30m",
+    title: "Still Time to Join 👀",
+    body: "Waffles is live and late entry stays open for 1 more hour.",
+  },
+  {
+    phase: "live30m",
+    offsetBeforeTicketCloseMs: 30 * 60 * 1000,
+    nextPhase: "live10m",
+    title: "30 Minutes Left to Join ⏰",
+    body: "The join window is closing soon. Tap in before it's too late.",
+  },
+  {
+    phase: "live10m",
+    offsetBeforeTicketCloseMs: 10 * 60 * 1000,
+    nextPhase: "gameEnd",
+    title: "Final 10 Minutes to Join 🚨",
+    body: "Last call. Ticket sales close in 10 minutes.",
+  },
+];
+
+function getTicketCloseTime(endsAt: number): number {
+  return endsAt - TICKET_CLOSE_BUFFER_MS;
+}
+
+/**
  * Get the first countdown phase that hasn't passed yet
  */
 export function getFirstCountdownPhase(
@@ -112,6 +155,25 @@ export function getFirstCountdownPhase(
 }
 
 /**
+ * Get the first live reminder phase that hasn't passed yet.
+ * Falls back to the game end alarm once all live join reminders are past.
+ */
+export function getFirstLivePhase(
+  endsAt: number,
+  now: number,
+): AlarmPhase | null {
+  for (const phase of LIVE_JOIN_PHASES) {
+    const alarmTime = getTicketCloseTime(endsAt) - phase.offsetBeforeTicketCloseMs;
+    if (alarmTime > now) {
+      return phase.phase;
+    }
+  }
+
+  if (endsAt > now) return "gameEnd";
+  return null;
+}
+
+/**
  * Get alarm time for a phase
  */
 export function getAlarmTimeForPhase(
@@ -121,9 +183,37 @@ export function getAlarmTimeForPhase(
 ): number | null {
   const config = COUNTDOWN_PHASES.find((p) => p.phase === phase);
   if (config) return startsAt - config.offsetMs;
+  const liveConfig = LIVE_JOIN_PHASES.find((p) => p.phase === phase);
+  if (liveConfig) return getTicketCloseTime(endsAt) - liveConfig.offsetBeforeTicketCloseMs;
   if (phase === "start") return startsAt;
   if (phase === "gameEnd") return endsAt;
   return null;
+}
+
+export async function scheduleNextLiveOrEndAlarm(
+  server: GameServer,
+  endsAt: number,
+  now = Date.now(),
+): Promise<AlarmPhase | null> {
+  const nextPhase = getFirstLivePhase(endsAt, now);
+  if (!nextPhase) {
+    return null;
+  }
+
+  const nextAlarmTime = getAlarmTimeForPhase(nextPhase, 0, endsAt);
+  if (!nextAlarmTime || nextAlarmTime <= now) {
+    return null;
+  }
+
+  await server.room.storage.put("alarmPhase", nextPhase);
+  await server.room.storage.setAlarm(nextAlarmTime);
+
+  console.log("[PartyKit]", "live_next_scheduled", {
+    nextPhase,
+    at: new Date(nextAlarmTime).toISOString(),
+  });
+
+  return nextPhase;
 }
 
 // ==========================================
@@ -162,6 +252,37 @@ export async function handleCountdownAlarm(
   }
 }
 
+/**
+ * Handle live-game join reminder alarms.
+ */
+export async function handleLiveJoinAlarm(
+  server: GameServer,
+  phase: AlarmPhase,
+): Promise<void> {
+  const gameId = await server.room.storage.get<string>("gameId");
+  const endsAt = await server.room.storage.get<number>("endsAt");
+
+  const config = LIVE_JOIN_PHASES.find((p) => p.phase === phase);
+  if (!config || !endsAt) {
+    console.error("[PartyKit]", "live_join_missing_config", { phase, gameId });
+    return;
+  }
+
+  console.log("[PartyKit]", "live_join_alarm", { phase, gameId });
+
+  await server.sendNotifications(`${config.title}\n${config.body}`);
+
+  const nextAlarmTime = getAlarmTimeForPhase(config.nextPhase, 0, endsAt);
+  if (nextAlarmTime && nextAlarmTime > Date.now()) {
+    await server.room.storage.put("alarmPhase", config.nextPhase);
+    await server.room.storage.setAlarm(nextAlarmTime);
+    console.log("[PartyKit]", "live_join_next_scheduled", {
+      nextPhase: config.nextPhase,
+      at: new Date(nextAlarmTime).toISOString(),
+    });
+  }
+}
+
 // ==========================================
 // EXISTING HANDLERS
 // ==========================================
@@ -186,12 +307,9 @@ export async function handleStartAlarm(
     return;
   }
 
-  // Schedule game end alarm
-  await server.room.storage.put("alarmPhase", "gameEnd" as AlarmPhase);
-  await server.room.storage.setAlarm(endsAt);
-
   await server.sendNotifications("The game has started! 🚀", roomId);
   server.broadcast({ type: "game:live" });
+  await scheduleNextLiveOrEndAlarm(server, endsAt);
 
   console.log("[PartyKit]", "start_phase_complete", {
     gameId,
