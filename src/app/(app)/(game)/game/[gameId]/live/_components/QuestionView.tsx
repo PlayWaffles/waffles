@@ -92,9 +92,19 @@ function AnswererAvatars() {
   const queuedNamesRef = useRef(new Set<string>());
   const processingRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const displayedRef = useRef<QuestionAnswerer[]>([]);
+
+  const getRevealDelay = (isFirstReveal: boolean) =>
+    isFirstReveal
+      ? 1000 + Math.random() * 1000
+      : 800 + Math.random() * 1200;
 
   useEffect(() => {
-    const displayedNames = new Set(displayed.map((player) => player.username));
+    displayedRef.current = displayed;
+  }, [displayed]);
+
+  useEffect(() => {
+    const displayedNames = new Set(displayedRef.current.map((player) => player.username));
 
     for (const player of answerers) {
       if (displayedNames.has(player.username) || queuedNamesRef.current.has(player.username)) {
@@ -113,15 +123,26 @@ function AnswererAvatars() {
       }
 
       queuedNamesRef.current.delete(next.username);
-      setDisplayed((current) => [...current, next]);
-      timerRef.current = setTimeout(revealNext, 180);
+      setDisplayed((current) => {
+        const updated = [...current, next];
+        displayedRef.current = updated;
+        return updated;
+      });
+
+      if (pendingRef.current.length > 0) {
+        timerRef.current = setTimeout(revealNext, getRevealDelay(false));
+      } else {
+        processingRef.current = false;
+        timerRef.current = null;
+      }
     };
 
     if (!processingRef.current && pendingRef.current.length > 0) {
       processingRef.current = true;
-      revealNext();
+      const isFirstReveal = displayedRef.current.length === 0;
+      timerRef.current = setTimeout(revealNext, getRevealDelay(isFirstReveal));
     }
-  }, [answerers, displayed]);
+  }, [answerers]);
 
   useEffect(() => {
     return () => {
@@ -407,7 +428,9 @@ export default function QuestionView({
         </AnimatePresence>
 
         <motion.ul
-          className="w-full flex flex-col gap-2 px-4"
+          className={`w-full flex flex-col gap-2 px-4 ${
+            answerResult ? "pb-28" : ""
+          }`}
           variants={optionContainerVariants}
           initial="hidden"
           animate="visible"
