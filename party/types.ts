@@ -10,6 +10,7 @@ export interface StoredChatMessage {
 
 export type AlarmPhase =
   // Pre-game countdown notifications
+  | "36h"
   | "24h"
   | "12h"
   | "6h"

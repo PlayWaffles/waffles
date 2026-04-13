@@ -187,6 +187,7 @@ export default class GameServer implements Party.Server {
 
     switch (phase) {
       // Countdown phases
+      case "36h":
       case "24h":
       case "12h":
       case "6h":

@@ -39,6 +39,13 @@ const TICKET_CLOSE_BUFFER_MS = 5 * 60 * 1000;
  */
 const COUNTDOWN_PHASES: CountdownPhase[] = [
   {
+    phase: "36h",
+    offsetMs: 36 * 60 * 60 * 1000,
+    nextPhase: "24h",
+    title: "Waffles — 36 hours out",
+    body: "Game night is getting close. Lock in your ticket early.",
+  },
+  {
     phase: "24h",
     offsetMs: 24 * 60 * 60 * 1000,
     nextPhase: "12h",
