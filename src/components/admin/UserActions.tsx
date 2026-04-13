@@ -33,6 +33,8 @@ export function UserActions({ user }: UserActionsProps) {
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
     const [tempPassword, setTempPassword] = useState<string | null>(null);
+    const [confirmAction, setConfirmAction] = useState<{ type: string; message: string; onConfirm: () => void } | null>(null);
+    const [quotaInput, setQuotaInput] = useState<string | null>(null);
 
     // Clear messages after 3 seconds
     const showMessage = (type: 'success' | 'error', message: string) => {
@@ -49,62 +51,29 @@ export function UserActions({ user }: UserActionsProps) {
         }, 3000);
     };
 
-    const handleBan = async () => {
-        if (!confirm(`Ban @${user.username || 'this user'}?\n\n⚠️ This will block them from all platform activities.`)) return;
-
+    const executeBan = async () => {
+        setConfirmAction(null);
         setLoading('ban');
         const result = await banUserAction(user.id);
         setLoading(null);
-
-        if (result.success) {
-            showMessage('success', 'User banned');
-        } else {
-            showMessage('error', result.error);
-        }
+        if (result.success) showMessage('success', 'User banned');
+        else showMessage('error', result.error);
     };
 
-    const handleUnban = async () => {
-        if (!confirm(`Unban @${user.username || 'this user'}?\n\nThey will regain access to the platform.`)) return;
-
+    const executeUnban = async () => {
+        setConfirmAction(null);
         setLoading('unban');
         const result = await unbanUserAction(user.id);
         setLoading(null);
-
-        if (result.success) {
-            showMessage('success', 'User unbanned');
-        } else {
-            showMessage('error', result.error);
-        }
+        if (result.success) showMessage('success', 'User unbanned');
+        else showMessage('error', result.error);
     };
 
-    const handleQuotaAdjust = async () => {
-        const newQuota = prompt(`Enter new invite quota for @${user.username || 'this user'}:\n\nCurrent quota: ${user.inviteQuota}`, user.inviteQuota.toString());
-        if (!newQuota) return;
-
-        const quota = parseInt(newQuota);
-        if (isNaN(quota) || quota < 0) {
-            showMessage('error', 'Invalid quota - must be a positive number');
-            return;
-        }
-
-        setLoading('quota');
-        const result = await adjustInviteQuotaAction(user.id, quota);
-        setLoading(null);
-
-        if (result.success) {
-            showMessage('success', `Invite quota updated to ${quota}`);
-        } else {
-            showMessage('error', result.error);
-        }
-    };
-
-    const handlePromoteToAdmin = async () => {
-        if (!confirm(`Promote @${user.username || 'this user'} to ADMIN?\n\n⚠️ This grants FULL administrative access to the platform.\n\nThis action should be used with extreme caution.`)) return;
-
+    const executePromote = async () => {
+        setConfirmAction(null);
         setLoading('promote');
         const result = await promoteToAdminAction(user.id);
         setLoading(null);
-
         if (result.success) {
             setTempPassword(result.tempPassword ?? null);
             showMessage('success', 'User promoted to admin');
@@ -113,11 +82,100 @@ export function UserActions({ user }: UserActionsProps) {
         }
     };
 
+    const handleBan = () => {
+        setConfirmAction({
+            type: 'ban',
+            message: `Ban @${user.username || 'this user'}? This will block them from all platform activities.`,
+            onConfirm: executeBan,
+        });
+    };
+
+    const handleUnban = () => {
+        setConfirmAction({
+            type: 'unban',
+            message: `Unban @${user.username || 'this user'}? They will regain access to the platform.`,
+            onConfirm: executeUnban,
+        });
+    };
+
+    const handleQuotaAdjust = () => {
+        setQuotaInput(user.inviteQuota.toString());
+    };
+
+    const submitQuotaAdjust = async () => {
+        if (quotaInput === null) return;
+        const quota = parseInt(quotaInput);
+        if (isNaN(quota) || quota < 0) {
+            showMessage('error', 'Invalid quota — must be a positive number');
+            setQuotaInput(null);
+            return;
+        }
+        setQuotaInput(null);
+        setLoading('quota');
+        const result = await adjustInviteQuotaAction(user.id, quota);
+        setLoading(null);
+        if (result.success) showMessage('success', `Invite quota updated to ${quota}`);
+        else showMessage('error', result.error);
+    };
+
+    const handlePromoteToAdmin = () => {
+        setConfirmAction({
+            type: 'promote',
+            message: `Promote @${user.username || 'this user'} to ADMIN? This grants full administrative access. Use with extreme caution.`,
+            onConfirm: executePromote,
+        });
+    };
+
     const isLoading = loading !== null;
 
     return (
         <div className="bg-white/5 border border-white/8 rounded-2xl backdrop-blur-lg p-6">
             <h3 className="text-lg font-semibold text-white mb-4 font-display">Actions</h3>
+
+            {/* Confirmation Dialog */}
+            {confirmAction && (
+                <div className="mb-4 p-4 rounded-xl bg-white/5 border border-white/10" role="alertdialog" aria-label="Confirm action">
+                    <p className="text-sm text-white mb-3">{confirmAction.message}</p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={confirmAction.onConfirm}
+                            className="px-4 py-2 bg-red-500/20 text-red-400 text-sm font-medium rounded-xl hover:bg-red-500/30 border border-red-500/30 transition-colors"
+                        >
+                            Confirm
+                        </button>
+                        <button
+                            onClick={() => setConfirmAction(null)}
+                            className="px-4 py-2 bg-white/10 text-white/70 text-sm font-medium rounded-xl hover:bg-white/20 transition-colors"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Quota Input Dialog */}
+            {quotaInput !== null && (
+                <div className="mb-4 p-4 rounded-xl bg-white/5 border border-white/10" role="dialog" aria-label="Adjust invite quota">
+                    <p className="text-sm text-white/70 mb-2">New invite quota for @{user.username}:</p>
+                    <div className="flex gap-2">
+                        <input
+                            type="number"
+                            min="0"
+                            value={quotaInput}
+                            onChange={(e) => setQuotaInput(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") submitQuotaAdjust(); if (e.key === "Escape") setQuotaInput(null); }}
+                            className="flex-1 px-3 py-2 bg-black/40 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:ring-2 focus:ring-[#00CFF2]/50"
+                            autoFocus
+                        />
+                        <button onClick={submitQuotaAdjust} className="px-4 py-2 bg-[#00CFF2]/20 text-[#00CFF2] text-sm font-medium rounded-xl hover:bg-[#00CFF2]/30 border border-[#00CFF2]/30 transition-colors">
+                            Save
+                        </button>
+                        <button onClick={() => setQuotaInput(null)} className="px-4 py-2 bg-white/10 text-white/70 text-sm font-medium rounded-xl hover:bg-white/20 transition-colors">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* Status Messages */}
             {success && (

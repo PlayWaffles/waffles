@@ -82,6 +82,16 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
   // Max message length
   const MAX_MESSAGE_LENGTH = 500;
 
+  // Escape key to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
   // Focus input when drawer opens (with longer delay for mobile)
   useEffect(() => {
     if (isOpen) {
@@ -150,6 +160,9 @@ export function ChatDrawer({ isOpen, onClose }: ChatDrawerProps) {
         {isOpen && (
           <motion.div
             ref={drawerRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Lobby chat"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}

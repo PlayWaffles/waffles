@@ -3,15 +3,17 @@
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import {
     ArrowRightEndOnRectangleIcon,
-    WalletIcon
+    WalletIcon,
+    Bars3Icon,
 } from "@heroicons/react/24/outline";
 
 interface AdminHeaderProps {
     username: string;
     pfpUrl: string | null;
+    onMenuToggle?: () => void;
 }
 
-export function AdminHeader({ username, pfpUrl }: AdminHeaderProps) {
+export function AdminHeader({ username, pfpUrl, onMenuToggle }: AdminHeaderProps) {
     const { isConnected, address, chain } = useAccount();
 
     const { connect, connectors, isPending: isConnecting } = useConnect();
@@ -20,11 +22,23 @@ export function AdminHeader({ username, pfpUrl }: AdminHeaderProps) {
 
 
     return (
-        <header className="bg-[#0a0a0b]/80 border-b border-white/6 backdrop-blur-xl flex h-16 items-center justify-between px-6">
-            {/* Left: Title */}
-            <h2 className="text-lg font-semibold text-white font-body">
-                Admin Dashboard
-            </h2>
+        <header className="bg-[#0a0a0b]/80 border-b border-white/6 backdrop-blur-xl flex h-16 items-center justify-between px-4 md:px-6">
+            {/* Left: Menu + Title */}
+            <div className="flex items-center gap-3">
+                {onMenuToggle && (
+                    <button
+                        type="button"
+                        onClick={onMenuToggle}
+                        className="inline-flex items-center justify-center w-10 h-10 rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition-colors md:hidden"
+                        aria-label="Open navigation menu"
+                    >
+                        <Bars3Icon className="h-6 w-6" />
+                    </button>
+                )}
+                <h2 className="text-lg font-semibold text-white font-body">
+                    Admin Dashboard
+                </h2>
+            </div>
 
             {/* Right: Wallet + User */}
             <div className="flex items-center gap-3">

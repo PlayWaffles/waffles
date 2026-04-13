@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
@@ -160,6 +160,18 @@ function DemoQuestionSlide({
 }) {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [showResult, setShowResult] = useState(false);
+  const [btnWidth, setBtnWidth] = useState(296);
+
+  useEffect(() => {
+    const measure = () => {
+      const w = window.innerWidth;
+      // 48px accounts for px-4 padding (32px) + extra margin
+      setBtnWidth(Math.floor(Math.min(296, w - 48) / 4) * 4);
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
 
   const handleSelect = useCallback(
     (index: number) => {
@@ -269,7 +281,7 @@ function DemoQuestionSlide({
               <PixelButton
                 variant="filled"
                 colorTheme={optionColorThemes[idx % optionColorThemes.length]}
-                width={296}
+                width={btnWidth}
                 height={48}
                 fontSize={14}
                 onClick={() => handleSelect(idx)}
@@ -468,7 +480,7 @@ export function OnboardingOverlay({
                     className="text-[26px] text-[#1E1E1E] w-full max-w-full"
                   >
                     {isLoading ? (
-                      <span className="flex items-center justify-center gap-2">
+                      <span className="flex items-center justify-center gap-2" role="status" aria-label="Loading">
                         <motion.span
                           className="inline-block w-5 h-5 border-2 border-current border-t-transparent rounded-full"
                           animate={{ rotate: 360 }}

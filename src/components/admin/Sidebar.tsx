@@ -99,11 +99,12 @@ export function AdminSidebar({
                             key={item.name}
                             href={item.href}
                             title={isCollapsed ? item.name : undefined}
+                            aria-current={isActive ? "page" : undefined}
                             className={`
                                 group flex rounded-lg text-sm font-medium transition-all duration-200
                                 ${isActive
-                                    ? "bg-[#FFC931]/15 text-[#FFC931] border-l-3 border-[#FFC931] shadow-[0_0_20px_rgba(255,201,49,0.1)]"
-                                    : "text-white/70 hover:bg-white/5 hover:text-white border-l-3 border-transparent"
+                                    ? "bg-[#FFC931]/15 text-[#FFC931] shadow-[0_0_20px_rgba(255,201,49,0.1)]"
+                                    : "text-white/70 hover:bg-white/5 hover:text-white"
                                 }
                                 ${isCollapsed ? "items-center justify-center px-0 py-3" : "items-center gap-3 px-3 py-2.5"}
                             `}

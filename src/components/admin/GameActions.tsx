@@ -68,11 +68,12 @@ export function GameActions({ game, onOpenChange }: GameActionsProps) {
       <button
         ref={buttonRef}
         onClick={() => toggleOpen(!isOpen)}
-        className={`p-2 rounded-xl transition-all duration-200 ${isOpen
+        className={`p-2.5 rounded-xl transition-all duration-200 ${isOpen
             ? "bg-[#FFC931]/20 text-[#FFC931] ring-2 ring-[#FFC931]/30"
             : "text-white/50 hover:text-white hover:bg-white/10"
           }`}
         title="More actions"
+        aria-label="More actions"
       >
         <EllipsisVerticalIcon className="h-5 w-5" />
       </button>

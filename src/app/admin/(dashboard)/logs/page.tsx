@@ -44,7 +44,7 @@ export default async function AuditLogsPage({
                 </p>
             </div>
 
-            <div className="bg-linear-to-br from-white/6 to-white/2 border border-white/8 rounded-2xl backdrop-blur-lg overflow-hidden">
+            <div className="bg-linear-to-br from-white/6 to-white/2 border border-white/8 rounded-2xl backdrop-blur-lg overflow-hidden overflow-x-auto">
                 <table className="min-w-full divide-y divide-white/6">
                     <thead className="bg-white/3">
                         <tr>

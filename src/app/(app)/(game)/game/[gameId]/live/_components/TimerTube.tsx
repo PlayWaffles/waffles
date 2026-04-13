@@ -42,6 +42,7 @@ export function TimerTube({ remaining, duration }: TimerTubeProps) {
       viewBox="0 0 78 12"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
       // Combined shake + pulse when low time, subtle pulse for medium time
       animate={
         isTimeUp

@@ -117,7 +117,7 @@ export default async function UsersListPage({
             <UserFilters />
 
             {/* Users Table */}
-            <div className="rounded-2xl border border-white/10 overflow-hidden">
+            <div className="rounded-2xl border border-white/10 overflow-hidden overflow-x-auto">
                 <table className="min-w-full">
                     <thead>
                         <tr className="border-b border-white/10">
