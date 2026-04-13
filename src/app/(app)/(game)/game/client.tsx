@@ -255,11 +255,11 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
 
                 {/* Copy */}
                 <div className="flex flex-col min-w-0">
-                  <span className="font-display text-[11px] uppercase tracking-[0.08em] text-white/40">
-                    Waffles #{String(lastGameResult.gameNumber).padStart(3, "0")} winners
+                  <span className="font-body text-[14px] text-white leading-tight truncate">
+                    {lastGameResult.winners[0].username ?? "Player"} + {lastGameResult.totalWinners - 1} others
                   </span>
-                  <span className="font-body text-[14px] text-waffle-gold leading-tight truncate">
-                    {lastGameResult.winners[0].username ?? "Player"} won ${lastGameResult.winners[0].prize.toFixed(2)}
+                  <span className="font-display text-[12px] text-waffle-gold leading-tight">
+                    won ${lastGameResult.prizePool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>

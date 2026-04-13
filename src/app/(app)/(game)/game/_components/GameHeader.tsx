@@ -221,7 +221,7 @@ function MuteButton({ isMuted, onToggle }: { isMuted: boolean; onToggle: () => v
   return (
     <motion.button
       onClick={onToggle}
-      className="flex items-center justify-center w-[44px] h-[44px] -m-2 rounded-full bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
+      className="relative flex items-center justify-center w-[28px] h-[28px] rounded-full bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] before:absolute before:inset-[-8px] before:content-['']"
       whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.2)", scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       transition={springs.snappy}

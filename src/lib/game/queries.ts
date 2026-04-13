@@ -113,6 +113,8 @@ type PrismaWinnerEntry = { rank: number | null; score: number; prize: number | n
 export interface LastGameResult {
   gameNumber: number;
   gameId: string;
+  prizePool: number;
+  totalWinners: number;
   winners: LastGameWinner[];
 }
 
@@ -129,6 +131,10 @@ export const getLastGameWinners = cache(
       select: {
         id: true,
         gameNumber: true,
+        prizePool: true,
+        _count: {
+          select: { entries: { where: { prize: { gt: 0 } } } },
+        },
         entries: {
           where: { rank: { not: null, lte: 3 } },
           orderBy: { rank: "asc" },
@@ -153,6 +159,8 @@ export const getLastGameWinners = cache(
     return {
       gameNumber: lastGame.gameNumber ?? 0,
       gameId: lastGame.id,
+      prizePool: lastGame.prizePool ?? 0,
+      totalWinners: lastGame._count.entries,
       winners: (lastGame.entries as PrismaWinnerEntry[]).map((e) => ({
         username: e.user.username,
         pfpUrl: e.user.pfpUrl,

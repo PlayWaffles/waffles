@@ -424,6 +424,11 @@ export default function QuestionView({
           )}
         </AnimatePresence>
 
+        {/* Real-time answerers — above options */}
+        <AnimatePresence>
+          <AnswererAvatars />
+        </AnimatePresence>
+
         <motion.ul
           className={`w-full flex flex-col gap-3 px-4 ${
             answerResult ? "pb-24" : ""
@@ -456,11 +461,6 @@ export default function QuestionView({
             </motion.div>
           ))}
         </motion.ul>
-
-        {/* Real-time answerers — below options so they don't push options down */}
-        <AnimatePresence>
-          <AnswererAvatars />
-        </AnimatePresence>
 
         {/* Post-answer feedback overlay */}
         <AnimatePresence>
