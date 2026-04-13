@@ -1,23 +1,19 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Prisma, TicketPurchaseSource, type UserPlatform } from "@prisma";
-import { notifyTicketPurchased } from "@/lib/partykit";
+import { Prisma, type UserPlatform } from "@prisma";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getScore } from "@/lib/game/scoring";
-import { unlockReferralRewards } from "@/lib/game/shared";
 import { safeRevalidateGamePaths } from "@/lib/game/cache";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { hasPlayableTicket } from "@/lib/tickets";
-import { areTicketsClosedForGame } from "@/lib/game/ticket-window";
 import {
   finalizeTicketPurchase,
   type PurchaseInput,
   type PurchaseResult,
 } from "@/lib/game/purchase";
-import { captureServerEvent } from "@/lib/posthog-server";
 
 /**
  * Records a ticket purchase after on-chain transaction succeeds.
@@ -38,208 +34,6 @@ export async function purchaseGameTicket(
       error: error instanceof Error ? error.message : String(error),
     });
     return { success: false, error: "Purchase failed", code: "INTERNAL_ERROR" };
-  }
-}
-
-export type FreeTicketResult =
-  | { success: true; entryId: string }
-  | { success: false; error: string; code?: string };
-
-type ClaimFreeTicketUser = {
-  id: string;
-  platform: UserPlatform;
-  username: string | null;
-  pfpUrl: string | null;
-  wallet?: string | null;
-};
-
-async function claimFreeTicketForUser(
-  user: ClaimFreeTicketUser,
-  gameId: string,
-): Promise<FreeTicketResult> {
-  const game = await prisma.game.findUnique({
-    where: { id: gameId },
-    select: {
-      id: true,
-      platform: true,
-      isTestnet: true,
-      startsAt: true,
-      endsAt: true,
-      ticketsOpenAt: true,
-      prizePool: true,
-      playerCount: true,
-      maxPlayers: true,
-      gameNumber: true,
-    },
-  });
-
-  if (!game) {
-    return { success: false, error: "Game not found", code: "NOT_FOUND" };
-  }
-
-  if (!isGameVisibleToPlatform(game, user.platform)) {
-    return { success: false, error: "Wrong platform", code: "WRONG_PLATFORM" };
-  }
-
-  if (game.ticketsOpenAt && new Date() < game.ticketsOpenAt) {
-    return { success: false, error: "Tickets are not yet available", code: "TICKETS_NOT_OPEN" };
-  }
-
-  // Block free ticket if user has previously played a game with a free ticket
-  const priorFreeEntry = await prisma.gameEntry.findFirst({
-    where: {
-      userId: user.id,
-      gameId: { not: gameId },
-      purchaseSource: TicketPurchaseSource.FREE_PLAYER,
-      answered: { gt: 0 },
-    },
-    select: { id: true },
-  });
-
-  if (priorFreeEntry) {
-    return { success: false, error: "Free ticket no longer available", code: "FREE_TICKET_USED" };
-  }
-
-  if (areTicketsClosedForGame(game)) {
-    return { success: false, error: "Ticket sales have closed", code: "TICKETS_CLOSED" };
-  }
-
-  try {
-    const result = await prisma.$transaction(async (tx) => {
-      const existing = await tx.gameEntry.findUnique({
-        where: { gameId_userId: { gameId, userId: user.id } },
-        select: { id: true },
-      });
-
-      if (existing) {
-        return { entryId: existing.id, wasCreated: false, playerCount: game.playerCount };
-      }
-
-      const currentGame = await tx.game.findUnique({
-        where: { id: gameId },
-        select: { playerCount: true, maxPlayers: true },
-      });
-
-      if (!currentGame || currentGame.playerCount >= currentGame.maxPlayers) {
-        throw new Error("GAME_FULL");
-      }
-
-      const entry = await tx.gameEntry.create({
-        data: {
-          gameId,
-          userId: user.id,
-          paidAmount: 0,
-          purchaseSource: TicketPurchaseSource.FREE_PLAYER,
-        },
-        select: { id: true },
-      });
-
-      const updated = await tx.game.update({
-        where: { id: gameId },
-        data: { playerCount: { increment: 1 } },
-        select: { playerCount: true },
-      });
-
-      await unlockReferralRewards(tx, user.id);
-
-      return { entryId: entry.id, wasCreated: true, playerCount: updated.playerCount };
-    });
-
-    safeRevalidateGamePaths("claimFreeTicketForUser");
-
-    if (result.wasCreated) {
-      notifyTicketPurchased(gameId, {
-        username: getDisplayName(user),
-        pfpUrl: user.pfpUrl || null,
-        prizePool: game.prizePool,
-        playerCount: result.playerCount,
-      }).catch((err) =>
-        console.error("[game-actions]", "free_ticket_partykit_error", err),
-      );
-
-      await captureServerEvent({
-        distinctId: user.id,
-        event: "free_ticket_claimed",
-        properties: {
-          game_id: gameId,
-          entry_id: result.entryId,
-          platform: user.platform,
-          player_count: result.playerCount,
-          prize_pool: game.prizePool,
-        },
-      }).catch((err) =>
-        console.error("[game-actions]", "posthog_capture_error", {
-          event: "free_ticket_claimed",
-          gameId,
-          userId: user.id,
-          error: err instanceof Error ? err.message : String(err),
-        }),
-      );
-    }
-
-    return { success: true, entryId: result.entryId };
-  } catch (error) {
-    if (error instanceof Error && error.message === "GAME_FULL") {
-      return { success: false, error: "Game is full", code: "GAME_FULL" };
-    }
-    throw error;
-  }
-}
-
-/**
- * Claims a free ticket for a game. No on-chain transaction.
- * Free tickets grant game access but are not eligible for prizes.
- */
-export async function claimFreeTicket(
-  gameId: string,
-): Promise<FreeTicketResult> {
-  if (!gameId) {
-    return { success: false, error: "Missing game ID", code: "INVALID_INPUT" };
-  }
-
-  try {
-    const { user } = await requireCurrentUser();
-    return claimFreeTicketForUser(user, gameId);
-  } catch (error) {
-    if (error instanceof Error && error.message === "GAME_FULL") {
-      return { success: false, error: "Game is full", code: "GAME_FULL" };
-    }
-    console.error("[game-actions]", "free_ticket_error", {
-      gameId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return { success: false, error: "Failed to claim ticket", code: "INTERNAL_ERROR" };
-  }
-}
-
-export async function claimFreeTicketForAuthenticatedUser(
-  userId: string,
-  gameId: string,
-): Promise<FreeTicketResult> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      platform: true,
-      username: true,
-      pfpUrl: true,
-      wallet: true,
-    },
-  });
-
-  if (!user) {
-    return { success: false, error: "User not found", code: "NOT_FOUND" };
-  }
-
-  try {
-    return await claimFreeTicketForUser(user, gameId);
-  } catch (error) {
-    console.error("[game-actions]", "free_ticket_error", {
-      gameId,
-      userId,
-      error: error instanceof Error ? error.message : String(error),
-    });
-    return { success: false, error: "Failed to claim ticket", code: "INTERNAL_ERROR" };
   }
 }
 

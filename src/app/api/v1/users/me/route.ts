@@ -5,35 +5,25 @@ import { prisma } from "@/lib/db";
 
 export const GET = withAuth(async (_request: NextRequest, auth) => {
   try {
-    const [user, freeTicketEntry] = await Promise.all([
-      prisma.user.findUnique({
-        where: { id: auth.userId },
-        select: {
-          id: true,
-          platform: true,
-          fid: true,
-          username: true,
-          pfpUrl: true,
-          wallet: true,
-          _count: {
-            select: { referrals: true, notifs: true },
-          },
-          inviteQuota: true,
-          inviteCode: true,
-          hasGameAccess: true,
-          isBanned: true,
-          createdAt: true,
+    const user = await prisma.user.findUnique({
+      where: { id: auth.userId },
+      select: {
+        id: true,
+        platform: true,
+        fid: true,
+        username: true,
+        pfpUrl: true,
+        wallet: true,
+        _count: {
+          select: { referrals: true, notifs: true },
         },
-      }),
-      prisma.gameEntry.findFirst({
-        where: {
-          userId: auth.userId,
-          purchaseSource: "FREE_PLAYER",
-          answered: { gt: 0 },
-        },
-        select: { id: true },
-      }),
-    ]);
+        inviteQuota: true,
+        inviteCode: true,
+        hasGameAccess: true,
+        isBanned: true,
+        createdAt: true,
+      },
+    });
 
     if (!user) {
       return NextResponse.json<ApiError>(
@@ -57,7 +47,6 @@ export const GET = withAuth(async (_request: NextRequest, auth) => {
       isBanned: user.isBanned,
       createdAt: user.createdAt,
       invitesCount: user._count.referrals,
-      hasUsedFreeTicket: !!freeTicketEntry,
     });
   } catch (error) {
     console.error("GET /api/v1/users/me Error:", error);

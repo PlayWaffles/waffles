@@ -2,7 +2,6 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { TicketIcon, CheckCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
 import { GameFilter } from "./_components/GameFilter";
-import { IssueFreeTicketCard } from "./_components/IssueFreeTicketCard";
 import { TicketReconciliationCard } from "./_components/TicketReconciliationCard";
 import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
@@ -542,7 +541,6 @@ export default async function TicketsPage({
                 </div>
             </div>
 
-            <IssueFreeTicketCard games={stats.games} />
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                 <div className="mb-4 flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div className="space-y-2">

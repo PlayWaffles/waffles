@@ -10,18 +10,9 @@ export type PurchaseStep =
   | "syncing"
   | "error";
 
-export type TicketTier = "free" | "paid";
+export type TicketTier = "paid";
 
 const TIER_CONFIG = {
-  free: {
-    selected:
-      "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.52) 100%)",
-    unselected:
-      "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.12) 100%)",
-    border:
-      "linear-gradient(157.31deg, rgba(255, 255, 255, 0.09) 26.56%, rgba(255, 255, 255, 0.5) 114.33%)",
-    glow: "rgba(255, 255, 255, 0.3)",
-  },
   paid: {
     selected:
       "linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,201,49,0.52) 100%)",
@@ -40,7 +31,6 @@ interface PurchaseViewProps {
   potentialPayout: number;
   selectedTier: TicketTier;
   onSelectTier: (tier: TicketTier) => void;
-  hasUsedFreeTicket?: boolean;
   isLoading: boolean;
   isError: boolean;
   step: PurchaseStep;
@@ -56,7 +46,6 @@ export function PurchaseView({
   potentialPayout,
   selectedTier,
   onSelectTier,
-  hasUsedFreeTicket = false,
   isLoading,
   isError,
   step,
@@ -80,14 +69,9 @@ export function PurchaseView({
     };
   }, []);
 
-  const allTiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
+  const tiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
     { key: "paid", label: "PAID", price: `$${currentPrice}`, sublabel: "Prize eligible" },
-    { key: "free", label: "FREE", price: "$0", sublabel: "Play only" },
   ];
-
-  const tiers = hasUsedFreeTicket
-    ? allTiers.filter((t) => t.key !== "free")
-    : allTiers;
 
   return (
     <>

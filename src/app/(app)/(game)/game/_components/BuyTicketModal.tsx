@@ -10,15 +10,12 @@ import {
 } from "@/hooks/useTicketPurchase";
 import { PurchaseView, type PurchaseStep, type TicketTier } from "./PurchaseView";
 import { useUser } from "@/hooks/useUser";
-import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { formatAddress } from "@/lib/address";
 import { notify } from "@/components/ui/Toaster";
-import { playSound } from "@/lib/sounds";
 import type { TicketPricingSnapshot } from "@/lib/tickets";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import {
-  authenticatedFetch,
   getAppRuntime,
   isMiniPayRuntime,
   type AppRuntime,
@@ -59,14 +56,9 @@ export function BuyTicketModal({
   const { address, isConnected } = useAccount();
   const { connect, connectors } = useConnect();
   const { user } = useUser();
-  const { refetchEntry } = useRealtime();
   const [isAnimating, setIsAnimating] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const hasUsedFreeTicket = user?.hasUsedFreeTicket ?? false;
   const [selectedTier, setSelectedTier] = useState<TicketTier>("paid");
-  const [freeStep, setFreeStep] = useState<PurchaseStep>("idle");
-  const [freeLoading, setFreeLoading] = useState(false);
-  const [freeError, setFreeError] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime>("browser");
 
   const openMiniPayAddCash = useCallback(() => {
@@ -171,88 +163,35 @@ export function BuyTicketModal({
     if (!isOpen) {
       setIsAnimating(false);
       resetPaid();
-      setFreeStep("idle");
-      setFreeLoading(false);
-      setFreeError(false);
     }
   }, [isOpen, resetPaid]);
 
-  // Free ticket claim handler
-  const handleClaimFree = useCallback(async () => {
-    setFreeLoading(true);
-    setFreeError(false);
-    setFreeStep("syncing");
-    try {
-      const response = await authenticatedFetch(`/api/v1/games/${gameId}/free-ticket`, {
-        method: "POST",
-      });
-      const result = (await response.json()) as
-        | { success: true; entryId: string }
-        | { success: false; error: string; code?: string };
-
-      if (result.success) {
-        setFreeStep("idle");
-        playSound("purchase");
-        notify.success("Free ticket claimed!");
-        refetchEntry();
-        onPurchaseSuccess?.();
-        redirectToSuccess();
-      } else {
-        setFreeStep("error");
-        setFreeError(true);
-        notify.error(result.error);
-      }
-    } catch {
-      setFreeStep("error");
-      setFreeError(true);
-      notify.error("Failed to claim ticket. Try again.");
-    } finally {
-      setFreeLoading(false);
-    }
-  }, [gameId, refetchEntry, onPurchaseSuccess, redirectToSuccess]);
-
   // Computed states based on selected tier
-  const isFree = selectedTier === "free";
-  const step = isFree ? freeStep : paidStep;
-  const isLoading = isFree ? freeLoading : paidLoading;
-  const isError = isFree ? freeError : paidError;
+  const step = paidStep;
+  const isLoading = paidLoading;
+  const isError = paidError;
   const isPurchased = hasTicket || paidSuccess;
   const isWalletReady = isConnected && !!address;
   const isFarcasterWalletLoading =
     runtime === "farcaster" && !isWalletReady && !paidLoading && !paidError;
 
-  const buttonText = isFree
-    ? freeLoading
-      ? "CLAIMING..."
-      : freeError
-        ? "TRY AGAIN"
-        : "PLAY FOR FREE"
-    : !isWalletReady
-      ? isFarcasterWalletLoading
-        ? "Loading wallet..."
-        : "Connecting wallet..."
-      : salesClosed
-        ? "SALES CLOSED"
+  const buttonText = !isWalletReady
+    ? isFarcasterWalletLoading
+      ? "Loading wallet..."
+      : "Connecting wallet..."
+    : salesClosed
+      ? "SALES CLOSED"
       : getPurchaseButtonText(paidStep, selectedPrice);
 
-  const isButtonDisabled = isFree
-    ? freeLoading || isPurchased
-    : paidLoading || !onchainId || isPurchased || !isWalletReady || salesClosed;
+  const isButtonDisabled =
+    paidLoading || !onchainId || isPurchased || !isWalletReady || salesClosed;
 
   // Handle purchase button click
   const handlePurchase = () => {
-    if (isFree) {
-      if (freeError) {
-        setFreeError(false);
-        setFreeStep("idle");
-      }
-      handleClaimFree();
+    if (paidError) {
+      resetPaid();
     } else {
-      if (paidError) {
-        resetPaid();
-      } else {
-        purchase();
-      }
+      purchase();
     }
   };
 
@@ -387,7 +326,6 @@ export function BuyTicketModal({
             potentialPayout={potentialPayout}
             selectedTier={selectedTier}
             onSelectTier={setSelectedTier}
-            hasUsedFreeTicket={hasUsedFreeTicket}
             isLoading={isLoading}
             isError={isError}
             step={step as PurchaseStep}

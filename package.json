@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "duffel:check-nigeria-airlines": "node --import tsx scripts/check-duffel-nigeria-airlines.ts",
     "cloudinary:fetch": "node --import tsx scripts/fetch-cloudinary-images.ts",
     "postinstall": "prisma generate"
   },
