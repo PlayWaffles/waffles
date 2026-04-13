@@ -157,11 +157,11 @@ export default function LeaveGameDrawer({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             <div
-              className="w-full rounded-t-2xl overflow-hidden noise bg-linear-to-b from-[#1E1E1E] to-black"
+              className="w-full rounded-t-2xl overflow-hidden noise bg-linear-to-b from-background to-black"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Handle bar with subtle animation */}
-              <div className="relative w-full border-b border-white/5 bg-[#191919]">
+              <div className="relative w-full border-b border-white/5 bg-card">
                 <div className="mx-auto w-full max-w-[480px] px-4 pt-3 pb-3 relative">
                   <motion.div
                     className="absolute left-1/2 top-2 -translate-x-1/2 h-[5px] w-9 rounded-[2.5px] bg-white/40"

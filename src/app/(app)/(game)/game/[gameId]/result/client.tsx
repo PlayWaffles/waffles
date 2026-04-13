@@ -650,7 +650,7 @@ export default function ResultPageClient({
   return (
     <>
       <div className="w-full px-4 text-white flex flex-col items-center flex-1 overflow-y-auto">
-        <div className="flex flex-col justify-center items-center gap-2 w-[315px] mb-4">
+        <div className="flex flex-col justify-center items-center gap-3 w-full max-w-[315px] mb-4">
           <motion.div
             initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
             animate={{ scale: 1, opacity: 1, rotate: 0 }}
@@ -696,10 +696,10 @@ export default function ResultPageClient({
           pfpUrl={user.pfpUrl ?? ""}
           username={user.username ?? "Player"}
         />
-        <div className="flex flex-col justify-center items-center gap-3 w-[361px] mt-5">
+        <div className="flex flex-col justify-center items-center gap-3 w-full max-w-[361px] mt-4">
           {/* Percentile row */}
           <motion.div
-            className="flex flex-row items-center gap-1"
+            className="flex flex-row items-center gap-1.5"
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.4, delay: 0.6 }}
@@ -724,7 +724,7 @@ export default function ResultPageClient({
           </motion.div>
 
           {/* Buttons container */}
-          <div className="flex flex-col items-start gap-5 w-full">
+          <div className="flex flex-col items-start gap-3 w-full">
             {/* Claim Prize Button - Only show for winners */}
             {isWinner && (
               <motion.div

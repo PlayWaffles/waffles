@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect } from "wagmi";
 
@@ -239,92 +239,8 @@ export function BuyTicketModal({
     ? freeLoading || isPurchased
     : paidLoading || !onchainId || isPurchased || !isWalletReady || salesClosed;
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    console.log("[ticket-modal]", {
-      stage: "opened",
-      gameId,
-      platform,
-      network,
-      onchainId,
-      runtime,
-      isConnected,
-      address: address ?? null,
-      selectedTier,
-      selectedPrice,
-      isWalletReady,
-      isFarcasterWalletLoading,
-      salesClosed,
-      hasTicket,
-    });
-  }, [
-    address,
-    gameId,
-    hasTicket,
-    isConnected,
-    isOpen,
-    isWalletReady,
-    isFarcasterWalletLoading,
-    network,
-    onchainId,
-    platform,
-    runtime,
-    salesClosed,
-    selectedPrice,
-    selectedTier,
-  ]);
-
-  useEffect(() => {
-    console.log("[ticket-modal]", {
-      stage: "button-state",
-      gameId,
-      platform,
-      network,
-      selectedTier,
-      buttonText,
-      isButtonDisabled,
-      step,
-      isLoading,
-      isError,
-      isPurchased,
-      isWalletReady,
-      isFarcasterWalletLoading,
-      salesClosed,
-    });
-  }, [
-    buttonText,
-    gameId,
-    isButtonDisabled,
-    isError,
-    isLoading,
-    isPurchased,
-    isWalletReady,
-    isFarcasterWalletLoading,
-    network,
-    platform,
-    salesClosed,
-    selectedTier,
-    step,
-  ]);
-
   // Handle purchase button click
   const handlePurchase = () => {
-    console.log("[ticket-modal]", {
-      stage: "cta-clicked",
-      gameId,
-      platform,
-      network,
-      selectedTier,
-      isButtonDisabled,
-      isWalletReady,
-      salesClosed,
-      hasTicket,
-      paidError,
-      freeError,
-      step,
-    });
-
     if (isFree) {
       if (freeError) {
         setFreeError(false);
@@ -341,14 +257,60 @@ export function BuyTicketModal({
   };
 
   // Handle close with animation
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setIsClosing(true);
     setIsAnimating(false);
     setTimeout(() => {
       onClose();
       setIsClosing(false);
     }, 300);
-  };
+  }, [onClose]);
+
+  // Escape key to close
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, handleClose]);
+
+  // Focus trap
+  const modalRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!isOpen || !isAnimating) return;
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    const focusableSelector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusFirst = () => {
+      const first = modal.querySelector<HTMLElement>(focusableSelector);
+      first?.focus();
+    };
+    // Focus first element after animation settles
+    const timer = setTimeout(focusFirst, 400);
+
+    const trapFocus = (e: KeyboardEvent) => {
+      if (e.key !== "Tab") return;
+      const focusable = modal.querySelectorAll<HTMLElement>(focusableSelector);
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", trapFocus);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("keydown", trapFocus);
+    };
+  }, [isOpen, isAnimating]);
 
   if (!isOpen && !isClosing) return null;
 
@@ -364,10 +326,15 @@ export function BuyTicketModal({
           backdropFilter: isAnimating ? "blur(4px)" : "blur(0px)",
         }}
         onClick={handleClose}
+        aria-hidden="true"
       />
 
       {/* Modal with slide-up animation */}
       <div
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Buy ticket"
         className="fixed bottom-0 left-0 right-0 z-50 flex flex-col rounded-t-[20px] overflow-hidden"
         style={{
           background: "linear-gradient(180deg, #1E1E1E 0%, #000000 100%)",

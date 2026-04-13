@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef, useCallback } from "react";
 import { motion } from "framer-motion";
 import {
   CheckCircleIcon,
@@ -49,8 +50,33 @@ export function HowToPlayModal({
   position = "fixed",
   showStepIcons = true,
 }: HowToPlayModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Escape key to close
+  const handleClose = useCallback(() => onClose(), [onClose]);
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") handleClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [handleClose]);
+
+  // Auto-focus close button on mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const closeBtn = modalRef.current?.querySelector<HTMLElement>('button[aria-label="Close how to play"]');
+      closeBtn?.focus();
+    }, 200);
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <motion.div
+      ref={modalRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="How to play"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -71,7 +97,7 @@ export function HowToPlayModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
             aria-label="Close how to play"
           >
             <XMarkIcon className="w-4 h-4" />
@@ -85,13 +111,13 @@ export function HowToPlayModal({
           transition={{ delay: 0.05, ...springs.gentle }}
           className="mb-8 space-y-3"
         >
-          <span className="inline-flex rounded-full bg-[#FFC931]/10 border border-[#FFC931]/15 px-3 py-1 text-[11px] font-display uppercase tracking-[0.25em] text-[#FFC931]">
+          <span className="inline-flex rounded-full bg-waffle-gold/10 border border-waffle-gold/15 px-3 py-1 text-[11px] font-display uppercase tracking-[0.25em] text-waffle-gold">
             How to Play
           </span>
           <h3 className="font-body text-[32px] leading-[0.95] tracking-[-0.02em] text-white">
             GUESS THE
             <br />
-            <span className="text-[#FFC931]">MOVIE SCENE</span>
+            <span className="text-waffle-gold">MOVIE SCENE</span>
           </h3>
           <p className="font-display text-[14px] leading-[1.5] text-white/45 max-w-[320px]">
             Compete in a live 60-minute arena where every second counts. Speed,
@@ -113,21 +139,13 @@ export function HowToPlayModal({
               className="relative overflow-hidden rounded-2xl border border-white/[0.06]"
               style={{
                 background:
-                  "linear-gradient(145deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)",
+                  `linear-gradient(145deg, rgba(255,201,49,${0.04 - index * 0.01}) 0%, rgba(255,255,255,0.01) 100%)`,
               }}
             >
-              {/* Accent bar left */}
-              <div
-                className="absolute left-0 top-0 bottom-0 w-[2px]"
-                style={{
-                  background: `linear-gradient(180deg, rgba(255,201,49,${0.5 - index * 0.12}) 0%, transparent 100%)`,
-                }}
-              />
-
-              <div className="relative flex items-start gap-4 p-4 pl-5">
+              <div className="relative flex items-start gap-4 p-4">
                 {/* Number + icon */}
                 <div className="flex flex-col items-center gap-1.5 pt-0.5">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#FFC931]/8 border border-[#FFC931]/12 text-[#FFC931]">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-waffle-gold/8 border border-waffle-gold/12 text-waffle-gold">
                     {showStepIcons ? (
                       step.icon
                     ) : (
@@ -137,7 +155,7 @@ export function HowToPlayModal({
                     )}
                   </div>
                   {showStepIcons && (
-                    <span className="font-body text-[11px] text-[#FFC931]/40 tabular-nums">
+                    <span className="font-body text-[11px] text-waffle-gold/40 tabular-nums">
                       {step.number}
                     </span>
                   )}
@@ -162,7 +180,7 @@ export function HowToPlayModal({
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5, ...springs.gentle }}
-          className="relative mt-4 overflow-hidden rounded-2xl border border-[#FFC931]/12"
+          className="relative mt-4 overflow-hidden rounded-2xl border border-waffle-gold/12"
           style={{
             background:
               "linear-gradient(135deg, rgba(255,201,49,0.06) 0%, rgba(255,201,49,0.02) 100%)",
@@ -178,8 +196,8 @@ export function HowToPlayModal({
           />
           <div className="relative p-4">
             <div className="flex items-center gap-2 mb-2">
-              <StarIcon className="w-4 h-4 text-[#FFC931]" />
-              <span className="font-body text-[14px] text-[#FFC931] leading-none">
+              <StarIcon className="w-4 h-4 text-waffle-gold" />
+              <span className="font-body text-[14px] text-waffle-gold leading-none">
                 PRIZE POOL
               </span>
             </div>

@@ -54,6 +54,7 @@ export const WaffleButton = React.forwardRef<
           "border-[5px] border-t-0 border-l-0 border-(--brand-cyan)",
           "transition-colors", // Removed transform transition as motion handles it
           "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1e1e1e]",
           className
         )}
         onClick={handleClick}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, } from "framer-motion";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { springs } from "@/lib/animations";
 
@@ -119,7 +119,7 @@ function NavItem({ item, isActive }: NavItemProps) {
   return (
     <Link
       href={item.href}
-      className="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3"
+      className="flex flex-1 flex-col items-center justify-center gap-1 px-4 py-3 landscape:py-1.5 landscape:gap-0.5"
       role="tab"
       aria-selected={isActive}
       aria-label={item.label}
@@ -133,9 +133,12 @@ function NavItem({ item, isActive }: NavItemProps) {
       >
         <IconComponent isActive={isActive} />
       </motion.div>
-      {/* Label - always muted, no glow */}
+      {/* Label */}
       <motion.span
-        className="text-xs font-medium font-display text-muted-foreground"
+        className={cn(
+          "text-xs font-medium font-display landscape:text-[10px]",
+          isActive ? "text-primary" : "text-muted-foreground"
+        )}
         animate={isActive ? { scale: [1, 1.05, 1] } : { scale: 1 }}
         transition={{ duration: 0.2, ease: "easeOut" as const }}
       >
@@ -156,7 +159,7 @@ export function BottomNav() {
     <footer
       className={cn(
         "border-t-2 border-border",
-        "bg-[#0F0F10]",
+        "bg-card",
         "shrink-0",
         "w-full"
       )}

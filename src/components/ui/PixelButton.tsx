@@ -183,7 +183,7 @@ export function PixelButton({
 
     return (
         <button
-            className={`relative flex items-center justify-center ${className}`}
+            className={`relative flex items-center justify-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1e1e1e] ${className}`}
             style={{
                 width: `${width}px`,
                 height: `${height}px`,
@@ -195,6 +195,7 @@ export function PixelButton({
                 transform: isPressed ? "scale(0.96)" : isHovered ? "scale(1.02)" : "scale(1)",
                 transition: "transform 0.15s ease, filter 0.15s ease",
                 filter: isHovered ? "brightness(1.05)" : "brightness(1)",
+                borderRadius: "4px",
             }}
             onMouseEnter={() => setIsHovered(true)}
             onMouseLeave={() => {

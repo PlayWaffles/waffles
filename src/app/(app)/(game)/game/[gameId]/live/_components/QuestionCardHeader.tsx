@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { formatTimeColon } from "@/lib/utils";
 import { TimerTube } from "./TimerTube";
@@ -62,7 +63,7 @@ function StreakBreak({ show }: { show: boolean }) {
       transition={{ duration: 0.5, ease: "easeIn" }}
     >
       <span className="text-lg">🔥</span>
-      <span className="font-body text-[18px] text-[#FF4444]">x0</span>
+      <span className="font-body text-[18px] text-danger-soft">x0</span>
     </motion.div>
   );
 }
@@ -77,6 +78,14 @@ export function QuestionCardHeader({
 }: QuestionCardHeaderProps) {
   const isLowTime = remaining <= 3 && remaining > 0;
   const isTimeUp = remaining === 0;
+
+  // Announce time at key intervals for screen readers (every 5s, plus final 3s)
+  const timerAnnouncement = useMemo(() => {
+    if (isTimeUp) return "Time is up";
+    if (remaining <= 3) return `${remaining} seconds left`;
+    if (remaining % 5 === 0) return `${remaining} seconds remaining`;
+    return "";
+  }, [remaining, isTimeUp]);
 
   return (
     <motion.div
@@ -117,12 +126,18 @@ export function QuestionCardHeader({
         </AnimatePresence>
       </div>
 
+      {/* Screen reader timer announcements */}
+      <span className="sr-only" aria-live="assertive" aria-atomic="true">
+        {timerAnnouncement}
+      </span>
+
       {/* Right side: timer */}
       <motion.div
         className="flex items-center gap-2"
         initial={{ opacity: 0, x: 10 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ duration: 0.3, delay: 0.15 }}
+        aria-hidden="true"
       >
         {/* Animated timer text */}
         <motion.div
@@ -143,7 +158,7 @@ export function QuestionCardHeader({
               key={remaining}
               className="font-body text-[18px] inline-block"
               style={{
-                color: isTimeUp ? "#FF6B6B" : isLowTime ? "#FF6B6B" : "#ffffff",
+                color: isTimeUp || isLowTime ? "var(--danger-soft)" : "#ffffff",
               }}
               initial={{ opacity: 0, y: -12, scale: 1.2 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}

@@ -21,8 +21,9 @@ html {
 :root {
   /* ── Brand Colors ───────────────────────────── */
   --brand-gold: oklch(0.83 0.17 95); /* #FFC931 */
+  --brand-gold-warm: oklch(0.79 0.16 85); /* #F5BB1B — warmer gold for gradients */
   --brand-cyan: oklch(0.78 0.19 210); /* #00CFF2 */
-  --brand-black: #1e1e1e;
+  --brand-black: oklch(0.14 0 0); /* #1e1e1e */
   --brand-pink: oklch(0.73 0.22 342); /* #FB72FF */
 
   --brand-ink-950: oklch(0.12 0 0);
@@ -50,8 +51,10 @@ html {
   --accent-soft: var(--white-a13);
   --accent-ring: var(--brand-gold);
 
-  --success: #14b985;
-  --danger: oklch(0.65 0.22 25);
+  --success: oklch(0.68 0.15 168); /* #14b985 */
+  --danger: oklch(0.65 0.22 25); /* red-orange */
+  --danger-soft: oklch(0.70 0.18 20); /* #FF6B6B — lighter error/warning */
+  --live-indicator: oklch(0.55 0.25 25); /* #FC1919 — pulsing live dot */
 
   /* ── Radii ──────────────────────────────────── */
   --radius-xs: 8px;
@@ -73,8 +76,8 @@ html {
   --sidebar-primary-fg: var(--brand-white);
   --sidebar-accent: var(--white-a10);
   --sidebar-accent-fg: var(--brand-ink-900);
-  --sidebar-border: #eaeaea;
-  --sidebar-ring: #b5b5b5;
+  --sidebar-border: oklch(0.93 0 0); /* #eaeaea */
+  --sidebar-ring: oklch(0.73 0 0); /* #b5b5b5 */
 }
 
 /* ------------------------------------------------------------
@@ -115,10 +118,13 @@ html {
   --color-ring: var(--accent-ring);
 
   --color-waffle-gold: var(--brand-gold);
+  --color-waffle-gold-warm: var(--brand-gold-warm);
   --color-neon-cyan: var(--brand-cyan);
   --color-neon-pink: var(--brand-pink);
   --color-success: var(--success);
   --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-live: var(--live-indicator);
 
   --radius-sm: var(--radius-xs);
   --radius-md: var(--radius-sm);
@@ -178,4 +184,18 @@ html {
   width: 100%;
   background: url("/noise.svg"),
     linear-gradient(180deg, #1e1e1e 0%, #000000 100%);
+}
+
+/* ------------------------------------------------------------
+   REDUCED MOTION
+   ------------------------------------------------------------ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

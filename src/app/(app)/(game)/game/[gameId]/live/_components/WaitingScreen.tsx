@@ -159,7 +159,7 @@ export default function WaitingScreen({
               </motion.div>
 
               {/* Subtle glow effect */}
-              <div className="absolute inset-0 bg-[#F5BB1B]/10 blur-3xl rounded-full -z-10" />
+              <div className="absolute inset-0 bg-waffle-gold-warm/10 blur-3xl rounded-full -z-10" />
             </motion.div>
 
             {/* Status text */}
@@ -352,7 +352,7 @@ export default function WaitingScreen({
                       {/* Rank */}
                       <div
                         className={`flex items-center justify-center w-6 h-6 rounded-full shrink-0 ${entry.rank === 1
-                          ? "bg-[#F5BB1B]/20 text-[#F5BB1B]"
+                          ? "bg-waffle-gold-warm/20 text-waffle-gold-warm"
                           : entry.rank === 2
                             ? "bg-[#C0C0C0]/20 text-[#C0C0C0]"
                             : entry.rank === 3
@@ -377,7 +377,7 @@ export default function WaitingScreen({
                             unoptimized
                           />
                         ) : (
-                          <div className="w-full h-full bg-linear-to-br from-[#F5BB1B] to-[#FF6B35]" />
+                          <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
                         )}
                       </div>
 

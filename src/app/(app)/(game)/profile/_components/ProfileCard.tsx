@@ -58,16 +58,16 @@ export function ProfileCard({
         {/* User Section */}
         <div className="flex flex-row justify-between items-start gap-2 w-full flex-1">
           {/* Upload Button (Left) */}
-          <motion.div
+          <motion.button
+            type="button"
             onClick={onUpload}
             whileHover={{ scale: 1.1, backgroundColor: "rgba(255, 255, 255, 0.2)" }}
             whileTap={{ scale: 0.9 }}
-            className="box-border flex flex-row justify-center items-center p-2 gap-2 w-[34px] h-[34px] bg-white/13 rounded-[900px] cursor-pointer transition-colors"
-            role="button"
-            aria-label="Upload"
+            className="box-border flex flex-row justify-center items-center p-2 gap-2 w-[44px] h-[44px] bg-white/13 rounded-[900px] cursor-pointer transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
+            aria-label="Upload profile photo"
           >
             <UploadIcon className="text-white w-[18px] h-[18px]" />
-          </motion.div>
+          </motion.button>
 
           {/* Center Content: Avatar, Username, Streak */}
           <div className="flex flex-col justify-center items-center gap-[13px] h-[120px]">
@@ -176,7 +176,7 @@ export function ProfileCard({
 
           {/* Invisible placeholder (Right) for symmetry */}
           <div
-            className="box-border flex flex-row justify-center items-center p-2 gap-2 w-[34px] h-[34px] bg-white/13 opacity-0 rounded-[900px]"
+            className="box-border flex flex-row justify-center items-center p-2 gap-2 w-[44px] h-[44px] bg-white/13 opacity-0 rounded-[900px]"
             aria-hidden="true"
           >
             <UploadIcon className="text-white w-[18px] h-[18px]" />

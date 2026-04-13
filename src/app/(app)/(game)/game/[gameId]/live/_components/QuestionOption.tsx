@@ -134,7 +134,6 @@ export function QuestionOption({
 
       <PixelButton
         aria-pressed={isSelected}
-        tabIndex={-1}
         variant="filled"
         colorTheme={colorTheme}
         width={buttonWidth}

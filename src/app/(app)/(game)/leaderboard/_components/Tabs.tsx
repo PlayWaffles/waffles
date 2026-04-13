@@ -31,7 +31,7 @@ export function Tabs({ activeTab, gameNumber, prevGameId, nextGameId, onNavigate
       const available = el.clientWidth - arrowSpace - gap;
       // Round down to nearest 4 (PixelButton grid requirement)
       const perButton = Math.floor(available / 2 / 4) * 4;
-      setButtonWidth(Math.max(120, Math.min(perButton, 180)));
+      setButtonWidth(Math.max(80, Math.min(perButton, 180)));
     };
     measure();
     const ro = new ResizeObserver(measure);

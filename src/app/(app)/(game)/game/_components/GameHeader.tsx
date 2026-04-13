@@ -48,7 +48,7 @@ export function GameHeader({
     <>
       <header
         className={cn(
-          "sticky top-0 left-0 shrink-0 z-40 flex items-center justify-between w-full max-w-lg h-[52px] bg-[#191919] border-b border-b-[#FFFFFF12] pt-[12px] px-4 pb-[12px]"
+          "sticky top-0 left-0 shrink-0 z-40 flex items-center justify-between w-full max-w-lg h-[52px] bg-card border-b border-border pt-[12px] px-4 pb-[12px]"
         )}
       >
         {isLiveRoute ? (
@@ -80,7 +80,7 @@ export function GameHeader({
             >
               {/* Animated pulsing dot */}
               <motion.span
-                className="w-2 h-2 rounded-full bg-[#FC1919]"
+                className="w-2 h-2 rounded-full bg-live"
                 animate={{
                   scale: [1, 1.3, 1],
                   boxShadow: [
@@ -96,7 +96,7 @@ export function GameHeader({
                 }}
               />
               <motion.span
-                className="text-[#FC1919] text-[18px] not-italic font-normal leading-[92%] tracking-[-0.03em]"
+                className="text-live text-[18px] not-italic font-normal leading-[92%] tracking-[-0.03em]"
                 animate={{ opacity: [1, 0.7, 1] }}
                 transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" as const }}
               >
@@ -132,7 +132,7 @@ export function GameHeader({
               {isCurrentGameLive ? (
                 <span className="flex items-center gap-1.5">
                   <motion.span
-                    className="w-2 h-2 rounded-full bg-[#FC1919]"
+                    className="w-2 h-2 rounded-full bg-live"
                     animate={{
                       scale: [1, 1.3, 1],
                       boxShadow: [
@@ -148,7 +148,7 @@ export function GameHeader({
                     }}
                   />
                   <motion.span
-                    className="text-[#FC1919] text-[18px] not-italic font-normal leading-[92%] tracking-[-0.03em]"
+                    className="text-live text-[18px] not-italic font-normal leading-[92%] tracking-[-0.03em]"
                     animate={{ opacity: [1, 0.7, 1] }}
                     transition={{
                       duration: 1.5,
@@ -176,7 +176,7 @@ export function GameHeader({
             /* Leave Game button with interactions */
             <motion.button
               onClick={() => setIsLeaveGameDrawerOpen(true)}
-              className="flex items-center bg-white/10 rounded-full px-[12px] py-[6px] w-[130.9916px] h-[28px] transition-colors font-body"
+              className="flex items-center bg-white/10 rounded-full px-[12px] py-[6px] min-h-[44px] transition-colors font-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
               whileHover={{
                 backgroundColor: "rgba(255, 255, 255, 0.2)",
                 scale: 1.05,
@@ -221,7 +221,7 @@ function MuteButton({ isMuted, onToggle }: { isMuted: boolean; onToggle: () => v
   return (
     <motion.button
       onClick={onToggle}
-      className="flex items-center justify-center w-[28px] h-[28px] rounded-full bg-white/10"
+      className="flex items-center justify-center w-[44px] h-[44px] -m-2 rounded-full bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
       whileHover={{ backgroundColor: "rgba(255, 255, 255, 0.2)", scale: 1.1 }}
       whileTap={{ scale: 0.9 }}
       transition={springs.snappy}

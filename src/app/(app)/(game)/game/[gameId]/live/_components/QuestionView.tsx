@@ -17,6 +17,7 @@ import { useRealtime } from "@/components/providers/RealtimeProvider";
 import type { LiveGameQuestion } from "../page";
 import type { AnswerResult } from "@/lib/game/tension";
 import type { QuestionAnswerer } from "@shared/protocol";
+import { LucideClover } from "lucide-react";
 
 // ==========================================
 // ANIMATION VARIANTS
@@ -187,11 +188,11 @@ function AnswererAvatars() {
                 transition={{ duration: 0.6, ease: "easeOut" }}
               />
 
-              <div className="w-full h-full rounded-[6px] overflow-hidden bg-gradient-to-br from-[#F5BB1B] to-[#FF6B35]">
+              <div className="w-full h-full rounded-[6px] overflow-hidden bg-gradient-to-br from-waffle-gold-warm to-[#FF6B35]">
                 {player.pfpUrl ? (
                   <Image
                     src={player.pfpUrl}
-                    alt=""
+                    alt={player.username}
                     width={50}
                     height={50}
                     className="w-full h-full object-cover"
@@ -209,8 +210,8 @@ function AnswererAvatars() {
                     height: 14,
                     bottom: -1,
                     right: -1,
-                    backgroundColor: player.correct ? "#14B985" : "#FF4444",
-                    boxShadow: "0 0 0 2px #1e1e1e",
+                    backgroundColor: player.correct ? "var(--success)" : "var(--danger-soft)",
+                    boxShadow: "0 0 0 2px var(--brand-black)",
                   }}
                   initial={{ scale: 0 }}
                   animate={{ scale: 1 }}
@@ -366,7 +367,8 @@ export default function QuestionView({
       <section className="w-full flex flex-col relative" aria-live="polite">
         {/* Question Content with urgency glow */}
         <motion.div
-          className="relative mx-auto mb-4 flex items-center justify-center w-full font-body font-normal text-[36px] leading-[0.92] text-center tracking-[-0.03em] text-white px-4"
+          className="relative mx-auto mb-4 flex items-center justify-center w-full font-body font-normal leading-[0.92] text-center tracking-[-0.03em] text-white px-4"
+          style={{ fontSize: "clamp(24px, 7vw, 34px)" }}
           variants={questionTextVariants}
           animate={
             isLowTime
@@ -398,9 +400,9 @@ export default function QuestionView({
               animate="visible"
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
             >
-              <div className="relative w-full aspect-video rounded-[10px] overflow-hidden bg-[#17171a] border border-[#313136] shadow-[0_8px_0_#000]">
+              <div className="relative w-full aspect-video rounded-[10px] overflow-hidden bg-card border border-border shadow-[0_8px_0_#000]">
                 {!mediaLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#17171a]">
+                  <div className="absolute inset-0 flex items-center justify-center z-10 bg-card">
                     <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   </div>
                 )}
@@ -422,14 +424,9 @@ export default function QuestionView({
           )}
         </AnimatePresence>
 
-        {/* Real-time answerers — between question/media and options */}
-        <AnimatePresence>
-          <AnswererAvatars />
-        </AnimatePresence>
-
         <motion.ul
-          className={`w-full flex flex-col gap-2 px-4 ${
-            answerResult ? "pb-28" : ""
+          className={`w-full flex flex-col gap-3 px-4 ${
+            answerResult ? "pb-24" : ""
           }`}
           variants={optionContainerVariants}
           initial="hidden"
@@ -460,18 +457,26 @@ export default function QuestionView({
           ))}
         </motion.ul>
 
+        {/* Real-time answerers — below options so they don't push options down */}
+        <AnimatePresence>
+          <AnswererAvatars />
+        </AnimatePresence>
+
         {/* Post-answer feedback overlay */}
         <AnimatePresence>
           {answerResult && (
             <motion.div
-              className="absolute bottom-0 left-0 right-0 px-4 pb-4 flex flex-col items-center gap-2 z-20"
+              className="sticky bottom-0 left-0 right-0 px-4 pb-4 pt-3 flex flex-col items-center gap-3 z-20"
+              style={{
+                background: "linear-gradient(to top, var(--brand-black) 60%, transparent 100%)",
+              }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
               transition={{ type: "spring", stiffness: 400, damping: 20 }}
             >
               <motion.p
-                className="font-body text-lg"
+                className="font-body text-lg text-center"
                 style={{ color: answerResult.feedback.color }}
                 initial={{ scale: 0.5, opacity: 0 }}
                 animate={{ scale: [1, 1.15, 1], opacity: 1 }}
@@ -481,12 +486,12 @@ export default function QuestionView({
               </motion.p>
               {showAdvancePrompt ? (
                 <motion.button
-                  className="w-full py-3 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white"
+                  className="w-full max-w-sm py-3.5 rounded-xl bg-white/10 border border-white/20 font-body text-lg text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)]"
                   onClick={onAdvance}
                   whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.15)" }}
                   whileTap={{ scale: 0.97 }}
                 >
-                  {questionNumber >= totalQuestions ? "FINAL SCORE???" : "NEXT QUESTION"}
+                  {questionNumber >= totalQuestions ? "SEE RESULTS" : "NEXT QUESTION"}
                 </motion.button>
               ) : null}
             </motion.div>

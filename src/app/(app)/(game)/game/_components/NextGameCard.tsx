@@ -170,7 +170,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
         }}
       >
         {/* Game title */}
-        <div className="flex items-center justify-center gap-2 w-full px-4 pt-3 pb-1 z-10">
+        <div className="flex items-center justify-center gap-2 w-full px-4 pt-4 pb-1 z-10">
           <span className="font-body text-[16px] text-white tracking-[0.04em]">
             {gameLabel}
           </span>
@@ -181,7 +181,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, ...springs.gentle }}
-          className="flex flex-col items-center z-10 shrink-0 w-full px-4 pt-1 pb-2"
+          className="flex flex-col items-center z-10 shrink-0 w-full px-4 pt-1 pb-3"
         >
           <span className="font-display text-[10px] uppercase tracking-[0.18em] text-white/35 mb-2">
             {hasEnded
@@ -204,7 +204,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.25 }}
-          className="relative flex flex-row items-stretch z-10 shrink-0 mx-4 mb-3 gap-2.5"
+          className="relative flex flex-row items-stretch z-10 shrink-0 mx-4 mb-4 gap-3"
         >
           <StatBlock
             icon="/images/illustrations/spots.svg"
@@ -229,7 +229,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ delay: 0.35, ...springs.bouncy }}
-          className="relative flex justify-center items-center px-4 pb-1 z-10 shrink-0"
+          className="relative flex justify-center items-center px-4 pb-3 z-10 shrink-0"
         >
           <WaffleButton
             disabled={buttonConfig.disabled}
@@ -244,7 +244,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="flex flex-row justify-center items-center w-full px-4 pb-4 pt-2.5 gap-2 min-h-7"
+          className="flex flex-row justify-center items-center w-full px-4 pb-4 pt-1 gap-2 min-h-7"
         >
           {/* Avatar Stack */}
           <AnimatePresence>
@@ -276,7 +276,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-linear-to-br from-[#F5BB1B] to-[#FF6B35]" />
+                      <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
                     )}
                   </motion.div>
                 ))}
@@ -329,7 +329,7 @@ function CountdownUnit({ value, label }: { value: string; label: string }) {
   return (
     <div className="flex flex-col items-center gap-0.5">
       <motion.div
-        className="flex items-center justify-center w-[52px] h-[44px] rounded-lg font-body text-[24px] text-[#F5BB1B] tabular-nums"
+        className="flex items-center justify-center w-[52px] h-[44px] rounded-lg font-body text-[24px] text-waffle-gold-warm tabular-nums"
         style={{
           background:
             "linear-gradient(180deg, rgba(245, 187, 27, 0.1) 0%, rgba(245, 187, 27, 0.04) 100%)",

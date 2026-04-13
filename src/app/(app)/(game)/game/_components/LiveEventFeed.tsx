@@ -90,7 +90,7 @@ function ConnectionIndicator({
             : { scale: [0.8, 1, 0.8], opacity: [0.5, 1, 0.5] }
         }
         transition={{ duration: isConnected ? 2 : 1, repeat: Infinity }}
-        className={`w-2 h-2 rounded-full ${isConnected ? "bg-[#14B985]" : "bg-[#F5BB1B]"
+        className={`w-2 h-2 rounded-full ${isConnected ? "bg-success" : "bg-waffle-gold-warm"
           }`}
       />
       <span className="text-[10px] text-white/50 font-display">

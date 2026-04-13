@@ -56,7 +56,7 @@ export function PlayerAvatarStack({
               />
 
               {/* PFP */}
-              <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-[#F5BB1B] to-[#FF6B35]">
+              <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-waffle-gold-warm to-[#FF6B35]">
                 {player.pfpUrl ? (
                   <Image
                     src={player.pfpUrl}

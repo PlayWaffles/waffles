@@ -20,7 +20,7 @@ export function Row({ entry, isCurrentUser = false, showScore = false }: RowProp
   });
 
   return (
-    <motion.div
+    <motion.li
       layout
       whileHover={{
         scale: 1.01,
@@ -79,6 +79,6 @@ export function Row({ entry, isCurrentUser = false, showScore = false }: RowProp
           </span>
         </div>
       </div>
-    </motion.div>
+    </motion.li>
   );
 }

@@ -211,7 +211,7 @@ export default function LeaderboardClient() {
         </AnimatePresence>
 
         {/* Rows */}
-        <div className="space-y-3">
+        <ol className="space-y-3 list-none" aria-label="Leaderboard rankings">
           {rest.map((entry) => (
             <Row
               key={`${activeTab}-${entry.rank}-${entry.id}`}
@@ -220,7 +220,7 @@ export default function LeaderboardClient() {
               showScore={activeTab === "current"}
             />
           ))}
-        </div>
+        </ol>
 
         {/* Pagination Loader */}
         {isLoading && !isEmpty && (

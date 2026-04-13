@@ -58,7 +58,7 @@ const InviteDrawerComingSoon = ({ isOpen, onClose }: Omit<InviteDrawerProps, "in
               transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="relative w-full max-w-lg mx-auto bg-white shadow-2xl overflow-hidden border-t-2 border-white/20 pointer-events-auto"
               style={{
-                height: "400px",
+                height: "min(400px, 80dvh)",
                 borderTopLeftRadius: "20px",
                 borderTopRightRadius: "20px",
               }}
@@ -198,7 +198,7 @@ const InviteDrawerActive = ({ isOpen, onClose, inviteLink }: InviteDrawerProps) 
             isOpen ? "translate-y-0 pointer-events-auto" : "translate-y-full pointer-events-none"
           )}
           style={{
-            height: '518px',
+            height: 'min(518px, 85dvh)',
             borderTopLeftRadius: '20px',
             borderTopRightRadius: '20px',
           }}

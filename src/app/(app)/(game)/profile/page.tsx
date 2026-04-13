@@ -105,7 +105,7 @@ export default function ProfilePage() {
         variants={containerVariants}
         initial="hidden"
         animate="visible"
-        className="flex-1 flex flex-col overflow-auto px-3 gap-3 pb-4"
+        className="flex-1 flex flex-col overflow-auto px-3 pb-4"
       >
         {/* Header */}
         <motion.header
@@ -145,8 +145,8 @@ export default function ProfilePage() {
           </motion.button>
         </motion.header>
 
-        {/* Profile Card */}
-        <motion.div variants={itemVariants} className="shrink-0">
+        {/* Profile Card — hero element, extra breathing room */}
+        <motion.div variants={itemVariants} className="shrink-0 mt-1">
           <ProfileCard
             username={safeUsername}
             streak={stats?.currentStreak ?? 0}
@@ -157,8 +157,8 @@ export default function ProfilePage() {
           />
         </motion.div>
 
-        {/* Invite Button */}
-        <motion.div variants={itemVariants} className="shrink-0">
+        {/* Invite Button — tight with card above (same identity group) */}
+        <motion.div variants={itemVariants} className="shrink-0 mt-2">
           <InviteFriendsButton onInvite={() => {
             console.info("[posthog]", "client_capture", {
               event: "invite_friends_opened",
@@ -168,8 +168,8 @@ export default function ProfilePage() {
           }} />
         </motion.div>
 
-        {/* Stats Section */}
-        <motion.div variants={itemVariants} className="shrink-0">
+        {/* Stats Section — generous separation from identity group */}
+        <motion.div variants={itemVariants} className="shrink-0 mt-5">
           <Stats
             stats={{
               totalGames: stats?.totalGames ?? 0,
@@ -185,8 +185,8 @@ export default function ProfilePage() {
           />
         </motion.div>
 
-        {/* Game History */}
-        <motion.div variants={itemVariants} className="shrink-0 pb-2">
+        {/* Game History — tight with stats (same data group) */}
+        <motion.div variants={itemVariants} className="shrink-0 mt-3 pb-2">
           <GameHistory gameHistory={recentGames} />
         </motion.div>
       </motion.div>

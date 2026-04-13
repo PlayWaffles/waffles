@@ -192,7 +192,7 @@ export function GameCountdownScreen({
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-linear-to-br from-[#F5BB1B] to-[#FF6B35]" />
+                      <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
                     )}
                   </motion.div>
                 ))}
