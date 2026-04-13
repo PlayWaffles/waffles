@@ -59,9 +59,10 @@ type SponsorStep =
     | "error";
 
 function getExplorerTxUrl(network: GameNetwork, hash: `0x${string}`) {
-    if (network === "BASE_MAINNET") return `https://basescan.org/tx/${hash}`;
-    if (network === "BASE_SEPOLIA") return `https://sepolia.basescan.org/tx/${hash}`;
-    return `https://celo-sepolia.blockscout.com/tx/${hash}`;
+  if (network === "BASE_MAINNET") return `https://basescan.org/tx/${hash}`;
+  if (network === "BASE_SEPOLIA") return `https://sepolia.basescan.org/tx/${hash}`;
+  if (network === "CELO_MAINNET") return `https://celoscan.io/tx/${hash}`;
+  return `https://celo-sepolia.blockscout.com/tx/${hash}`;
 }
 
 function toError(error: unknown) {

@@ -110,7 +110,7 @@ function getReconcileTargets(platform: ChainPlatform): GameNetwork[] {
     return ["BASE_MAINNET", "BASE_SEPOLIA"];
   }
 
-  return ["CELO_SEPOLIA"];
+  return ["CELO_MAINNET", "CELO_SEPOLIA"];
 }
 
 function revalidateTicketAdminPaths(gameId?: string) {

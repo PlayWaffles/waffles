@@ -1,4 +1,4 @@
-import { base, baseSepolia, celoSepolia } from "viem/chains";
+import { base, baseSepolia, celo, celoSepolia } from "viem/chains";
 import type { Chain } from "viem";
 import { env } from "@/lib/env";
 import { type ChainTarget, resolveChainTarget } from "./network";
@@ -29,19 +29,24 @@ const farcasterSepoliaChain: Chain = {
 };
 export const farcasterChain = farcasterMainnetChain;
 export const farcasterSepoliaChainConfig = farcasterSepoliaChain;
-export const miniPayChain = celoSepolia;
+export const miniPayChain = celo;
+export const miniPaySepoliaChain = celoSepolia;
 
 export function getPlatformChain(target: ChainTarget): Chain {
   const { network } = resolveChainTarget(target);
   if (network === "BASE_SEPOLIA") return farcasterSepoliaChain;
-  if (network === "CELO_SEPOLIA") return miniPayChain;
+  if (network === "CELO_MAINNET") return miniPayChain;
+  if (network === "CELO_SEPOLIA") return miniPaySepoliaChain;
   return farcasterMainnetChain;
 }
 
 export function getPlatformRpcUrl(target: ChainTarget): string {
   const { network } = resolveChainTarget(target);
   if (network === "BASE_SEPOLIA") return env.nextPublicBaseSepoliaRpcUrl;
-  if (network === "CELO_SEPOLIA") return miniPayChain.rpcUrls.default.http[0];
+  if (network === "CELO_MAINNET") {
+    return env.nextPublicCeloMainnetRpcUrl || miniPayChain.rpcUrls.default.http[0];
+  }
+  if (network === "CELO_SEPOLIA") return miniPaySepoliaChain.rpcUrls.default.http[0];
   return env.nextPublicBaseMainnetRpcUrl;
 }
 

@@ -44,7 +44,10 @@ function getRecoveryTargets(
     ];
   }
 
-  return [{ platform, network: "CELO_SEPOLIA" }];
+  return [
+    { platform, network: "CELO_MAINNET" },
+    { platform, network: "CELO_SEPOLIA" },
+  ];
 }
 
 function getRecoveryScanWindow(platform: RecoveryPlatform) {

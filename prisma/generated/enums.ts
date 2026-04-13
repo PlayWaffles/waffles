@@ -38,6 +38,7 @@ export type PendingPurchaseStatus = (typeof PendingPurchaseStatus)[keyof typeof 
 export const GameNetwork = {
   BASE_MAINNET: 'BASE_MAINNET',
   BASE_SEPOLIA: 'BASE_SEPOLIA',
+  CELO_MAINNET: 'CELO_MAINNET',
   CELO_SEPOLIA: 'CELO_SEPOLIA'
 } as const
 

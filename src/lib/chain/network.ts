@@ -3,6 +3,7 @@ import type { ChainPlatform } from "./platform";
 export type GameNetwork =
   | "BASE_MAINNET"
   | "BASE_SEPOLIA"
+  | "CELO_MAINNET"
   | "CELO_SEPOLIA";
 
 export type ChainTarget =
@@ -13,7 +14,7 @@ export type ChainTarget =
     };
 
 export function defaultNetworkForPlatform(platform: ChainPlatform): GameNetwork {
-  return platform === "MINIPAY" ? "CELO_SEPOLIA" : "BASE_MAINNET";
+  return platform === "MINIPAY" ? "CELO_MAINNET" : "BASE_MAINNET";
 }
 
 export function resolveChainTarget(target: ChainTarget): {

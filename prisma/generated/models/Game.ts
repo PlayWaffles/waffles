@@ -437,12 +437,13 @@ export type GameOrderByWithRelationInput = {
 
 export type GameWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  gameNumber?: number
   onchainId?: string
   launchGroupId_platform?: Prisma.GameLaunchGroupIdPlatformCompoundUniqueInput
+  network_gameNumber?: Prisma.GameNetworkGameNumberCompoundUniqueInput
   AND?: Prisma.GameWhereInput | Prisma.GameWhereInput[]
   OR?: Prisma.GameWhereInput[]
   NOT?: Prisma.GameWhereInput | Prisma.GameWhereInput[]
+  gameNumber?: Prisma.IntFilter<"Game"> | number
   platform?: Prisma.EnumUserPlatformFilter<"Game"> | $Enums.UserPlatform
   network?: Prisma.EnumGameNetworkFilter<"Game"> | $Enums.GameNetwork
   title?: Prisma.StringFilter<"Game"> | string
@@ -470,7 +471,7 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   entries?: Prisma.GameEntryListRelationFilter
   chats?: Prisma.ChatListRelationFilter
   pendingPurchases?: Prisma.PendingPurchaseListRelationFilter
-}, "id" | "gameNumber" | "onchainId" | "launchGroupId_platform">
+}, "id" | "onchainId" | "launchGroupId_platform" | "network_gameNumber">
 
 export type GameOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -776,6 +777,11 @@ export type FloatNullableListFilter<$PrismaModel = never> = {
 export type GameLaunchGroupIdPlatformCompoundUniqueInput = {
   launchGroupId: string
   platform: $Enums.UserPlatform
+}
+
+export type GameNetworkGameNumberCompoundUniqueInput = {
+  network: $Enums.GameNetwork
+  gameNumber: number
 }
 
 export type GameCountOrderByAggregateInput = {
