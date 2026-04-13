@@ -149,6 +149,52 @@ export async function notifyTicketPurchased(
 }
 
 /**
+ * Broadcast a stats-only update without adding an entrant.
+ */
+export async function notifyGameStatsUpdated(
+  gameId: string,
+  data: {
+    prizePool: number;
+    playerCount: number;
+  },
+): Promise<void> {
+  if (!env.partykitHost || !env.partykitSecret) {
+    console.warn("[" + SERVICE + "]", "notify_game_stats_skipped", {
+      gameId,
+      reason: "PartyKit not configured",
+    });
+    return;
+  }
+
+  try {
+    const res = await partyFetch(gameId, "update-stats", {
+      method: "POST",
+      body: data,
+    });
+
+    if (!res.ok) {
+      console.error("[" + SERVICE + "]", "notify_game_stats_failed", {
+        gameId,
+        status: res.status,
+        statusText: res.statusText,
+      });
+      return;
+    }
+
+    console.log("[" + SERVICE + "]", "notify_game_stats_success", {
+      gameId,
+      prizePool: data.prizePool,
+      playerCount: data.playerCount,
+    });
+  } catch (err) {
+    console.error("[" + SERVICE + "]", "notify_game_stats_error", {
+      gameId,
+      error: err instanceof Error ? err.message : String(err),
+    });
+  }
+}
+
+/**
  * Cleanup PartyKit room when a game is deleted.
  * Notifies the PartyKit server to close connections and free resources.
  */

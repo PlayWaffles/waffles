@@ -7,6 +7,8 @@ import { getPublicClient } from "@/lib/chain/client";
 import { getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { waffleGameAbi } from "@/lib/chain/abi";
 import { logAdminAction, EntityType } from "@/lib/audit";
+import { safeRevalidateGamePaths } from "@/lib/game/cache";
+import { notifyGameStatsUpdated } from "@/lib/partykit";
 import { sendBatch } from "@/lib/notifications";
 import { buildPayload, preGame } from "@/lib/notifications/templates";
 
@@ -121,9 +123,20 @@ export async function POST(request: NextRequest, context: RouteContext) {
       formatUnits(onchainTotalPrizePool, PAYMENT_TOKEN_DECIMALS),
     );
 
-    await prisma.game.update({
+    const updatedGame = await prisma.game.update({
       where: { id: game.id },
       data: { prizePool: syncedNetPrizePool },
+      select: {
+        id: true,
+        prizePool: true,
+        playerCount: true,
+      },
+    });
+
+    safeRevalidateGamePaths("admin/sponsorship-sync");
+    void notifyGameStatsUpdated(updatedGame.id, {
+      prizePool: updatedGame.prizePool,
+      playerCount: updatedGame.playerCount,
     });
 
     let notificationResults: Awaited<ReturnType<typeof sendBatch>> | null = null;

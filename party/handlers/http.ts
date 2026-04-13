@@ -127,6 +127,29 @@ export async function handleTicketPurchased(
   return Response.json({ success: true }, { headers: CORS_HEADERS });
 }
 
+export async function handleUpdateStats(
+  server: GameServer,
+  req: Party.Request,
+): Promise<Response> {
+  const body = (await req.json()) as {
+    prizePool: number;
+    playerCount: number;
+  };
+
+  server.broadcast({
+    type: "stats",
+    prizePool: body.prizePool,
+    playerCount: body.playerCount,
+  });
+
+  console.log("[PartyKit]", "stats_updated_broadcasted", {
+    prizePool: body.prizePool,
+    playerCount: body.playerCount,
+  });
+
+  return Response.json({ success: true }, { headers: CORS_HEADERS });
+}
+
 // Update game endpoint - called when admin updates game
 export async function handleUpdateGame(
   server: GameServer,

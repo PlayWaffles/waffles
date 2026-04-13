@@ -12,6 +12,7 @@ import { StoredChatMessage, AlarmPhase, CORS_HEADERS } from "./types";
 import {
   handleInit,
   handleTicketPurchased,
+  handleUpdateStats,
   handleUpdateGame,
   handleChatHistory,
   checkAuth,
@@ -100,7 +101,7 @@ export default class GameServer implements Party.Server {
     const secret = this.room.env.PARTYKIT_SECRET as string;
 
     // Routes requiring auth
-    const authRoutes = ["init", "ticket-purchased", "update-game", "chat-history"];
+    const authRoutes = ["init", "ticket-purchased", "update-stats", "update-game", "chat-history"];
     if (authRoutes.includes(path || "") && !checkAuth(req, secret)) {
       return Response.json(
         { error: "Unauthorized" },
@@ -136,6 +137,15 @@ export default class GameServer implements Party.Server {
             );
           }
           return await handleUpdateGame(this, req);
+
+        case "update-stats":
+          if (req.method !== "POST") {
+            return Response.json(
+              { error: "Method not allowed" },
+              { status: 405, headers: CORS_HEADERS },
+            );
+          }
+          return await handleUpdateStats(this, req);
 
         case "chat-history":
           if (req.method !== "GET") {
