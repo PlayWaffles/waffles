@@ -2,9 +2,10 @@ import { prisma } from "@/lib/db";
 import type { GameNetwork } from "@/lib/chain/network";
 
 export async function getNextGameNumberForNetwork(network: GameNetwork) {
-  const totalGamesOnNetwork = await prisma.game.count({
+  const highestNumber = await prisma.game.aggregate({
     where: { network },
+    _max: { gameNumber: true },
   });
 
-  return totalGamesOnNetwork + 1;
+  return (highestNumber._max.gameNumber ?? 0) + 1;
 }

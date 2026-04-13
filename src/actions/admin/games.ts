@@ -7,7 +7,7 @@ import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
-import { GameTheme, UserPlatform } from "@prisma";
+import { GameTheme, Prisma, UserPlatform } from "@prisma";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
@@ -49,6 +49,17 @@ export type GameActionResult =
 const DEFAULT_GAME_THEME = GameTheme.MOVIES;
 const DEFAULT_GAME_COVER_URL = "/images/movies-cover.png";
 const AUTO_QUESTION_COUNT = 9;
+const GAME_NUMBER_RETRY_LIMIT = 3;
+
+function isGameNumberConflict(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("network") &&
+    error.meta.target.includes("gameNumber")
+  );
+}
 
 async function getAutoQuestionTemplates() {
   const templates = await prisma.questionTemplate.findMany({
@@ -181,31 +192,47 @@ export async function createGameAction(
     const network = defaultNetworkForPlatform(platform);
     const onchainId = generateOnchainGameId();
     let gameId: string | null = null;
-    const gameNumber = await getNextGameNumberForNetwork(network);
+    let gameNumber: number | null = null;
 
     try {
-      const game = await prisma.game.create({
-        data: {
-          title: formatGameLabel(gameNumber),
-          gameNumber,
-          platform,
-          network,
-          isTestnet: network !== "BASE_MAINNET",
-          description: null,
-          theme: DEFAULT_GAME_THEME,
-          coverUrl: DEFAULT_GAME_COVER_URL,
-          startsAt: data.startsAt,
-          endsAt: data.endsAt,
-          ticketsOpenAt: data.ticketsOpenAt,
-          tierPrices: [data.ticketPrice],
-          prizePool: 0,
-          playerCount: 0,
-          roundBreakSec: data.roundBreakSec,
-          maxPlayers: data.maxPlayers,
-          onchainId,
-          launchGroupId,
-        },
-      });
+      let game = null;
+      for (let attempt = 0; attempt < GAME_NUMBER_RETRY_LIMIT; attempt += 1) {
+        gameNumber = await getNextGameNumberForNetwork(network);
+
+        try {
+          game = await prisma.game.create({
+            data: {
+              title: formatGameLabel(gameNumber),
+              gameNumber,
+              platform,
+              network,
+              isTestnet: network !== "BASE_MAINNET",
+              description: null,
+              theme: DEFAULT_GAME_THEME,
+              coverUrl: DEFAULT_GAME_COVER_URL,
+              startsAt: data.startsAt,
+              endsAt: data.endsAt,
+              ticketsOpenAt: data.ticketsOpenAt,
+              tierPrices: [data.ticketPrice],
+              prizePool: 0,
+              playerCount: 0,
+              roundBreakSec: data.roundBreakSec,
+              maxPlayers: data.maxPlayers,
+              onchainId,
+              launchGroupId,
+            },
+          });
+          break;
+        } catch (error) {
+          if (!isGameNumberConflict(error) || attempt === GAME_NUMBER_RETRY_LIMIT - 1) {
+            throw error;
+          }
+        }
+      }
+
+      if (!game || gameNumber === null) {
+        throw new Error("Failed to allocate a game number");
+      }
       gameId = game.id;
 
       const { initGameRoom } = await import("@/lib/partykit");
