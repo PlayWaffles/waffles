@@ -95,6 +95,76 @@ export const getCurrentOrNextGame = cache(
   }
 );
 
+// ============================================================================
+// Last Game Winners
+// ============================================================================
+
+export interface LastGameWinner {
+  username: string | null;
+  pfpUrl: string | null;
+  prize: number;
+  rank: number;
+  score: number;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma entry type coercion
+type PrismaWinnerEntry = { rank: number | null; score: number; prize: number | null; user: { username: string | null; pfpUrl: string | null } };
+
+export interface LastGameResult {
+  gameNumber: number;
+  gameId: string;
+  winners: LastGameWinner[];
+}
+
+/**
+ * Fetch top 3 winners from the most recent ended game.
+ * Used for social proof on the lobby page.
+ */
+export const getLastGameWinners = cache(
+  async (platform: UserPlatform): Promise<LastGameResult | null> => {
+    const now = new Date();
+
+    const lastGame = await prisma.game.findFirst({
+      where: { ...gameWhere(platform), endsAt: { lte: now } },
+      orderBy: { endsAt: "desc" },
+      select: {
+        id: true,
+        gameNumber: true,
+        entries: {
+          where: { rank: { not: null, lte: 3 } },
+          orderBy: { rank: "asc" },
+          take: 3,
+          select: {
+            rank: true,
+            score: true,
+            prize: true,
+            user: {
+              select: {
+                username: true,
+                pfpUrl: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!lastGame || lastGame.entries.length === 0) return null;
+
+    return {
+      gameNumber: lastGame.gameNumber ?? 0,
+      gameId: lastGame.id,
+      winners: (lastGame.entries as PrismaWinnerEntry[]).map((e) => ({
+        username: e.user.username,
+        pfpUrl: e.user.pfpUrl,
+        prize: e.prize ?? 0,
+        rank: e.rank!,
+        score: e.score,
+      })),
+    };
+  }
+);
+
 /**
  * Fetch a specific game by ID with question count.
  * Cached per-request for deduplication.

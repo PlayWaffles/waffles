@@ -12,8 +12,11 @@
 export {
   getCurrentOrNextGame,
   getGameById,
+  getLastGameWinners,
   type GameWithQuestionCount,
   type GameQueryResult,
+  type LastGameResult,
+  type LastGameWinner,
 } from "./queries";
 
 // Prize distribution

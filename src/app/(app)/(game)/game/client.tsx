@@ -12,11 +12,12 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { springs, staggerContainer, fadeInUp } from "@/lib/animations";
-import type { GameWithQuestionCount } from "@/lib/game";
+import type { GameWithQuestionCount, LastGameResult } from "@/lib/game";
 import { usePendingPurchaseRecovery } from "@/hooks/usePendingPurchaseRecovery";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useUser } from "@/hooks/useUser";
 
+import Image from "next/image";
 import { GameChat } from "./_components/chat/GameChat";
 import { LiveEventFeed } from "./_components/LiveEventFeed";
 import { NextGameCard } from "./_components/NextGameCard";
@@ -33,13 +34,15 @@ const MODAL_HOW_TO_PLAY = "how-to-play";
 interface GameHubProps {
   /** Game data from server component - not stored in React state */
   game: GameWithQuestionCount | null;
+  /** Top 3 winners from the last ended game — social proof */
+  lastGameResult: LastGameResult | null;
 }
 
 // ==========================================
 // COMPONENT
 // ==========================================
 
-export function GameHub({ game }: GameHubProps) {
+export function GameHub({ game, lastGameResult }: GameHubProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -213,6 +216,58 @@ export function GameHub({ game }: GameHubProps) {
         className="shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4"
       >
         <NextGameCard game={game} />
+
+        {/* Last game winners — social proof */}
+        {lastGameResult && lastGameResult.winners.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45, ...springs.gentle }}
+            className="mt-3 w-full md:max-w-[361px]"
+          >
+            <Link
+              href={`/leaderboard?gameId=${lastGameResult.gameId}`}
+              className="group flex items-center justify-between w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] transition-colors hover:bg-white/[0.05]"
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Winner avatars — overlapping */}
+                <div className="flex items-center shrink-0">
+                  {lastGameResult.winners.map((w, i) => (
+                    <div
+                      key={i}
+                      className="w-7 h-7 rounded-full border-[1.5px] border-white/60 overflow-hidden bg-card shrink-0"
+                      style={{ marginLeft: i > 0 ? "-6px" : "0", zIndex: 3 - i }}
+                    >
+                      {w.pfpUrl ? (
+                        <Image
+                          src={w.pfpUrl}
+                          alt={w.username ?? "Winner"}
+                          width={28}
+                          height={28}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Copy */}
+                <div className="flex flex-col min-w-0">
+                  <span className="font-display text-[11px] uppercase tracking-[0.08em] text-white/40">
+                    Waffles #{String(lastGameResult.gameNumber).padStart(3, "0")} winners
+                  </span>
+                  <span className="font-body text-[14px] text-waffle-gold leading-tight truncate">
+                    {lastGameResult.winners[0].username ?? "Player"} won ${lastGameResult.winners[0].prize.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+
+              <ChevronRightIcon className="w-4 h-4 text-white/25 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-waffle-gold/50" />
+            </Link>
+          </motion.div>
+        )}
 
         {/* How to Play link */}
         <motion.div
