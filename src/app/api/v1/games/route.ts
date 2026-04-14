@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import type { Prisma } from "@prisma";
 import { getGamePhase, type GamePhase } from "@/lib/types";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import { getTicketPricingSnapshot } from "@/lib/tickets";
 
@@ -16,12 +19,13 @@ import { getTicketPricingSnapshot } from "@/lib/tickets";
 export async function GET(request: Request) {
   try {
     const platform = await resolveRuntimePlatform(request);
+    const visibility = await resolvePlatformGameVisibility(platform, request);
     const { searchParams } = new URL(request.url);
     const phaseFilter = searchParams.get("status") as GamePhase | null;
     const limit = parseInt(searchParams.get("limit") || "10", 10);
     const now = new Date();
 
-    const whereClause: Prisma.GameWhereInput = gameWhere(platform);
+    const whereClause: Prisma.GameWhereInput = gameWhere(platform, visibility);
 
     if (phaseFilter === "LIVE") {
       whereClause.startsAt = { lte: now };

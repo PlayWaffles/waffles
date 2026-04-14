@@ -6,6 +6,7 @@ import { env } from "@/lib/env";
 import { WINNERS_COUNT } from "@/lib/game/prizeDistribution";
 import { verifyClaim } from "@/lib/chain";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 
 const SERVICE = "claim-api";
 
@@ -37,6 +38,7 @@ export const POST = withAuth<Params>(
   async (request: NextRequest, auth: AuthResult, params) => {
     try {
       const { gameId } = params;
+      const visibility = await resolvePlatformGameVisibility(auth.platform, request);
 
       if (!gameId) {
         return NextResponse.json<ApiError>(
@@ -77,7 +79,7 @@ export const POST = withAuth<Params>(
         },
       });
 
-      if (!game || !isGameVisibleToPlatform(game, auth.platform) || !game.onchainId) {
+      if (!game || !isGameVisibleToPlatform(game, auth.platform, visibility) || !game.onchainId) {
         return NextResponse.json<ApiError>(
           { error: "Game not found or not on-chain", code: "NOT_FOUND" },
           { status: 404 },

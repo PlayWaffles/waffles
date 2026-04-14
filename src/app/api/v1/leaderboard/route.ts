@@ -3,7 +3,10 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { z } from "zod";
 import { Prisma, UserPlatform } from "@prisma";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import {
   entryWhere,
   gameWhere,
@@ -56,6 +59,7 @@ const querySchema = z.object({
 export async function GET(request: NextRequest) {
   try {
     const platform = await resolveRuntimePlatform(request);
+    const visibility = await resolvePlatformGameVisibility(platform, request);
     // 1. Parse params
     const { searchParams } = new URL(request.url);
     const parsed = querySchema.safeParse({
@@ -75,9 +79,9 @@ export async function GET(request: NextRequest) {
 
     // 2. Route to appropriate handler
     if (tab === "allTime") {
-      return handleAllTime(page, platform);
+      return handleAllTime(page, platform, visibility.includeTestnet === true);
     }
-    return handleGame(page, platform, gameId);
+    return handleGame(page, platform, gameId, visibility);
   } catch (error) {
     console.error("GET /api/v1/leaderboard Error:", error);
     return NextResponse.json(
@@ -93,10 +97,13 @@ export async function GET(request: NextRequest) {
 async function handleAllTime(
   page: number,
   platform: UserPlatform,
+  includeTestnet: boolean,
 ): Promise<NextResponse<LeaderboardResponse>> {
   const offset = page * PAGE_SIZE;
   const allTimeWhere = sharesBaseMainnetGames(platform)
     ? Prisma.sql`g.platform IN ('FARCASTER'::"UserPlatform", 'BASE_APP'::"UserPlatform") AND g."isTestnet" = false`
+    : platform === "MINIPAY" && !includeTestnet
+      ? Prisma.sql`g.platform = ${platform}::"UserPlatform" AND g."isTestnet" = false`
     : Prisma.sql`g.platform = ${platform}::"UserPlatform"`;
   const [rankedRows, countResult] = await Promise.all([
     prisma.$queryRaw<Array<{
@@ -178,14 +185,15 @@ async function handleAllTime(
 async function handleGame(
   page: number,
   platform: UserPlatform,
-  gameId?: string
+  gameId: string | undefined,
+  visibility?: Parameters<typeof gameWhere>[1],
 ): Promise<NextResponse<LeaderboardResponse>> {
   // Resolve game ID - use provided or get latest
   let targetGameId = gameId;
 
   if (!targetGameId) {
     const latest = await prisma.game.findFirst({
-      where: gameWhere(platform),
+      where: gameWhere(platform, visibility),
       orderBy: { endsAt: "desc" },
       select: { id: true },
     });
@@ -205,7 +213,7 @@ async function handleGame(
     select: { title: true, gameNumber: true, platform: true, isTestnet: true, endsAt: true },
   });
 
-  if (!game || !isGameVisibleToPlatform(game, platform)) {
+  if (!game || !isGameVisibleToPlatform(game, platform, visibility)) {
     return NextResponse.json({
       entries: [],
       hasMore: false,
@@ -214,7 +222,7 @@ async function handleGame(
   }
 
   // Fetch adjacent games for prev/next navigation
-  const platformGamesWhere = gameWhere(platform);
+  const platformGamesWhere = gameWhere(platform, visibility);
   const [prevGame, nextGame] = await Promise.all([
     prisma.game.findFirst({
       where: {

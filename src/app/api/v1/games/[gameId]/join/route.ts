@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { hasPlayableTicket } from "@/lib/tickets";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 
 type Params = { gameId: string };
 
@@ -18,6 +19,7 @@ export const POST = withAuth<Params>(
   async (request, auth: AuthResult, params) => {
     try {
       const gameId = params.gameId;
+      const visibility = await resolvePlatformGameVisibility(auth.platform, request);
 
       if (!gameId) {
         return NextResponse.json<ApiError>(
@@ -37,7 +39,7 @@ export const POST = withAuth<Params>(
         },
       });
 
-      if (!game || !isGameVisibleToPlatform(game, auth.platform)) {
+      if (!game || !isGameVisibleToPlatform(game, auth.platform, visibility)) {
         return NextResponse.json<ApiError>(
           { error: "Game not found", code: "NOT_FOUND" },
           { status: 404 }

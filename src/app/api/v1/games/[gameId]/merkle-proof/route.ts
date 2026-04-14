@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { CLAIM_DELAY_MS } from "@/lib/constants";
 import { getAuthFromRequest, type ApiError } from "@/lib/auth";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 
 type Params = { gameId: string };
@@ -41,6 +44,7 @@ export async function GET(
 
     const auth = await getAuthFromRequest(request);
     const expectedPlatform = auth?.platform ?? requestPlatform;
+    const visibility = await resolvePlatformGameVisibility(expectedPlatform, request);
     const fidParam = new URL(request.url).searchParams.get("fid");
     const legacyFid = fidParam ? parseInt(fidParam, 10) : NaN;
     const user = auth
@@ -74,7 +78,7 @@ export async function GET(
       },
     });
 
-    if (!game || !isGameVisibleToPlatform(game, expectedPlatform)) {
+    if (!game || !isGameVisibleToPlatform(game, expectedPlatform, visibility)) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

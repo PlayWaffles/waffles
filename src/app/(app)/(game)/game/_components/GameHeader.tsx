@@ -10,13 +10,16 @@ import { WalletBalance } from "./WalletBalance";
 import { motion } from "framer-motion";
 import { springs } from "@/lib/animations";
 import { useSounds } from "@/components/providers/SoundProvider";
+import { MiniPayTestnetToggle } from "./MiniPayTestnetToggle";
 
 export function GameHeader({
   title,
   isCurrentGameLive = false,
+  initialShowMiniPayTestnet = false,
 }: {
   title?: string | null;
   isCurrentGameLive?: boolean;
+  initialShowMiniPayTestnet?: boolean;
 }) {
   const pathname = usePathname();
   const params = useParams();
@@ -197,13 +200,24 @@ export function GameHeader({
               </span>
             </motion.button>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={springs.gentle}
-            >
-              <WalletBalance />
-            </motion.div>
+            <>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={springs.gentle}
+              >
+                <MiniPayTestnetToggle
+                  initialShowTestnet={initialShowMiniPayTestnet}
+                />
+              </motion.div>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={springs.gentle}
+              >
+                <WalletBalance />
+              </motion.div>
+            </>
           )}
         </div>
       </header>

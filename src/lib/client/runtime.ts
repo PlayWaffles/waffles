@@ -3,6 +3,7 @@
 import sdk from "@farcaster/miniapp-sdk";
 
 import {
+  MINIPAY_TESTNET_COOKIE,
   PLATFORM_COOKIE,
   PLATFORM_HEADER,
 } from "@/lib/platform/constants";
@@ -61,6 +62,24 @@ export function setRuntimePlatformCookie(platform: UserPlatform) {
   }
 
   document.cookie = `${PLATFORM_COOKIE}=${platform}; path=/; max-age=31536000; samesite=lax`;
+  return true;
+}
+
+export function setMiniPayTestnetCookie(showTestnet: boolean) {
+  if (typeof document === "undefined") return false;
+
+  const nextValue = showTestnet ? "show" : "hide";
+  const current = document.cookie
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${MINIPAY_TESTNET_COOKIE}=`))
+    ?.slice(MINIPAY_TESTNET_COOKIE.length + 1);
+
+  if (current === nextValue) {
+    return false;
+  }
+
+  document.cookie = `${MINIPAY_TESTNET_COOKIE}=${nextValue}; path=/; max-age=31536000; samesite=lax`;
   return true;
 }
 

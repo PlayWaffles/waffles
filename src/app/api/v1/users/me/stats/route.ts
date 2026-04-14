@@ -3,11 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { entryWhere } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 
-export const GET = withAuth(async (_request: NextRequest, auth) => {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
     const userId = auth.userId;
-    const platformFilter = entryWhere(auth.platform);
+    const visibility = await resolvePlatformGameVisibility(auth.platform, request);
+    const platformFilter = entryWhere(auth.platform, visibility);
     const [user, statsAggregate, winStats, bestRankEntry] =
       await Promise.all([
         prisma.user.findUnique({

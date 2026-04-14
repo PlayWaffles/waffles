@@ -3,13 +3,15 @@ import { NextRequest, NextResponse } from "next/server";
 import { withAuth, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { entryWhere } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 
-export const GET = withAuth(async (_request: NextRequest, auth) => {
+export const GET = withAuth(async (request: NextRequest, auth) => {
   try {
+    const visibility = await resolvePlatformGameVisibility(auth.platform, request);
     const entries = await prisma.gameEntry.findMany({
       where: {
         userId: auth.userId,
-        ...entryWhere(auth.platform),
+        ...entryWhere(auth.platform, visibility),
       },
       select: {
         id: true,

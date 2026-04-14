@@ -4,7 +4,10 @@ import { cache } from "react";
 import type { UserPlatform } from "@prisma";
 import { env } from "@/lib/env";
 import { buildJoinedOGUrl } from "@/lib/og";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+    resolvePlatformGameVisibility,
+    resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import { TicketSuccessClient } from "./client";
 import { buildMiniAppEmbed } from "@/lib/farcaster";
@@ -16,8 +19,9 @@ interface SuccessPageProps {
 
 // Cache game data fetch
 const getGameInfo = cache(async (gameId: string, platform: UserPlatform) => {
+    const visibility = await resolvePlatformGameVisibility(platform);
     const game = await prisma.game.findFirst({
-        where: { id: gameId, ...gameWhere(platform) },
+        where: { id: gameId, ...gameWhere(platform, visibility) },
         select: {
             id: true,
             title: true,

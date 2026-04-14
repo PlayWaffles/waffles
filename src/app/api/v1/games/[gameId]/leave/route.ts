@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 
 type Params = { gameId: string };
 
@@ -14,6 +15,7 @@ export const POST = withAuth<Params>(
   async (request, auth: AuthResult, params) => {
     try {
       const gameId = params.gameId;
+      const visibility = await resolvePlatformGameVisibility(auth.platform, request);
 
       if (!gameId) {
         return NextResponse.json<ApiError>(
@@ -50,7 +52,7 @@ export const POST = withAuth<Params>(
         );
       }
 
-      if (!isGameVisibleToPlatform(entry.game, auth.platform)) {
+      if (!isGameVisibleToPlatform(entry.game, auth.platform, visibility)) {
         return NextResponse.json<ApiError>(
           { error: "You are not in this game", code: "NOT_IN_GAME" },
           { status: 404 }

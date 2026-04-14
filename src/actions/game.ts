@@ -8,6 +8,7 @@ import { safeRevalidateGamePaths } from "@/lib/game/cache";
 import { requireCurrentUser } from "@/lib/auth";
 import { getDisplayName } from "@/lib/address";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 import { hasPlayableTicket } from "@/lib/tickets";
 import {
   finalizeTicketPurchase,
@@ -66,6 +67,7 @@ export async function leaveGame(
   try {
     const { user } = await requireCurrentUser();
     currentUserId = user.id;
+    const visibility = await resolvePlatformGameVisibility(user.platform);
 
     const entry = await prisma.gameEntry.findUnique({
       where: {
@@ -94,6 +96,7 @@ export async function leaveGame(
     if (!isGameVisibleToPlatform(
       { ...entry.game, platform: user.platform },
       user.platform,
+      visibility,
     )) {
       return { success: false, error: "Not in this game", code: "NOT_IN_GAME" };
     }
@@ -184,7 +187,7 @@ async function submitAnswerForUser(
     const [user, game, entry, question] = await Promise.all([
       prisma.user.findUnique({
         where: { id: userId },
-        select: { id: true, username: true, wallet: true },
+        select: { id: true, username: true, wallet: true, platform: true },
       }),
       prisma.game.findUnique({
         where: { id: gameId },
@@ -218,11 +221,13 @@ async function submitAnswerForUser(
       return { success: false, error: "User not found", code: "NOT_FOUND" };
     }
 
+    const visibility = await resolvePlatformGameVisibility(user.platform);
+
     if (!game) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 
-    if (!isGameVisibleToPlatform(game, game.platform)) {
+    if (!isGameVisibleToPlatform(game, game.platform, visibility)) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 

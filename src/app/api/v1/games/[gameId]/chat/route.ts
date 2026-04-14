@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import { z } from "zod";
 
@@ -43,9 +46,10 @@ export async function GET(
     }
 
     const platform = await resolveRuntimePlatform(request);
+    const visibility = await resolvePlatformGameVisibility(platform, request);
 
     const game = await prisma.game.findFirst({
-      where: { id: gameId, ...gameWhere(platform) },
+      where: { id: gameId, ...gameWhere(platform, visibility) },
       select: { id: true },
     });
 
@@ -103,6 +107,7 @@ export const POST = withAuth<Params>(
   async (request, auth: AuthResult, params) => {
     try {
       const gameId = params.gameId;
+      const visibility = await resolvePlatformGameVisibility(auth.platform, request);
 
       if (!gameId) {
         return NextResponse.json<ApiError>(
@@ -125,7 +130,7 @@ export const POST = withAuth<Params>(
       }
 
       const game = await prisma.game.findFirst({
-        where: { id: gameId, ...gameWhere(auth.platform) },
+        where: { id: gameId, ...gameWhere(auth.platform, visibility) },
         select: { id: true },
       });
 

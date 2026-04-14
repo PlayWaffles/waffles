@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 
 type Params = { gameId: string };
@@ -28,6 +31,7 @@ export async function GET(
 ) {
   try {
     const platform = await resolveRuntimePlatform(request);
+    const visibility = await resolvePlatformGameVisibility(platform, request);
     const { gameId } = await context.params;
 
     if (!gameId) {
@@ -49,7 +53,7 @@ export async function GET(
       select: { id: true, platform: true, isTestnet: true },
     });
 
-    if (!game || !isGameVisibleToPlatform(game, platform)) {
+    if (!game || !isGameVisibleToPlatform(game, platform, visibility)) {
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

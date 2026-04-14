@@ -4,7 +4,10 @@ import type { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { getGamePhase } from "@/lib/types";
 import { RealtimeProvider } from "@/components/providers/RealtimeProvider";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import LiveGameScreen from "./LiveGameScreen";
 
@@ -43,8 +46,9 @@ export interface LiveGameData {
 // ==========================================
 
 const getGame = cache(async (gameId: string, platform: UserPlatform) => {
+  const visibility = await resolvePlatformGameVisibility(platform);
   const game = await prisma.game.findFirst({
-    where: { id: gameId, ...gameWhere(platform) },
+    where: { id: gameId, ...gameWhere(platform, visibility) },
     select: {
       id: true,
       gameNumber: true,

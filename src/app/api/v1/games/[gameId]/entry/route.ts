@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { getAuthFromRequest, type ApiError } from "@/lib/auth";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import {
+  resolvePlatformGameVisibility,
+  resolveRuntimePlatform,
+} from "@/lib/platform/server";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { hasPlayableTicket } from "@/lib/tickets";
 
@@ -28,13 +31,14 @@ export async function GET(
 
     const auth = await getAuthFromRequest(request);
     const expectedPlatform = auth?.platform ?? requestPlatform;
+    const visibility = await resolvePlatformGameVisibility(expectedPlatform, request);
     const fidParam = new URL(request.url).searchParams.get("fid");
     const game = await prisma.game.findUnique({
       where: { id: gameId },
       select: { id: true, platform: true, isTestnet: true },
     });
 
-    if (!game || !isGameVisibleToPlatform(game, expectedPlatform)) {
+    if (!game || !isGameVisibleToPlatform(game, expectedPlatform, visibility)) {
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }

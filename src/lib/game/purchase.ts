@@ -9,6 +9,7 @@ import { transactional, preGame, buildPayload } from "@/lib/notifications/templa
 import { formatGameTime } from "@/lib/utils";
 import { normalizeAddress } from "@/lib/auth";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 import {
   attachWalletToFarcasterUser,
   farcasterUserHasWallet,
@@ -110,6 +111,7 @@ export async function finalizeTicketPurchase(
   });
 
   try {
+    const visibility = await resolvePlatformGameVisibility(user.platform);
     const game = await prisma.game.findUnique({
       where: { id: gameId },
       select: {
@@ -129,7 +131,7 @@ export async function finalizeTicketPurchase(
       },
     });
 
-    if (!game || !isGameVisibleToPlatform(game, user.platform)) {
+    if (!game || !isGameVisibleToPlatform(game, user.platform, visibility)) {
       return { success: false, error: "Game not found", code: "NOT_FOUND" };
     }
 

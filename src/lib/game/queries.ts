@@ -14,6 +14,7 @@ import {
   type TicketPricingSnapshot,
 } from "@/lib/tickets";
 import { gameWhere } from "@/lib/platform/query";
+import { resolvePlatformGameVisibility } from "@/lib/platform/server";
 
 // ============================================================================
 // Types
@@ -58,12 +59,13 @@ const gameInclude = {
 export const getCurrentOrNextGame = cache(
   async (platform: UserPlatform): Promise<GameQueryResult> => {
     const now = new Date();
+    const visibility = await resolvePlatformGameVisibility(platform);
 
     // Fire both queries in parallel — prefer active game, fall back to ended
     const [activeGame, endedGame] = await Promise.all([
       prisma.game.findFirst({
         where: {
-          ...gameWhere(platform),
+          ...gameWhere(platform, visibility),
           OR: [
             { startsAt: { lte: now }, endsAt: { gt: now } }, // Live
             { startsAt: { gt: now } }, // Scheduled
@@ -73,7 +75,7 @@ export const getCurrentOrNextGame = cache(
         include: gameInclude,
       }),
       prisma.game.findFirst({
-        where: { ...gameWhere(platform), endsAt: { lte: now } },
+        where: { ...gameWhere(platform, visibility), endsAt: { lte: now } },
         orderBy: [{ endsAt: "desc" }],
         include: gameInclude,
       }),
@@ -126,8 +128,9 @@ const SHOWCASE_GAME_NUMBER = 4;
 
 export const getLastGameWinners = cache(
   async (platform: UserPlatform): Promise<LastGameResult | null> => {
+    const visibility = await resolvePlatformGameVisibility(platform);
     const lastGame = await prisma.game.findFirst({
-      where: { ...gameWhere(platform), gameNumber: SHOWCASE_GAME_NUMBER },
+      where: { ...gameWhere(platform, visibility), gameNumber: SHOWCASE_GAME_NUMBER },
       select: {
         id: true,
         gameNumber: true,
@@ -184,8 +187,9 @@ export const getGameById = cache(
     gameId: string,
     platform: UserPlatform,
   ): Promise<GameQueryResult> => {
+    const visibility = await resolvePlatformGameVisibility(platform);
     const game = await prisma.game.findFirst({
-      where: { id: gameId, ...gameWhere(platform) },
+      where: { id: gameId, ...gameWhere(platform, visibility) },
       include: gameInclude,
     });
 
