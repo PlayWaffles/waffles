@@ -1,7 +1,6 @@
 import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
-import { verifyMessage } from "viem";
 import { createClient as createQuickAuthClient } from "@farcaster/quick-auth";
 import { track } from "@vercel/analytics/server";
 
@@ -13,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { generateInviteCode } from "@/lib/utils";
 import { parseCookieHeader } from "@/lib/platform/server";
+import { getPublicClient } from "@/lib/chain";
 
 const SESSION_COOKIE = "waffles_session";
 const NONCE_COOKIE = "waffles_auth_nonce";
@@ -274,7 +274,8 @@ export async function verifyWalletSignature(
   }
 
   const message = buildSignInMessage(normalizedAddress, payload.nonce);
-  const verified = await verifyMessage({
+  const publicClient = getPublicClient(platform);
+  const verified = await publicClient.verifyMessage({
     address: normalizedAddress as `0x${string}`,
     message,
     signature: signature as `0x${string}`,
