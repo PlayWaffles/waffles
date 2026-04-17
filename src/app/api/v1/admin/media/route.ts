@@ -1,10 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
-import {
-  listFilesWithUrls,
-  isBucketConfigured,
-  getFileMetadata,
-} from "@/lib/storage";
+import { listFilesWithUrls, isBucketConfigured } from "@/lib/storage";
 
 export async function GET() {
   try {
@@ -25,19 +21,15 @@ export async function GET() {
     // List all files from Cloudinary with public URLs
     const allFiles = await listFilesWithUrls();
 
-    // Get content types for each file
-    const files = await Promise.all(
-      allFiles.map(async (file) => {
-        const metadata = await getFileMetadata(file.key);
-        return {
-          url: file.url,
-          pathname: file.key,
-          contentType: metadata?.contentType || "application/octet-stream",
-          size: file.size,
-          uploadedAt: file.lastModified,
-        };
-      })
-    );
+    // listFilesWithUrls already includes Cloudinary-derived content types.
+    // Using that data directly keeps the picker to a single Admin API request.
+    const files = allFiles.map((file) => ({
+      url: file.url,
+      pathname: file.key,
+      contentType: file.contentType || "application/octet-stream",
+      size: file.size,
+      uploadedAt: file.lastModified,
+    }));
 
     return NextResponse.json({ files });
   } catch (error) {

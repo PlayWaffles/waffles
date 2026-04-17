@@ -4,7 +4,6 @@ import {
   listFilesWithUrls,
   deleteFile,
   isBucketConfigured,
-  getFileMetadata,
 } from "@/lib/storage";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { revalidatePath } from "next/cache";
@@ -37,18 +36,16 @@ export async function listMediaAction(): Promise<MediaActionResult> {
   try {
     const allFiles = await listFilesWithUrls();
 
-    const files: MediaFile[] = await Promise.all(
-      allFiles.map(async (file) => {
-        const metadata = await getFileMetadata(file.key);
-        return {
-          url: file.url,
-          pathname: file.key,
-          size: file.size,
-          uploadedAt: file.lastModified,
-          contentType: metadata?.contentType || "application/octet-stream",
-        };
-      })
-    );
+    // listFilesWithUrls already returns Cloudinary-derived content types.
+    // Avoid per-file metadata lookups here because large libraries can hit the
+    // Cloudinary Admin API rate limit and make the media library appear empty.
+    const files: MediaFile[] = allFiles.map((file) => ({
+      url: file.url,
+      pathname: file.key,
+      size: file.size,
+      uploadedAt: file.lastModified,
+      contentType: file.contentType || "application/octet-stream",
+    }));
 
     return { success: true, files };
   } catch (error) {
