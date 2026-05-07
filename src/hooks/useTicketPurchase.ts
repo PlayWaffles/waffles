@@ -25,6 +25,7 @@ import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { authenticatedFetch } from "@/lib/client/runtime";
+import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
 
 // ==========================================
 // TYPES
@@ -361,7 +362,7 @@ export function useTicketPurchase(
           priceInUnits: priceInUnits.toString(),
         });
 
-        const msg = "Insufficient funds";
+        const msg = platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Insufficient funds";
         setState({ step: "error", error: msg });
         notify.error(msg);
         onInsufficientFunds?.();
@@ -468,9 +469,13 @@ export function useTicketPurchase(
         : lowered.includes("insufficient funds for transfer") ||
             lowered.includes("insufficient funds for gas") ||
             lowered.includes("exceeds the balance of the account")
-          ? "Insufficient gas"
+          ? platform === "MINIPAY"
+            ? MINIPAY_LOW_BALANCE_MESSAGE
+            : "Insufficient funds"
           : lowered.includes("insufficient")
-            ? "Insufficient funds"
+            ? platform === "MINIPAY"
+              ? MINIPAY_LOW_BALANCE_MESSAGE
+              : "Insufficient funds"
             : "Transaction failed";
 
       setState({ step: "error", error: msg });

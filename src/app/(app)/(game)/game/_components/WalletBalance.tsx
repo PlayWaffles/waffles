@@ -18,6 +18,7 @@ import {
   runtimeToPlatform,
   type AppRuntime,
 } from "@/lib/client/runtime";
+import { MINIPAY_PAYMENT_TOKEN_SYMBOL } from "@/lib/minipay/compliance";
 
 // Animated Wallet Icon with coin drop effect
 function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
@@ -119,9 +120,9 @@ export function WalletBalance() {
   const { roundedBalance, status } = useGetTokenBalance(address as `0x${string}`, {
     address: tokenAddress as `0x${string}`,
     decimals: PAYMENT_TOKEN_DECIMALS,
-    name: "USDC",
-    symbol: "USDC",
-    image: "/images/tokens/usdc.png",
+    name: platform === "MINIPAY" ? MINIPAY_PAYMENT_TOKEN_SYMBOL : "USDC",
+    symbol: platform === "MINIPAY" ? MINIPAY_PAYMENT_TOKEN_SYMBOL : "USDC",
+    image: "/images/icons/icon-prizepool-cash.png",
     chainId: chain.id,
   });
 

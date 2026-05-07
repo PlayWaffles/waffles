@@ -24,8 +24,11 @@ import {
   isMiniPayRuntime,
   type AppRuntime,
 } from "@/lib/client/runtime";
-
-const MINIPAY_ADD_CASH_URL = "https://minipay.opera.com/add_cash";
+import {
+  MINIPAY_DEPOSIT_URL,
+  MINIPAY_LOW_BALANCE_MESSAGE,
+  MINIPAY_USDT_ONLY_MESSAGE,
+} from "@/lib/minipay/compliance";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -153,8 +156,8 @@ export function NextGameCard({ game }: NextGameCardProps) {
   // ── 1-tap purchase (inline, no modal) ──────────────
   const openMiniPayAddCash = () => {
     if (runtime !== "minipay" && !isMiniPayRuntime()) return;
-    notify.info("Opening MiniPay Add Cash...");
-    window.location.assign(MINIPAY_ADD_CASH_URL);
+    notify.info("Opening MiniPay Deposit...");
+    window.location.assign(MINIPAY_DEPOSIT_URL);
   };
 
   const {
@@ -324,8 +327,8 @@ export function NextGameCard({ game }: NextGameCardProps) {
               animate={{ opacity: 1, y: 0 }}
               className="text-danger-soft text-xs font-display text-center mt-1"
             >
-              {purchaseErrorMsg === "Insufficient funds"
-                ? "Not enough USDC."
+              {purchaseErrorMsg === MINIPAY_LOW_BALANCE_MESSAGE
+                ? MINIPAY_LOW_BALANCE_MESSAGE
                 : purchaseErrorMsg === "Transaction rejected"
                   ? "Transaction cancelled."
                   : purchaseErrorMsg}
@@ -333,6 +336,10 @@ export function NextGameCard({ game }: NextGameCardProps) {
             </motion.p>
           )}
         </motion.div>
+
+        <p className="px-5 pb-2 text-center font-display text-[10px] leading-snug text-white/35">
+          {MINIPAY_USDT_ONLY_MESSAGE}
+        </p>
 
         {/* Player Avatars Row */}
         <motion.div
