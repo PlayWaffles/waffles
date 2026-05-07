@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
 import { PixelButton } from "@/components/ui/PixelButton";
 import type { DemoQuestion } from "@/actions/onboarding";
-import confetti from "canvas-confetti";
 
 interface OnboardingOverlayProps {
   onComplete: () => void;
@@ -128,12 +127,16 @@ function DemoQuestionSlide({
       const isCorrect = index === question.correctIndex;
 
       if (isCorrect) {
-        confetti({
-          particleCount: 60,
-          spread: 50,
-          origin: { y: 0.5 },
-          colors: ["#FFC931", "#14B985", "#1B8FF5"],
-        });
+        import("canvas-confetti")
+          .then(({ default: confetti }) => {
+            confetti({
+              particleCount: 60,
+              spread: 50,
+              origin: { y: 0.5 },
+              colors: ["#FFC931", "#14B985", "#1B8FF5"],
+            });
+          })
+          .catch(() => {});
       }
 
       setShowResult(true);
@@ -443,6 +446,7 @@ export function OnboardingOverlay({
   const handleFinish = async () => {
     setIsLoading(true);
     try {
+      const { default: confetti } = await import("canvas-confetti");
       confetti({
         particleCount: 80,
         spread: 70,

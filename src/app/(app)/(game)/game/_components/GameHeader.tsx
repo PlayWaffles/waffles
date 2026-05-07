@@ -64,7 +64,7 @@ export function GameHeader({
             >
               <Link href={`/game`} className="relative block w-[29.96px] h-[23.24px]">
                 <Image
-                  src="/logo.png"
+                  src="/logo-small.png"
                   alt="Live game logo"
                   fill
                   sizes="29.96px"
@@ -121,7 +121,7 @@ export function GameHeader({
                 className="relative w-[30px] h-[24px]"
               >
                 <Image
-                  src="/logo.png"
+                  src="/logo-small.png"
                   alt="Waffles logo"
                   fill
                   sizes="30px"

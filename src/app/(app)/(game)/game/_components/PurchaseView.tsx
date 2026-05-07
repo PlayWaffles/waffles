@@ -2,6 +2,10 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import {
+  MINIPAY_PAYMENT_TOKEN_SYMBOL,
+  MINIPAY_USDT_ONLY_MESSAGE,
+} from "@/lib/minipay/compliance";
 
 export type PurchaseStep =
   | "idle"
@@ -70,7 +74,7 @@ export function PurchaseView({
   }, []);
 
   const tiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
-    { key: "paid", label: "PAID", price: `$${currentPrice}`, sublabel: "Prize eligible" },
+    { key: "paid", label: "PAID", price: `$${currentPrice}`, sublabel: `${MINIPAY_PAYMENT_TOKEN_SYMBOL} only` },
   ];
 
   return (
@@ -90,6 +94,10 @@ export function PurchaseView({
       >
         CHOOSE YOUR TICKET
       </h2>
+
+      <p className="w-full max-w-[361px] text-center font-display text-[11px] leading-snug text-white/45">
+        {MINIPAY_USDT_ONLY_MESSAGE}
+      </p>
 
       {/* Tier Cards */}
       <div
@@ -278,9 +286,9 @@ export function PurchaseView({
           className="text-white/50 text-xs text-center"
           style={{ animation: "pulse-fade 1.5s ease-in-out infinite" }}
         >
-          {step === "pending" && "Please confirm in your wallet..."}
+          {step === "pending" && "Please confirm in MiniPay..."}
           {step === "confirming" && "Waiting for confirmation..."}
-          {step === "syncing" && "Finalizing purchase..."}
+          {step === "syncing" && "Finalizing ticket..."}
         </p>
       )}
 

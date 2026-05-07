@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import posthog from "posthog-js";
 import { formatAddress } from "@/lib/address";
+import Link from "next/link";
 
 // ==========================================
 // COMPONENT
@@ -189,6 +190,26 @@ export default function ProfilePage() {
         <motion.div variants={itemVariants} className="shrink-0 mt-3 pb-2">
           <GameHistory gameHistory={recentGames} />
         </motion.div>
+
+        <motion.nav
+          variants={itemVariants}
+          aria-label="Legal and support"
+          className="grid grid-cols-3 gap-2 pb-20"
+        >
+          {[
+            { href: "/support", label: "Support" },
+            { href: "/terms", label: "Terms" },
+            { href: "/privacy", label: "Privacy" },
+          ].map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="rounded-xl border border-white/8 bg-white/[0.04] px-3 py-3 text-center font-display text-xs text-white/60"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </motion.nav>
       </motion.div>
 
       <BottomNav />

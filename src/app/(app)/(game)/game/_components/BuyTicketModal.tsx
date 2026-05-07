@@ -20,8 +20,7 @@ import {
   isMiniPayRuntime,
   type AppRuntime,
 } from "@/lib/client/runtime";
-
-const MINIPAY_ADD_CASH_URL = "https://minipay.opera.com/add_cash";
+import { MINIPAY_DEPOSIT_URL } from "@/lib/minipay/compliance";
 
 interface BuyTicketModalProps {
   isOpen: boolean;
@@ -65,8 +64,8 @@ export function BuyTicketModal({
     if (typeof window === "undefined") return;
     if (runtime !== "minipay" && !isMiniPayRuntime()) return;
 
-    notify.info("Opening MiniPay Add Cash...");
-    window.location.assign(MINIPAY_ADD_CASH_URL);
+    notify.info("Opening MiniPay Deposit...");
+    window.location.assign(MINIPAY_DEPOSIT_URL);
   }, [runtime]);
 
   // Derived display values

@@ -231,8 +231,8 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     setNotificationNudgeDismissed(false);
   }, [runtime, user?.id, user?.notificationsEnabled]);
 
-  // Fetch a random question from the template bank for the onboarding demo
-  // Must complete before showing the overlay so the slide list is stable
+  // Fetch the demo question in the background. The first onboarding slide does
+  // not need it, so keep the pitch render path independent of this request.
   useEffect(() => {
     if (!showOnboarding || demoQuestionLoaded) return;
     getDemoQuestion()
@@ -614,7 +614,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     }
 
     if (showOnboarding) {
-      if (!demoQuestionLoaded) return null;
       return (
         <OnboardingOverlay
           onComplete={handleOnboardingComplete}
@@ -663,7 +662,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   }
 
   if (showOnboarding) {
-    if (!demoQuestionLoaded) return null;
     return (
       <OnboardingOverlay
         onComplete={handleOnboardingComplete}

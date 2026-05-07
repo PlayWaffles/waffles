@@ -64,28 +64,8 @@ export default function RootLayout({
           name="app_transfer_verification"
           content="69cc9bb31aacdcc17b25514a"
         />
-        {/* Preload onboarding images - browser fetches immediately */}
+        {/* Keep the first route logo hot without competing for the LCP image. */}
         <link rel="preload" as="image" href="/logo-onboarding.png" />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/illustrations/movie-clapper.png"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/illustrations/two-tickets.png"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/illustrations/treasure-chest.png"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/images/illustrations/play-live.png"
-        />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
