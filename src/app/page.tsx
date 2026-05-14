@@ -3,17 +3,13 @@ import { Providers } from "@/components/providers";
 import { RealtimeProvider } from "@/components/providers/RealtimeProvider";
 import { getCurrentOrNextGame, getLastGameWinners } from "@/lib/game";
 import { formatGameLabel } from "@/lib/game/labels";
-import {
-  resolvePlatformGameVisibility,
-  resolveRuntimePlatform,
-} from "@/lib/platform/server";
+import { resolveRuntimePlatform } from "@/lib/platform/server";
 
 import { GameHeader } from "./(app)/(game)/game/_components/GameHeader";
 import { GameHub } from "./(app)/(game)/game/client";
 
 export default async function Home() {
   const platform = await resolveRuntimePlatform();
-  const visibility = await resolvePlatformGameVisibility(platform);
   const [{ game }, lastGameResult] = await Promise.all([
     getCurrentOrNextGame(platform),
     getLastGameWinners(platform),
@@ -29,7 +25,6 @@ export default async function Home() {
         <GameHeader
           title={headerTitle}
           isCurrentGameLive={isCurrentGameLive}
-          initialShowMiniPayTestnet={visibility.includeTestnet === true}
         />
         <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <RealtimeProvider gameId={game?.id ?? null}>
