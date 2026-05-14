@@ -15,7 +15,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useTimer } from "@/hooks/useTimer";
 import { GameChat } from "../../../_components/chat/GameChat";
 import { LiveEventFeed } from "../../../_components/LiveEventFeed";
-import { authenticatedFetch } from "@/lib/client/runtime";
+import {
+  authenticatedFetch,
+  getAppRuntime,
+  isMiniPayRuntime,
+  type AppRuntime,
+} from "@/lib/client/runtime";
 import { getDisplayName } from "@/lib/address";
 import { FlashIcon, ArrowLeftIcon } from "@/components/icons";
 
@@ -71,9 +76,29 @@ export default function WaitingScreen({
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [userRank, setUserRank] = useState<number | null>(null);
+  const [runtime, setRuntime] = useState<AppRuntime>(
+    isMiniPayRuntime() ? "minipay" : "browser",
+  );
+  const isMiniPay = runtime === "minipay";
 
   // Countdown timer until game ends
   const secondsRemaining = useTimer(gameEndsAt.getTime());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((nextRuntime) => {
+        if (!cancelled) setRuntime(nextRuntime);
+      })
+      .catch(() => {
+        if (!cancelled) setRuntime(isMiniPayRuntime() ? "minipay" : "browser");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Format time as MM:SS
   const formatTime = useCallback((seconds: number) => {
@@ -408,19 +433,19 @@ export default function WaitingScreen({
       </div>
 
       {/* ==================== Bottom Section ==================== */}
-      <div className="shrink-0 mt-auto">
-        {/* Live Feed */}
-        <div className="w-full max-w-md mx-auto px-4">
-          <LiveEventFeed />
-        </div>
+      {!isMiniPay && (
+        <div className="shrink-0 mt-auto">
+          <div className="w-full max-w-md mx-auto px-4">
+            <LiveEventFeed />
+          </div>
 
-        {/* Chat */}
-        <div className="w-full bg-[#0E0E0E] border-t border-white/10 px-4 py-3">
-          <div className="w-full max-w-md mx-auto">
-            <GameChat />
+          <div className="w-full bg-[#0E0E0E] border-t border-white/10 px-4 py-3">
+            <div className="w-full max-w-md mx-auto">
+              <GameChat />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
