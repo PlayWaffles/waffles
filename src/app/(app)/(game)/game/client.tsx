@@ -313,7 +313,9 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         </motion.div>
       </motion.section>
 
-      {!isMiniPay && (
+      {isMiniPay ? (
+        <div className="flex-1 min-h-0" />
+      ) : (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
