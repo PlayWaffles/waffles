@@ -284,7 +284,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
                     {lastGameResult.winners[0].username ?? "Player"} + {lastGameResult.totalWinners - 1} others
                   </span>
                   <span className="font-display text-[12px] text-waffle-gold leading-tight">
-                    won ${lastGameResult.prizePool.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    won ${lastGameResult.prizeAwarded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
               </div>
