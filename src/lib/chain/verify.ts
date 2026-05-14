@@ -655,6 +655,7 @@ export async function verifyClaim(
         abi: waffleGameAbi,
         functionName: "hasClaimed",
         args: [expectedGameId, expectedClaimer],
+        blockNumber: receipt.blockNumber,
       })) as boolean;
     } catch {
       return {
