@@ -116,6 +116,7 @@ export interface LastGameResult {
   gameNumber: number;
   gameId: string;
   prizePool: number;
+  prizeAwarded: number;
   totalWinners: number;
   winners: LastGameWinner[];
 }
@@ -159,18 +160,21 @@ export const getLastGameWinners = cache(
 
     if (!lastGame || lastGame.entries.length === 0) return null;
 
+    const winners = (lastGame.entries as PrismaWinnerEntry[]).map((e) => ({
+      username: e.user.username,
+      pfpUrl: e.user.pfpUrl,
+      prize: e.prize ?? 0,
+      rank: e.rank!,
+      score: e.score,
+    }));
+
     return {
       gameNumber: lastGame.gameNumber ?? 0,
       gameId: lastGame.id,
       prizePool: lastGame.prizePool ?? 0,
+      prizeAwarded: winners.reduce((total, winner) => total + winner.prize, 0),
       totalWinners: lastGame._count.entries,
-      winners: (lastGame.entries as PrismaWinnerEntry[]).map((e) => ({
-        username: e.user.username,
-        pfpUrl: e.user.pfpUrl,
-        prize: e.prize ?? 0,
-        rank: e.rank!,
-        score: e.score,
-      })),
+      winners,
     };
   }
 );
