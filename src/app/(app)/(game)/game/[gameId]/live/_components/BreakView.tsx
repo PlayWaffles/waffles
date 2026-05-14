@@ -6,7 +6,12 @@ import CircularProgress from "./CircularProgress";
 import { LiveEventFeed } from "../../../_components/LiveEventFeed";
 import { GameChat } from "../../../_components/chat/GameChat";
 import Image from "next/image";
-import { authenticatedFetch } from "@/lib/client/runtime";
+import {
+  authenticatedFetch,
+  getAppRuntime,
+  isMiniPayRuntime,
+  type AppRuntime,
+} from "@/lib/client/runtime";
 import { getDisplayName } from "@/lib/address";
 
 const MAX_LEADERBOARD_ENTRIES = 8;
@@ -45,6 +50,10 @@ export default function BreakView({
 }: BreakViewProps) {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [runtime, setRuntime] = useState<AppRuntime>(
+    isMiniPayRuntime() ? "minipay" : "browser",
+  );
+  const isMiniPay = runtime === "minipay";
 
   const percentage = Math.max(
     0,
@@ -53,6 +62,22 @@ export default function BreakView({
 
   // Low time state for micro-interactions
   const isLowTime = seconds <= 3;
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((nextRuntime) => {
+        if (!cancelled) setRuntime(nextRuntime);
+      })
+      .catch(() => {
+        if (!cancelled) setRuntime(isMiniPayRuntime() ? "minipay" : "browser");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fetch leaderboard when break view mounts
   useEffect(() => {
@@ -213,19 +238,19 @@ export default function BreakView({
       </div>
 
       {/* Bottom section - always at bottom */}
-      <div className="shrink-0 mt-auto">
-        {/* Live Feed */}
-        <div className="w-full max-w-lg mx-auto px-3 sm:px-4">
-          <LiveEventFeed />
-        </div>
+      {!isMiniPay && (
+        <div className="shrink-0 mt-auto">
+          <div className="w-full max-w-lg mx-auto px-3 sm:px-4">
+            <LiveEventFeed />
+          </div>
 
-        {/* Chat */}
-        <div className="w-full bg-[#0E0E0E] border-t border-white/10 px-3 sm:px-4 py-2 sm:py-3">
-          <div className="w-full max-w-lg mx-auto">
-            <GameChat />
+          <div className="w-full bg-[#0E0E0E] border-t border-white/10 px-3 sm:px-4 py-2 sm:py-3">
+            <div className="w-full max-w-lg mx-auto">
+              <GameChat />
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

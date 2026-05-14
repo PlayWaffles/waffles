@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
@@ -16,6 +16,11 @@ import type { GameWithQuestionCount, LastGameResult } from "@/lib/game";
 import { usePendingPurchaseRecovery } from "@/hooks/usePendingPurchaseRecovery";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useUser } from "@/hooks/useUser";
+import {
+  getAppRuntime,
+  isMiniPayRuntime,
+  type AppRuntime,
+} from "@/lib/client/runtime";
 
 import Image from "next/image";
 import { GameChat } from "./_components/chat/GameChat";
@@ -46,11 +51,15 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [runtime, setRuntime] = useState<AppRuntime>(
+    isMiniPayRuntime() ? "minipay" : "browser",
+  );
 
   // User context for recovery
   const { address } = useAccount();
   const { user } = useUser();
   const { refetchEntry } = useRealtime();
+  const isMiniPay = runtime === "minipay";
 
   const isHowToPlayOpen = searchParams.get("modal") === MODAL_HOW_TO_PLAY;
 
@@ -67,6 +76,22 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
     const url = params.toString() ? `${pathname}?${params.toString()}` : pathname;
     router.replace(url, { scroll: false });
   };
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((nextRuntime) => {
+        if (!cancelled) setRuntime(nextRuntime);
+      })
+      .catch(() => {
+        if (!cancelled) setRuntime(isMiniPayRuntime() ? "minipay" : "browser");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Track game lobby view
   const hasTrackedView = useRef<string | null>(null);
@@ -288,28 +313,30 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         </motion.div>
       </motion.section>
 
-      {/* Live Event Feed */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5, ...springs.gentle }}
-        className="flex-1 flex flex-col justify-end w-full px-4"
-        style={{ minHeight: "clamp(60px, 12vh, 180px)" }}
-      >
-        <LiveEventFeed />
-      </motion.div>
+      {!isMiniPay && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5, ...springs.gentle }}
+          className="flex-1 flex flex-col justify-end w-full px-4"
+          style={{ minHeight: "clamp(60px, 12vh, 180px)" }}
+        >
+          <LiveEventFeed />
+        </motion.div>
+      )}
 
-      {/* Game Chat */}
-      <motion.div
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6, ...springs.gentle }}
-        className="shrink-0 w-full bg-[#0E0E0E] border-t border-white/10 px-4 py-3"
-      >
-        <div className="w-full max-w-lg mx-auto">
-          <GameChat />
-        </div>
-      </motion.div>
+      {!isMiniPay && (
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, ...springs.gentle }}
+          className="shrink-0 w-full bg-[#0E0E0E] border-t border-white/10 px-4 py-3"
+        >
+          <div className="w-full max-w-lg mx-auto">
+            <GameChat />
+          </div>
+        </motion.div>
+      )}
 
       {isHowToPlayOpen && (
         <HowToPlayModal onClose={closeHowToPlay} showStepIcons={false} />
