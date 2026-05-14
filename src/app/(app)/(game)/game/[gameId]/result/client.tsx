@@ -13,7 +13,8 @@ import { notify } from "@/components/ui/Toaster";
 import { env } from "@/lib/env";
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useSendCalls, useCallsStatus, useAccount } from "wagmi";
+import { useSendCalls, useCallsStatus, useAccount, useWriteContract } from "wagmi";
+import { waitForTransactionReceipt } from "wagmi/actions";
 import { encodeFunctionData } from "viem";
 
 import { waffleGameAbi } from "@/lib/chain/abi";
@@ -23,6 +24,7 @@ import { WINNERS_COUNT } from "@/lib/game/prizeDistribution";
 import { CLAIM_DELAY_MS } from "@/lib/constants";
 import { getWaffleContractAddress } from "@/lib/chain";
 import { builderCodeSendCallsCapability } from "@/lib/chain/builderCode";
+import { wagmiConfig } from "@/lib/wagmi/config";
 import { useUser } from "@/hooks/useUser";
 import { shareTextOrCopy } from "@/lib/share";
 import { authenticatedFetch } from "@/lib/client/runtime";
@@ -359,6 +361,10 @@ export default function ResultPageClient({
     error: sendError,
     reset: resetSendCalls,
   } = useSendCalls();
+  const {
+    writeContractAsync: writeClaimContractAsync,
+    isPending: isWriteClaimPending,
+  } = useWriteContract();
 
   const { data: callsStatus } = useCallsStatus({
     id: callsId?.id ?? "",
@@ -562,6 +568,23 @@ export default function ResultPageClient({
       setClaimState("confirming");
       resetSendCalls();
 
+      if (game?.platform === "MINIPAY") {
+        const txHash = await writeClaimContractAsync({
+          address: contractAddress!,
+          abi: waffleGameAbi,
+          functionName: "claimPrize",
+          args: [onchainId, BigInt(amount), proof],
+        });
+
+        await waitForTransactionReceipt(wagmiConfig, {
+          hash: txHash,
+          confirmations: 1,
+        });
+
+        await syncClaimWithBackend(txHash);
+        return;
+      }
+
       sendCalls({
         calls: [
           {
@@ -592,6 +615,9 @@ export default function ResultPageClient({
     gameId,
     sendCalls,
     resetSendCalls,
+    writeClaimContractAsync,
+    syncClaimWithBackend,
+    game?.platform,
     hasClaimed,
     refetchEntry,
     isClaimWindowOpen,
@@ -606,7 +632,7 @@ export default function ResultPageClient({
       return `OPENS IN ${claimCountdown}`;
     if (claimState === "pending") return "RESULTS PENDING";
     if (claimState === "fetching") return "Loading...";
-    if (claimState === "confirming" || isSending) return "Claiming...";
+    if (claimState === "confirming" || isSending || isWriteClaimPending) return "Claiming...";
     if (claimState === "error") return "RETRY";
     return "CLAIM PRIZE";
   };
@@ -619,7 +645,8 @@ export default function ResultPageClient({
     claimState === "pending" ||
     claimState === "fetching" ||
     claimState === "confirming" ||
-    isSending;
+    isSending ||
+    isWriteClaimPending;
 
   // ==========================================
   // RENDER
