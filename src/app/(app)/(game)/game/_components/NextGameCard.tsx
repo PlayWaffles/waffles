@@ -156,7 +156,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
   // ── 1-tap purchase (inline, no modal) ──────────────
   const openMiniPayAddCash = () => {
     if (runtime !== "minipay" && !isMiniPayRuntime()) return;
-    notify.info("Opening MiniPay Deposit...");
+    notify.info("Opening MiniPay Add Cash...");
     window.location.assign(MINIPAY_DEPOSIT_URL);
   };
 

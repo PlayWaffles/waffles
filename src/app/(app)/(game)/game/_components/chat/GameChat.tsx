@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getAppRuntime, isMiniPayRuntime, type AppRuntime } from "@/lib/client/runtime";
 import { ChatInputBar } from "./ChatInputBar";
 import { ChatDrawer } from "./ChatDrawer";
 
@@ -19,6 +20,29 @@ import { ChatDrawer } from "./ChatDrawer";
  */
 export function GameChat() {
   const [isOpen, setIsOpen] = useState(false);
+  const [runtime, setRuntime] = useState<AppRuntime | null>(
+    isMiniPayRuntime() ? "minipay" : null,
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    getAppRuntime()
+      .then((nextRuntime) => {
+        if (!cancelled) setRuntime(nextRuntime);
+      })
+      .catch(() => {
+        if (!cancelled) setRuntime("browser");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (runtime === "minipay") {
+    return null;
+  }
 
   return (
     <>
