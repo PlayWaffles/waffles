@@ -1,8 +1,18 @@
 import SettingsClient from "./client";
 import Link from "next/link";
 import { LinkIcon, Cog6ToothIcon } from "@heroicons/react/24/outline";
+import { cookies } from "next/headers";
+import { MiniPayNetworkToggle } from "@/components/admin/MiniPayNetworkToggle";
+import {
+    MINIPAY_TESTNET_COOKIE,
+    parseMiniPayTestnetPreference,
+} from "@/lib/platform/constants";
 
 export default async function AdminSettingsPage() {
+    const cookieStore = await cookies();
+    const showMiniPayTestnet =
+        parseMiniPayTestnetPreference(cookieStore.get(MINIPAY_TESTNET_COOKIE)?.value) === true;
+
     return (
         <div className="max-w-3xl space-y-6">
             <div>
@@ -47,6 +57,8 @@ export default async function AdminSettingsPage() {
                     </div>
                 </div>
             </div>
+
+            <MiniPayNetworkToggle initialShowTestnet={showMiniPayTestnet} />
 
             <SettingsClient />
         </div>
