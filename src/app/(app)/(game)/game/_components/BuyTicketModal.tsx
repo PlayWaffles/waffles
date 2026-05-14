@@ -64,7 +64,7 @@ export function BuyTicketModal({
     if (typeof window === "undefined") return;
     if (runtime !== "minipay" && !isMiniPayRuntime()) return;
 
-    notify.info("Opening MiniPay Deposit...");
+    notify.info("Opening MiniPay Add Cash...");
     window.location.assign(MINIPAY_DEPOSIT_URL);
   }, [runtime]);
 
