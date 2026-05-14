@@ -2,6 +2,25 @@ import { z } from "zod";
 
 const isServer = typeof window === "undefined";
 
+function cleanEnvString(value: unknown) {
+  if (typeof value !== "string") return value;
+
+  const trimmed = value.trim();
+  if (
+    (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
+    (trimmed.startsWith("'") && trimmed.endsWith("'"))
+  ) {
+    return trimmed.slice(1, -1).trim();
+  }
+
+  return trimmed;
+}
+
+const addressSchema = z.preprocess(
+  cleanEnvString,
+  z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+);
+
 const envSchema = z.object({
   // Server-only (optional on client, required on server)
   NEYNAR_API_KEY: isServer
@@ -49,56 +68,29 @@ const envSchema = z.object({
   NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_CELO_MAINNET_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
-  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_BASE_APP: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_APP: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
-  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/)
-    .optional(),
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: addressSchema,
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER: addressSchema,
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_BASE_APP: addressSchema,
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET: addressSchema,
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA: addressSchema,
+  NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY: addressSchema,
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS: addressSchema,
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER: addressSchema,
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_APP: addressSchema,
+  NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY: addressSchema,
   NEXT_PUBLIC_BLOCK_EXPLORER_URL: z.string().url().optional(),
   NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE: z.coerce
     .number()
     .int()
     .positive()
     .default(25),
-  NEXT_PUBLIC_TREASURY_WALLET: z
-    .string()
-    .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Treasury Wallet address")
-    .optional(),
+  NEXT_PUBLIC_TREASURY_WALLET: z.preprocess(
+    cleanEnvString,
+    z
+      .string()
+      .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Treasury Wallet address")
+      .optional(),
+  ),
   NEXT_PUBLIC_HOME_URL_PATH: z
     .string()
     .min(1, "NEXT_PUBLIC_HOME_URL_PATH is required"),
