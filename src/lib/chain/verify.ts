@@ -194,6 +194,7 @@ async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
       abi: waffleGameAbi,
       functionName: "hasTicket",
       args: [expectedGameId, expectedBuyer],
+      blockNumber: receipt.blockNumber,
     })) as boolean;
 
     if (!hasTicket) {
@@ -469,6 +470,7 @@ export async function inspectTicketPurchase(input: {
       abi: waffleGameAbi,
       functionName: "hasTicket",
       args: [purchase.gameId, purchase.buyer],
+      blockNumber: receipt.blockNumber,
     })) as boolean;
 
     if (!hasTicket) {
