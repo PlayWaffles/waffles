@@ -28,6 +28,7 @@ import { wagmiConfig } from "@/lib/wagmi/config";
 import { useUser } from "@/hooks/useUser";
 import { shareTextOrCopy } from "@/lib/share";
 import { authenticatedFetch } from "@/lib/client/runtime";
+import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
 import posthog from "posthog-js";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain";
@@ -602,11 +603,17 @@ export default function ResultPageClient({
       });
     } catch (error: unknown) {
       console.error("[Claim] Error:", error);
-      setClaimError(error instanceof Error ? error.message : "Claim failed");
+      const errorMessage = error instanceof Error ? error.message : "Claim failed";
+      const lowBalanceMessage =
+        game?.platform === "MINIPAY" &&
+        (errorMessage.toLowerCase().includes("insufficient funds for gas") ||
+          errorMessage.toLowerCase().includes("exceeds the balance of the account"))
+          ? MINIPAY_LOW_BALANCE_MESSAGE
+          : errorMessage;
+
+      setClaimError(lowBalanceMessage);
       setClaimState("error");
-      notify.error(
-        error instanceof Error ? error.message : "Failed to claim prize"
-      );
+      notify.error(lowBalanceMessage);
     }
   }, [
     onchainId,
