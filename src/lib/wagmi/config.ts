@@ -2,24 +2,16 @@
 
 import { QueryClient } from "@tanstack/react-query";
 import { createConfig, createStorage, cookieStorage, http } from "wagmi";
-import { coinbaseWallet, injected } from "wagmi/connectors";
+import { injected } from "wagmi/connectors";
 import { farcasterMiniApp } from "@farcaster/miniapp-wagmi-connector";
 
 import { farcasterChain, farcasterSepoliaChainConfig, getPlatformRpcUrl, miniPayChain } from "@/lib/chain";
 import { env } from "@/lib/env";
 
-const appName = "Waffles";
-
 function createWafflesWagmiConfig(includeInjected: boolean) {
   return createConfig({
     chains: [farcasterChain, farcasterSepoliaChainConfig, miniPayChain],
-    connectors: [
-      ...(includeInjected ? [injected()] : []),
-      coinbaseWallet({
-        appName,
-        preference: "all",
-      }),
-    ],
+    connectors: includeInjected ? [injected()] : [],
     storage: createStorage({
       storage: cookieStorage,
     }),

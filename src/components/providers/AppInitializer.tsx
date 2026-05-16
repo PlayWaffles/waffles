@@ -8,12 +8,11 @@ import {
   useRef,
   type ReactNode,
 } from "react";
+import dynamic from "next/dynamic";
 import sdk from "@farcaster/miniapp-sdk";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
-import posthog from "posthog-js";
 
-import { OnboardingOverlay } from "../OnboardingOverlay";
 import { WaffleButton } from "../buttons/WaffleButton";
 import { getDemoQuestion, type DemoQuestion } from "@/actions/onboarding";
 import { useUser } from "@/hooks/useUser";
@@ -26,6 +25,11 @@ import {
   setRuntimePlatformCookie,
   type AppRuntime,
 } from "@/lib/client/runtime";
+
+const OnboardingOverlay = dynamic(
+  () => import("../OnboardingOverlay").then((mod) => mod.OnboardingOverlay),
+  { ssr: false },
+);
 
 function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
   return userId
@@ -71,7 +75,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!user?.id) {
       console.info("[posthog]", "client_reset");
-      posthog.reset();
+      import("posthog-js").then(({ default: posthog }) => posthog.reset());
       return;
     }
     console.info("[posthog]", "client_identify", {
@@ -81,11 +85,13 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       fid: user.fid ?? null,
       wallet: user.wallet ?? null,
     });
-    posthog.identify(user.id, {
-      platform: user.platform,
-      username: user.username ?? undefined,
-      fid: user.fid ?? undefined,
-      wallet: user.wallet ?? undefined,
+    import("posthog-js").then(({ default: posthog }) => {
+      posthog.identify(user.id, {
+        platform: user.platform,
+        username: user.username ?? undefined,
+        fid: user.fid ?? undefined,
+        wallet: user.wallet ?? undefined,
+      });
     });
   }, [user?.id, user?.platform, user?.username, user?.fid, user?.wallet]);
 
