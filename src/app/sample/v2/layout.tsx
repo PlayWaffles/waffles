@@ -1,5 +1,20 @@
 import type { Metadata } from "next";
+import { Nunito, Archivo_Black } from "next/font/google";
 import "./styles.css";
+
+const nunito = Nunito({
+  subsets: ["latin"],
+  weight: ["600", "700", "800", "900"],
+  variable: "--font-body",
+  display: "swap",
+});
+
+const archivoBlack = Archivo_Black({
+  subsets: ["latin"],
+  weight: "400",
+  variable: "--font-display",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Waffles · v2 Prototype",
@@ -7,12 +22,6 @@ export const metadata: Metadata = {
 
 export default function V2Layout({ children }: { children: React.ReactNode }) {
   return (
-    <>
-      <link
-        rel="stylesheet"
-        href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&family=Archivo+Black&display=swap"
-      />
-      {children}
-    </>
+    <div className={`${nunito.variable} ${archivoBlack.variable}`}>{children}</div>
   );
 }

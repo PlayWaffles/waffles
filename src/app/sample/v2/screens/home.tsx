@@ -53,22 +53,42 @@ const HomeMissions = () => {
 
 const HomeContinueRun = () => {
   const proto = useProto();
+  // proto.level IS the next playable level (the one shown as "current" on
+  // the level path). Don't add 1 — that was the bug that made Home say
+  // "Next Level 24" while the level path said "PLAY LEVEL 23".
   const level = proto.level;
-  const next = level + 1;
+  const next = level;
   return (
-    <div onClick={() => proto.goto("levels")} style={{ cursor: "pointer", background: "linear-gradient(135deg, #1a2a1a 0%, #0F0F10 60%)", border: "1px solid rgba(0,207,242,.2)", borderRadius: 16, padding: 14, display: "flex", gap: 14, alignItems: "center", position: "relative", overflow: "hidden", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), 0 0 24px rgba(0,207,242,.06)" }}>
-      <div style={{ width: 74, height: 74, borderRadius: 14, background: "radial-gradient(circle at 30% 30%, #2a4a2a, #0d1a0d)", border: "1px solid rgba(0,207,242,.2)", position: "relative", flexShrink: 0, overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <PixelImg src={ASSETS.wally} size={62} alt="Wally" />
+    <button
+      type="button"
+      className="pressable"
+      onClick={() => proto.goto("levels")}
+      aria-label={`Continue to level ${next}`}
+      style={{ width: "100%", background: "linear-gradient(135deg, #1a2a1a 0%, var(--surface-1) 60%)", border: "1px solid rgba(0,207,242,.2)", borderRadius: 16, padding: "10px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 104 }}
+    >
+      <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--leaf)", letterSpacing: 1, textTransform: "uppercase" }}>Next Level · Forest</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1.1, marginTop: 2, color: "var(--ink)" }}>Level {next}</div>
+        <div style={{ fontSize: 11, color: "var(--ink-mute)", fontWeight: 700, marginTop: 4 }}>3 questions · 3 lives · +50 XP</div>
       </div>
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ fontSize: 10, fontWeight: 800, color: "#00CFF2", letterSpacing: 1, textTransform: "uppercase" }}>Next Level · Forest</div>
-        <div style={{ fontFamily: "Archivo Black", fontSize: 18, lineHeight: 1.1, marginTop: 2, color: "#fff" }}>Level {next}</div>
-        <div style={{ fontSize: 11, color: "rgba(255,255,255,.55)", fontWeight: 700, marginTop: 3 }}>3 questions · 3 lives · +50 XP</div>
+      <PixelImg
+        src={ASSETS.wally}
+        size={108}
+        alt=""
+        style={{
+          flexShrink: 0,
+          marginRight: -6,
+          marginBottom: -10,
+          marginTop: -8,
+          // Wally has a quiet life — gentle idle bob every 5s so he feels alive
+          // without yanking attention away from the CTA button he's sitting on.
+          animation: "waffles-v2-wally-idle 5s ease-in-out infinite",
+        }}
+      />
+      <div aria-hidden="true" style={{ position: "absolute", right: 12, bottom: 12, display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 99, background: "var(--leaf)", color: "var(--frame)", boxShadow: "0 3px 0 rgba(0,207,242,.3)" }}>
+        <svg width="14" height="14" viewBox="0 0 24 24"><path d="M9 5l8 7-8 7" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 36, height: 36, borderRadius: 99, background: "#00CFF2", color: "#1e1e1e", flexShrink: 0, boxShadow: "0 3px 0 rgba(0,207,242,.3)" }}>
-        <svg width="16" height="16" viewBox="0 0 24 24"><path d="M9 5l8 7-8 7" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
-      </div>
-    </div>
+    </button>
   );
 };
 
@@ -76,18 +96,26 @@ export const HomeScreen = () => {
   const proto = useProto();
   const tickets = proto.tickets;
   const level = proto.level;
-  const xp = proto.xp;
-  const xpPct = Math.min(100, Math.round((xp / 500) * 100));
+  // XP overflow: when raw XP exceeds 500 we treat it as a level-up moment.
+  // Display the *displayed* level (one above the current proto.level) and
+  // wrap the XP into the next bucket (xp - 500). The displayed bar fills
+  // proportionally instead of showing nonsense like 544/500.
+  const rawXp = proto.xp;
+  const overflow = rawXp >= 500;
+  const displayLevel = overflow ? proto.level + 1 : proto.level;
+  const displayXp = overflow ? rawXp - 500 : rawXp;
+  const xpPct = Math.min(100, Math.round((displayXp / 500) * 100));
   const streak = proto.streak;
   const homeSlot = proto.tweaks.homeSlot;
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
-      <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 280, background: "radial-gradient(ellipse at center top, rgba(255,201,49,0.15), transparent 60%)", pointerEvents: "none" }} />
+      <div className="bg-deep" />
+      {/* Tilted oversized waffle wordmark watermark — replaces the generic radial glow on this screen. */}
+      <div aria-hidden="true" style={{ position: "absolute", top: 26, left: -10, right: -10, fontFamily: "var(--font-display)", fontSize: 110, color: "var(--maple-500)", opacity: 0.04, letterSpacing: 4, transform: "rotate(-6deg)", textAlign: "center", pointerEvents: "none", whiteSpace: "nowrap" }}>WAFFLES</div>
 
       <TopHeader tickets={tickets} title="WAFFLES" />
 
-      <div style={{ position: "absolute", top: 70, left: 0, right: 0, bottom: 140, padding: "0 18px", display: "flex", flexDirection: "column", gap: 14, overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 140, padding: "0 18px", display: "flex", flexDirection: "column", gap: 14, overflow: "hidden" }}>
         <div style={{ background: "#0F0F10", borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
             <div style={{ width: 8, height: 8, borderRadius: 99, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
@@ -128,22 +156,28 @@ export const HomeScreen = () => {
             </div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 2 }}>day streak</div>
           </div>
-          <div onClick={() => proto.goto("levels")} style={{ cursor: "pointer", flex: 1.4, background: "#0F0F10", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "10px 14px" }}>
+          <button
+            type="button"
+            className="pressable"
+            onClick={() => proto.goto("levels")}
+            aria-label={`Level ${displayLevel}, ${displayXp} of 500 XP — open levels`}
+            style={{ flex: 1.4, background: "var(--surface-1)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "10px 14px" }}
+          >
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-              <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.8, textTransform: "uppercase" }}>Lvl {level}</span>
-              <span style={{ fontSize: 11, fontWeight: 700, color: "#FFC931", fontFamily: "Archivo Black" }}>{xp}/500 XP</span>
+              <span style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.8, textTransform: "uppercase" }}>Lvl {displayLevel}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "var(--maple-500)", fontFamily: "var(--font-display)" }}>{displayXp}/500 XP</span>
             </div>
             <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.05)", overflow: "hidden", border: "1px solid rgba(255,255,255,0.04)" }}>
-              <div style={{ width: `${xpPct}%`, height: "100%", background: "linear-gradient(90deg, #FFC931, #F5BB1B)", borderRadius: 99, transition: "width .4s" }} />
+              <div style={{ width: `${xpPct}%`, height: "100%", background: "linear-gradient(90deg, var(--maple-500), var(--maple-400))", borderRadius: 99, transition: "width .4s var(--ease-out-quart)" }} />
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
+      <div className="cta-row sticky">
+        <button className="cta" onClick={() => proto.startTournament()}>JOIN NEXT TOURNAMENT</button>
+      </div>
       <div className="bottom-bar">
-        <div className="cta-row">
-          <button className="cta" onClick={() => proto.startTournament()}>JOIN NEXT TOURNAMENT</button>
-        </div>
         <TabBar active="home" />
       </div>
     </Phone>

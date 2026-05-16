@@ -5,7 +5,11 @@ import { ASSETS, Phone, PixelImg } from "../shared";
 
 export const LevelIntroScreen = () => {
   const proto = useProto();
-  const levelNum = 18;
+  // Use the live current level so the intro stays in sync with the level
+  // path. Bosses sit at every multiple of 5 — match the rule used in
+  // levels.tsx (`level % 5 === 0`) so non-boss levels show as regular.
+  const levelNum = proto.level;
+  const isBoss = levelNum % 5 === 0;
   const total = proto.totalQuestions;
 
   return (
@@ -17,14 +21,18 @@ export const LevelIntroScreen = () => {
         <button onClick={() => proto.goto("levels", { back: true })} style={{ width: 36, height: 36, borderRadius: 99, background: "rgba(0,0,0,.45)", border: "1px solid rgba(255,255,255,.1)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
-        <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 1.5, textTransform: "uppercase" }}>Boss Level</div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 1.5, textTransform: "uppercase" }}>{isBoss ? "Boss Level" : "Level"}</div>
         <div style={{ width: 36 }} />
       </div>
 
       <div style={{ position: "absolute", top: 96, left: 0, right: 0, textAlign: "center", color: "#fff" }}>
         <div style={{ fontFamily: "Archivo Black", fontSize: 14, letterSpacing: 3, color: "#FFC931" }}>LEVEL {levelNum}</div>
-        <div style={{ fontFamily: "Archivo Black", fontSize: 42, letterSpacing: 0.5, lineHeight: 1, marginTop: 6, textShadow: "0 0 30px rgba(255,201,49,.4)" }}>THE NIGHT<br />OWL</div>
-        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 8, padding: "0 32px" }}>Three questions stand between you and Level 19.</div>
+        <div style={{ fontFamily: "Archivo Black", fontSize: 42, letterSpacing: 0.5, lineHeight: 1, marginTop: 6, textShadow: "0 0 30px rgba(255,201,49,.4)" }}>
+          {isBoss ? <>THE NIGHT<br />OWL</> : "READY?"}
+        </div>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 8, padding: "0 32px" }}>
+          {total} question{total === 1 ? "" : "s"} stand between you and Level {levelNum + 1}.
+        </div>
       </div>
 
       <div style={{ position: "absolute", top: 236, left: "50%", transform: "translateX(-50%)", width: 172, height: 172 }}>

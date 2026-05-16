@@ -2,10 +2,7 @@
    All rules are scoped under .waffles-v2 to avoid colliding with the rest of the app. */
 
 .waffles-v2 {
-  --maple-900: #0a0a0b;
-  --maple-800: #141416;
-  --maple-700: #1e1e1e;
-  --maple-600: #2a2a2e;
+  /* Brand */
   --maple-500: #FFC931;
   --maple-400: #F5BB1B;
   --maple-300: #ffe07a;
@@ -16,18 +13,34 @@
   --butter-400: #F5BB1B;
   --butter-300: #ffe07a;
 
-  --cream: #0F0F10;
-  --cream-2: #1a1a1c;
-
   --berry: #FB72FF;
   --leaf: #00CFF2;
   --leaf-dark: #00a3c2;
   --sky: #00CFF2;
   --sky-dark: #00a3c2;
   --live-red: #FC1919;
+  --frame: #1e1e1e;
 
-  --ink: #ffffff;
-  --ink-soft: rgba(255, 255, 255, 0.6);
+  /* Tinted neutrals — replace raw #000/#fff. Hue 85 (warm), low chroma. */
+  --surface-deep: #070705;
+  --surface-1: #0F0F10;
+  --surface-2: #1a1a1c;
+  --surface-3: #2a2a2e;
+  --cream-pure: #fdfbf6;
+
+  /* Ink ramp — three semantic steps from cream-pure */
+  --ink: #fdfbf6;
+  --ink-mute: rgba(253, 251, 246, 0.55);
+  --ink-faint: rgba(253, 251, 246, 0.35);
+  --ink-soft: rgba(253, 251, 246, 0.60);
+
+  /* Legacy aliases — do not use in new code */
+  --maple-900: var(--surface-deep);
+  --maple-800: #141416;
+  --maple-700: var(--frame);
+  --maple-600: var(--surface-3);
+  --cream: var(--surface-1);
+  --cream-2: var(--surface-2);
 
   --shadow-sm: 0 2px 0 rgba(58, 31, 10, 0.18), 0 4px 8px rgba(58, 31, 10, 0.10);
   --shadow-md: 0 4px 0 rgba(58, 31, 10, 0.20), 0 8px 18px rgba(58, 31, 10, 0.14);
@@ -38,13 +51,16 @@
   --radius-lg: 26px;
   --radius-xl: 36px;
 
-  font-family: "Nunito", system-ui, -apple-system, sans-serif;
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --press: transform 0.08s var(--ease-out-quart), filter 0.15s ease, box-shadow 0.08s ease;
+
+  font-family: var(--font-body, "Nunito"), system-ui, -apple-system, sans-serif;
 }
 
 .waffles-v2-stage {
   min-height: 100dvh;
   width: 100%;
-  background: #0a0a0b;
+  background: var(--surface-deep);
   box-sizing: border-box;
   overflow: hidden;
 }
@@ -54,6 +70,7 @@
   width: 100%;
   min-height: 100dvh;
   overflow: hidden;
+  background: var(--surface-deep);
 }
 
 .waffles-v2-hint {
@@ -77,65 +94,137 @@
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
 }
+@keyframes waffles-v2-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+@keyframes waffles-v2-tile-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes waffles-v2-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes waffles-v2-firefly {
+  0%, 100% { transform: translate(0, 0); opacity: 0.85; }
+  25% { transform: translate(18px, -14px); opacity: 1; }
+  50% { transform: translate(-6px, -28px); opacity: 0.9; }
+  75% { transform: translate(-22px, -10px); opacity: 0.95; }
+}
+/* Hero moment: each path tile drops into place with a fade + slide on first
+   render. The translate() preserves the tile's existing centering transform
+   (set inline on the wrapper) by using only translate3d on Z and Y here. */
+@keyframes waffles-v2-tile-enter {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Soft attention ring under the current tile — expands and fades, pulling
+   the eye to the playable level without being noisy. */
+@keyframes waffles-v2-attention-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.7); opacity: 0.55; }
+  70%  { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+}
+/* Wally idle: subtle bob while standing still, paired with a separate slow
+   blink (handled by the eye-overlay element if present). Compound, gentle. */
+@keyframes waffles-v2-wally-idle {
+  0%, 60%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-4px); }
+  40% { transform: translateY(-2px); }
+}
+/* Streak flame: flickers like a real flame — irregular vertical squash and
+   tiny horizontal sway so it feels alive, not on a metronome. */
+@keyframes waffles-v2-flame-flicker {
+  0%, 100% { transform: scale(1, 1) translateX(0); filter: brightness(1); }
+  20% { transform: scale(1.05, 0.95) translateX(0.5px); filter: brightness(1.1); }
+  40% { transform: scale(0.96, 1.04) translateX(-0.5px); filter: brightness(0.95); }
+  60% { transform: scale(1.02, 0.98) translateX(0.3px); filter: brightness(1.08); }
+  80% { transform: scale(0.98, 1.02) translateX(-0.3px); filter: brightness(1); }
+}
+/* Confetti: a piece falls from above the viewport, drifting and rotating
+   on the way down. Each piece varies via inline styles (delay, x-offset,
+   colour, rotation seed) so the burst doesn't look mechanical. */
+@keyframes waffles-v2-confetti-fall {
+  0%   { transform: translate3d(0, -40px, 0) rotate(0deg);    opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate3d(var(--cf-dx, 0), 110vh, 0) rotate(var(--cf-rot, 720deg)); opacity: 1; }
+}
+/* CTA invitation: a tiny periodic pulse on primary actions when there's
+   nothing else competing for attention. Quiet enough not to nag. */
+@keyframes waffles-v2-cta-invite {
+  0%, 70%, 100% { box-shadow: 0 4px 0 var(--frame); }
+  85% { box-shadow: 0 4px 0 var(--frame), 0 0 0 6px rgba(255, 201, 49, 0.2); }
+}
+/* Cloud drift: slow horizontal sway with a tiny vertical bob so the clouds
+   over locked levels feel alive rather than stamped on. The keyframe uses
+   percentages on translate so each cloud drifts a bit differently if its
+   parent has a different width. */
+@keyframes waffles-v2-cloud-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(8px, -3px); }
+}
+/* Shimmer: a left-to-right gradient sweep used during the bundle "Processing…"
+   state to telegraph that something is happening without spinning a generic
+   loader. Plays inside a clip so the highlight only crosses the button. */
+@keyframes waffles-v2-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+/* Snackbar progress: a 4-second left-shrinking bar that visualises the undo
+   grace period for power-up purchases. transform: scaleX uses the right edge
+   so it appears to drain toward the UNDO button. */
+@keyframes waffles-v2-snackbar-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+/* Honour the user's motion preference. Disable decorative animation but
+   keep functional feedback (press, focus) intact. */
+@media (prefers-reduced-motion: reduce) {
+  .waffles-v2 *,
+  .waffles-v2 *::before,
+  .waffles-v2 *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 .waffles-v2 .phone {
   width: 100%;
-  min-height: 100dvh;
+  /* Use 100svh (small viewport) so the tab bar stays visible even when the
+     mobile address bar is showing — `100dvh` shrinks dynamically and can
+     leave the bottom-bar overflowing the visible area. */
+  min-height: 100svh;
+  height: 100svh;
   overflow: hidden;
   position: relative;
-  background: linear-gradient(180deg, #1e1e1e 0%, #000 100%);
-  font-family: "Nunito", system-ui, -apple-system, sans-serif;
+  background: linear-gradient(180deg, var(--frame) 0%, var(--surface-deep) 100%);
+  font-family: var(--font-body, "Nunito"), system-ui, -apple-system, sans-serif;
   color: var(--ink);
   display: flex;
   flex-direction: column;
 }
 .waffles-v2 .phone * { box-sizing: border-box; }
 
-.waffles-v2 .status-bar {
-  height: 44px;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--ink);
-  flex-shrink: 0;
-}
-.waffles-v2 .status-bar.dark { color: white; }
-.waffles-v2 .status-bar .right { display: flex; gap: 6px; align-items: center; }
-.waffles-v2 .status-bar .dot-row { display: flex; gap: 3px; align-items: flex-end; }
-.waffles-v2 .status-bar .dot-row span { width: 3px; background: currentColor; border-radius: 1px; }
-.waffles-v2 .status-bar .dot-row span:nth-child(1) { height: 4px; }
-.waffles-v2 .status-bar .dot-row span:nth-child(2) { height: 6px; }
-.waffles-v2 .status-bar .dot-row span:nth-child(3) { height: 8px; }
-.waffles-v2 .status-bar .dot-row span:nth-child(4) { height: 10px; }
-.waffles-v2 .status-bar .battery {
-  width: 26px; height: 12px;
-  border: 1.5px solid currentColor; border-radius: 4px;
-  position: relative; padding: 1px;
-}
-.waffles-v2 .status-bar .battery::after {
-  content: ""; position: absolute; right: -4px; top: 3px;
-  width: 2px; height: 4px; background: currentColor; border-radius: 1px;
-}
-.waffles-v2 .status-bar .battery i { display: block; height: 100%; background: currentColor; border-radius: 2px; width: 100%; }
-
 .waffles-v2 .body { flex: 1; position: relative; overflow: hidden; }
 
 .waffles-v2 .top-header {
   position: absolute; top: 0; left: 0; right: 0;
-  padding: 8px 18px 14px;
-  display: flex; align-items: center; justify-content: center; gap: 10px;
+  /* Top padding accounts for the iOS status bar / notch via env() so the
+     ticket counter never sits behind it. */
+  padding: max(14px, calc(env(safe-area-inset-top) + 12px)) 18px 14px;
+  display: flex; align-items: center; gap: 6px;
   z-index: 10;
+  pointer-events: none;
 }
 .waffles-v2 .top-header .ticket-pill {
-  position: absolute; left: 18px;
-  display: flex; align-items: center; gap: 6px;
-  background: rgba(0, 0, 0, 0.35);
-  padding: 6px 12px 6px 8px;
-  border-radius: 999px;
-  color: white; font-weight: 800; font-size: 14px;
+  display: inline-flex; align-items: center; gap: 6px;
+  /* No pill background — clean icon + count on the screen surface. */
+  color: var(--ink); font-weight: 900; font-size: 16px;
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  font-variant-numeric: tabular-nums;
+  pointer-events: auto;
 }
 .waffles-v2 .top-header .title {
   color: white;
@@ -145,28 +234,74 @@
   text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
 }
 
+/* Bottom nav: ALWAYS just the TabBar at a consistent height across screens.
+   Per-screen primary CTAs (Tournament, Play Level, …) sit in `.cta-row`,
+   which floats above the bottom bar via `.cta-row.sticky` so that the tab
+   bar's vertical position never shifts when navigating between screens.
+   Horizontal padding is 0 here so the tab labels span the full width and
+   don't appear compacted compared to the rest of the screen. */
 .waffles-v2 .bottom-bar {
   position: absolute; bottom: 0; left: 0; right: 0;
-  background: #0F0F10;
-  padding: 14px 16px 8px;
-  display: flex; flex-direction: column; gap: 12px;
+  background: var(--surface-1);
+  /* Generous bottom padding so the home indicator on iOS / a system gesture
+     bar on Android can't sit on top of the tab labels. The max() keeps a
+     baseline 12px even on devices that don't expose a safe area inset. */
+  padding: 8px 0 max(12px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column;
   border-top: 2px solid rgba(255, 255, 255, 0.08);
 }
 .waffles-v2 .cta-row { display: flex; gap: 10px; }
+.waffles-v2 .cta-row.sticky {
+  position: absolute;
+  /* Sit just above the bottom bar — the bar is 64px PLUS whatever safe-area
+     padding is in play, so the sticky CTA matches that dynamically and
+     doesn't end up overlapping the tab labels on iPhones with a notch. */
+  bottom: calc(64px + max(4px, env(safe-area-inset-bottom)));
+  left: 0; right: 0;
+  padding: 10px 16px;
+  background: var(--surface-1);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 5;
+}
 .waffles-v2 .cta {
   flex: 1; height: 54px; border-radius: 12px;
-  background: white; color: #191919;
-  font-family: "Archivo Black", system-ui;
+  background: var(--cream-pure); color: #191919;
+  font-family: var(--font-display, "Archivo Black"), system-ui;
   font-size: 18px; letter-spacing: 0.3px;
   text-transform: uppercase;
-  border: 5px solid #00CFF2;
+  border: 5px solid var(--leaf);
   border-top: 0; border-left: 0;
   display: flex; align-items: center; justify-content: center;
   cursor: pointer;
+  transition: var(--press);
+  user-select: none;
 }
-.waffles-v2 .cta.maple { background: #FFC931; color: #191919; border-color: #1e1e1e; }
-.waffles-v2 .cta.berry { background: #FB72FF; color: #1e1e1e; border-color: #1e1e1e; }
-.waffles-v2 .cta.icon-btn { flex: 0 0 54px; background: white; color: #191919; }
+.waffles-v2 .cta:active { transform: translateY(2px); filter: brightness(0.96); }
+.waffles-v2 .cta:focus-visible { outline: 3px solid var(--berry); outline-offset: 3px; }
+.waffles-v2 .cta.maple { background: var(--maple-500); color: #191919; border-color: var(--frame); }
+.waffles-v2 .cta.berry { background: var(--berry); color: var(--frame); border-color: var(--frame); }
+.waffles-v2 .cta.icon-btn { flex: 0 0 54px; background: var(--cream-pure); color: #191919; }
+
+/* Generic button reset for divs that should be buttons. */
+.waffles-v2 .pressable {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition: var(--press);
+}
+.waffles-v2 .pressable:focus-visible {
+  outline: 3px solid var(--berry);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+.waffles-v2 .pressable:active { transform: translateY(1px) scale(0.97); }
+.waffles-v2 .pressable:disabled { cursor: default; opacity: 1; }
 
 .waffles-v2 .tab-bar { display: flex; justify-content: space-around; padding: 4px 0 6px; }
 .waffles-v2 .tab {
@@ -178,10 +313,10 @@
 .waffles-v2 .tab svg { width: 22px; height: 22px; }
 
 .waffles-v2 .card {
-  background: #0F0F10;
+  background: var(--surface-1);
   border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: var(--radius-md);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .waffles-v2 .chip {
@@ -192,10 +327,10 @@
 }
 
 .waffles-v2 .bubble {
-  background: white;
+  background: var(--cream-pure);
   border-radius: 12px;
   padding: 10px 14px;
-  border: 4px solid #00CFF2;
+  border: 4px solid var(--leaf);
   border-top: 0; border-left: 0;
   position: relative;
   font-size: 13px; font-weight: 700; color: #191919;
@@ -207,7 +342,7 @@
   width: 0; height: 0;
   border-top: 8px solid transparent;
   border-bottom: 8px solid transparent;
-  border-right: 10px solid white;
+  border-right: 10px solid var(--cream-pure);
 }
 
 .waffles-v2 .waffle-node {
@@ -216,32 +351,37 @@
   background:
     repeating-linear-gradient(0deg, transparent 0 12px, rgba(0, 0, 0, 0.35) 12px 14px),
     repeating-linear-gradient(90deg, transparent 0 12px, rgba(0, 0, 0, 0.35) 12px 14px),
-    linear-gradient(180deg, #FFC931 0%, #F5BB1B 100%);
-  border: 3px solid #1e1e1e;
+    linear-gradient(180deg, var(--maple-500) 0%, var(--maple-400) 100%);
+  border: 3px solid var(--frame);
   display: flex; align-items: center; justify-content: center;
-  font-family: "Archivo Black", system-ui;
-  font-size: 22px; color: #1e1e1e;
-  box-shadow: 0 5px 0 #1e1e1e, 0 8px 14px rgba(0, 0, 0, 0.4);
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  font-size: 22px; color: var(--frame);
+  box-shadow: 0 5px 0 var(--frame);
   position: relative;
+  transition: var(--press);
 }
 .waffles-v2 .waffle-node.done {
   background:
     repeating-linear-gradient(0deg, transparent 0 12px, rgba(0, 0, 0, 0.4) 12px 14px),
     repeating-linear-gradient(90deg, transparent 0 12px, rgba(0, 0, 0, 0.4) 12px 14px),
-    linear-gradient(180deg, #00CFF2, #00a3c2);
-  border-color: #1e1e1e;
-  box-shadow: 0 5px 0 #1e1e1e, 0 8px 14px rgba(0, 207, 242, 0.3);
-  color: #1e1e1e;
+    linear-gradient(180deg, var(--leaf), var(--leaf-dark));
+  border-color: var(--frame);
+  box-shadow: 0 5px 0 var(--frame);
+  color: var(--frame);
 }
 .waffles-v2 .waffle-node.locked {
-  background: linear-gradient(180deg, #2a2a2e, #141416);
+  background: linear-gradient(180deg, var(--surface-3), #141416);
   border-color: #050505;
-  box-shadow: 0 5px 0 #050505, 0 8px 14px rgba(0, 0, 0, 0.5);
-  color: rgba(255, 255, 255, 0.4);
+  box-shadow: 0 5px 0 #050505;
+  color: var(--ink-faint);
 }
 .waffles-v2 .waffle-node.current {
   transform: scale(1.08);
-  box-shadow: 0 5px 0 #1e1e1e, 0 0 0 4px #FB72FF, 0 8px 22px rgba(251, 114, 255, 0.6);
+  box-shadow: 0 5px 0 var(--frame), 0 0 0 4px var(--berry);
+}
+.waffles-v2 .pressable:active .waffle-node.current {
+  transform: scale(1.06) translateY(2px);
+  box-shadow: 0 3px 0 var(--frame), 0 0 0 4px var(--berry);
 }
 
 .waffles-v2 .waffle-mark {
@@ -250,7 +390,51 @@
   background:
     repeating-linear-gradient(0deg, transparent 0 6px, rgba(0, 0, 0, 0.35) 6px 7px),
     repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.35) 6px 7px),
-    linear-gradient(180deg, #FFC931, #F5BB1B);
-  border: 2px solid #1e1e1e;
+    linear-gradient(180deg, var(--maple-500), var(--maple-400));
+  border: 2px solid var(--frame);
   flex-shrink: 0;
+}
+
+/* Body gradient utility — replaces inline `linear-gradient(180deg, #1e1e1e 0%, #000 100%)`. */
+.waffles-v2 .bg-deep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--frame) 0%, var(--surface-deep) 100%);
+}
+
+/* Header glow — used on home/levels/question/results. Use sparingly. */
+.waffles-v2 .glow-top {
+  position: absolute;
+  top: -60px;
+  left: -40px;
+  right: -40px;
+  height: 280px;
+  background: radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.15), transparent 60%);
+  pointer-events: none;
+}
+
+/* Tab bar */
+.waffles-v2 .tab {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--press);
+}
+.waffles-v2 .tab:focus-visible {
+  outline: 2px solid var(--berry);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.waffles-v2 .tab:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .waffles-v2 *,
+  .waffles-v2 *::before,
+  .waffles-v2 *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

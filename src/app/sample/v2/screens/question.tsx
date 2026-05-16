@@ -25,8 +25,8 @@ export const QuestionScreen = () => {
 
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
-      <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 240, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.15), transparent 65%)" }} />
+      <div className="bg-deep" />
+      <div className="glow-top" style={{ height: 240 }} />
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 16px", display: "flex", gap: 8, alignItems: "center", zIndex: 5 }}>
         <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.08)", display: "flex", border: "1px solid rgba(255,255,255,.05)" }}>
@@ -63,11 +63,11 @@ export const QuestionScreen = () => {
       </div>
 
       <div style={{ position: "absolute", top: 218, left: 16, right: 16 }}>
-        <div style={{ background: "#fff", borderRadius: 14, padding: "18px 16px", position: "relative", border: "5px solid #00CFF2", borderTop: 0, borderLeft: 0 }}>
-          <div className="chip" style={{ background: catCol.fg, color: "#1e1e1e", position: "absolute", top: -12, left: 14, border: "2px solid #1e1e1e" }}>
+        <div style={{ background: "var(--cream-pure)", borderRadius: 14, padding: "18px 16px", position: "relative", border: "5px solid var(--leaf)", borderTop: 0, borderLeft: 0 }}>
+          <div className="chip" style={{ background: catCol.fg, color: "var(--frame)", position: "absolute", top: -12, left: 14, border: "2px solid var(--frame)" }}>
             <CategoryIcon name={cat} size={14} /> {cat.toUpperCase()}
           </div>
-          <div style={{ fontFamily: "Archivo Black", fontSize: 18, lineHeight: 1.25, color: "#191919" }}>{q.q}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.25, color: "#191919" }}>{q.q}</div>
         </div>
       </div>
 
@@ -80,29 +80,32 @@ export const QuestionScreen = () => {
             else if (i === answered) state = "wrong";
             else state = "dim";
           }
-          const stateBg = { idle: "#fff", correct: "#00CFF2", wrong: "#FC1919", dim: "rgba(255,255,255,.4)" }[state];
-          const stateColor = state === "idle" ? "#191919" : state === "correct" ? "#1e1e1e" : state === "wrong" ? "#fff" : "#191919";
+          const stateBg = { idle: "var(--cream-pure)", correct: "var(--leaf)", wrong: "var(--live-red)", dim: "rgba(253,251,246,.4)" }[state];
+          const stateColor = state === "idle" ? "#191919" : state === "correct" ? "var(--frame)" : state === "wrong" ? "var(--ink)" : "#191919";
           return (
-            <div
+            <button
               key={i}
+              type="button"
+              disabled={answered != null}
               onClick={() => answered == null && proto.answerQuestion(i)}
-              style={{ background: stateBg, borderRadius: 12, padding: "12px 12px", minHeight: 78, display: "flex", flexDirection: "column", justifyContent: "space-between", color: stateColor, border: "5px solid #1e1e1e", borderTop: 0, borderLeft: 0, cursor: answered == null ? "pointer" : "default", transition: "background .3s, transform .2s", transform: state === "correct" ? "scale(1.03)" : "scale(1)" }}
+              aria-label={`Answer ${letters[i]}: ${text}`}
+              style={{ background: stateBg, borderRadius: 12, padding: "12px 12px", minHeight: 78, display: "flex", flexDirection: "column", justifyContent: "space-between", alignItems: "stretch", textAlign: "left", color: stateColor, border: "5px solid var(--frame)", borderTop: 0, borderLeft: 0, font: "inherit", cursor: answered == null ? "pointer" : "default", transition: "background .3s var(--ease-out-quart), transform .2s var(--ease-out-quart)", transform: state === "correct" ? "scale(1.03)" : "scale(1)" }}
             >
-              <div style={{ fontFamily: "Archivo Black", fontSize: 11, opacity: 0.6 }}>{letters[i]}</div>
-              <div style={{ fontFamily: "Archivo Black", fontSize: 15, lineHeight: 1.1 }}>{text}</div>
-            </div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 11, opacity: 0.6 }}>{letters[i]}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 15, lineHeight: 1.1 }}>{text}</div>
+            </button>
           );
         })}
       </div>
 
       {answered != null && (
-        <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: isCorrect ? "linear-gradient(180deg, #00CFF2, #00a3c2)" : "linear-gradient(180deg, #FC1919, #b30c0c)", padding: "14px 18px 22px", color: isCorrect ? "#1e1e1e" : "#fff", borderTop: "2px solid #1e1e1e", animation: "waffles-v2-slideUp .25s ease" }}>
+        <div role="status" aria-live="polite" style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: isCorrect ? "linear-gradient(180deg, var(--leaf), var(--leaf-dark))" : "linear-gradient(180deg, var(--live-red), #b30c0c)", padding: "14px 18px 22px", color: isCorrect ? "var(--frame)" : "var(--ink)", borderTop: "2px solid var(--frame)", animation: "waffles-v2-slideUp .25s var(--ease-out-quart)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
-              <div style={{ fontFamily: "Archivo Black", fontSize: 18 }}>{isCorrect ? `Correct! +${points}` : answered === -1 ? "Out of time!" : "Incorrect"}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18 }}>{isCorrect ? `Correct! +${points}` : answered === -1 ? "Out of time!" : "Incorrect"}</div>
               <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.75 }}>{isCorrect ? `Speed bonus · ${(totalTime - timeLeft).toFixed(1)}s` : `Answer: ${q.answers[q.correct]}`}</div>
             </div>
-            {isCorrect && <div style={{ fontFamily: "Archivo Black", fontSize: 30, textShadow: "0 2px 0 rgba(0,0,0,.15)" }}>+{points}</div>}
+            {isCorrect && <div style={{ fontFamily: "var(--font-display)", fontSize: 30, textShadow: "0 2px 0 rgba(0,0,0,.15)" }}>+{points}</div>}
           </div>
         </div>
       )}

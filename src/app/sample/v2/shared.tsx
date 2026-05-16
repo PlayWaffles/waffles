@@ -41,6 +41,26 @@ export const ASSETS = {
   iconTarget: `${ASSETS_BASE}/icon-target.png`,
   iconCalendar: `${ASSETS_BASE}/icon-calendar.png`,
   coin: "/images/illustrations/golden-coin.png",
+  // Forest scene (twilight Levels world)
+  forestFloorTile: `${ASSETS_BASE}/forest-floor-tile.png`,
+  cloud: `${ASSETS_BASE}/cloud.png`,
+  terrainStone: `${ASSETS_BASE}/terrain-stone.png`,
+  forestCabin: `${ASSETS_BASE}/forest-cabin.png`,
+  forestPond: `${ASSETS_BASE}/forest-pond.png`,
+  forestFrog: `${ASSETS_BASE}/forest-frog.png`,
+  forestTreePine: `${ASSETS_BASE}/forest-tree-pine.png`,
+  forestTreeBush: `${ASSETS_BASE}/forest-tree-bush.png`,
+  forestMushroom: `${ASSETS_BASE}/forest-mushroom.png`,
+  forestFlowers: `${ASSETS_BASE}/forest-flowers.png`,
+  forestStump: `${ASSETS_BASE}/forest-stump.png`,
+  forestSignpost: `${ASSETS_BASE}/forest-signpost.png`,
+  forestFirefly: `${ASSETS_BASE}/forest-firefly.png`,
+  forestMoon: `${ASSETS_BASE}/forest-moon.png`,
+  wallyStump: `${ASSETS_BASE}/wally-stump.png`,
+  // Isometric waffle path slabs (3D-rendered tiles for the levels world)
+  waffleSlabActive: `${ASSETS_BASE}/waffle-slab-active.png`,
+  waffleSlabDone: `${ASSETS_BASE}/waffle-slab-done.png`,
+  waffleSlabLocked: `${ASSETS_BASE}/waffle-slab-locked.png`,
 } as const;
 
 // Pixel-art image helper. `imageRendering: pixelated` keeps the chunky aesthetic when scaled.
@@ -73,35 +93,8 @@ export const PixelImg = ({
   />
 );
 
-export const StatusBar = ({ time = "9:41", dark = false }: { time?: string; dark?: boolean }) => (
-  <div className={"status-bar" + (dark ? " dark" : "")}>
-    <span>{time}</span>
-    <div className="right">
-      <div className="dot-row">
-        <span /><span /><span /><span />
-      </div>
-      <svg width="16" height="11" viewBox="0 0 16 11" fill="none">
-        <path
-          d="M8 10.5C9.5 9 11 8.5 14 11C14.5 10 15.5 9 16 8.5C12 4 4 4 0 8.5C0.5 9 1.5 10 2 11C5 8.5 6.5 9 8 10.5Z"
-          fill="currentColor"
-        />
-      </svg>
-      <div className="battery"><i /></div>
-    </div>
-  </div>
-);
-
-export const Phone = ({
-  children,
-  statusDark = false,
-  time,
-}: {
-  children: ReactNode;
-  statusDark?: boolean;
-  time?: string;
-}) => (
+export const Phone = ({ children }: { children: ReactNode; statusDark?: boolean; time?: string }) => (
   <div className="phone">
-    <StatusBar dark={statusDark} time={time} />
     <div className="body">{children}</div>
   </div>
 );
@@ -112,18 +105,68 @@ export const TicketIcon = ({ size = 18 }: { size?: number; color?: string }) => 
 );
 
 export const FlameIcon = ({ size = 16 }: { size?: number }) => (
-  <PixelImg src={ASSETS.flame} size={size} alt="streak" />
+  <PixelImg
+    src={ASSETS.flame}
+    size={size}
+    alt="streak"
+    style={{
+      animation: "waffles-v2-flame-flicker 1.4s ease-in-out infinite",
+      transformOrigin: "bottom center",
+    }}
+  />
 );
 
-export const TopHeader = ({ tickets = 7, title = "Levels" }: { tickets?: number; title?: string }) => (
-  <div className="top-header">
-    <div className="ticket-pill">
-      <TicketIcon />
-      <span>{tickets}</span>
-    </div>
-    <div className="title">{title}</div>
+// Confetti — one-shot celebration burst rendered via 36 absolutely positioned
+// pieces with randomised offsets, colours, and timings via inline CSS vars.
+// CSS-only animation; no library dependency. Auto-disables under
+// prefers-reduced-motion via the global stylesheet rule.
+const CONFETTI_COLORS = ["#FFC931", "#00CFF2", "#FB72FF", "#FF6B6B", "#7BE57E"];
+export const Confetti = ({ pieces = 36 }: { pieces?: number }) => (
+  <div
+    aria-hidden="true"
+    style={{
+      position: "absolute",
+      inset: 0,
+      pointerEvents: "none",
+      overflow: "hidden",
+      zIndex: 50,
+    }}
+  >
+    {Array.from({ length: pieces }).map((_, i) => {
+      const startX = (i / pieces) * 100; // spread across width 0–100%
+      const drift = (Math.sin(i * 1.7) * 60).toFixed(0); // sideways drift in px
+      const rot = 540 + Math.round(Math.sin(i * 0.9) * 360); // total rotation
+      const dur = 1.6 + ((i * 13) % 10) * 0.12; // 1.6s – 2.8s
+      const delay = ((i * 17) % 11) * 0.05; // 0 – 0.5s stagger
+      const color = CONFETTI_COLORS[i % CONFETTI_COLORS.length];
+      const w = 6 + (i % 4) * 2;
+      return (
+        <span
+          key={i}
+          style={{
+            position: "absolute",
+            left: `${startX}%`,
+            top: 0,
+            width: w,
+            height: w * 1.6,
+            background: color,
+            borderRadius: 1,
+            opacity: 0,
+            ["--cf-dx" as string]: `${drift}px`,
+            ["--cf-rot" as string]: `${rot}deg`,
+            animation: `waffles-v2-confetti-fall ${dur}s cubic-bezier(0.22, 1, 0.36, 1) ${delay}s forwards`,
+          }}
+        />
+      );
+    })}
   </div>
 );
+
+// Top header has been removed from the v2 prototype — the active tab in
+// the bottom nav labels the screen, and ticket counts now live inline on
+// the screens that actually need them (Shop, Profile). The component is
+// kept as a no-op so existing call sites still compile without churn.
+export const TopHeader = (_: { tickets?: number; title?: string }) => null;
 
 export const TabBar = ({ active = "home" }: { active?: string }) => {
   const proto = useProto();
@@ -203,21 +246,31 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
     },
   ];
   return (
-    <div className="tab-bar">
+    <div className="tab-bar" role="tablist">
       {tabs.map((t) => (
-        <div
+        <button
           key={t.id}
+          type="button"
+          role="tab"
+          aria-selected={t.id === active}
+          aria-label={t.label}
           className={"tab" + (t.id === active ? " active" : "")}
           onClick={() => onTab(t.id)}
-          style={{ cursor: "pointer" }}
         >
-          <svg viewBox="0 0 24 24">{t.icon}</svg>
+          <svg viewBox="0 0 24 24" aria-hidden="true">{t.icon}</svg>
           <span>{t.label}</span>
-        </div>
+        </button>
       ))}
     </div>
   );
 };
+
+export const InfoIcon = ({ size = 14 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+    <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+    <path d="M12 11v5M12 7.5v.01" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+  </svg>
+);
 
 export const CategoryIcon = ({ name, size = 28 }: { name: string; size?: number }) => {
   const map: Record<string, ReactNode> = {

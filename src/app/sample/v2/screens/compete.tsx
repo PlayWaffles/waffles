@@ -22,32 +22,160 @@ const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?:
   );
 };
 
-const REWARD_PRESETS: { free: { type: "xp" | "ticket" | "cosmetic"; label: string }; premium: { type: "xp" | "ticket" | "cosmetic"; label: string } }[] = [
-  { free: { type: "xp", label: "+50" }, premium: { type: "ticket", label: "×2" } },
-  { free: { type: "ticket", label: "×1" }, premium: { type: "cosmetic", label: "Frame" } },
-  { free: { type: "xp", label: "+75" }, premium: { type: "ticket", label: "×3" } },
+type RewardType = "xp" | "ticket" | "cosmetic";
+type Reward = { type: RewardType; label: string };
+
+const REWARD_PRESETS: { free: Reward; premium: Reward }[] = [
+  { free: { type: "xp", label: "+50 XP" }, premium: { type: "ticket", label: "×2 Tickets" } },
+  { free: { type: "ticket", label: "×1 Ticket" }, premium: { type: "cosmetic", label: "Frame" } },
+  { free: { type: "xp", label: "+75 XP" }, premium: { type: "ticket", label: "×3 Tickets" } },
   { free: { type: "cosmetic", label: "Emote" }, premium: { type: "cosmetic", label: "Avatar" } },
 ];
 
-const PassRewardCell = ({ type, label, claimed, current, locked }: { type: "xp" | "ticket" | "cosmetic"; label: string; claimed: boolean; current: boolean; locked: boolean }) => {
-  const styles =
-    type === "xp"
-      ? { bg: "#1a1a1c", fg: "#FFC931", glyph: "XP" }
-      : type === "ticket"
-      ? { bg: "rgba(255,201,49,.12)", fg: "#FFC931", glyph: "🎟" }
-      : { bg: "rgba(251,114,255,.12)", fg: "#FB72FF", glyph: "★" };
+const REWARD_PALETTE: Record<RewardType, { bg: string; fg: string; glyph: string }> = {
+  xp:       { bg: "rgba(255, 201, 49, 0.10)", fg: "var(--maple-500)", glyph: "XP" },
+  ticket:   { bg: "rgba(0, 207, 242, 0.10)",  fg: "var(--leaf)",      glyph: "🎟" },
+  cosmetic: { bg: "rgba(251, 114, 255, 0.10)", fg: "var(--berry)",     glyph: "★" },
+};
 
-  const dim = !claimed && !current;
-  const showLock = locked && !claimed;
-
+// One reward chip — keeps the reward visible in every state. Claimed cells
+// get a small corner badge instead of a full overlay so the player can still
+// see WHAT they earned, not just THAT they earned something.
+const PassRewardCell = ({
+  reward,
+  state,
+  premium,
+}: {
+  reward: Reward;
+  state: "claimed" | "current" | "locked";
+  premium?: boolean;
+}) => {
+  const palette = REWARD_PALETTE[reward.type];
+  const isClaimed = state === "claimed";
+  const isCurrent = state === "current";
+  const isLocked = state === "locked";
   return (
-    <div style={{ width: 54, height: 54, borderRadius: 10, background: styles.bg, border: claimed ? `1.5px solid ${styles.fg}` : `1px solid ${styles.fg}40`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 1, color: styles.fg, opacity: dim ? 0.55 : 1, position: "relative", boxShadow: current ? `0 0 0 2px ${styles.fg}30` : "none" }}>
-      <div style={{ fontFamily: "Archivo Black", fontSize: 14, lineHeight: 1 }}>{styles.glyph}</div>
-      <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.3 }}>{label}</div>
-      {showLock && <div style={{ position: "absolute", top: 3, right: 3, width: 12, height: 12, borderRadius: 99, background: "rgba(0,0,0,.6)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8 }}>🔒</div>}
-      {claimed && (
-        <div style={{ position: "absolute", inset: 0, background: "rgba(0,207,242,.12)", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ width: 22, height: 22, borderRadius: 99, background: "#00CFF2", color: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Archivo Black", fontSize: 13 }}>✓</div>
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        height: 56,
+        borderRadius: 12,
+        background: palette.bg,
+        border: isCurrent
+          ? `1.5px solid ${palette.fg}`
+          : isClaimed
+            ? `1px solid ${palette.fg}`
+            : "1px solid rgba(253, 251, 246, 0.08)",
+        boxShadow: isCurrent ? `0 0 0 3px ${palette.fg}20` : undefined,
+        opacity: isLocked ? 0.45 : 1,
+        position: "relative",
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "0 10px",
+        color: "var(--ink)",
+      }}
+    >
+      <div
+        style={{
+          width: 36,
+          height: 36,
+          borderRadius: 8,
+          background: "rgba(0, 0, 0, 0.25)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontFamily: "Archivo Black",
+          fontSize: 16,
+          color: palette.fg,
+          flexShrink: 0,
+        }}
+      >
+        {palette.glyph}
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div
+          style={{
+            fontFamily: "Archivo Black",
+            fontSize: 11,
+            color: "var(--ink)",
+            letterSpacing: 0.2,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+          }}
+        >
+          {reward.label}
+        </div>
+        <div style={{ fontSize: 9, fontWeight: 800, color: "var(--ink-faint)", marginTop: 2, textTransform: "uppercase", letterSpacing: 0.4 }}>
+          {premium ? "VIP" : "Free"}
+        </div>
+      </div>
+      {/* State badges — claimed (cyan check), current (maple "GET"), locked (lock).
+          All sit in the corner so the reward art stays visible underneath. */}
+      {isClaimed && (
+        <div
+          aria-label="Claimed"
+          style={{
+            position: "absolute",
+            top: -6,
+            right: -6,
+            width: 20,
+            height: 20,
+            borderRadius: 99,
+            background: "var(--leaf)",
+            color: "var(--frame)",
+            fontFamily: "Archivo Black",
+            fontSize: 11,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            boxShadow: "0 2px 0 rgba(0, 0, 0, 0.4)",
+          }}
+        >
+          ✓
+        </div>
+      )}
+      {isCurrent && (
+        <div
+          aria-label="Available now"
+          style={{
+            position: "absolute",
+            top: -6,
+            right: -6,
+            background: "var(--maple-500)",
+            color: "var(--frame)",
+            fontFamily: "Archivo Black",
+            fontSize: 9,
+            padding: "2px 6px",
+            borderRadius: 99,
+            letterSpacing: 0.4,
+            boxShadow: "0 2px 0 rgba(0, 0, 0, 0.4)",
+          }}
+        >
+          GET
+        </div>
+      )}
+      {isLocked && (
+        <div
+          aria-label="Locked"
+          style={{
+            position: "absolute",
+            top: 6,
+            right: 6,
+            width: 14,
+            height: 14,
+            borderRadius: 99,
+            background: "rgba(0, 0, 0, 0.55)",
+            color: "var(--ink-soft)",
+            fontSize: 9,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+          }}
+        >
+          🔒
         </div>
       )}
     </div>
@@ -94,13 +222,13 @@ export const CompeteScreen = () => {
 
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
+      <div className="bg-deep" />
       <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 340, background: "radial-gradient(ellipse at center top, rgba(251,114,255,.18), transparent 60%)" }} />
-      <div style={{ position: "absolute", top: 60, left: 0, right: 0, height: 240, backgroundImage: "radial-gradient(circle at 18% 35%, rgba(255,255,255,.35) 1px, transparent 1.5px), radial-gradient(circle at 72% 60%, rgba(255,255,255,.25) 1px, transparent 1.5px), radial-gradient(circle at 42% 85%, rgba(255,255,255,.2) 1px, transparent 1.5px), radial-gradient(circle at 88% 18%, rgba(255,255,255,.3) 1px, transparent 1.5px)", backgroundSize: "200px 200px", pointerEvents: "none" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 240, backgroundImage: "radial-gradient(circle at 18% 35%, rgba(255,255,255,.35) 1px, transparent 1.5px), radial-gradient(circle at 72% 60%, rgba(255,255,255,.25) 1px, transparent 1.5px), radial-gradient(circle at 42% 85%, rgba(255,255,255,.2) 1px, transparent 1.5px), radial-gradient(circle at 88% 18%, rgba(255,255,255,.3) 1px, transparent 1.5px)", backgroundSize: "200px 200px", pointerEvents: "none" }} />
 
       <TopHeader tickets={tickets} title="COMPETE" />
 
-      <div style={{ position: "absolute", top: 60, left: 0, right: 0, bottom: 80, overflow: "auto", display: "flex", flexDirection: "column", scrollbarWidth: "none" }}>
+      <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, overflow: "auto", display: "flex", flexDirection: "column", scrollbarWidth: "none" }}>
         <div style={{ padding: "10px 14px 0", display: "flex", gap: 3, alignItems: "center", justifyContent: "center" }}>
           {ladder.map((t, i) => {
             const isCurrent = i === currentIdx;
@@ -137,49 +265,130 @@ export const CompeteScreen = () => {
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>3 daily · 4 partner offers</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.25)", color: "#FFC931", padding: "3px 7px", borderRadius: 6, fontFamily: "Archivo Black", fontSize: 10 }}>+675 <PixelImg src={ASSETS.trophy} size={12} alt="" /></span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.25)", color: "var(--maple-500)", padding: "3px 7px", borderRadius: 6, fontFamily: "var(--font-display)", fontSize: 11 }}>+675 XP</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(255,255,255,.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
         </button>
 
-        <div style={{ textAlign: "center", marginTop: 16, marginBottom: 6 }}>
-          <div style={{ fontFamily: "Archivo Black", fontSize: 22, color: "#fff", letterSpacing: 1.2 }}>SEASON PASS</div>
-          <div style={{ display: "inline-flex", gap: 6, alignItems: "center", background: "rgba(0,0,0,.4)", border: "1px solid rgba(255,255,255,.08)", padding: "3px 10px", borderRadius: 99, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.7)", marginTop: 4 }}>
-            <span>⏱</span> Ends in 4d 16h
-          </div>
-        </div>
-
-        <div style={{ margin: "10px 16px 8px", display: "flex", gap: 8, alignItems: "center" }}>
-          <button style={{ flex: "0 0 auto", background: "linear-gradient(180deg, #FFC931, #F5BB1B)", color: "#1e1e1e", border: "none", padding: "10px 14px", borderRadius: 12, fontFamily: "Archivo Black", fontSize: 13, letterSpacing: 0.3, boxShadow: "0 3px 0 #1e1e1e", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>
-            <PixelImg src={ASSETS.vipStar} size={16} alt="" /> ACTIVATE VIP
-          </button>
-          <div style={{ flex: 1, background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 99, padding: "6px 10px", display: "flex", alignItems: "center", gap: 8 }}>
-            <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.06)", overflow: "hidden" }}>
-              <div style={{ width: `${passPct}%`, height: "100%", background: "linear-gradient(90deg, #FB72FF, #FFC931)" }} />
+        {/* Season Pass — header with title, countdown, and current tier. */}
+        <div style={{ margin: "20px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: "Archivo Black", fontSize: 20, color: "var(--ink)", letterSpacing: 1, lineHeight: 1 }}>SEASON PASS</div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 5 }}>
+              <span>⏱</span> Ends in 4d 16h
             </div>
-            <span style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.7)", fontFamily: "Archivo Black", whiteSpace: "nowrap" }}>0/1 mission</span>
-            <div style={{ width: 22, height: 22, borderRadius: 99, background: "#00CFF2", color: "#1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Archivo Black", fontSize: 11, flexShrink: 0 }}>1</div>
+          </div>
+          <div
+            style={{
+              background: "var(--surface-1)",
+              border: "1px solid rgba(253, 251, 246, 0.06)",
+              borderRadius: 10,
+              padding: "6px 10px",
+              textAlign: "center",
+              flexShrink: 0,
+            }}
+          >
+            <div style={{ fontFamily: "Archivo Black", fontSize: 16, color: "var(--maple-500)", lineHeight: 1 }}>{passLevel}</div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.5, textTransform: "uppercase", marginTop: 2 }}>Tier</div>
           </div>
         </div>
 
-        <div style={{ padding: "8px 16px 16px" }}>
-          {track.slice(0, 5).map((row) => (
-            <div key={row.level} style={{ display: "grid", gridTemplateColumns: "1fr 32px 1fr", gap: 8, alignItems: "center", marginBottom: 8 }}>
-              <PassRewardCell {...row.free} claimed={row.claimed} current={row.current} locked={!row.claimed && !row.current} />
-              <div style={{ position: "relative", height: 54, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                {row.level > 1 && <div style={{ position: "absolute", top: 0, bottom: "50%", left: "50%", width: 2, background: "rgba(255,255,255,.12)", transform: "translateX(-50%)" }} />}
-                {row.level < 5 && <div style={{ position: "absolute", top: "50%", bottom: 0, left: "50%", width: 2, background: "rgba(255,255,255,.12)", transform: "translateX(-50%)" }} />}
-                <div style={{ position: "relative", width: 30, height: 30, borderRadius: 99, background: row.claimed ? "#00CFF2" : row.current ? "#FFC931" : "rgba(15,15,16,1)", border: row.current ? "2px solid #fff" : "1.5px solid rgba(255,255,255,.18)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Archivo Black", fontSize: 13, color: row.claimed || row.current ? "#1e1e1e" : "rgba(255,255,255,.5)", boxShadow: row.current ? "0 0 0 4px rgba(255,201,49,.25)" : "none" }}>
-                  {row.claimed ? "✓" : row.level - 1}
+        {/* Progress to next tier — clear horizontal bar with mission count. */}
+        <div style={{ margin: "10px 16px 0", background: "var(--surface-1)", border: "1px solid rgba(253, 251, 246, 0.06)", borderRadius: 12, padding: "10px 12px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)" }}>Next tier in</span>
+            <span style={{ fontFamily: "Archivo Black", fontSize: 11, color: "var(--ink)" }}>{passXp} / {passXpNext} XP</span>
+          </div>
+          <div style={{ height: 8, borderRadius: 99, background: "rgba(253, 251, 246, 0.06)", overflow: "hidden" }}>
+            <div style={{ width: `${passPct}%`, height: "100%", background: "linear-gradient(90deg, var(--berry), var(--maple-500))", borderRadius: 99 }} />
+          </div>
+        </div>
+
+        {/* VIP upsell — full-width primary CTA so it doesn't fight with the
+            progress bar for attention. The benefit copy makes the value clear
+            instead of just labelling the button "ACTIVATE VIP". */}
+        <button
+          style={{
+            margin: "10px 16px 0",
+            background: "linear-gradient(180deg, var(--maple-500), var(--maple-400))",
+            color: "var(--frame)",
+            border: "2px solid var(--frame)",
+            padding: "12px 14px",
+            borderRadius: 14,
+            fontFamily: "Nunito",
+            fontWeight: 900,
+            fontSize: 14,
+            letterSpacing: 0.2,
+            boxShadow: "0 4px 0 var(--frame)",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            textAlign: "left",
+          }}
+        >
+          <PixelImg src={ASSETS.vipStar} size={26} alt="" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontFamily: "Archivo Black", fontSize: 14, lineHeight: 1, letterSpacing: 0.4 }}>UNLOCK VIP REWARDS</div>
+            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2, opacity: 0.75 }}>Claim every premium reward this season</div>
+          </div>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+        </button>
+
+        {/* Track headers — set the two-column expectation before the rows. */}
+        <div style={{ margin: "16px 16px 6px", display: "grid", gridTemplateColumns: "32px 1fr 1fr", gap: 10, alignItems: "center" }}>
+          <div />
+          <div style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.6, textTransform: "uppercase" }}>Free</div>
+          <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 0.6, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4 }}>
+            <PixelImg src={ASSETS.vipStar} size={11} alt="" /> VIP
+          </div>
+        </div>
+
+        <div style={{ padding: "0 16px 16px" }}>
+          {track.slice(passLevel - 3, passLevel + 5).map((row, i, arr) => {
+            const freeState: "claimed" | "current" | "locked" = row.claimed ? "claimed" : row.current ? "current" : "locked";
+            const premiumState: "claimed" | "current" | "locked" = row.current ? "current" : "locked";
+            return (
+              <div key={row.level} style={{ display: "grid", gridTemplateColumns: "32px 1fr 1fr", gap: 10, alignItems: "center", marginBottom: 10, position: "relative" }}>
+                {/* Tier number column with connecting line. */}
+                <div style={{ position: "relative", height: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {i > 0 && <div style={{ position: "absolute", top: 0, bottom: "50%", left: "50%", width: 2, background: "rgba(253, 251, 246, 0.10)", transform: "translateX(-50%)" }} />}
+                  {i < arr.length - 1 && <div style={{ position: "absolute", top: "50%", bottom: 0, left: "50%", width: 2, background: "rgba(253, 251, 246, 0.10)", transform: "translateX(-50%)" }} />}
+                  <div
+                    style={{
+                      position: "relative",
+                      width: 28,
+                      height: 28,
+                      borderRadius: 99,
+                      background: row.claimed
+                        ? "var(--leaf)"
+                        : row.current
+                          ? "var(--maple-500)"
+                          : "var(--surface-1)",
+                      border: row.current
+                        ? "2px solid var(--ink)"
+                        : "1.5px solid rgba(253, 251, 246, 0.15)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontFamily: "Archivo Black",
+                      fontSize: 12,
+                      color: row.claimed || row.current ? "var(--frame)" : "var(--ink-faint)",
+                      boxShadow: row.current ? "0 0 0 4px rgba(255, 201, 49, 0.20)" : undefined,
+                    }}
+                  >
+                    {row.level}
+                  </div>
                 </div>
+                <PassRewardCell reward={row.free} state={freeState} />
+                <PassRewardCell reward={row.premium} state={premiumState} premium />
               </div>
-              <PassRewardCell {...row.premium} claimed={false} current={row.current} locked />
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "#0F0F10", padding: "8px 0 6px", borderTop: "2px solid rgba(255,255,255,.08)" }}>
+      <div className="bottom-bar">
         <TabBar active="compete" />
       </div>
     </Phone>

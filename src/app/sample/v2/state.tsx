@@ -72,7 +72,7 @@ export const DEFAULT_TWEAKS: Tweaks = {
   questionTime: 10,
   questionsPerRound: 5,
   levelQuestions: 3,
-  lobbyCountdown: 5,
+  lobbyCountdown: 10,
   startingTickets: 3,
   homeSlot: "both",
 };

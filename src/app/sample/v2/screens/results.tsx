@@ -1,7 +1,7 @@
 "use client";
 
 import { useProto } from "../state";
-import { ASSETS, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
+import { ASSETS, Confetti, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
 
 export const ResultsScreen = () => {
   const proto = useProto();
@@ -11,8 +11,10 @@ export const ResultsScreen = () => {
   const pct = Math.max(1, Math.round((rank / 2418) * 100));
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
-      <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 360, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.25), transparent 60%)" }} />
+      <div className="bg-deep" />
+      {/* Celebration burst — top-3 finishes get a richer confetti shower. */}
+      <Confetti pieces={rank <= 3 ? 60 : 36} />
+      <div className="glow-top" style={{ height: 360, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.25), transparent 60%)" }} />
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.55 }} />
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "#fff" }}>
@@ -53,13 +55,11 @@ export const ResultsScreen = () => {
         ].map((p, i) => {
           const rankColor = i === 0 ? "#FFC931" : i === 1 ? "#bfc7d0" : i === 2 ? "#cd7f32" : "rgba(255,255,255,.4)";
           return (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10, padding: "7px 8px", borderRadius: 10, background: p.you ? "rgba(255,201,49,.08)" : "transparent", border: p.you ? "1.5px solid #FFC931" : "1.5px solid transparent", marginBottom: 4 }}>
-              <div style={{ width: 28, fontFamily: "Archivo Black", fontSize: 13, color: rankColor, textAlign: "center" }}>{p.r}</div>
-              <div style={{ width: 30, height: 30, borderRadius: 99, background: "#1a1a1c", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <PixelImg src={p.av} size={26} alt="" />
-              </div>
-              <div style={{ flex: 1, fontSize: 13, fontWeight: 800, color: "#fff" }}>{p.n}</div>
-              <div style={{ fontFamily: "Archivo Black", fontSize: 13, color: p.you ? "#FFC931" : "#fff" }}>{p.s.toLocaleString()}</div>
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: 10, background: p.you ? "rgba(255,201,49,.08)" : "transparent", border: p.you ? "1.5px solid var(--maple-500)" : "1.5px solid transparent", marginBottom: 4 }}>
+              <div style={{ width: 24, fontFamily: "var(--font-display)", fontSize: 13, color: rankColor, textAlign: "center", flexShrink: 0 }}>{p.r}</div>
+              <PixelImg src={p.av} size={36} alt="" />
+              <div style={{ flex: 1, fontSize: 13, fontWeight: 800, color: "var(--ink)", minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.n}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: p.you ? "var(--maple-500)" : "var(--ink)" }}>{p.s.toLocaleString()}</div>
             </div>
           );
         })}
@@ -67,7 +67,7 @@ export const ResultsScreen = () => {
 
       <div className="bottom-bar">
         <div className="cta-row">
-          <button className="cta icon-btn" onClick={() => proto.goto("home")}>
+          <button className="cta icon-btn" aria-label="Back to home" onClick={() => proto.goto("home")}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2v-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /></svg>
           </button>
           <button className="cta maple" onClick={() => proto.playAgain()}>PLAY NEXT HOUR</button>

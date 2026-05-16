@@ -10,18 +10,18 @@ export const ProfileScreen = () => {
   const streak = proto.streak;
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
+      <div className="bg-deep" />
       <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 280, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.2), transparent 60%)" }} />
 
       <TopHeader tickets={tickets} title="ME" />
 
-      <div style={{ position: "absolute", top: 60, left: 0, right: 0, bottom: 80, padding: "0 16px", overflow: "hidden" }}>
-        <div style={{ textAlign: "center", color: "#fff", marginBottom: 14 }}>
-          <div style={{ width: 88, height: 88, margin: "4px auto 8px", borderRadius: 99, background: "linear-gradient(180deg, #FFC931, #F5BB1B)", border: "4px solid #1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 0 #1e1e1e", overflow: "hidden" }}>
-            <PixelImg src={ASSETS.wally} size={76} alt="Wally" />
+      <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "0 16px", overflow: "hidden" }}>
+        <div style={{ textAlign: "center", color: "var(--ink)", marginBottom: 14 }}>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
+            <PixelImg src={ASSETS.wally} size={132} alt="" />
           </div>
-          <div style={{ fontFamily: "Archivo Black", fontSize: 22, lineHeight: 1 }}>@waffleeater</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 4 }}>Joined 2 weeks ago</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, lineHeight: 1 }}>@waffleeater</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-mute)", marginTop: 4 }}>Joined 2 weeks ago</div>
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>

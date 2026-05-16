@@ -1,16 +1,22 @@
 "use client";
 
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg, TicketIcon } from "../shared";
+import { ASSETS, Confetti, Phone, PixelImg, TicketIcon } from "../shared";
 
 export const LevelWinScreen = () => {
   const proto = useProto();
   const score = proto.score;
   const heartsLeft = proto.hearts;
+  // Bind progress copy to the actual current level instead of a hard-coded
+  // "Level 18 → 19". `proto.level` represents the level the player JUST
+  // completed (and is about to advance from on this success screen).
+  const justCompleted = proto.level;
+  const next = justCompleted + 1;
 
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
+      <div className="bg-deep" />
+      <Confetti pieces={48} />
       <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 380, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.3), transparent 60%)" }} />
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.6 }} />
 
@@ -20,7 +26,7 @@ export const LevelWinScreen = () => {
           <PixelImg src={ASSETS.trophy} size={92} alt="trophy" />
         </div>
         <div style={{ fontFamily: "Archivo Black", fontSize: 38, marginTop: 8, color: "#FFC931" }}>LEVEL UP!</div>
-        <div style={{ fontFamily: "Archivo Black", fontSize: 18, color: "#fff", marginTop: 2 }}>Level 18 → 19</div>
+        <div style={{ fontFamily: "Archivo Black", fontSize: 18, color: "#fff", marginTop: 2 }}>Level {justCompleted} → {next}</div>
       </div>
 
       <div style={{ position: "absolute", top: 330, left: 18, right: 18, display: "flex", gap: 10 }}>
@@ -38,20 +44,29 @@ export const LevelWinScreen = () => {
         </div>
       </div>
 
-      <div style={{ position: "absolute", top: 430, left: 18, right: 18, background: "rgba(0,207,242,.1)", border: "1px solid rgba(0,207,242,.25)", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
-        <TicketIcon size={26} color="#fff" />
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: "Archivo Black", fontSize: 13, color: "#fff", lineHeight: 1 }}>Free ticket at Level 21</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>2 levels to go</div>
-        </div>
-        <div style={{ height: 6, width: 60, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
-          <div style={{ width: "33%", height: "100%", background: "#FFC931", borderRadius: 99 }} />
-        </div>
-      </div>
+      {/* Free ticket milestone — every 5 levels. Show the next milestone
+          dynamically so the copy stays in sync with the player's progress. */}
+      {(() => {
+        const nextTicketLevel = Math.ceil((next + 1) / 5) * 5;
+        const levelsToGo = nextTicketLevel - next;
+        const pct = Math.round(((5 - levelsToGo) / 5) * 100);
+        return (
+          <div style={{ position: "absolute", top: 430, left: 18, right: 18, background: "rgba(0,207,242,.1)", border: "1px solid rgba(0,207,242,.25)", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <TicketIcon size={26} color="#fff" />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontFamily: "Archivo Black", fontSize: 13, color: "#fff", lineHeight: 1 }}>Free ticket at Level {nextTicketLevel}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{levelsToGo} level{levelsToGo === 1 ? "" : "s"} to go</div>
+            </div>
+            <div style={{ height: 6, width: 60, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", background: "#FFC931", borderRadius: 99 }} />
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="bottom-bar">
         <div className="cta-row">
-          <button className="cta icon-btn" onClick={() => proto.goto("home")}>
+          <button className="cta icon-btn" aria-label="Back to home" onClick={() => proto.goto("home")}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2v-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /></svg>
           </button>
           <button className="cta maple" onClick={() => proto.goto("levels")}>NEXT LEVEL</button>
@@ -65,7 +80,7 @@ export const LevelFailScreen = () => {
   const proto = useProto();
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "linear-gradient(180deg, #1e1e1e 0%, #000 100%)" }} />
+      <div className="bg-deep" />
       <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 380, background: "radial-gradient(ellipse at center top, rgba(252,25,25,.25), transparent 60%)" }} />
 
       <div style={{ position: "absolute", top: 88, left: 0, right: 0, textAlign: "center", color: "#fff" }}>
@@ -92,7 +107,7 @@ export const LevelFailScreen = () => {
 
       <div className="bottom-bar">
         <div className="cta-row">
-          <button className="cta icon-btn" onClick={() => proto.goto("levels", { back: true })}>
+          <button className="cta icon-btn" aria-label="Back to level path" onClick={() => proto.goto("levels", { back: true })}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           <button className="cta" onClick={() => proto.retryLevel()}>RETRY</button>
