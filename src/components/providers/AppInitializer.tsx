@@ -13,7 +13,6 @@ import sdk from "@farcaster/miniapp-sdk";
 import { useRouter } from "next/navigation";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
-import { WaffleButton } from "../buttons/WaffleButton";
 import { getDemoQuestion, type DemoQuestion } from "@/actions/onboarding";
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
@@ -30,6 +29,113 @@ const OnboardingOverlay = dynamic(
   () => import("../OnboardingOverlay").then((mod) => mod.OnboardingOverlay),
   { ssr: false },
 );
+
+function ProviderActionButton({
+  children,
+  className = "",
+  disabled,
+  onClick,
+}: {
+  children: ReactNode;
+  className?: string;
+  disabled?: boolean;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className={`relative flex h-[54px] w-full items-center justify-center rounded-[12px] border-[5px] border-l-0 border-t-0 border-(--brand-cyan) bg-white px-6 text-center font-body text-[26px] font-normal uppercase leading-[115%] tracking-[-0.02em] text-[#191919] transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      disabled={disabled}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
+function IntroStat({ value, label }: { value: string; label: string }) {
+  return (
+    <div className="flex flex-col items-center">
+      <span className="font-body text-[22px] leading-none text-waffle-gold">
+        {value}
+      </span>
+      <span className="mt-1 font-display text-[11px] uppercase tracking-[0.1em] text-white/40">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+function FastOnboardingIntro({ onNext }: { onNext: () => void }) {
+  return (
+    <div
+      className="fixed inset-0 z-81 flex flex-col app-background"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="fast-onboarding-title"
+    >
+      <div className="flex items-center justify-between px-5 pt-4 pb-2">
+        <div className="font-body text-sm tracking-[0.08em] text-white">
+          WAFFLES
+        </div>
+        <div className="h-1.5 w-10 rounded-full bg-waffle-gold" />
+      </div>
+
+      <div className="flex flex-1 items-center justify-center px-6">
+        <div className="flex w-full max-w-[320px] flex-col items-center gap-8">
+          <div className="relative h-[126px] w-[190px] rotate-[-8deg] rounded-[18px] border-[6px] border-[#FFC931] bg-[#F7A928] shadow-[0_8px_0_rgba(0,0,0,0.35)]">
+            <div className="absolute left-0 right-0 top-0 h-9 rounded-t-[10px] bg-[#2A2A2E]">
+              <div className="grid h-full grid-cols-5 gap-1 p-1">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="skew-x-[-18deg] rounded-sm bg-white/85"
+                  />
+                ))}
+              </div>
+            </div>
+            <div className="absolute inset-x-4 bottom-5 grid grid-cols-4 gap-2">
+              {Array.from({ length: 12 }).map((_, index) => (
+                <span
+                  key={index}
+                  className="h-4 rounded-[4px] bg-[#9B5B11]/70"
+                />
+              ))}
+            </div>
+            <div className="absolute left-1/2 top-1/2 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-[10px] border-4 border-[#1E1E1E] bg-[#FFC931] font-body text-2xl text-[#1E1E1E]">
+              ?
+            </div>
+          </div>
+
+          <div className="flex flex-col items-center gap-3">
+            <h1
+              id="fast-onboarding-title"
+              className="text-center font-body leading-[0.92] tracking-[-0.03em] text-white"
+              style={{ fontSize: "clamp(36px, 10vw, 48px)" }}
+            >
+              GUESS THE SCENE.
+              <br />
+              <span className="text-waffle-gold">WIN THE POT.</span>
+            </h1>
+            <p className="max-w-[280px] text-center font-display text-[15px] leading-[1.4] text-white/50">
+              AI-remixed movie scenes. Live arena. Top scorers split the prize pool.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-6">
+            <IntroStat value="3x" label="per week" />
+            <div className="h-8 w-px bg-white/10" />
+            <IntroStat value="TOP 10" label="split the pot" />
+            <div className="h-8 w-px bg-white/10" />
+            <IntroStat value="60s" label="per question" />
+          </div>
+
+          <ProviderActionButton onClick={onNext}>TRY A QUESTION</ProviderActionButton>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
   return userId
@@ -49,6 +155,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const [authState, setAuthState] = useState<"idle" | "authenticating" | "error">("idle");
   const [authError, setAuthError] = useState<string | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showFullOnboarding, setShowFullOnboarding] = useState(false);
   const [demoQuestion, setDemoQuestion] = useState<DemoQuestion | null>(null);
   const [demoQuestionLoaded, setDemoQuestionLoaded] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
@@ -214,11 +321,14 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       : false;
 
     if (runtime === "farcaster") {
-      setShowOnboarding(Boolean(user) && !hasSeen);
+      const shouldShow = Boolean(user) && !hasSeen;
+      setShowOnboarding(shouldShow);
+      if (!shouldShow) setShowFullOnboarding(false);
       return;
     }
 
     setShowOnboarding(!hasSeen);
+    if (hasSeen) setShowFullOnboarding(false);
   }, [onboardingKey, runtime, user]);
 
   useEffect(() => {
@@ -368,6 +478,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       localStorage.setItem(onboardingKey, "1");
     }
     setShowOnboarding(false);
+    setShowFullOnboarding(false);
   }, [authenticateWallet, connectWallet, onboardingKey, refetch, runtime]);
 
   useEffect(() => {
@@ -608,18 +719,22 @@ export function AppInitializer({ children }: { children: ReactNode }) {
             <p className="mt-3 font-display text-sm text-white/60">
               Open Waffles inside Farcaster to continue with your Farcaster profile.
             </p>
-            <WaffleButton
+            <ProviderActionButton
               className="mt-6 w-full"
               onClick={() => refetch().catch(console.error)}
             >
               Retry
-            </WaffleButton>
+            </ProviderActionButton>
           </div>
         </div>
       );
     }
 
     if (showOnboarding) {
+      if (!showFullOnboarding) {
+        return <FastOnboardingIntro onNext={() => setShowFullOnboarding(true)} />;
+      }
+
       return (
         <OnboardingOverlay
           onComplete={handleOnboardingComplete}
@@ -642,13 +757,13 @@ export function AppInitializer({ children }: { children: ReactNode }) {
                 </p>
               </div>
               <div className="mt-4 flex flex-col gap-3">
-                <WaffleButton
+                <ProviderActionButton
                   className="h-12 max-w-none border-(--brand-cyan) px-4 text-base"
                   onClick={() => enableNotifications().catch(console.error)}
                   disabled={isEnablingNotifications}
                 >
                   {isEnablingNotifications ? "Opening..." : "Enable Notifications"}
-                </WaffleButton>
+                </ProviderActionButton>
                 <button
                   type="button"
                   className="text-sm text-white/60 underline"
@@ -668,6 +783,10 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   }
 
   if (showOnboarding) {
+    if (!showFullOnboarding) {
+      return <FastOnboardingIntro onNext={() => setShowFullOnboarding(true)} />;
+    }
+
     return (
       <OnboardingOverlay
         onComplete={handleOnboardingComplete}
@@ -689,7 +808,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
           <p className="mt-3 font-display text-sm text-white/60">
             Sign the wallet message to continue into the MiniPay app.
           </p>
-          <WaffleButton
+          <ProviderActionButton
             className="mt-6 w-full"
             onClick={async () => {
               try {
@@ -702,7 +821,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
             disabled={isConnecting}
           >
             {isConnecting ? "Connecting..." : "Retry Sign-In"}
-          </WaffleButton>
+          </ProviderActionButton>
           <button
             className="mt-3 text-sm text-white/60 underline"
             onClick={() => disconnect()}
