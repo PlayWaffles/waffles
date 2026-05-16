@@ -289,7 +289,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
           className="relative flex flex-row items-stretch z-10 shrink-0 mx-4 mb-4 gap-3"
         >
           <StatBlock
-            icon="/images/illustrations/spots.svg"
+            icon="/images/illustrations/spots-mini.svg"
             iconSize={{ w: 40, h: 30 }}
             label="Spots left"
             value={spotsLeft <= 0 ? "SOLD OUT" : `${spotsLeft}`}
@@ -299,7 +299,7 @@ export function NextGameCard({ game }: NextGameCardProps) {
             bgOverride={getScarcityColor(spotsLeft, spotsTotal)}
           />
           <StatBlock
-            icon="/images/illustrations/money-stack.svg"
+            icon="/images/illustrations/money-stack-mini.svg"
             iconSize={{ w: 30, h: 30 }}
             label="Prize pool"
             value={`$${prizePool.toLocaleString()}`}

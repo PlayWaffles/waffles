@@ -7,11 +7,11 @@ export const metadata = {
 const sections = [
   {
     title: "Service",
-    body: "Waffles is a skill-based trivia game where players join scheduled games, answer timed questions, and may win prizes based on the final leaderboard and the rules shown in the app.",
+    body: "Waffles is a skill-based trivia game operated by the Waffles team. The app is not operated by Opera or MiniPay. Players join scheduled games, answer timed questions, and may win prizes based on the final leaderboard and the rules shown in the app.",
   },
   {
     title: "Payments",
-    body: "MiniPay ticket payments are made in USDT digital dollars. Network fees may apply and are handled by MiniPay. Waffles does not ask MiniPay users to pay with CELO.",
+    body: "MiniPay ticket payments are made in USDT digital dollars. Network fees may apply and are handled by MiniPay.",
   },
   {
     title: "Prizes",

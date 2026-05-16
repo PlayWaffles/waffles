@@ -64,8 +64,6 @@ export default function RootLayout({
           name="app_transfer_verification"
           content="69cc9bb31aacdcc17b25514a"
         />
-        {/* Keep the first route logo hot without competing for the LCP image. */}
-        <link rel="preload" as="image" href="/logo-onboarding.png" />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
