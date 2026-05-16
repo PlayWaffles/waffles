@@ -1,7 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { OnchainKitProvider as OnchainKitProviderComponent } from "@coinbase/onchainkit";
+import { useEffect, useState, type ComponentType, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { env } from "@/lib/env";
@@ -18,8 +17,21 @@ interface Props {
   children: React.ReactNode;
 }
 
+type OnchainKitComponent = ComponentType<{
+  apiKey?: string;
+  chain: ReturnType<typeof getPlatformChain>;
+  miniKit?: { enabled?: boolean; autoConnect?: boolean };
+  config?: {
+    appearance?: { mode?: "light" | "dark" | "auto" };
+    wallet?: { display?: "modal" | "classic"; termsUrl?: string };
+  };
+  children: ReactNode;
+}>;
+
 export function OnchainKitProvider({ children }: Props) {
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
+  const [OnchainKitRuntimeProvider, setOnchainKitRuntimeProvider] =
+    useState<OnchainKitComponent | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +53,21 @@ export function OnchainKitProvider({ children }: Props) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!runtime || runtime === "minipay") return;
+
+    let cancelled = false;
+    import("@coinbase/onchainkit").then((mod) => {
+      if (!cancelled) {
+        setOnchainKitRuntimeProvider(() => mod.OnchainKitProvider);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [runtime]);
+
   if (!runtime) {
     return null;
   }
@@ -59,29 +86,33 @@ export function OnchainKitProvider({ children }: Props) {
         ? miniPayWagmiConfig
         : wagmiConfig;
 
+  const app = runtime === "minipay" || !OnchainKitRuntimeProvider ? (
+    children
+  ) : (
+    <OnchainKitRuntimeProvider
+      apiKey={env.nextPublicOnchainkitApiKey}
+      chain={chain}
+      miniKit={{
+        enabled: runtime === "farcaster",
+        autoConnect: runtime === "farcaster",
+      }}
+      config={{
+        appearance: {
+          mode: "dark",
+        },
+        wallet: {
+          display: "modal",
+          termsUrl: `${env.rootUrl}/terms`,
+        },
+      }}
+    >
+      {children}
+    </OnchainKitRuntimeProvider>
+  );
+
   return (
     <WagmiProvider config={activeWagmiConfig}>
-      <QueryClientProvider client={wagmiQueryClient}>
-        <OnchainKitProviderComponent
-          apiKey={env.nextPublicOnchainkitApiKey}
-          chain={chain}
-          miniKit={{
-            enabled: runtime === "farcaster",
-            autoConnect: runtime === "farcaster",
-          }}
-          config={{
-            appearance: {
-              mode: "dark",
-            },
-            wallet: {
-              display: "modal",
-              termsUrl: `${env.rootUrl}/terms`,
-            },
-          }}
-        >
-          {children}
-        </OnchainKitProviderComponent>
-      </QueryClientProvider>
+      <QueryClientProvider client={wagmiQueryClient}>{app}</QueryClientProvider>
     </WagmiProvider>
   );
 }
