@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, FlameIcon, Phone, PixelImg, StatusBar, TabBar } from "../shared";
+import { ASSETS, FlameIcon, Phone, PixelImg, TabBar } from "../shared";
 
 export const MissionsScreen = () => {
   const proto = useProto();
@@ -30,13 +30,11 @@ export const MissionsScreen = () => {
 
   return (
     <Phone>
-      <div style={{ position: "absolute", inset: 0, background: "#1e1e1e" }} />
+      <div style={{ position: "absolute", inset: 0, background: "var(--frame)" }} />
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: "radial-gradient(ellipse at 50% 0%, rgba(255,201,49,.18), transparent 70%)" }} />
 
-      <StatusBar dark />
-
-      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "#fff", gap: 8 }}>
-        <button onClick={() => proto.goto("pass", { back: true })} style={{ background: "transparent", border: "none", padding: 6, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}>
+      <div style={{ position: "absolute", top: 6, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "#fff", gap: 8 }}>
+        <button aria-label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} style={{ background: "transparent", border: "none", padding: 6, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
         <div style={{ flex: 1, fontFamily: "Archivo Black", fontSize: 18, letterSpacing: 0.5, textAlign: "center" }}>MISSIONS</div>
@@ -57,13 +55,11 @@ export const MissionsScreen = () => {
       <div style={{ position: "absolute", top: 148, left: 0, right: 0, bottom: 80, overflow: "auto", scrollbarWidth: "none", padding: "10px 14px 24px" }}>
         {tab === "daily" && (
           <>
-            <div style={{ background: "linear-gradient(180deg, rgba(255,201,49,.14), rgba(255,201,49,.04))", border: "1px solid rgba(255,201,49,.25)", borderRadius: 14, padding: "12px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,201,49,.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <PixelImg src={ASSETS.trophy} size={28} alt="" />
-              </div>
+            <div style={{ background: "linear-gradient(180deg, rgba(255,201,49,.14), rgba(255,201,49,.04))", border: "1px solid rgba(255,201,49,.25)", borderRadius: 14, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+              <PixelImg src={ASSETS.trophy} size={48} alt="" />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "Archivo Black", fontSize: 13, color: "#fff", letterSpacing: 0.3 }}>Earn up to {totalDailyXP} XP today</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>Resets in 17h 42m</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", letterSpacing: 0.3 }}>Earn up to {totalDailyXP} XP today</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginTop: 2 }}>Resets in 17h 42m</div>
               </div>
             </div>
 
@@ -72,10 +68,8 @@ export const MissionsScreen = () => {
                 const pct = Math.min(100, Math.round((m.p / m.tot) * 100));
                 const done = m.p >= m.tot;
                 return (
-                  <div key={i} style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px", display: "flex", alignItems: "center", gap: 12, opacity: done ? 0.65 : 1 }}>
-                    <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.06)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                      <PixelImg src={m.icon} size={26} alt="" />
-                    </div>
+                  <div key={i} style={{ background: "var(--surface-1)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: done ? 0.65 : 1 }}>
+                    <PixelImg src={m.icon} size={44} alt="" style={{ flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
@@ -85,8 +79,8 @@ export const MissionsScreen = () => {
                         <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", whiteSpace: "nowrap" }}>{m.p}/{m.tot}</span>
                       </div>
                     </div>
-                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.15)", border: "1px solid rgba(255,201,49,.3)", color: "#FFC931", padding: "4px 8px", borderRadius: 8, fontFamily: "Archivo Black", fontSize: 10, flexShrink: 0 }}>
-                      <PixelImg src={ASSETS.trophy} size={12} alt="" /> {m.xp}
+                    <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.15)", border: "1px solid rgba(255,201,49,.3)", color: "var(--maple-500)", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, flexShrink: 0 }}>
+                      +{m.xp} XP
                     </div>
                   </div>
                 );
@@ -118,7 +112,24 @@ export const MissionsScreen = () => {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                       <div style={{ fontFamily: "Archivo Black", fontSize: 12, color: "#fff", letterSpacing: 0.3 }}>{m.brand}</div>
-                      <span style={{ fontSize: 8, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.4 }}>· SPONSORED</span>
+                      {/* Clear "Sponsored" pill so the partnership is unmistakable
+                          and never reads as a regular in-app reward. */}
+                      <span
+                        style={{
+                          fontSize: 8,
+                          fontWeight: 900,
+                          color: "var(--ink-soft)",
+                          letterSpacing: 0.6,
+                          textTransform: "uppercase",
+                          background: "rgba(253, 251, 246, 0.08)",
+                          border: "1px solid rgba(253, 251, 246, 0.15)",
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          lineHeight: 1,
+                        }}
+                      >
+                        Sponsored
+                      </span>
                     </div>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.85)", lineHeight: 1.3, marginTop: 2 }}>{m.t}</div>
                     <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>

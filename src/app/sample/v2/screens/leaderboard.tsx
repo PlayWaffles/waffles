@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg } from "../shared";
+import { ASSETS, InfoIcon, Phone, PixelImg, TabBar } from "../shared";
 
 // Pre-generated medal art replaces the synthesized SVG medal.
 const BigMedal = ({ size = 78 }: { color?: string; size?: number }) => (
@@ -16,26 +16,25 @@ const ChestGlyph = ({ rank }: { rank: number }) => {
 
 type Player = { rank: number; name: string; pts: number; color: string; avatar?: string; you?: boolean };
 
+const AVATAR_BY_RANK = [
+  ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda,
+  ASSETS.avatarOwl, ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit,
+];
+
 const LeaderRow = ({ p }: { p: Player }) => {
-  const initial = p.name[0].toUpperCase();
+  const av = p.you ? ASSETS.wally : AVATAR_BY_RANK[(p.rank - 1) % AVATAR_BY_RANK.length];
+  // Top-3 ranks get the brand maple gold, everyone else uses the muted-ink ramp.
+  const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
+  const ptsColor = p.you ? "var(--maple-500)" : "var(--ink)";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 22px", color: "#1e1e1e" }}>
-      <div style={{ width: 30, height: 30, borderRadius: 99, border: p.you ? "2px solid #9ca3af" : "2px solid #3dd17a", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Archivo Black", fontSize: 13, color: "#1e1e1e", flexShrink: 0 }}>{p.rank}</div>
-      {p.avatar === "photo" ? (
-        <div style={{ width: 36, height: 36, borderRadius: 99, background: "radial-gradient(circle at 50% 35%, #f8c896 0%, #e09a6b 70%)", flexShrink: 0, position: "relative", overflow: "hidden", border: "1px solid rgba(0,0,0,.08)" }}>
-          <div style={{ position: "absolute", top: 0, left: "15%", right: "15%", height: "40%", background: "#3a2820", borderRadius: "18px 18px 8px 8px" }} />
-          <div style={{ position: "absolute", top: "48%", left: "25%", width: 3, height: 3, background: "#1e1e1e", borderRadius: 99 }} />
-          <div style={{ position: "absolute", top: "48%", right: "25%", width: 3, height: 3, background: "#1e1e1e", borderRadius: 99 }} />
-          <div style={{ position: "absolute", bottom: "25%", left: "35%", right: "35%", height: 2, borderBottom: "1.5px solid #1e1e1e", borderRadius: "0 0 6px 6px" }} />
-        </div>
-      ) : (
-        <div style={{ width: 36, height: 36, borderRadius: 99, background: p.color, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontFamily: "Archivo Black", fontSize: 15, flexShrink: 0 }}>{initial}</div>
-      )}
-      <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "#1e1e1e", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 22px", color: "var(--ink)" }}>
+      <div style={{ width: 28, fontFamily: "var(--font-display)", fontSize: 14, color: rankColor, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{p.rank}</div>
+      <PixelImg src={av} size={44} alt="" />
+      <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {!p.you && <ChestGlyph rank={p.rank} />}
-        <PixelImg src={ASSETS.trophy} size={16} alt="" />
-        <span style={{ fontFamily: "Archivo Black", fontSize: 14, color: "#1e1e1e", fontVariantNumeric: "tabular-nums", minWidth: 34, textAlign: "right" }}>{p.pts.toLocaleString()}</span>
+        <PixelImg src={ASSETS.trophy} size={22} alt="" />
+        <span style={{ fontFamily: "var(--font-display)", fontSize: 14, color: ptsColor, fontVariantNumeric: "tabular-nums", minWidth: 38, textAlign: "right" }}>{p.pts.toLocaleString()}</span>
       </div>
     </div>
   );
@@ -63,54 +62,134 @@ export const LeaderboardScreen = () => {
 
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "#fff" }} />
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 230, background: "linear-gradient(180deg, #4d1f99 0%, #3a1a78 100%)" }} />
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 230, backgroundImage: "radial-gradient(circle at 18% 35%, rgba(255,255,255,.5) 1px, transparent 1.5px), radial-gradient(circle at 72% 60%, rgba(255,255,255,.4) 1px, transparent 1.5px), radial-gradient(circle at 42% 25%, rgba(255,255,255,.3) 1px, transparent 1.5px), radial-gradient(circle at 88% 18%, rgba(255,255,255,.45) 1px, transparent 1.5px), radial-gradient(circle at 30% 75%, rgba(255,255,255,.3) 1px, transparent 1.5px)", backgroundSize: "200px 200px", pointerEvents: "none" }} />
+      {/* Match the rest of the v2 app: deep tinted-neutral surface with a
+          warm gold glow at the top that echoes the results / level-up screens
+          rather than the off-brand purple gradient that was here before. */}
+      <div className="bg-deep" />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 280,
+          background: "radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.22), transparent 65%)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 280,
+          backgroundImage:
+            "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)",
+          backgroundSize: "80px 80px, 100px 100px, 70px 70px",
+          backgroundPosition: "0 0, 30px 40px, 50px 20px",
+          opacity: 0.35,
+          pointerEvents: "none",
+        }}
+      />
 
-      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "#fff" }}>
-        <button onClick={() => proto.goto("pass", { back: true })} style={{ background: "transparent", border: "none", padding: 6, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center" }}>
+      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--ink)", zIndex: 2 }}>
+        <button aria-label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} style={{ background: "transparent", border: "none", padding: 6, cursor: "pointer", color: "var(--ink)", display: "flex", alignItems: "center" }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
         </button>
         <div style={{ flex: 1 }} />
-        <button onClick={() => proto.goto("leagues")} style={{ background: "rgba(255,255,255,.1)", border: "1.5px solid rgba(255,255,255,.4)", borderRadius: 99, width: 30, height: 30, padding: 0, cursor: "pointer", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Archivo Black", fontSize: 13 }}>i</button>
+        <button type="button" aria-label="About leagues" onClick={() => proto.goto("leagues")} style={{ background: "rgba(253, 251, 246, 0.08)", border: "1.5px solid rgba(253, 251, 246, 0.25)", borderRadius: 99, width: 30, height: 30, padding: 0, cursor: "pointer", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}><InfoIcon size={16} /></button>
       </div>
 
-      <div style={{ position: "absolute", top: 78, left: 0, right: 0, textAlign: "center", color: "#fff" }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
-          <BigMedal color="#cd7f32" size={70} />
+      <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 201, 49, 0.35))" }}>
+          <BigMedal color="#cd7f32" size={120} />
         </div>
-        <div style={{ fontFamily: "Archivo Black", fontSize: 22, letterSpacing: 0.5 }}>APPRENTICE I</div>
-        <div style={{ display: "inline-flex", gap: 5, alignItems: "center", fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.85)", marginTop: 4 }}>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>APPRENTICE I</div>
+        <div style={{ display: "inline-flex", gap: 5, alignItems: "center", fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4 }}>
           <span>⏱</span> Ends in 1d 15h
         </div>
       </div>
 
-      <div style={{ position: "absolute", top: 240, left: 0, right: 0, bottom: 0, background: "#fff", borderRadius: "18px 18px 0 0", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ display: "flex", borderBottom: "1px solid #e5e7eb", padding: "0 24px" }}>
+      <div style={{ position: "absolute", top: 280, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 24px" }}>
           {[
             { id: "league" as const, label: "Your League" },
             { id: "friends" as const, label: "Friends" },
           ].map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "Nunito", fontSize: 15, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "#1e1e1e" : "#9ca3af", borderBottom: tab === t.id ? "2.5px solid #1e1e1e" : "2.5px solid transparent", cursor: "pointer" }}>
+            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "Nunito", fontSize: 15, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}>
               {t.label}
             </button>
           ))}
         </div>
 
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px 10px", color: "#1e1e1e" }}>
-          <span style={{ fontSize: 14, fontWeight: 800 }}>Position</span>
-          <span style={{ fontSize: 14, fontWeight: 800, display: "flex", alignItems: "center", gap: 5 }}>
-            Points
-            <span style={{ width: 16, height: 16, borderRadius: 99, border: "1.5px solid #9ca3af", color: "#9ca3af", fontSize: 10, fontFamily: "Archivo Black", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>i</span>
-          </span>
-        </div>
-
-        <div style={{ flex: 1, overflow: "auto", scrollbarWidth: "none" }}>
-          {leaders.map((p) => <LeaderRow key={p.rank} p={p} />)}
-          <div style={{ position: "sticky", bottom: 0, background: "#f4eaff", borderTop: "1px solid #e5d4f8" }}>
-            <LeaderRow p={you} />
+        {tab === "league" ? (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px 10px", color: "var(--ink-soft)" }}>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>Position</span>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                Points
+                <span aria-hidden="true" style={{ color: "var(--ink-faint)", display: "inline-flex" }}><InfoIcon size={14} /></span>
+              </span>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", scrollbarWidth: "none" }}>
+              {leaders.map((p) => <LeaderRow key={p.rank} p={p} />)}
+              {/* "You" row pinned to the bottom — uses the maple-tinted highlight
+                  that the results screen uses for the player's row, so the two
+                  leaderboards in the app share a visual language. */}
+              <div style={{ position: "sticky", bottom: 0, background: "var(--maple-100)", borderTop: "1.5px solid var(--maple-500)" }}>
+                <LeaderRow p={you} />
+              </div>
+            </div>
+          </>
+        ) : (
+          // Friends tab — empty state with a clear CTA, instead of mirroring
+          // the league list and leaving the user wondering whether the tab
+          // even switched. Sets up a real product moment (invite friends).
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: 99, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, border: "1px solid rgba(253, 251, 246, 0.08)" }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="9" cy="8" r="3.5" stroke="var(--ink-soft)" strokeWidth="2" fill="none" />
+                <path d="M3 19c.8-3 3.2-5 6-5s5.2 2 6 5" stroke="var(--ink-soft)" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <circle cx="17" cy="6" r="2.5" stroke="var(--maple-500)" strokeWidth="2" fill="none" />
+                <path d="M14 14c.5-1.8 1.8-3 3-3s2.5 1.2 3 3" stroke="var(--maple-500)" strokeWidth="2" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div style={{ fontFamily: "Archivo Black", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No friends yet</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
+              Add friends to see their scores next to yours and compete for bragging rights.
+            </div>
+            <button
+              type="button"
+              className="pressable"
+              style={{
+                marginTop: 22,
+                background: "var(--maple-500)",
+                color: "var(--frame)",
+                border: "2px solid var(--frame)",
+                fontFamily: "Nunito",
+                fontWeight: 900,
+                fontSize: 13,
+                padding: "10px 20px",
+                borderRadius: 12,
+                letterSpacing: 0.3,
+                boxShadow: "0 3px 0 var(--frame)",
+                cursor: "pointer",
+              }}
+              onClick={() => {
+                // No-op for prototype — inviting friends is out of scope.
+              }}
+            >
+              INVITE FRIENDS
+            </button>
           </div>
-        </div>
+        )}
+      </div>
+
+      <div className="bottom-bar" style={{ paddingTop: 4, paddingBottom: 4, gap: 0 }}>
+        <TabBar active="compete" />
       </div>
     </Phone>
   );

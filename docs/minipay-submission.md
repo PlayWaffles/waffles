@@ -1,6 +1,4 @@
-# MiniPay submission manifest
-
-This file tracks the production evidence MiniPay asks for before listing Waffles.
+Minipay Submission
 
 ## App URLs
 
@@ -28,26 +26,6 @@ environment config and app integrations before each MiniPay submission.
 - `https://t.me` - support contact link.
 - `mailto:support@playwaffles.fun` - support contact link.
 
-## Currency support
-
-MiniPay supports USDT, USDC, and USDm. Waffles currently supports USDT only for
-MiniPay ticket purchases and prize flows. The app now explains this in the ticket
-purchase surfaces and low-balance errors.
-
-## Contract evidence
-
-Do not use the stale MiniPay address previously present in local `.env` as
-submission evidence. The production Celo mainnet contract address must be filled
-in after deployment.
-
-- WaffleGame proxy: `TODO`
-- Celoscan verified source URL: `TODO`
-- `createGame` sample transaction: `TODO`
-- `buyTicket` sample transaction: `TODO`
-- `submitResults` sample transaction: `TODO`
-- `claimPrize` sample transaction: `TODO`
-- `sponsorPrizePool` sample transaction, if used in production: `TODO`
-
 ## Performance evidence
 
 Run PageSpeed Insights against the production URL after deployment and paste the
@@ -69,6 +47,3 @@ mobile result here.
   - Accessibility: `100`
   - Best Practices: `96`
   - SEO: `100`
-- Local attempt on 2026-05-07: Google PageSpeed Insights API returned
-  `RESOURCE_EXHAUSTED` for the default API quota, so the score must be captured
-  from the PageSpeed web UI or a project with quota.

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { ProtoProvider, useProto, type ScreenName } from "./state";
 import { CompeteScreen } from "./screens/compete";
 import { HomeScreen } from "./screens/home";
@@ -43,6 +44,18 @@ const Stage = () => {
 };
 
 export default function V2Page() {
+  useEffect(() => {
+    // Easter egg for developers poking around in DevTools.
+    if (typeof window !== "undefined" && !(window as unknown as { __wafflesGreeted?: boolean }).__wafflesGreeted) {
+      (window as unknown as { __wafflesGreeted: boolean }).__wafflesGreeted = true;
+      const big = "color:#FFC931;font-family:Archivo Black,sans-serif;font-size:22px;text-shadow:0 2px 0 #1e1e1e;padding:6px 0;";
+      const small = "color:#888;font-size:11px;font-family:ui-monospace,monospace;";
+      console.log("%c🧇 Waffles", big);
+      console.log("%cReal-time multiplayer trivia. Built with care on Celo.", small);
+      console.log("%cLike what you see? Drop us a line — playwaffles.xyz", small);
+    }
+  }, []);
+
   return (
     <div className="waffles-v2 waffles-v2-stage">
       <ProtoProvider>
