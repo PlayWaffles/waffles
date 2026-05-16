@@ -6,6 +6,10 @@ export const metadata = {
 
 const sections = [
   {
+    title: "Operator",
+    body: "Waffles is operated by the Waffles team. The app is not operated by Opera or MiniPay.",
+  },
+  {
     title: "Information we use",
     body: "We may process your app profile, wallet address, MiniPay runtime signals, game entries, answers, scores, ticket payments, prize claims, support messages, and basic analytics events.",
   },
@@ -46,9 +50,10 @@ export default function PrivacyPage() {
         <div className="space-y-3">
           <h1 className="font-body text-[30px] leading-none text-white">Privacy</h1>
           <p className="font-display text-sm leading-6 text-white/60">
-            Effective May 7, 2026. Waffles collects the information needed to run
-            games, recover tickets, display leaderboards, prevent abuse, and
-            support players.
+            Effective May 7, 2026. Waffles is operated by the Waffles team, not
+            Opera or MiniPay. We collect the information needed to run games,
+            recover tickets, display leaderboards, prevent abuse, and support
+            players.
           </p>
         </div>
 

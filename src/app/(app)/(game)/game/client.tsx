@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { useAccount } from "wagmi";
-import posthog from "posthog-js";
 import {
   QuestionMarkCircleIcon,
   ChevronRightIcon,
@@ -23,11 +23,24 @@ import {
 } from "@/lib/client/runtime";
 
 import Image from "next/image";
-import { GameChat } from "./_components/chat/GameChat";
-import { LiveEventFeed } from "./_components/LiveEventFeed";
 import { NextGameCard } from "./_components/NextGameCard";
-import { CheerOverlay } from "./_components/CheerOverlay";
-import { HowToPlayModal, HOW_TO_PLAY_STEPS } from "./_components/HowToPlayModal";
+
+const GameChat = dynamic(
+  () => import("./_components/chat/GameChat").then((mod) => mod.GameChat),
+  { ssr: false },
+);
+const LiveEventFeed = dynamic(
+  () => import("./_components/LiveEventFeed").then((mod) => mod.LiveEventFeed),
+  { ssr: false },
+);
+const CheerOverlay = dynamic(
+  () => import("./_components/CheerOverlay").then((mod) => mod.CheerOverlay),
+  { ssr: false },
+);
+const HowToPlayModal = dynamic(
+  () => import("./_components/HowToPlayModal").then((mod) => mod.HowToPlayModal),
+  { ssr: false },
+);
 
 
 // ==========================================
@@ -35,6 +48,11 @@ import { HowToPlayModal, HOW_TO_PLAY_STEPS } from "./_components/HowToPlayModal"
 // ==========================================
 
 const MODAL_HOW_TO_PLAY = "how-to-play";
+const HOW_TO_PLAY_PREVIEW_STEPS = [
+  { number: "01", title: "Secure your spot" },
+  { number: "02", title: "Identify the remix" },
+  { number: "03", title: "Race the leaderboard" },
+] as const;
 
 interface GameHubProps {
   /** Game data from server component - not stored in React state */
@@ -98,12 +116,14 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   useEffect(() => {
     if (game && hasTrackedView.current !== game.id) {
       hasTrackedView.current = game.id;
-      posthog.capture("game_viewed", {
-        game_id: game.id,
-        game_number: game.gameNumber,
-        theme: game.theme,
-        prize_pool: game.prizePool,
-        player_count: game.playerCount,
+      import("posthog-js").then(({ default: posthog }) => {
+        posthog.capture("game_viewed", {
+          game_id: game.id,
+          game_number: game.gameNumber,
+          theme: game.theme,
+          prize_pool: game.prizePool,
+          player_count: game.playerCount,
+        });
       });
     }
   }, [game]);
@@ -201,7 +221,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
 
           {/* Quick preview steps — collapsed */}
           <motion.div variants={fadeInUp} className="w-full space-y-2">
-            {HOW_TO_PLAY_STEPS.map((step, index) => (
+            {HOW_TO_PLAY_PREVIEW_STEPS.map((step, index) => (
               <motion.div
                 key={step.title}
                 initial={{ opacity: 0, x: -16 }}
@@ -344,7 +364,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         <HowToPlayModal onClose={closeHowToPlay} showStepIcons={false} />
       )}
 
-      <CheerOverlay />
+      {!isMiniPay && <CheerOverlay />}
     </>
   );
 }
