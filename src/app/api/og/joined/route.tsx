@@ -25,8 +25,8 @@ export async function GET(request: NextRequest) {
 
         // Load assets from filesystem
         const publicDir = join(process.cwd(), "public");
-        const bgPath = join(publicDir, "images/share/bg.png");
-        const moneyPath = join(publicDir, "images/share/money.png");
+        const bgPath = join(publicDir, "images/share/bg.webp");
+        const moneyPath = join(publicDir, "images/share/money.webp");
         const fontPath = join(publicDir, "fonts/editundo_bd.ttf");
         const brockmannPath = join(process.cwd(), "src/lib/fonts/brockmann_bd.otf");
 

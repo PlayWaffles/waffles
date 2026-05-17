@@ -50,7 +50,7 @@ const puzzleTiles: PuzzleTile[] = [
 
 const decorations: Decoration[] = [
   {
-    src: "/images/v2/forest-tree-pine.png",
+    src: "/images/v2/forest-tree-pine.webp",
     alt: "",
     x: 7,
     y: 2,
@@ -58,14 +58,14 @@ const decorations: Decoration[] = [
     className: styles.treeCluster,
   },
   {
-    src: "/images/v2/forest-tree-bush.png",
+    src: "/images/v2/forest-tree-bush.webp",
     alt: "",
     x: 1,
     y: 27,
     size: 132,
   },
   {
-    src: "/images/v2/forest-pond.png",
+    src: "/images/v2/forest-pond.webp",
     alt: "",
     x: 60,
     y: 36,
@@ -73,7 +73,7 @@ const decorations: Decoration[] = [
     className: styles.pond,
   },
   {
-    src: "/images/v2/forest-frog.png",
+    src: "/images/v2/forest-frog.webp",
     alt: "",
     x: 79,
     y: 39,
@@ -81,14 +81,14 @@ const decorations: Decoration[] = [
     className: styles.frog,
   },
   {
-    src: "/images/v2/forest-flowers.png",
+    src: "/images/v2/forest-flowers.webp",
     alt: "",
     x: 72,
     y: 58,
     size: 64,
   },
   {
-    src: "/images/v2/forest-tree-pine.png",
+    src: "/images/v2/forest-tree-pine.webp",
     alt: "",
     x: 6,
     y: 70,
@@ -96,7 +96,7 @@ const decorations: Decoration[] = [
     className: styles.bigTree,
   },
   {
-    src: "/images/v2/forest-cabin.png",
+    src: "/images/v2/forest-cabin.webp",
     alt: "",
     x: 61,
     y: 116,
@@ -104,14 +104,14 @@ const decorations: Decoration[] = [
     className: styles.cabin,
   },
   {
-    src: "/images/v2/forest-signpost.png",
+    src: "/images/v2/forest-signpost.webp",
     alt: "",
     x: 40,
     y: 96,
     size: 56,
   },
   {
-    src: "/images/v2/forest-mushroom.png",
+    src: "/images/v2/forest-mushroom.webp",
     alt: "",
     x: 77,
     y: 111,
@@ -166,7 +166,7 @@ function PuzzleTileButton({ tile }: { tile: PuzzleTile }) {
       {isCurrent ? (
         <img
           className={styles.playerMarker}
-          src="/images/v2/avatar-frog.png"
+          src="/images/v2/avatar-frog.webp"
           alt=""
           draggable={false}
         />
@@ -181,7 +181,7 @@ function TopChrome() {
       <div className={styles.statusBar} aria-hidden="true">
         <span>12:45</span>
         <div className={styles.dynamicIsland}>
-          <img src="/images/v2/avatar-owl.png" alt="" draggable={false} />
+          <img src="/images/v2/avatar-owl.webp" alt="" draggable={false} />
           <span />
         </div>
         <div className={styles.statusIcons}>
@@ -193,7 +193,7 @@ function TopChrome() {
 
       <div className={styles.titleRow}>
         <span className={styles.ticketBadge}>
-          <img src="/images/v2/ticket.png" alt="" draggable={false} />
+          <img src="/images/v2/ticket.webp" alt="" draggable={false} />
           7
         </span>
         <h1>Puzzles</h1>
@@ -205,7 +205,7 @@ function TopChrome() {
 function CoachBubble() {
   return (
     <div className={styles.coach}>
-      <img src="/images/v2/wally.png" alt="" draggable={false} />
+      <img src="/images/v2/wally.webp" alt="" draggable={false} />
       <p>Feel the need for speed? How about a game of Puzzle Rush?</p>
     </div>
   );
@@ -217,7 +217,7 @@ function ScoreRail() {
       <div>
         <strong>707</strong>
         <span>
-          <img src="/images/v2/flame.png" alt="" draggable={false} />
+          <img src="/images/v2/flame.webp" alt="" draggable={false} />
           12
         </span>
       </div>
@@ -225,7 +225,7 @@ function ScoreRail() {
         <span />
       </div>
       <span className={styles.smallTicket}>
-        <img src="/images/v2/ticket.png" alt="" draggable={false} />8
+        <img src="/images/v2/ticket.webp" alt="" draggable={false} />8
       </span>
     </div>
   );

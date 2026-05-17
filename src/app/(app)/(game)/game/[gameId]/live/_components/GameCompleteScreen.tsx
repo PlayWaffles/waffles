@@ -154,7 +154,7 @@ export default function GameCompleteScreen({
                         whileHover={{ scale: 1.1, rotate: 5 }}
                     >
                         <Image
-                            src="/images/illustrations/money-bag.png"
+                            src="/images/illustrations/money-bag.webp"
                             alt="Money Bag"
                             width={40}
                             height={48}

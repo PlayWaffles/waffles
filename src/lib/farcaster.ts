@@ -19,7 +19,7 @@ export function buildMiniAppEmbed(params: {
         type: "launch_frame",
         name: "Waffles",
         url: params.url || getMiniAppHomeUrl(),
-        splashImageUrl: `${env.rootUrl}/icon.png`,
+        splashImageUrl: `${env.rootUrl}/icon.webp`,
         splashBackgroundColor: "#0B0B10",
       },
     },

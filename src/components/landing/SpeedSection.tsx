@@ -105,7 +105,7 @@ export function SpeedSection() {
                         transition={{ duration: 0.6 }}
                     >
                         <Image
-                            src="/images/godfather.png"
+                            src="/images/godfather.webp"
                             alt="Movie Scene"
                             fill
                             className="object-cover"

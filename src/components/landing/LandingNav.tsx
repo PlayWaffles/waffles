@@ -52,7 +52,7 @@ export function LandingNav() {
                             transition={springPresets.snappy}
                         >
                             <Image
-                                src="/logo.png"
+                                src="/logo.webp"
                                 alt="Waffles"
                                 width={30}
                                 height={22}

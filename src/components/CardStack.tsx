@@ -29,10 +29,10 @@ export function CardStack({
 }: CardStackProps) {
   const defaultAvatars = useMemo(() => {
     return [
-      "/images/avatars/a.png",
-      "/images/avatars/b.png",
-      "/images/avatars/c.png",
-      "/images/avatars/d.png",
+      "/images/avatars/a.webp",
+      "/images/avatars/b.webp",
+      "/images/avatars/c.webp",
+      "/images/avatars/d.webp",
     ];
   }, []);
 

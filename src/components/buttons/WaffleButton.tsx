@@ -2,11 +2,9 @@
 
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { motion, HTMLMotionProps } from "framer-motion";
-import { springs, tapBounce, hoverLift } from "@/lib/animations";
 import { playSound } from "@/lib/sounds";
 
-interface WaffleButtonProps extends Omit<HTMLMotionProps<"button">, "children"> {
+interface WaffleButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   children: React.ReactNode;
   fullWidth?: boolean;
 }
@@ -38,12 +36,9 @@ export const WaffleButton = React.forwardRef<
     );
 
     return (
-      <motion.button
+      <button
         ref={ref}
-        type={type as "button" | "submit" | "reset"}
-        whileHover={disabled ? undefined : hoverLift}
-        whileTap={disabled ? undefined : tapBounce}
-        transition={springs.snappy}
+        type={type}
         className={cn(
           "relative flex items-center justify-center h-[54px] px-6",
           "bg-white text-[#191919]",
@@ -52,8 +47,9 @@ export const WaffleButton = React.forwardRef<
           "max-w-[361px] mx-auto",
           "rounded-[12px]",
           "border-[5px] border-t-0 border-l-0 border-(--brand-cyan)",
-          "transition-colors", // Removed transform transition as motion handles it
-          "disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
+          "transition-[background-color,color,transform] duration-150 ease-out",
+          "hover:-translate-y-0.5 active:translate-y-0.5 active:scale-[0.98]",
+          "disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-gold)] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1e1e1e]",
           className
         )}
@@ -62,7 +58,7 @@ export const WaffleButton = React.forwardRef<
         {...props}
       >
         {children}
-      </motion.button>
+      </button>
     );
   }
 );

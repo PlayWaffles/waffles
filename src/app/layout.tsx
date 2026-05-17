@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/images/hero-image.png",
+        url: "/images/hero-image.webp",
         width: 1200,
         height: 630,
         alt: "Waffles OG Image",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Waffles",
     description: "Guess the movie scene. Win real prizes.",
-    images: ["/images/hero-image.png"],
+    images: ["/images/hero-image.webp"],
   },
   icons: {
     icon: "/favicon.ico",

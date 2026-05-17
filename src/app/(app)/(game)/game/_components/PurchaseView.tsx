@@ -182,7 +182,7 @@ export function PurchaseView({
                   }}
                 >
                   <Image
-                    src="/images/icons/waffle-small.png"
+                    src="/images/icons/waffle-small.webp"
                     alt="waffle"
                     width={16}
                     height={12}

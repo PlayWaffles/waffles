@@ -35,7 +35,7 @@ export function SplashScreen({ duration = 2000, onComplete }: SplashScreenProps)
                     }}
                 >
                     <Image
-                        src="/logo-small.png"
+                        src="/logo-small.webp"
                         alt="Waffles"
                         width={55}
                         height={43}

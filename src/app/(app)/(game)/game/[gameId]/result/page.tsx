@@ -85,7 +85,7 @@ export async function generateMetadata({
       ? game.coverUrl.startsWith("http")
         ? game.coverUrl
         : `${env.rootUrl}${game.coverUrl}`
-      : `${env.rootUrl}/logo.png`;
+      : `${env.rootUrl}/logo.webp`;
 
     imageUrl = buildJoinedOGUrl({
       username,
@@ -110,7 +110,7 @@ export async function generateMetadata({
       : `Check out the results for ${game.title || game.theme}`;
   const pageUrl = `${env.rootUrl}/game/${gameId}/result`;
   const embed = buildMiniAppEmbed({
-    imageUrl: imageUrl || `${env.rootUrl}/logo.png`,
+    imageUrl: imageUrl || `${env.rootUrl}/logo.webp`,
     buttonTitle: "View Results",
     url: pageUrl,
   });

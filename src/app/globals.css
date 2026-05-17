@@ -186,6 +186,70 @@ html {
     linear-gradient(180deg, #1e1e1e 0%, #000000 100%);
 }
 
+@keyframes balance-pop {
+  0%,
+  100% {
+    color: #ffffff;
+    transform: scale(1);
+  }
+  50% {
+    color: #f5bb1b;
+    transform: scale(1.1);
+  }
+}
+
+@keyframes wallet-pop {
+  0%,
+  100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.1);
+  }
+}
+
+@keyframes wallet-flap {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-5deg);
+  }
+}
+
+@keyframes wallet-slot {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes onboarding-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes onboarding-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 /* ------------------------------------------------------------
    REDUCED MOTION
    ------------------------------------------------------------ */

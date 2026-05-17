@@ -821,7 +821,7 @@ export default function TensionSamplePage() {
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src="/logo.png"
+                src="/logo.webp"
                 alt="Waffles"
                 className="w-[30px] h-[24px] object-contain"
               />

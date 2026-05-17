@@ -75,7 +75,7 @@ export function CompeteSection() {
                     }}
                 >
                     <Image
-                        src="/images/illustrations/treasure-chest.png"
+                        src="/images/illustrations/treasure-chest.webp"
                         alt="Treasure Chest"
                         width={424}
                         height={395}

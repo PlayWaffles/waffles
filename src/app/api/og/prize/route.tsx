@@ -28,8 +28,8 @@ export async function GET(request: Request) {
     const [fontData, logoBuffer, chestBuffer, bgBuffer, safePfpUrl] = await Promise.all([
         readFile(join(publicDir, "fonts/editundo_bd.ttf")),
         readFile(join(publicDir, "logo-onboarding.png")),
-        readFile(join(publicDir, "images/illustrations/treasure-chest.png")),
-        readFile(join(publicDir, "images/share/bg.png")),
+        readFile(join(publicDir, "images/illustrations/treasure-chest.webp")),
+        readFile(join(publicDir, "images/share/bg.webp")),
         safeImageUrl(pfpUrlParam),
     ]);
 

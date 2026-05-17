@@ -61,7 +61,7 @@ export default function ProfilePage() {
   }
 
   const safeUsername = user.username || formatAddress(user.wallet);
-  const safeAvatarUrl = user.pfpUrl || "/images/avatars/a.png";
+  const safeAvatarUrl = user.pfpUrl || "/images/avatars/a.webp";
   const showReferralButton = user.inviteQuota !== null && user.inviteQuota > 0;
 
   // Transform games for GameHistory component

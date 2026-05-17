@@ -2,10 +2,9 @@
 
 import { useAccount, useConnect } from "wagmi";
 import { useGetTokenBalance } from "@coinbase/onchainkit/wallet";
-import { motion, useAnimation } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 
-import { springs } from "@/lib/animations";
+import { cn } from "@/lib/utils";
 import {
   getPaymentTokenAddress,
   getPlatformChain,
@@ -31,39 +30,26 @@ function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
       className="mr-1"
     >
       {/* Wallet body */}
-      <motion.path
+      <path
         d="M2 6.2H13.4C13.559 6.2 13.712 6.263 13.824 6.376C13.937 6.488 14 6.641 14 6.8V12.8C14 12.959 13.937 13.112 13.824 13.224C13.712 13.337 13.559 13.4 13.4 13.4H2.6C2.441 13.4 2.288 13.337 2.176 13.224C2.063 13.112 2 12.959 2 12.8V6.2Z"
         fill="currentColor"
-        animate={triggerAnim ? { scaleY: [1, 1.1, 1] } : { scaleY: 1 }}
-        transition={{ duration: 0.3, ease: "easeOut" as const }}
-        style={{ transformOrigin: "center bottom" }}
+        className={triggerAnim ? "origin-bottom animate-[wallet-pop_300ms_ease-out]" : ""}
       />
       {/* Wallet flap */}
-      <motion.path
+      <path
         d="M2.6 2.6H11.6V5H2V3.2C2 3.041 2.063 2.888 2.176 2.776C2.288 2.663 2.441 2.6 2.6 2.6Z"
         fill="currentColor"
-        animate={triggerAnim ? { rotate: [0, -5, 0] } : { rotate: 0 }}
-        transition={{ duration: 0.25, ease: "easeOut" as const }}
-        style={{ transformOrigin: "left center" }}
+        className={triggerAnim ? "origin-left animate-[wallet-flap_250ms_ease-out]" : ""}
       />
       {/* Coin slot - pulses */}
-      <motion.rect
+      <rect
         x="9.8"
         y="9.2"
         width="1.8"
         height="1.2"
         rx="0.2"
         fill="currentColor"
-        animate={
-          triggerAnim
-            ? {
-              scale: [1, 1.3, 1],
-              opacity: [1, 0.6, 1],
-            }
-            : {}
-        }
-        transition={{ duration: 0.4, delay: 0.1, ease: "easeOut" as const }}
-        style={{ transformOrigin: "center" }}
+        className={triggerAnim ? "origin-center animate-[wallet-slot_400ms_ease-out_100ms]" : ""}
       />
     </svg>
   );
@@ -122,14 +108,14 @@ export function WalletBalance() {
     decimals: PAYMENT_TOKEN_DECIMALS,
     name: platform === "MINIPAY" ? MINIPAY_PAYMENT_TOKEN_SYMBOL : "USDC",
     symbol: platform === "MINIPAY" ? MINIPAY_PAYMENT_TOKEN_SYMBOL : "USDC",
-    image: "/images/icons/icon-prizepool-cash.png",
+    image: "/images/icons/icon-prizepool-cash.webp",
     chainId: chain.id,
   });
 
   // Track previous balance for animation trigger
   const prevBalance = useRef(roundedBalance);
   const [displayBalance, setDisplayBalance] = useState<string>("");
-  const controls = useAnimation();
+  const [isBalanceAnimating, setIsBalanceAnimating] = useState(false);
 
   // Animate on balance change
   useEffect(() => {
@@ -138,13 +124,11 @@ export function WalletBalance() {
     }
 
     if (prevBalance.current !== roundedBalance && roundedBalance !== undefined && roundedBalance !== "") {
-      controls.start({
-        scale: [1, 1.1, 1],
-        transition: { duration: 0.3, ease: "easeOut" as const },
-      });
+      setIsBalanceAnimating(true);
+      window.setTimeout(() => setIsBalanceAnimating(false), 300);
       prevBalance.current = roundedBalance;
     }
-  }, [roundedBalance, status, controls]);
+  }, [roundedBalance, status]);
 
   const balanceLabel =
     displayBalance !== ""
@@ -155,22 +139,18 @@ export function WalletBalance() {
       : "..."
 
   return (
-    <motion.div
-      className="flex items-center px-3 py-1.5 rounded-full bg-[#F9F9F91A] font-body cursor-pointer"
-      whileHover={{
-        scale: 1.05,
-        backgroundColor: "rgba(249, 249, 249, 0.15)",
-      }}
-      whileTap={{ scale: 0.95 }}
-      transition={springs.snappy}
+    <div
+      className="flex items-center px-3 py-1.5 rounded-full bg-[#F9F9F91A] font-body cursor-pointer transition-[background-color,transform] duration-150 ease-out hover:scale-105 hover:bg-white/15 active:scale-95"
     >
       <AnimatedWalletIcon triggerAnim={false} />
-      <motion.span
-        className="text-center font-normal not-italic text-[16px] leading-[100%] tracking-[0px] text-white"
-        animate={controls}
+      <span
+        className={cn(
+          "text-center font-normal not-italic text-[16px] leading-[100%] tracking-[0px] text-white",
+          isBalanceAnimating && "animate-[balance-pop_300ms_ease-out]",
+        )}
       >
         {balanceLabel}
-      </motion.span>
-    </motion.div>
+      </span>
+    </div>
   );
 }

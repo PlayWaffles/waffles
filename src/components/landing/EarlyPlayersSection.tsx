@@ -175,7 +175,7 @@ export function EarlyPlayersSection() {
             }}
           >
             <Image
-              src="/images/illustrations/golden-coin.png"
+              src="/images/illustrations/golden-coin.webp"
               alt="Golden Coin"
               width={381}
               height={379}
@@ -204,7 +204,7 @@ export function EarlyPlayersSection() {
             }}
           >
             <Image
-              src="/images/illustrations/golden-coin.png"
+              src="/images/illustrations/golden-coin.webp"
               alt="Golden Coin Small"
               width={240}
               height={239}
