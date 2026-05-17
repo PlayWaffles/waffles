@@ -2,9 +2,8 @@ import "./globals.css";
 import { fontBody, fontDisplay, fontInput } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
-import { SpeedInsights } from "@vercel/speed-insights/next";
-import { Analytics } from "@vercel/analytics/next";
 import { env } from "@/lib/env";
+import { DeferredVercelMetrics } from "@/components/providers/DeferredVercelMetrics";
 
 export const metadata: Metadata = {
   title: "Waffles",
@@ -67,8 +66,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased" suppressHydrationWarning>
         {children}
-        <SpeedInsights />
-        <Analytics />
+        <DeferredVercelMetrics />
       </body>
     </html>
   );
