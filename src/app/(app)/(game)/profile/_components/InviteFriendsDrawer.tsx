@@ -66,7 +66,7 @@ const InviteDrawerComingSoon = ({ isOpen, onClose }: Omit<InviteDrawerProps, "in
               {/* Background Image */}
               <div className="absolute inset-0 z-0 select-none">
                 <Image
-                  src="/images/share/invite-bg.png"
+                  src="/images/share/invite-bg.webp"
                   alt="Invite Background"
                   fill
                   className="object-cover opacity-90"
@@ -93,7 +93,7 @@ const InviteDrawerComingSoon = ({ isOpen, onClose }: Omit<InviteDrawerProps, "in
                   style={{ width: "86.5px", height: "75px" }}
                 >
                   <Image
-                    src="/images/illustrations/link-icon.png"
+                    src="/images/illustrations/link-icon.webp"
                     alt="Link Icon"
                     fill
                     className="object-contain opacity-50"
@@ -205,7 +205,7 @@ const InviteDrawerActive = ({ isOpen, onClose, inviteLink }: InviteDrawerProps) 
         >
           <div className="absolute inset-0 z-0 select-none">
             <Image
-              src="/images/share/invite-bg.png"
+              src="/images/share/invite-bg.webp"
               alt="Invite Background"
               fill
               className="object-cover opacity-90"
@@ -221,7 +221,7 @@ const InviteDrawerActive = ({ isOpen, onClose, inviteLink }: InviteDrawerProps) 
 
           <div className="relative z-10 flex flex-col items-center justify-start h-full pt-12 px-6 text-center">
             <div className="relative transition-transform hover:scale-105 duration-300 select-none" style={{ width: '86.5px', height: '75px' }}>
-              <Image src="/images/illustrations/link-icon.png" alt="Link Icon" fill className="object-contain" />
+              <Image src="/images/illustrations/link-icon.webp" alt="Link Icon" fill className="object-contain" />
             </div>
 
             <h2
@@ -232,7 +232,7 @@ const InviteDrawerActive = ({ isOpen, onClose, inviteLink }: InviteDrawerProps) 
             </h2>
 
             <div className="relative overflow-hidden w-[30px] h-[30px] rounded-full opacity-100 mb-6 transition-transform hover:scale-105 duration-300 select-none">
-              <Image src="/images/icons/farcaster.png" alt="Farcaster Icon" fill className="object-contain" />
+              <Image src="/images/icons/farcaster.webp" alt="Farcaster Icon" fill className="object-contain" />
             </div>
 
             <p className="font-display font-medium text-[18px] leading-[1.12] tracking-[-0.03em] text-center text-[#110047] mb-6">

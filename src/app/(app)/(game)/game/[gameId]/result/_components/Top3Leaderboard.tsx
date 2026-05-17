@@ -148,7 +148,7 @@ export default function Top3Leaderboard({ entries, className, gameId }: Props) {
                   transition={{ duration: 0.2 }}
                 >
                   <Image
-                    src={e.pfpUrl ?? "/images/avatar-default.png"}
+                    src={e.pfpUrl ?? "/images/avatar-default.webp"}
                     width={20}
                     height={20}
                     alt=""

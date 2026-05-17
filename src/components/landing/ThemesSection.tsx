@@ -131,7 +131,7 @@ function ThemeCard({
 }
 
 const themes = [
-    { image: "/images/themes/movie-scenes.png", label: "MOVIE SCENES", color: "purple" as const },
+    { image: "/images/themes/movie-scenes.webp", label: "MOVIE SCENES", color: "purple" as const },
 ];
 
 export function ThemesSection() {
@@ -169,7 +169,7 @@ export function ThemesSection() {
                     {/* Logo - Frame 1618869185 */}
                     <div className="relative w-[108px] h-[84px]">
                         <Image
-                            src="/logo.png"
+                            src="/logo.webp"
                             alt="Waffles Logo"
                             fill
                             className="object-contain"

@@ -216,7 +216,7 @@ export default function InvitePageClient() {
               whileTap={{ scale: 0.95 }}
             >
               <Image
-                src="/images/illustrations/invite-key.png"
+                src="/images/illustrations/invite-key.webp"
                 alt="Invite Key"
                 width={95}
                 height={113}

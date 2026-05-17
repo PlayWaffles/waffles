@@ -4,8 +4,8 @@ import { env } from "@/lib/env";
 import { getMiniAppHomeUrl } from "@/lib/farcaster";
 
 export function GET() {
-  const iconUrl = `${env.rootUrl}/icon.png`;
-  const imageUrl = `${env.rootUrl}/images/hero-image.png`;
+  const iconUrl = `${env.rootUrl}/icon.webp`;
+  const imageUrl = `${env.rootUrl}/images/hero-image.webp`;
 
   return NextResponse.json({
     accountAssociation: {

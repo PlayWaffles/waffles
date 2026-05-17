@@ -218,7 +218,7 @@ export function QuestForm({ quest }: QuestFormProps) {
                         type="url"
                         value={formData.iconUrl}
                         onChange={(e) => setFormData({ ...formData, iconUrl: e.target.value })}
-                        placeholder="/images/icons/quest.png"
+                        placeholder="/images/icons/quest.webp"
                         className="w-full px-3 py-2 bg-[#0D0F11] border border-white/10 rounded-lg text-white focus:border-[#14B985] focus:outline-none"
                     />
                 </div>

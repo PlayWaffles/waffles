@@ -180,7 +180,7 @@ export function HeroSection() {
                     animate="animate"
                 >
                     <Image
-                        src="/images/hero-character.png"
+                        src="/images/hero-character.webp"
                         alt="Waffles Character"
                         width={413}
                         height={515}

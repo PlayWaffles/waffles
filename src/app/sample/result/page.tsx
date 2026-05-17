@@ -481,7 +481,7 @@ export default function ResultSamplePage() {
           <header className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src="/logo.png" alt="Waffles" className="w-[30px] h-[24px] object-contain" />
+              <img src="/logo.webp" alt="Waffles" className="w-[30px] h-[24px] object-contain" />
               <span className="font-body text-[22px] leading-[92%] tracking-[-0.03em] text-white">WAFFLES</span>
               <span className="font-body text-[18px] leading-[92%] tracking-[-0.03em] text-white/50">
                 #{String(result.gameNumber).padStart(3, "0")}

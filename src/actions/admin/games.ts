@@ -47,7 +47,7 @@ export type GameActionResult =
   | { success: false; error: string };
 
 const DEFAULT_GAME_THEME = GameTheme.MOVIES;
-const DEFAULT_GAME_COVER_URL = "/images/movies-cover.png";
+const DEFAULT_GAME_COVER_URL = "/images/movies-cover.webp";
 const AUTO_QUESTION_COUNT = 9;
 const GAME_NUMBER_RETRY_LIMIT = 3;
 

@@ -40,7 +40,7 @@ export function Footer() {
                             transition={springPresets.snappy}
                         >
                             <Image
-                                src="/logo.png"
+                                src="/logo.webp"
                                 alt="Waffles Logo"
                                 fill
                                 className="object-contain"

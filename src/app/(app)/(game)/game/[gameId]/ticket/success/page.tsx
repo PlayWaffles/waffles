@@ -55,7 +55,7 @@ export async function generateMetadata({
     // themeImageUrl must be absolute URL for OG image generator to fetch
     const themeImageUrl = game.coverUrl
         ? (game.coverUrl.startsWith("http") ? game.coverUrl : `${env.rootUrl}${game.coverUrl}`)
-        : `${env.rootUrl}/logo.png`;
+        : `${env.rootUrl}/logo.webp`;
 
     // Build OG image URL using the /api/og/joined route
     const imageUrl = buildJoinedOGUrl({

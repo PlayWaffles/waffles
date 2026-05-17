@@ -14,7 +14,7 @@ export default function Logo({
   return (
     <div className={cn("relative w-[40px] h-[40px]", className)} {...props}>
       <Image
-        src="/logo.png"
+        src="/logo.webp"
         alt="Waffles Logo"
         fill
         sizes="40px"

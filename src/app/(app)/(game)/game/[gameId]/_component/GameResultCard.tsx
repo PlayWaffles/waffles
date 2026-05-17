@@ -71,7 +71,7 @@ export default function GameResultCard({
                                     width={18}
                                     height={18}
                                     unoptimized={true}
-                                    src={pfpUrl || "/images/avatars/a.png"}
+                                    src={pfpUrl || "/images/avatars/a.webp"}
                                     alt={username}
                                     className="object-cover w-full h-full"
                                 />

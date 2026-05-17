@@ -143,7 +143,7 @@ export function GameCountdownScreen({
           <div className="flex flex-row items-center justify-center gap-1.5">
             <div className="relative w-8 h-8 shrink-0">
               <Image
-                src="/logo.png"
+                src="/logo.webp"
                 alt="Waffles"
                 fill
                 sizes="48px"
