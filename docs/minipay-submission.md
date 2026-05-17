@@ -31,8 +31,10 @@ environment config and app integrations before each MiniPay submission.
 Run PageSpeed Insights against the production URL after deployment and paste the
 mobile result here.
 
-- PageSpeed mobile score: `54`
-- PageSpeed report URL: `https://pagespeed.web.dev/analysis/https-miniapp-playwaffles-fun/iwn4l71ptr?form_factor=mobile`
+- Latest PageSpeed mobile score: `71`
+- Latest PageSpeed report URL: `https://pagespeed.web.dev/analysis/https-miniapp-playwaffles-fun/5idv6gr0l5?form_factor=mobile`
+- Previous PageSpeed mobile score: `54`
+- Previous PageSpeed report URL: `https://pagespeed.web.dev/analysis/https-miniapp-playwaffles-fun/iwn4l71ptr?form_factor=mobile`
 - Tested URL: `https://playwaffles.fun/game`
 - Tested viewport requirement: `360w x 640h`
 - Captured at: `May 7, 2026, 2:55 PM GMT+1`
