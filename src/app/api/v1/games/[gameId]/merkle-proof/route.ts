@@ -72,6 +72,7 @@ export async function GET(
         id: true,
         platform: true,
         isTestnet: true,
+        network: true,
         merkleRoot: true,
         onChainAt: true,
         endsAt: true,

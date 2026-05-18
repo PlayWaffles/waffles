@@ -17,6 +17,10 @@ export function defaultNetworkForPlatform(platform: ChainPlatform): GameNetwork 
   return platform === "MINIPAY" ? "CELO_MAINNET" : "BASE_MAINNET";
 }
 
+export function isTestnetNetwork(network: GameNetwork): boolean {
+  return network === "BASE_SEPOLIA" || network === "CELO_SEPOLIA";
+}
+
 export function resolveChainTarget(target: ChainTarget): {
   platform: ChainPlatform;
   network: GameNetwork;

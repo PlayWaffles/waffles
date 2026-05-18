@@ -5,6 +5,7 @@ import { defaultNetworkForPlatform } from "@/lib/chain";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
+import { isTestnetNetwork } from "@/lib/chain/network";
 import { initGameRoom } from "@/lib/partykit";
 import { sendBatch } from "@/lib/notifications";
 import { preGame, buildPayload } from "@/lib/notifications/templates";
@@ -119,7 +120,7 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
             gameNumber,
             platform: input.platform,
             network,
-            isTestnet: network !== "BASE_MAINNET",
+            isTestnet: isTestnetNetwork(network),
             description: null,
             theme: DEFAULT_GAME_THEME,
             coverUrl: DEFAULT_GAME_COVER_URL,

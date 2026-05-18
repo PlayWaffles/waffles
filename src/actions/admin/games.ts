@@ -11,6 +11,7 @@ import { GameTheme, Prisma, UserPlatform } from "@prisma";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
+import { isTestnetNetwork } from "@/lib/chain/network";
 import { rankGame, publishResults } from "@/lib/game/lifecycle";
 import { defaultNetworkForPlatform } from "@/lib/chain";
 
@@ -206,7 +207,7 @@ export async function createGameAction(
               gameNumber,
               platform,
               network,
-              isTestnet: network !== "BASE_MAINNET",
+              isTestnet: isTestnetNetwork(network),
               description: null,
               theme: DEFAULT_GAME_THEME,
               coverUrl: DEFAULT_GAME_COVER_URL,

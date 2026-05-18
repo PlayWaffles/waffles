@@ -82,6 +82,7 @@ export async function leaveGame(
         game: {
           select: {
             isTestnet: true,
+            network: true,
             startsAt: true,
             endsAt: true,
           },
@@ -197,6 +198,7 @@ async function submitAnswerForUser(
           endsAt: true,
           gameNumber: true,
           isTestnet: true,
+          network: true,
         },
       }),
       prisma.gameEntry.findUnique({

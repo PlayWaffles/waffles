@@ -36,6 +36,7 @@ export async function GET(
         id: true,
         platform: true,
         isTestnet: true,
+        network: true,
         title: true,
         description: true,
         theme: true,
