@@ -38,6 +38,7 @@ export const POST = withAuth<Params>(
           select: {
             platform: true,
             isTestnet: true,
+            network: true,
             startsAt: true,
             endsAt: true,
           },

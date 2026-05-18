@@ -50,7 +50,7 @@ export async function GET(
 
     const game = await prisma.game.findUnique({
       where: { id: gameId },
-      select: { id: true, platform: true, isTestnet: true },
+      select: { id: true, platform: true, isTestnet: true, network: true },
     });
 
     if (!game || !isGameVisibleToPlatform(game, platform, visibility)) {

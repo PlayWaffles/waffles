@@ -34,6 +34,7 @@ export const POST = withAuth<Params>(
           id: true,
           platform: true,
           isTestnet: true,
+          network: true,
           startsAt: true,
           endsAt: true,
         },
