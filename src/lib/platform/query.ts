@@ -1,5 +1,6 @@
 import type { UserPlatform } from "@prisma";
 import type { Prisma } from "@prisma";
+import type { GameNetwork } from "@/lib/chain/network";
 import { isLocalDevelopmentDeployment } from "@/lib/deployment";
 
 export interface GameVisibilityOptions {
@@ -28,13 +29,25 @@ function hidesMiniPayTestnet(options?: GameVisibilityOptions) {
   return options?.includeTestnet !== true;
 }
 
+function miniPayNetworks(options?: GameVisibilityOptions): GameNetwork | { in: GameNetwork[] } {
+  return hidesMiniPayTestnet(options)
+    ? "CELO_MAINNET"
+    : { in: ["CELO_MAINNET", "CELO_SEPOLIA"] };
+}
+
 export function isGameVisibleToPlatform(
-  game: { platform: UserPlatform; isTestnet: boolean },
+  game: { platform: UserPlatform; isTestnet: boolean; network?: GameNetwork | null },
   platform: UserPlatform,
   options?: GameVisibilityOptions,
 ): boolean {
   if (platform === "MINIPAY") {
-    return game.platform === platform && (!game.isTestnet || !hidesMiniPayTestnet(options));
+    const allowedNetworks = miniPayNetworks(options);
+    const networkMatches =
+      typeof allowedNetworks === "string"
+        ? game.network === allowedNetworks
+        : !!game.network && allowedNetworks.in.includes(game.network);
+
+    return game.platform === platform && networkMatches;
   }
 
   return (
@@ -56,9 +69,7 @@ export function gameWhere(
   }
 
   if (platform === "MINIPAY") {
-    return hidesMiniPayTestnet(options)
-      ? { ...platformWhere, isTestnet: false }
-      : platformWhere;
+    return { ...platformWhere, network: miniPayNetworks(options) };
   }
 
   return excludesTestnet(platform) ? { ...platformWhere, isTestnet: false } : platformWhere;
