@@ -1,6 +1,7 @@
-import { UserPlatform } from "@prisma";
+import { Prisma, UserPlatform } from "@prisma";
 import { excludesTestnet, gamePlatformsForPlatform } from "@/lib/platform/query";
 import { isLocalDevelopmentDeployment } from "@/lib/deployment";
+import type { GameNetwork } from "@/lib/chain/network";
 
 export type PlatformWhere = { platform: UserPlatform } | Record<string, never>;
 export const PLATFORM_FEE_RATE = 0.2;
@@ -17,10 +18,23 @@ export function buildGamePlatformWhere(platform?: string) {
     return pf.platform ? { game: pf } : {};
 }
 
-export function buildAdminGameWhere(platform?: string) {
+function buildMiniPayNetworkWhere(prefersTestnetGames: boolean): Prisma.GameWhereInput {
+    const network: GameNetwork = prefersTestnetGames ? "CELO_SEPOLIA" : "CELO_MAINNET";
+
+    return {
+        platform: UserPlatform.MINIPAY,
+        network,
+    };
+}
+
+export function buildAdminGameWhere(platform?: string): Prisma.GameWhereInput {
     const prefersTestnetGames = isLocalDevelopmentDeployment();
     const pf = buildPlatformWhere(platform);
     if (pf.platform) {
+        if (pf.platform === UserPlatform.MINIPAY) {
+            return buildMiniPayNetworkWhere(prefersTestnetGames);
+        }
+
         const platforms = gamePlatformsForPlatform(pf.platform);
         const platformWhere =
             platforms.length === 1 ? { platform: pf.platform } : { platform: { in: platforms } };
@@ -35,7 +49,7 @@ export function buildAdminGameWhere(platform?: string) {
     if (prefersTestnetGames) {
         return {
             OR: [
-                { platform: UserPlatform.MINIPAY },
+                buildMiniPayNetworkWhere(prefersTestnetGames),
                 { platform: UserPlatform.FARCASTER, isTestnet: true },
                 { platform: UserPlatform.BASE_APP, isTestnet: true },
             ],
@@ -44,7 +58,7 @@ export function buildAdminGameWhere(platform?: string) {
 
     return {
         OR: [
-            { platform: UserPlatform.MINIPAY },
+            buildMiniPayNetworkWhere(prefersTestnetGames),
             { platform: UserPlatform.FARCASTER, isTestnet: false },
             { platform: UserPlatform.BASE_APP, isTestnet: false },
         ],
@@ -56,9 +70,13 @@ export function buildAdminEntryWhere(platform?: string) {
     return { game: gameWhere };
 }
 
-export function buildProductionGameWhere(platform?: string) {
+export function buildProductionGameWhere(platform?: string): Prisma.GameWhereInput {
     const pf = buildPlatformWhere(platform);
     if (pf.platform) {
+        if (pf.platform === UserPlatform.MINIPAY) {
+            return buildMiniPayNetworkWhere(false);
+        }
+
         const platforms = gamePlatformsForPlatform(pf.platform);
         const platformWhere =
             platforms.length === 1 ? { platform: pf.platform } : { platform: { in: platforms } };
@@ -69,7 +87,7 @@ export function buildProductionGameWhere(platform?: string) {
 
     return {
         OR: [
-            { platform: UserPlatform.MINIPAY },
+            buildMiniPayNetworkWhere(false),
             { platform: UserPlatform.FARCASTER, isTestnet: false },
             { platform: UserPlatform.BASE_APP, isTestnet: false },
         ],
