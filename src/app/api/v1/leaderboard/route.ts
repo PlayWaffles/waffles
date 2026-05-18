@@ -103,7 +103,9 @@ async function handleAllTime(
   const allTimeWhere = sharesBaseMainnetGames(platform)
     ? Prisma.sql`g.platform IN ('FARCASTER'::"UserPlatform", 'BASE_APP'::"UserPlatform") AND g."isTestnet" = false`
     : platform === "MINIPAY" && !includeTestnet
-      ? Prisma.sql`g.platform = ${platform}::"UserPlatform" AND g."isTestnet" = false`
+      ? Prisma.sql`g.platform = ${platform}::"UserPlatform" AND g.network = 'CELO_MAINNET'::"GameNetwork"`
+    : platform === "MINIPAY"
+      ? Prisma.sql`g.platform = ${platform}::"UserPlatform" AND g.network IN ('CELO_MAINNET'::"GameNetwork", 'CELO_SEPOLIA'::"GameNetwork")`
     : Prisma.sql`g.platform = ${platform}::"UserPlatform"`;
   const [rankedRows, countResult] = await Promise.all([
     prisma.$queryRaw<Array<{
@@ -210,7 +212,14 @@ async function handleGame(
 
   const game = await prisma.game.findUnique({
     where: { id: targetGameId },
-    select: { title: true, gameNumber: true, platform: true, isTestnet: true, endsAt: true },
+    select: {
+      title: true,
+      gameNumber: true,
+      platform: true,
+      network: true,
+      isTestnet: true,
+      endsAt: true,
+    },
   });
 
   if (!game || !isGameVisibleToPlatform(game, platform, visibility)) {
