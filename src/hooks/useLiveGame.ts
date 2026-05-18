@@ -30,6 +30,8 @@ import type {
   LiveGameQuestion,
 } from "@/app/(app)/(game)/game/[gameId]/live/page";
 
+const ANSWER_AUTO_ADVANCE_MS = 3000;
+
 // ==========================================
 // TYPES
 // ==========================================
@@ -154,6 +156,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
   const [lockedSeconds, setLockedSeconds] = useState<number | null>(null);
   const [showAdvancePrompt, setShowAdvancePrompt] = useState(false);
   const feedbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const autoAdvanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Refs
   const questionStartRef = useRef(Date.now());
@@ -283,6 +286,20 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     setPhase("question");
   }, [currentQuestionIndex, game.questions, game.roundBreakSec, isGameEnded]);
 
+  const scheduleAutoAdvance = useCallback(
+    (delayMs = ANSWER_AUTO_ADVANCE_MS) => {
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+      }
+
+      autoAdvanceTimerRef.current = setTimeout(() => {
+        autoAdvanceTimerRef.current = null;
+        advanceToNext();
+      }, delayMs);
+    },
+    [advanceToNext],
+  );
+
   // ==========================================
   // TIMER EXPIRY HANDLER
   // ==========================================
@@ -346,6 +363,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
           feedbackTimerRef.current = null;
           setShowAdvancePrompt(true);
         }, 600);
+        scheduleAutoAdvance();
         return;
       }
     }
@@ -359,6 +377,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
     isSubmitting,
     currentQuestion,
     refetchEntry,
+    scheduleAutoAdvance,
     streak,
   ]);
 
@@ -388,6 +407,10 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       if (feedbackTimerRef.current) {
         clearTimeout(feedbackTimerRef.current);
         feedbackTimerRef.current = null;
+      }
+      if (autoAdvanceTimerRef.current) {
+        clearTimeout(autoAdvanceTimerRef.current);
+        autoAdvanceTimerRef.current = null;
       }
     };
   }, [currentQuestion?.id, phase]);
@@ -548,11 +571,12 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
 
       setIsSubmitting(false);
 
-      // Show the reveal beat, then wait for explicit advance
+      // Show the reveal beat, then move on automatically after the answer lands.
       feedbackTimerRef.current = setTimeout(() => {
         feedbackTimerRef.current = null;
         setShowAdvancePrompt(true);
       }, 600);
+      scheduleAutoAdvance();
     },
     [
       game.id,
@@ -563,6 +587,7 @@ export function useLiveGame(game: LiveGameData): UseLiveGameReturn {
       seconds,
       streak,
       refetchEntry,
+      scheduleAutoAdvance,
       sendAnswer,
     ],
   );
