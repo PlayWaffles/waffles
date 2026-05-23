@@ -27,6 +27,8 @@ import { wagmiConfig } from "@/lib/wagmi/config";
 import { authenticatedFetch } from "@/lib/client/runtime";
 import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
 
+const MAX_TICKET_APPROVAL_AMOUNT = "10";
+
 // ==========================================
 // TYPES
 // ==========================================
@@ -388,7 +390,7 @@ export function useTicketPurchase(
           address: tokenAddress,
           abi: ERC20_ABI,
           functionName: "approve",
-          args: [contractAddress, parseUnits("5000", PAYMENT_TOKEN_DECIMALS)],
+          args: [contractAddress, parseUnits(MAX_TICKET_APPROVAL_AMOUNT, PAYMENT_TOKEN_DECIMALS)],
         });
 
         console.log("[ticket-purchase]", {
