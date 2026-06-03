@@ -169,7 +169,7 @@ async function handleAllTime(
     fid: row.fid,
     wallet: row.wallet,
     rank: Number(row.rank),
-    username: row.username ?? "Unknown",
+    username: row.username,
     prize: row.prize ?? 0,
     pfpUrl: row.pfpUrl,
   }));

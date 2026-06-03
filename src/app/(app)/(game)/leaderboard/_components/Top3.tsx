@@ -5,6 +5,7 @@ import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { LeaderboardEntry } from "@/lib/types";
 import { motion } from "framer-motion";
+import { getDisplayName } from "@/lib/address";
 
 interface Top3Props {
   entries: LeaderboardEntry[];
@@ -53,6 +54,10 @@ export function Top3({ entries, currentUserId, showScore = false }: Top3Props) {
         const isCurrentUser =
           currentUserId != null && entry.userId === currentUserId;
         const styles = cardStyles[i] ?? cardStyles[cardStyles.length - 1];
+        const displayName = getDisplayName({
+          username: entry.username,
+          wallet: entry.wallet,
+        });
 
         const hasScore = showScore && entry.score != null;
         const formattedPrize = entry.prize.toLocaleString(undefined, {
@@ -122,7 +127,7 @@ export function Top3({ entries, currentUserId, showScore = false }: Top3Props) {
                   <Image
                     unoptimized
                     src={entry.pfpUrl}
-                    alt={entry.username || "Unknown User"}
+                    alt={displayName}
                     width={28}
                     height={28}
                     className="rounded-full bg-[#F0F3F4] object-cover"
@@ -130,18 +135,18 @@ export function Top3({ entries, currentUserId, showScore = false }: Top3Props) {
                   />
                 ) : (
                   <span className="absolute inset-0 flex items-center justify-center text-[calc(var(--pad)*0.6)] font-bold text-white/70">
-                    {entry.username?.charAt(0)?.toUpperCase() || "U"}
+                    {displayName.charAt(0).toUpperCase()}
                   </span>
                 )}
               </motion.div>
               <span
-                title={entry.username || "Unknown User"}
+                title={displayName}
                 className="
                   min-w-0 truncate text-white font-body font-normal leading-tight
                 "
                 style={{ fontSize: "clamp(0.7rem, 2.3vw, 0.95rem)" }}
               >
-                {entry.username}
+                {displayName}
               </span>
             </div>
 

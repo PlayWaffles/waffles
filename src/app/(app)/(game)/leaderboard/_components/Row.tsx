@@ -5,6 +5,7 @@ import { UsdcIcon, FlashIcon } from "@/components/icons";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { getDisplayName } from "@/lib/address";
 
 interface RowProps {
   entry: LeaderboardEntry;
@@ -14,6 +15,10 @@ interface RowProps {
 
 export function Row({ entry, isCurrentUser = false, showScore = false }: RowProps) {
   const hasScore = showScore && entry.score != null;
+  const displayName = getDisplayName({
+    username: entry.username,
+    wallet: entry.wallet,
+  });
   const formattedPrize = entry.prize.toLocaleString(undefined, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -48,7 +53,7 @@ export function Row({ entry, isCurrentUser = false, showScore = false }: RowProp
               <Image
                 unoptimized
                 src={entry.pfpUrl}
-                alt={entry.username || "Unknown User"}
+                alt={displayName}
                 width={28}
                 height={28}
                 className="rounded-full bg-[#F0F3F4] object-cover"
@@ -56,11 +61,11 @@ export function Row({ entry, isCurrentUser = false, showScore = false }: RowProp
               />
             ) : (
               <span className="absolute inset-0 flex items-center justify-center text-xs leading-tight">
-                {entry.username?.charAt(0)?.toUpperCase() || "U"}
+                {displayName.charAt(0).toUpperCase()}
               </span>
             )}
           </motion.div>
-          <div className="text-sm leading-tight truncate">{entry.username}</div>
+          <div className="text-sm leading-tight truncate">{displayName}</div>
         </div>
       </div>
       <div className="flex items-center gap-3 shrink-0">
