@@ -22,7 +22,7 @@ describe("auto game scheduling", () => {
     );
   });
 
-  it("uses a fixed 2 hour duration and preserves ticket lead time when still in the future", () => {
+  it("uses a fixed 24 hour duration and preserves ticket lead time when still in the future", () => {
     const schedule = buildNextAutoGameSchedule(
       {
         startsAt: new Date("2026-04-03T14:00:00.000Z"),
@@ -33,7 +33,7 @@ describe("auto game scheduling", () => {
     );
 
     expect(schedule.startsAt).toEqual(new Date("2026-04-06T14:00:00.000Z"));
-    expect(schedule.endsAt).toEqual(new Date("2026-04-06T16:00:00.000Z"));
+    expect(schedule.endsAt).toEqual(new Date("2026-04-07T14:00:00.000Z"));
     expect(schedule.ticketsOpenAt).toEqual(new Date("2026-04-06T12:00:00.000Z"));
   });
 
