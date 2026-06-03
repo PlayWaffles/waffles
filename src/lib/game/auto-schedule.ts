@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
-const TWO_HOURS_MS = 2 * ONE_HOUR_MS;
+const ONE_DAY_MS = 24 * ONE_HOUR_MS;
 const ALLOWED_WEEKDAYS = new Set([1, 3, 5]); // Mon, Wed, Fri in Africa/Lagos
 const AUTO_START_HOUR_UTC = 14;
 
@@ -35,7 +35,7 @@ interface ScheduleSeed {
 
 export function buildNextAutoGameSchedule(seed: ScheduleSeed, now = new Date()) {
   const nextStartsAt = getNextAutoGameStart(seed.endsAt, now);
-  const nextEndsAt = new Date(nextStartsAt.getTime() + TWO_HOURS_MS);
+  const nextEndsAt = new Date(nextStartsAt.getTime() + ONE_DAY_MS);
 
   let nextTicketsOpenAt: Date | null = null;
   if (seed.ticketsOpenAt) {
