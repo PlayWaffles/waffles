@@ -1,8 +1,10 @@
-import type { TicketPurchaseSource } from "@prisma";
+import type { TicketPurchaseSource, UserPlatform } from "@prisma";
 
 export const DEFAULT_TICKET_PRICE = 1;
+export const MINIPAY_MINIMUM_TICKET_PRICE = 0.1;
 
 export interface TicketPricingConfig {
+  platform?: UserPlatform | null;
   tierPrices?: number[] | null;
 }
 
@@ -18,9 +20,24 @@ export interface TicketEntryLike {
 
 export function getBaseTicketPrice(game: TicketPricingConfig): number {
   const firstPrice = game.tierPrices?.[0];
-  return typeof firstPrice === "number" && firstPrice > 0
+  const basePrice = typeof firstPrice === "number" && firstPrice > 0
     ? firstPrice
     : DEFAULT_TICKET_PRICE;
+
+  return game.platform
+    ? enforceMinimumTicketPriceForPlatform(basePrice, game.platform)
+    : basePrice;
+}
+
+export function getMinimumTicketPriceForPlatform(platform: UserPlatform): number {
+  return platform === "MINIPAY" ? MINIPAY_MINIMUM_TICKET_PRICE : 0;
+}
+
+export function enforceMinimumTicketPriceForPlatform(
+  price: number,
+  platform: UserPlatform,
+): number {
+  return Math.max(price, getMinimumTicketPriceForPlatform(platform));
 }
 
 export function getTicketPricingSnapshot(

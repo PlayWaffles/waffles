@@ -9,6 +9,7 @@ import { isTestnetNetwork } from "@/lib/chain/network";
 import { initGameRoom } from "@/lib/partykit";
 import { sendBatch } from "@/lib/notifications";
 import { preGame, buildPayload } from "@/lib/notifications/templates";
+import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
 
 const DEFAULT_GAME_THEME = GameTheme.MOVIES;
 const DEFAULT_GAME_COVER_URL = "/images/movies-cover.webp";
@@ -104,6 +105,10 @@ async function assignAutoQuestionsToGame(
 export async function createAutoScheduledGame(input: AutoCreateGameInput) {
   const templates = await getAutoQuestionTemplates();
   const network = defaultNetworkForPlatform(input.platform);
+  const ticketPrice = enforceMinimumTicketPriceForPlatform(
+    input.ticketPrice,
+    input.platform,
+  );
   const onchainId = generateOnchainGameId();
   let gameNumber: number | null = null;
   let gameId: string | null = null;
@@ -127,7 +132,7 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
             startsAt: input.startsAt,
             endsAt: input.endsAt,
             ticketsOpenAt: input.ticketsOpenAt,
-            tierPrices: [input.ticketPrice],
+            tierPrices: [ticketPrice],
             prizePool: 0,
             playerCount: 0,
             roundBreakSec: input.roundBreakSec,
@@ -154,7 +159,7 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
       input.platform,
       network,
       onchainId,
-      input.ticketPrice,
+      ticketPrice,
     );
 
     const notifTemplate = input.ticketsOpenAt
