@@ -194,9 +194,10 @@ export default function ProfilePage() {
         <motion.nav
           variants={itemVariants}
           aria-label="Legal and support"
-          className="grid grid-cols-3 gap-2 pb-20"
+          className="grid grid-cols-2 gap-2 pb-20"
         >
           {[
+            { href: "https://x.com/playwaffles", label: "Follow X", external: true },
             { href: "/support", label: "Support" },
             { href: "/terms", label: "Terms" },
             { href: "/privacy", label: "Privacy" },
@@ -204,6 +205,7 @@ export default function ProfilePage() {
             <Link
               key={item.href}
               href={item.href}
+              {...(item.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
               className="rounded-xl border border-white/8 bg-white/[0.04] px-3 py-3 text-center font-display text-xs text-white/60"
             >
               {item.label}

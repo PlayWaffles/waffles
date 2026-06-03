@@ -67,7 +67,7 @@ export function Footer() {
                 >
                     {/* X (Twitter) */}
                     <SocialLink
-                        href="https://twitter.com"
+                        href="https://x.com/playwaffles"
                         label="X"
                     />
 
