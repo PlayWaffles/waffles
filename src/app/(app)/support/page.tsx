@@ -30,10 +30,12 @@ export default function SupportPage() {
 
         <div className="grid gap-3">
           <a
-            href="https://t.me/thecyberverse"
+            href="https://t.me/+QTFub8AHqQRmMDlk"
+            target="_blank"
+            rel="noopener noreferrer"
             className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 font-display text-sm text-white"
           >
-            Telegram: @thecyberverse
+            Telegram: Waffles Support Group
           </a>
           <a
             href="mailto:support@playwaffles.fun"
