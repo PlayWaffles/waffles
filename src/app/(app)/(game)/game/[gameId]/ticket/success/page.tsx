@@ -111,6 +111,7 @@ export default async function TicketSuccessPage({
             startsAt={game.startsAt.toISOString()}
             endsAt={game.endsAt.toISOString()}
             ticketCode={ticketCode}
+            hideTicketActions={platform === "MINIPAY"}
         />
     );
 }

@@ -20,8 +20,6 @@ These are the origins the app may use in production.
 - `https://res.cloudinary.com` - hosted media assets.
 - `https://api.cloudinary.com` - admin media uploads.
 - `https://api.neynar.com` - Farcaster profile/notification support for non-MiniPay runtime.
-- `https://calendar.google.com` - optional calendar add link after ticket purchase.
-- `https://outlook.live.com` - optional calendar add link after ticket purchase.
 - `https://t.me` - support contact link.
 - `mailto:support@playwaffles.fun` - support contact link.
 

@@ -16,6 +16,7 @@ import {
 } from "@/lib/calendar";
 import posthog from "posthog-js";
 import { shareTextOrCopy } from "@/lib/share";
+import { getAppRuntime, isMiniPayRuntime } from "@/lib/client/runtime";
 
 import { useUser } from "@/hooks/useUser";
 
@@ -27,6 +28,7 @@ interface TicketSuccessClientProps {
     startsAt: string;
     endsAt: string;
     ticketCode?: string;
+    hideTicketActions: boolean;
 }
 
 export function TicketSuccessClient({
@@ -37,10 +39,31 @@ export function TicketSuccessClient({
     startsAt,
     endsAt,
     ticketCode,
+    hideTicketActions,
 }: TicketSuccessClientProps) {
     const { user } = useUser();
     const [showCalendarOptions, setShowCalendarOptions] = useState(false);
+    const [isMiniPay, setIsMiniPay] = useState(
+        hideTicketActions || isMiniPayRuntime()
+    );
     const hasCelebrated = useRef(false);
+
+    useEffect(() => {
+        let cancelled = false;
+        getAppRuntime()
+            .then((runtime) => {
+                if (!cancelled) setIsMiniPay(hideTicketActions || runtime === "minipay");
+            })
+            .catch(() => {
+                if (!cancelled) setIsMiniPay(hideTicketActions || isMiniPayRuntime());
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [hideTicketActions]);
+
+    const showTicketActions = !isMiniPay;
+
     // Celebration confetti on mount
     useEffect(() => {
         if (hasCelebrated.current) return;
@@ -206,76 +229,83 @@ export function TicketSuccessClient({
                     <GameSummaryCard theme={theme} coverUrl={coverUrl} prizePool={prizePool} />
 
                     {/* Share Button */}
-                    <motion.button
-                        onClick={shareTicket}
-                        className={cn(
-                            "mt-8 w-full rounded-[14px] bg-white px-6 py-4 text-center font-body text-2xl text-[#FB72FF]",
-                            "border-r-[5px] border-b-[5px] border-[#FB72FF]"
-                        )}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.6, duration: 0.4 }}
-                        whileHover={{
-                            scale: 1.02,
-                            boxShadow: "0 10px 30px rgba(251, 114, 255, 0.3)",
-                        }}
-                        whileTap={{ scale: 0.98, x: 2, y: 2 }}
-                    >
-                        SHARE TICKET
-                    </motion.button>
+                    {showTicketActions && (
+                        <motion.button
+                            onClick={shareTicket}
+                            className={cn(
+                                "mt-8 w-full rounded-[14px] bg-white px-6 py-4 text-center font-body text-2xl text-[#FB72FF]",
+                                "border-r-[5px] border-b-[5px] border-[#FB72FF]"
+                            )}
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.6, duration: 0.4 }}
+                            whileHover={{
+                                scale: 1.02,
+                                boxShadow: "0 10px 30px rgba(251, 114, 255, 0.3)",
+                            }}
+                            whileTap={{ scale: 0.98, x: 2, y: 2 }}
+                        >
+                            SHARE TICKET
+                        </motion.button>
+                    )}
 
                     {/* Add to Calendar & Back to Home row */}
                     <motion.div
-                        className="flex flex-row items-start gap-3 w-full mt-4"
+                        className={cn(
+                            "flex w-full items-start gap-3",
+                            showTicketActions ? "mt-4 flex-row" : "mt-8"
+                        )}
                         initial={{ opacity: 0, y: 15 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.4, delay: 0.7 }}
                     >
                         {/* Add to Calendar Button */}
-                        <motion.div
-                            className="relative flex-1"
-                            whileHover={{ scale: 1.03 }}
-                            whileTap={{ scale: 0.97 }}
-                            transition={{ duration: 0.2 }}
-                        >
-                            <button
-                                onClick={() => setShowCalendarOptions(!showCalendarOptions)}
-                                className="flex flex-row justify-center items-center p-3 gap-2 w-full bg-white/9 border-2 border-white/40 rounded-[12px] hover:bg-white/15 hover:border-white/60 transition-colors duration-200"
+                        {showTicketActions && (
+                            <motion.div
+                                className="relative flex-1"
+                                whileHover={{ scale: 1.03 }}
+                                whileTap={{ scale: 0.97 }}
+                                transition={{ duration: 0.2 }}
                             >
-                                <span className="font-body font-normal text-[18px] leading-[115%] tracking-[-0.02em] text-white whitespace-nowrap">
-                                    📅 ADD TO CAL
-                                </span>
-                            </button>
+                                <button
+                                    onClick={() => setShowCalendarOptions(!showCalendarOptions)}
+                                    className="flex flex-row justify-center items-center p-3 gap-2 w-full bg-white/9 border-2 border-white/40 rounded-[12px] hover:bg-white/15 hover:border-white/60 transition-colors duration-200"
+                                >
+                                    <span className="font-body font-normal text-[18px] leading-[115%] tracking-[-0.02em] text-white whitespace-nowrap">
+                                        📅 ADD TO CAL
+                                    </span>
+                                </button>
 
-                            {/* Calendar Options Dropdown */}
-                            <AnimatePresence>
-                                {showCalendarOptions && (
-                                    <motion.div
-                                        initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="absolute top-full left-0 right-0 mt-2 bg-[#2A2A2A] rounded-xl border border-white/20 overflow-hidden z-50"
-                                    >
-                                        <button
-                                            onClick={handleAddToGoogle}
-                                            className="w-full px-4 py-3 text-left font-body text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+                                {/* Calendar Options Dropdown */}
+                                <AnimatePresence>
+                                    {showCalendarOptions && (
+                                        <motion.div
+                                            initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                                            exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                                            transition={{ duration: 0.2 }}
+                                            className="absolute top-full left-0 right-0 mt-2 bg-[#2A2A2A] rounded-xl border border-white/20 overflow-hidden z-50"
                                         >
-                                            <span className="text-xl">📆</span>
-                                            Google Calendar
-                                        </button>
-                                        <div className="h-px bg-white/10" />
-                                        <button
-                                            onClick={handleAddToApple}
-                                            className="w-full px-4 py-3 text-left font-body text-white hover:bg-white/10 transition-colors flex items-center gap-3"
-                                        >
-                                            <span className="text-xl">🍎</span>
-                                            Apple / Outlook
-                                        </button>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-                        </motion.div>
+                                            <button
+                                                onClick={handleAddToGoogle}
+                                                className="w-full px-4 py-3 text-left font-body text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+                                            >
+                                                <span className="text-xl">📆</span>
+                                                Google Calendar
+                                            </button>
+                                            <div className="h-px bg-white/10" />
+                                            <button
+                                                onClick={handleAddToApple}
+                                                className="w-full px-4 py-3 text-left font-body text-white hover:bg-white/10 transition-colors flex items-center gap-3"
+                                            >
+                                                <span className="text-xl">🍎</span>
+                                                Apple / Outlook
+                                            </button>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </motion.div>
+                        )}
 
                         {/* Back to Home Button */}
                         <motion.div
