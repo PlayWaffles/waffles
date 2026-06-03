@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { withAuth, type ApiError } from "@/lib/auth";
+import { getDisplayName } from "@/lib/address";
 
 /**
  * GET /api/v1/games/:gameId/answerers?questionId=xxx
@@ -35,6 +36,7 @@ export const GET = withAuth(async (request: NextRequest, auth, params) => {
       user: {
         select: {
           username: true,
+          wallet: true,
           pfpUrl: true,
         },
       },
@@ -49,7 +51,10 @@ export const GET = withAuth(async (request: NextRequest, auth, params) => {
       const answer = answers?.[questionId];
 
       return {
-        username: e.user.username ?? "anon",
+        username: getDisplayName({
+          username: e.user.username,
+          wallet: e.user.wallet,
+        }),
         pfpUrl: e.user.pfpUrl,
         correct: typeof answer?.correct === "boolean" ? answer.correct : null,
       };
