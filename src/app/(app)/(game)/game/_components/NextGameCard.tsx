@@ -28,6 +28,7 @@ import {
   MINIPAY_LOW_BALANCE_MESSAGE,
   MINIPAY_USDT_ONLY_MESSAGE,
 } from "@/lib/minipay/compliance";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -327,17 +328,13 @@ export function NextGameCard({ game }: NextGameCardProps) {
                     zIndex: 4 - index,
                   }}
                 >
-                  {player.pfpUrl ? (
-                    <Image
-                      src={player.pfpUrl}
-                      alt=""
-                      width={26}
-                      height={26}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
-                  )}
+                  <Image
+                    src={getPlayerAvatarUrl(player)}
+                    alt=""
+                    width={26}
+                    height={26}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ))}
             </div>

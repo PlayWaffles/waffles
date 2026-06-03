@@ -18,6 +18,7 @@ import type { LiveGameQuestion } from "../page";
 import type { AnswerResult } from "@/lib/game/tension";
 import type { QuestionAnswerer } from "@shared/protocol";
 import { LucideClover } from "lucide-react";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 // ==========================================
 // ANIMATION VARIANTS
@@ -189,18 +190,14 @@ function AnswererAvatars() {
               />
 
               <div className="w-full h-full rounded-[6px] overflow-hidden bg-gradient-to-br from-waffle-gold-warm to-[#FF6B35]">
-                {player.pfpUrl ? (
-                  <Image
-                    src={player.pfpUrl}
-                    alt={player.username}
-                    width={50}
-                    height={50}
-                    className="w-full h-full object-cover"
-                    sizes="50px"
-                  />
-                ) : (
-                  <div className="w-full h-full" />
-                )}
+                <Image
+                  src={getPlayerAvatarUrl(player)}
+                  alt={player.username}
+                  width={50}
+                  height={50}
+                  className="w-full h-full object-cover"
+                  sizes="50px"
+                />
               </div>
               {player.correct !== null ? (
                 <motion.div

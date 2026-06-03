@@ -3,6 +3,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 const MAX_VISIBLE = 6;
 
@@ -57,17 +58,13 @@ export function PlayerAvatarStack({
 
               {/* PFP */}
               <div className="w-full h-full rounded-full overflow-hidden bg-gradient-to-br from-waffle-gold-warm to-[#FF6B35]">
-                {player.pfpUrl ? (
-                  <Image
-                    src={player.pfpUrl}
-                    alt=""
-                    fill
-                    className="object-cover"
-                    sizes="50px"
-                  />
-                ) : (
-                  <div className="w-full h-full" />
-                )}
+                <Image
+                  src={getPlayerAvatarUrl(player)}
+                  alt=""
+                  fill
+                  className="object-cover"
+                  sizes="50px"
+                />
               </div>
             </motion.div>
           ))}
