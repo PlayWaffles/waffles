@@ -20,6 +20,7 @@ import {
   useTransition,
 } from "react";
 import { ConfirmationModal } from "@/components/admin/ConfirmationModal";
+import { MINIPAY_MINIMUM_TICKET_PRICE } from "@/lib/tickets";
 
 interface GameFormProps {
   action: (
@@ -118,6 +119,9 @@ export function GameForm({
     const remainingMins = mins % 60;
     return remainingMins > 0 ? `${hours}h ${remainingMins}m` : `${hours}h`;
   }, [durationMinutes]);
+
+  const includesMiniPay = platform === "MINIPAY" || createOnMultiplePlatforms;
+  const minimumTicketPrice = includesMiniPay ? MINIPAY_MINIMUM_TICKET_PRICE : 0;
 
   /**
    * Converts a datetime-local string to ISO 8601 format with timezone info.
@@ -618,11 +622,16 @@ export function GameForm({
                   required
                   value={ticketPrice}
                   onChange={(e) => setTicketPrice(e.target.value)}
-                  min={0}
+                  min={minimumTicketPrice}
                   step="0.01"
                   className="w-full pl-7 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
                 />
               </div>
+              {includesMiniPay && (
+                <p className="mt-2 text-xs text-white/45">
+                  MiniPay minimum is $0.10.
+                </p>
+              )}
             </div>
             {/* Prize Pool Info (v5 - Dynamic) */}
             <div className="col-span-1 md:col-span-3">

@@ -14,6 +14,7 @@ import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
 import { isTestnetNetwork } from "@/lib/chain/network";
 import { rankGame, publishResults } from "@/lib/game/lifecycle";
 import { defaultNetworkForPlatform } from "@/lib/chain";
+import { getMinimumTicketPriceForPlatform } from "@/lib/tickets";
 
 // ==========================================
 // SCHEMA
@@ -182,6 +183,17 @@ export async function createGameAction(
   const platforms = data.createOnMultiplePlatforms
     ? [UserPlatform.FARCASTER, UserPlatform.MINIPAY]
     : [data.platform];
+
+  const minimumTicketPrice = Math.max(
+    ...platforms.map((platform) => getMinimumTicketPriceForPlatform(platform)),
+  );
+  if (data.ticketPrice < minimumTicketPrice) {
+    return {
+      success: false,
+      error: `MiniPay ticket price must be at least $${minimumTicketPrice.toFixed(2)}`,
+    };
+  }
+
   const launchGroupId = crypto.randomUUID();
   const selectedTemplates = data.skipQuestions
     ? null
@@ -397,6 +409,14 @@ export async function updateGameAction(
     return {
       success: false,
       error: "Base App shares Farcaster games. Edit the Farcaster game instead.",
+    };
+  }
+
+  const minimumTicketPrice = getMinimumTicketPriceForPlatform(data.platform);
+  if (data.ticketPrice < minimumTicketPrice) {
+    return {
+      success: false,
+      error: `MiniPay ticket price must be at least $${minimumTicketPrice.toFixed(2)}`,
     };
   }
 

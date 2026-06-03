@@ -16,6 +16,7 @@ import {
   touchFarcasterWalletUsage,
 } from "@/lib/user-wallets";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
+import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
 import { captureServerEvent } from "@/lib/posthog-server";
 import { unlockReferralRewards } from "./shared";
 import { areTicketsClosedForGame } from "./ticket-window";
@@ -177,9 +178,9 @@ export async function finalizeTicketPurchase(
       maxPlayers: game.maxPlayers,
     });
 
-    const pricingCandidates = (game.tierPrices ?? []).filter(
-      (price): price is number => typeof price === "number" && price > 0,
-    );
+    const pricingCandidates = (game.tierPrices ?? [])
+      .filter((price): price is number => typeof price === "number" && price > 0)
+      .map((price) => enforceMinimumTicketPriceForPlatform(price, game.platform));
 
     if (!pricingCandidates.some((price) => isSamePrice(price, paidAmount))) {
       return {
