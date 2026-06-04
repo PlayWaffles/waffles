@@ -30,7 +30,7 @@ const HOW_TO_PLAY_STEPS = [
     number: "03",
     title: "Race the leaderboard",
     description:
-      "Speed plus accuracy earns points. When the 60-minute arena closes, the Top 10 split the prize pool.",
+      "Speed plus accuracy earns points. When the 24-hour arena closes, the Top 10 split the prize pool.",
     icon: <FlagIcon className="w-5 h-5" />,
   },
 ];
@@ -120,7 +120,7 @@ export function HowToPlayModal({
             <span className="text-waffle-gold">MOVIE SCENE</span>
           </h3>
           <p className="font-display text-[14px] leading-[1.5] text-white/45 max-w-[320px]">
-            Compete in a live 60-minute arena where every second counts. Speed,
+            Compete in a live 24-hour arena where every second counts. Speed,
             accuracy, and nerves of steel win the pot.
           </p>
         </motion.div>
