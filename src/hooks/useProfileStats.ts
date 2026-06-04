@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR from "swr";
+import { useQuery } from "@tanstack/react-query";
 import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
@@ -41,24 +41,22 @@ async function fetchStats(url: string): Promise<ProfileStats | null> {
 // ==========================================
 
 /**
- * Fetch profile stats with SWR caching.
+ * Fetch profile stats with TanStack Query caching.
  * Uses public /api/v1/users/[fid]/stats endpoint.
  */
 export function useProfileStats() {
-  const { data, error, isLoading, mutate } = useSWR<ProfileStats | null>(
-    "/api/v1/users/me/stats",
-    fetchStats,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 10000,
-    }
-  );
+  const { data, error, isLoading, refetch } = useQuery<ProfileStats | null>({
+    queryKey: ["profile", "me", "stats"],
+    queryFn: () => fetchStats("/api/v1/users/me/stats"),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: 10000,
+  });
 
   return {
     stats: data ?? null,
     isLoading,
     error: error ? "Failed to load stats" : null,
-    refetch: mutate,
+    refetch,
   };
 }
