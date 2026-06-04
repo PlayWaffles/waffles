@@ -91,6 +91,7 @@ const envSchema = z.object({
       .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Treasury Wallet address")
       .optional(),
   ),
+  NEXT_PUBLIC_TREASURY_WALLET_MINIPAY: addressSchema,
   NEXT_PUBLIC_HOME_URL_PATH: z
     .string()
     .min(1, "NEXT_PUBLIC_HOME_URL_PATH is required"),
@@ -157,6 +158,8 @@ const getEnv = () => {
     NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE:
       process.env.NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE,
     NEXT_PUBLIC_TREASURY_WALLET: process.env.NEXT_PUBLIC_TREASURY_WALLET,
+    NEXT_PUBLIC_TREASURY_WALLET_MINIPAY:
+      process.env.NEXT_PUBLIC_TREASURY_WALLET_MINIPAY,
     NEXT_PUBLIC_HOME_URL_PATH: process.env.NEXT_PUBLIC_HOME_URL_PATH,
     NEXT_PUBLIC_ACCOUNT_ASSOCIATION_HEADER:
       process.env.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_HEADER,
@@ -230,6 +233,8 @@ const getEnv = () => {
         nextPublicLeaderboardPageSize: 25,
         homeUrlPath: "",
         nextPublicTreasuryWallet:
+          "0x0000000000000000000000000000000000000000" as `0x${string}`,
+        nextPublicTreasuryWalletMiniPay:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
         accountAssociation: {
           header: undefined,
@@ -321,6 +326,8 @@ const getEnv = () => {
     homeUrlPath: data.NEXT_PUBLIC_HOME_URL_PATH,
     nextPublicTreasuryWallet: (data.NEXT_PUBLIC_TREASURY_WALLET ||
       "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicTreasuryWalletMiniPay: (data.NEXT_PUBLIC_TREASURY_WALLET_MINIPAY ||
+      "0x0000000000000000000000000000000000000000") as `0x${string}`,
     accountAssociation: {
       header: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_HEADER,
       payload: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_PAYLOAD,
@@ -330,3 +337,11 @@ const getEnv = () => {
 };
 
 export const env = getEnv();
+
+export function getTreasuryWalletForPlatform(platform: string): `0x${string}` {
+  if (platform === "MINIPAY") {
+    return env.nextPublicTreasuryWalletMiniPay;
+  }
+
+  return env.nextPublicTreasuryWallet;
+}

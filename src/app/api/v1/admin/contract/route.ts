@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { formatUnits } from "viem";
 import { waffleGameAbi } from "@/lib/chain/abi";
-import { env } from "@/lib/env";
+import { env, getTreasuryWalletForPlatform } from "@/lib/env";
 import {
   PAYMENT_TOKEN_DECIMALS,
   getPlatformChain,
@@ -126,7 +126,7 @@ export async function GET(request: NextRequest) {
       isPaused,
       settlementWalletConfigured: isConfigured,
       adminWalletConfigured: isAdminWalletConfigured,
-      treasuryWallet: env.nextPublicTreasuryWallet,
+      treasuryWallet: getTreasuryWalletForPlatform(platform),
     };
 
     return NextResponse.json(state);

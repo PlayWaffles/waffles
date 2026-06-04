@@ -14,7 +14,7 @@ import {
   getWaffleContractAddress,
 } from "@/lib/chain/config";
 import { assertChainPlatform } from "@/lib/chain/platform";
-import { env } from "@/lib/env";
+import { getTreasuryWalletForPlatform } from "@/lib/env";
 
 const withdrawProtocolFeesSchema = z.object({
   platform: z.string().optional(),
@@ -52,7 +52,7 @@ export async function withdrawProtocolFeesAction(
 
   const platform = assertChainPlatform(validation.data.platform ?? "FARCASTER");
   const contractAddress = getWaffleContractAddress(platform);
-  const treasuryWallet = env.nextPublicTreasuryWallet;
+  const treasuryWallet = getTreasuryWalletForPlatform(platform);
 
   if (
     !treasuryWallet ||
@@ -60,7 +60,10 @@ export async function withdrawProtocolFeesAction(
   ) {
     return {
       success: false,
-      error: "NEXT_PUBLIC_TREASURY_WALLET is not configured",
+      error:
+        platform === "MINIPAY"
+          ? "NEXT_PUBLIC_TREASURY_WALLET_MINIPAY is not configured"
+          : "NEXT_PUBLIC_TREASURY_WALLET is not configured",
     };
   }
 
