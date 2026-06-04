@@ -109,7 +109,6 @@ export interface LastGameWinner {
   score: number;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma entry type coercion
 type PrismaWinnerEntry = { rank: number | null; score: number; prize: number | null; user: { username: string | null; pfpUrl: string | null } };
 
 export interface LastGameResult {

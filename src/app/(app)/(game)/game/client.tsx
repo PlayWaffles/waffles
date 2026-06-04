@@ -39,6 +39,13 @@ const HowToPlayModal = dynamic(
   () => import("./_components/HowToPlayModal").then((mod) => mod.HowToPlayModal),
   { ssr: false },
 );
+const WinnerAnnouncementModal = dynamic(
+  () =>
+    import("./_components/WinnerAnnouncementModal").then(
+      (mod) => mod.WinnerAnnouncementModal,
+    ),
+  { ssr: false },
+);
 
 
 // ==========================================
@@ -46,6 +53,7 @@ const HowToPlayModal = dynamic(
 // ==========================================
 
 const MODAL_HOW_TO_PLAY = "how-to-play";
+const WINNER_ANNOUNCEMENT_STORAGE_PREFIX = "waffles:winner-announcement";
 const HOW_TO_PLAY_PREVIEW_STEPS = [
   { number: "01", title: "Secure your spot" },
   { number: "02", title: "Identify the remix" },
@@ -70,6 +78,8 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   const [runtime, setRuntime] = useState<AppRuntime>(
     isMiniPayRuntime() ? "minipay" : "browser",
   );
+  const [isWinnerAnnouncementOpen, setIsWinnerAnnouncementOpen] =
+    useState(false);
 
   // User context for recovery
   const { address } = useAccount();
@@ -78,6 +88,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   const isMiniPay = runtime === "minipay";
 
   const isHowToPlayOpen = searchParams.get("modal") === MODAL_HOW_TO_PLAY;
+  const hasWinners = Boolean(lastGameResult?.winners.length);
 
   // Shared URL param helpers (computed once, used by both branches)
   const howToPlayHref = (() => {
@@ -108,6 +119,16 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!lastGameResult || !hasWinners || isHowToPlayOpen) return;
+
+    const storageKey = `${WINNER_ANNOUNCEMENT_STORAGE_PREFIX}:${lastGameResult.gameId}`;
+    if (sessionStorage.getItem(storageKey) === "seen") return;
+
+    sessionStorage.setItem(storageKey, "seen");
+    setIsWinnerAnnouncementOpen(true);
+  }, [hasWinners, isHowToPlayOpen, lastGameResult]);
 
   // Track game lobby view
   const hasTrackedView = useRef<string | null>(null);
@@ -141,90 +162,99 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
 
   if (!game) {
     return (
-      <section className="relative flex-1 overflow-y-auto px-4 py-2">
-        <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-5 py-12">
-          {/* Header */}
-          <div className="text-center space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/5 px-4 py-1.5">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FFC931]/60" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FFC931]" />
-              </span>
-              <span className="font-display text-[11px] uppercase tracking-[0.2em] text-white/50">
-                No active games
-              </span>
+      <>
+        <section className="relative flex-1 overflow-y-auto px-4 py-2">
+          <div className="mx-auto flex w-full max-w-md flex-col items-center justify-center gap-5 py-12">
+            {/* Header */}
+            <div className="text-center space-y-3">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/8 bg-white/5 px-4 py-1.5">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#FFC931]/60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-[#FFC931]" />
+                </span>
+                <span className="font-display text-[11px] uppercase tracking-[0.2em] text-white/50">
+                  No active games
+                </span>
+              </div>
+              <h2 className="text-white font-body text-[28px] leading-[1.15] tracking-[0.08em]">
+                THE ARENA
+                <br />
+                <span className="text-[#FFC931]">AWAITS</span>
+              </h2>
             </div>
-            <h2 className="text-white font-body text-[28px] leading-[1.15] tracking-[0.08em]">
-              THE ARENA
-              <br />
-              <span className="text-[#FFC931]">AWAITS</span>
-            </h2>
-          </div>
 
-          {/* How to Play Card */}
-          <div className="w-full">
-            <Link
-              href={howToPlayHref}
-              scroll={false}
-              className="group relative block w-full overflow-hidden rounded-2xl border border-white/8"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(255,201,49,0.06) 0%, rgba(21,21,25,0.6) 50%, rgba(255,201,49,0.03) 100%)",
-              }}
-            >
-              {/* Shimmer edge */}
-              <div
-                className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+            {/* How to Play Card */}
+            <div className="w-full">
+              <Link
+                href={howToPlayHref}
+                scroll={false}
+                className="group relative block w-full overflow-hidden rounded-2xl border border-white/8"
                 style={{
                   background:
-                    "linear-gradient(135deg, rgba(255,201,49,0.12) 0%, transparent 40%, transparent 60%, rgba(255,201,49,0.08) 100%)",
+                    "linear-gradient(135deg, rgba(255,201,49,0.06) 0%, rgba(21,21,25,0.6) 50%, rgba(255,201,49,0.03) 100%)",
                 }}
-              />
-              <div className="relative flex items-center justify-between gap-4 p-5">
-                <div className="flex items-center gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FFC931]/10 border border-[#FFC931]/15">
-                    <QuestionMarkCircleIcon className="w-6 h-6 text-[#FFC931]" />
-                  </div>
-                  <div className="space-y-0.5">
-                    <h3 className="font-body text-xl text-white leading-none">
-                      How to Play
-                    </h3>
-                    <p className="font-display text-[13px] text-white/40 leading-snug">
-                      Arena format, scoring &amp; payouts
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 border border-white/8 transition-all duration-300 group-hover:bg-[#FFC931]/15 group-hover:border-[#FFC931]/20">
-                  <ChevronRightIcon className="w-4 h-4 text-white/50 transition-all duration-300 group-hover:text-[#FFC931] group-hover:translate-x-0.5" />
-                </div>
-              </div>
-            </Link>
-          </div>
-
-          {/* Quick preview steps — collapsed */}
-          <div className="w-full space-y-2">
-            {HOW_TO_PLAY_PREVIEW_STEPS.map((step) => (
-              <div
-                key={step.title}
-                className="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3"
               >
-                <span className="font-body text-[13px] text-[#FFC931]/70 tabular-nums leading-none">
-                  {step.number}
-                </span>
-                <span className="h-3 w-px bg-white/10" />
-                <span className="font-display text-[13px] text-white/60 leading-none">
-                  {step.title}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+                {/* Shimmer edge */}
+                <div
+                  className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, rgba(255,201,49,0.12) 0%, transparent 40%, transparent 60%, rgba(255,201,49,0.08) 100%)",
+                  }}
+                />
+                <div className="relative flex items-center justify-between gap-4 p-5">
+                  <div className="flex items-center gap-4">
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-[#FFC931]/10 border border-[#FFC931]/15">
+                      <QuestionMarkCircleIcon className="w-6 h-6 text-[#FFC931]" />
+                    </div>
+                    <div className="space-y-0.5">
+                      <h3 className="font-body text-xl text-white leading-none">
+                        How to Play
+                      </h3>
+                      <p className="font-display text-[13px] text-white/40 leading-snug">
+                        Arena format, scoring &amp; payouts
+                      </p>
+                    </div>
+                  </div>
 
-        {isHowToPlayOpen && (
-          <HowToPlayModal onClose={closeHowToPlay} position="absolute" />
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 border border-white/8 transition-all duration-300 group-hover:bg-[#FFC931]/15 group-hover:border-[#FFC931]/20">
+                    <ChevronRightIcon className="w-4 h-4 text-white/50 transition-all duration-300 group-hover:text-[#FFC931] group-hover:translate-x-0.5" />
+                  </div>
+                </div>
+              </Link>
+            </div>
+
+            {/* Quick preview steps — collapsed */}
+            <div className="w-full space-y-2">
+              {HOW_TO_PLAY_PREVIEW_STEPS.map((step) => (
+                <div
+                  key={step.title}
+                  className="flex items-center gap-3 rounded-xl border border-white/[0.04] bg-white/[0.02] px-4 py-3"
+                >
+                  <span className="font-body text-[13px] text-[#FFC931]/70 tabular-nums leading-none">
+                    {step.number}
+                  </span>
+                  <span className="h-3 w-px bg-white/10" />
+                  <span className="font-display text-[13px] text-white/60 leading-none">
+                    {step.title}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {isHowToPlayOpen && (
+            <HowToPlayModal onClose={closeHowToPlay} position="absolute" />
+          )}
+        </section>
+
+        {lastGameResult && isWinnerAnnouncementOpen && (
+          <WinnerAnnouncementModal
+            result={lastGameResult}
+            onClose={() => setIsWinnerAnnouncementOpen(false)}
+          />
         )}
-      </section>
+      </>
     );
   }
 
@@ -240,9 +270,10 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         {/* Last game winners — social proof */}
         {lastGameResult && lastGameResult.winners.length > 0 && (
           <div className="mt-3 w-full md:max-w-[361px]">
-            <Link
-              href={`/leaderboard?gameId=${lastGameResult.gameId}`}
-              className="group flex items-center justify-between w-full px-4 py-3 rounded-xl border border-white/[0.06] bg-white/[0.02] transition-colors hover:bg-white/[0.05]"
+            <button
+              type="button"
+              onClick={() => setIsWinnerAnnouncementOpen(true)}
+              className="group flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {/* Winner avatars — overlapping */}
@@ -280,7 +311,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
               </div>
 
               <ChevronRightIcon className="w-4 h-4 text-white/25 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-waffle-gold/50" />
-            </Link>
+            </button>
           </div>
         )}
 
@@ -322,6 +353,13 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
       )}
 
       {!isMiniPay && <CheerOverlay />}
+
+      {lastGameResult && isWinnerAnnouncementOpen && (
+        <WinnerAnnouncementModal
+          result={lastGameResult}
+          onClose={() => setIsWinnerAnnouncementOpen(false)}
+        />
+      )}
     </>
   );
 }
