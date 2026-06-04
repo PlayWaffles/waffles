@@ -1,7 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
-import useSWR from "swr";
+import { useQuery } from "@tanstack/react-query";
 import { authenticatedFetch } from "@/lib/client/runtime";
 
 // ==========================================
@@ -53,29 +52,25 @@ async function fetchGames(url: string): Promise<ProfileGame[]> {
 // HOOK
 // ==========================================
 
-/** Fetch user's game history with SWR caching. */
+/** Fetch user's game history with TanStack Query caching. */
 export function useProfileGames(limit?: number) {
-  const { data, error, isLoading, mutate } = useSWR<ProfileGame[]>(
-    "/api/v1/users/me/games",
-    fetchGames,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 10000,
-    }
-  );
-
-  const endedGames = useMemo(
-    () => (data ?? []).filter((g) => new Date(g.game.endsAt).getTime() < Date.now()),
-    [data],
-  );
-
-  const limitedGames = limit ? endedGames.slice(0, limit) : endedGames;
+  const { data, error, isLoading, refetch } = useQuery<ProfileGame[], Error, ProfileGame[]>({
+    queryKey: ["profile", "me", "games"],
+    queryFn: () => fetchGames("/api/v1/users/me/games"),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: 10000,
+    select: (games) => {
+      const now = Date.now();
+      const endedGames = games.filter((g) => new Date(g.game.endsAt).getTime() < now);
+      return limit ? endedGames.slice(0, limit) : endedGames;
+    },
+  });
 
   return {
-    games: limitedGames,
+    games: data ?? [],
     isLoading,
     error: error ? "Failed to load games" : null,
-    refetch: mutate,
+    refetch,
   };
 }

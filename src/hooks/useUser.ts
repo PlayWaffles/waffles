@@ -1,6 +1,6 @@
 "use client";
 
-import useSWR from "swr";
+import { useQuery } from "@tanstack/react-query";
 import { authenticatedFetch } from "@/lib/client/runtime";
 import type { UserPlatform } from "@prisma";
 
@@ -47,30 +47,26 @@ async function fetchUser(url: string): Promise<UserData | null> {
 // ==========================================
 
 /**
- * Fetch current user data with SWR.
+ * Fetch current user data with TanStack Query.
  * - Global cache: all components share the same data
  * - Deduplication: multiple calls = single request
  *
- * Loading is true when:
- * - MiniKit context hasn't provided FID yet, OR
- * - SWR is fetching user data
+ * Loading is true while the initial user request is in flight.
  */
 export function useUser() {
-  const { data, error, isLoading: swrLoading, mutate } = useSWR<UserData | null>(
-    "/api/v1/users/me",
-    fetchUser,
-    {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      dedupingInterval: 5000,
-    }
-  );
+  const { data, error, isLoading, refetch } = useQuery<UserData | null>({
+    queryKey: ["user", "me"],
+    queryFn: () => fetchUser("/api/v1/users/me"),
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    staleTime: 5000,
+  });
 
   return {
     user: data ?? null,
-    isLoading: swrLoading,
+    isLoading,
     error: error ? "Failed to load user" : null,
-    isUnauthenticated: !swrLoading && !data && !error,
-    refetch: mutate,
+    isUnauthenticated: !isLoading && !data && !error,
+    refetch,
   };
 }
