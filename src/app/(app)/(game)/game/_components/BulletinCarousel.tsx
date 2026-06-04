@@ -1,20 +1,38 @@
 "use client";
 
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   BellAlertIcon,
+  BoltIcon,
+  ClockIcon,
   ChevronRightIcon,
   MegaphoneIcon,
   PencilSquareIcon,
   QuestionMarkCircleIcon,
+  SparklesIcon,
+  TicketIcon,
   TrophyIcon,
+  WalletIcon,
 } from "@heroicons/react/24/outline";
 
-import type { LastGameResult } from "@/lib/game";
+import type { GameWithQuestionCount, LastGameResult } from "@/lib/game";
+import type { GameEntryData } from "@/components/providers/RealtimeProvider";
+import { getTicketCloseTime } from "@/lib/game/ticket-window";
 
 interface BulletinCarouselProps {
+  game: GameWithQuestionCount | null;
   lastGameResult: LastGameResult | null;
+  claimablePrize:
+    | {
+        gameId: string;
+        gameNumber: number;
+        amount: number;
+      }
+    | null;
+  entry: GameEntryData | null;
+  playerCount: number | null;
+  prizePool: number | null;
   howToPlayHref: string;
   onOpenWinners: () => void;
 }
@@ -35,6 +53,19 @@ function formatPrize(value: number) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+}
+
+function formatGameNumber(value: number | null | undefined) {
+  return String(value ?? 0).padStart(3, "0");
+}
+
+function formatTimeDistance(targetMs: number, nowMs: number) {
+  const totalMinutes = Math.max(0, Math.ceil((targetMs - nowMs) / 60000));
+  if (totalMinutes < 60) return `${totalMinutes} min`;
+
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return minutes === 0 ? `${hours} hr` : `${hours} hr ${minutes} min`;
 }
 
 function BulletinCardView({ card }: { card: BulletinCard }) {
@@ -90,12 +121,158 @@ function BulletinCardView({ card }: { card: BulletinCard }) {
 }
 
 export function BulletinCarousel({
+  game,
   lastGameResult,
+  claimablePrize,
+  entry,
+  playerCount,
+  prizePool,
   howToPlayHref,
   onOpenWinners,
 }: BulletinCarouselProps) {
+  const [nowMs, setNowMs] = useState<number | null>(null);
+
+  useEffect(() => {
+    const update = () => setNowMs(Date.now());
+    const initialTimer = window.setTimeout(update, 0);
+    const interval = window.setInterval(update, 60000);
+
+    return () => {
+      window.clearTimeout(initialTimer);
+      window.clearInterval(interval);
+    };
+  }, []);
+
   const winner = lastGameResult?.winners[0];
+  const effectivePlayerCount = playerCount ?? game?.playerCount ?? 0;
+  const effectivePrizePool = prizePool ?? game?.prizePool ?? 0;
+  const spotsLeft = Math.max(0, (game?.maxPlayers ?? 0) - effectivePlayerCount);
+  const startsAtMs = game?.startsAt.getTime() ?? 0;
+  const ticketsOpenAtMs = game?.ticketsOpenAt?.getTime() ?? startsAtMs;
+  const ticketCloseAtMs = game ? getTicketCloseTime(game.endsAt).getTime() : 0;
+  const hasTicket = Boolean(entry?.hasTicket);
+  const currentGameClaimablePrize =
+    entry?.prize != null && entry.prize > 0 && entry.claimedAt == null
+      ? entry.prize
+      : null;
+  const hasPrizeBoost = Boolean(game && effectivePrizePool > game.pricing.currentPrice * effectivePlayerCount);
+  const showTicketsOpeningSoon = Boolean(
+    game &&
+      nowMs != null &&
+      ticketsOpenAtMs > nowMs,
+  );
+  const showTicketsLive = Boolean(
+    game &&
+      nowMs != null &&
+      !hasTicket &&
+      ticketsOpenAtMs <= nowMs &&
+      nowMs < ticketCloseAtMs &&
+      spotsLeft > 0,
+  );
+  const showGameStartsSoon = Boolean(
+    game &&
+      nowMs != null &&
+      hasTicket &&
+      startsAtMs > nowMs &&
+      startsAtMs - nowMs <= 60 * 60 * 1000,
+  );
+  const showAlmostSoldOut = Boolean(
+    game &&
+      !hasTicket &&
+      spotsLeft > 0 &&
+      spotsLeft <= Math.max(3, Math.ceil((game.maxPlayers ?? 0) * 0.1)),
+  );
   const cards: BulletinCard[] = [
+    ...(claimablePrize
+      ? [
+          {
+            id: "claim-prize",
+            badge: "Prize",
+            title: `$${formatPrize(claimablePrize.amount)} waiting`,
+            body: `Your Waffles #${formatGameNumber(claimablePrize.gameNumber)} winnings are ready to claim.`,
+            action: "Claim prize",
+            icon: <WalletIcon className="h-4 w-4" />,
+            href: `/game/${claimablePrize.gameId}/result`,
+          },
+        ]
+      : currentGameClaimablePrize && game
+        ? [
+          {
+            id: "claim-prize",
+            badge: "Prize",
+            title: `$${formatPrize(currentGameClaimablePrize)} waiting`,
+            body: `Your Waffles #${formatGameNumber(game.gameNumber)} winnings are ready to claim.`,
+            action: "Claim prize",
+            icon: <WalletIcon className="h-4 w-4" />,
+            href: `/game/${game.id}/result`,
+          },
+        ]
+        : []),
+    ...(showTicketsLive && game
+      ? [
+          {
+            id: "tickets-live",
+            badge: "Tickets",
+            title: "Tickets are live",
+            body: `Waffles #${formatGameNumber(game.gameNumber)} is open. ${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left.`,
+            action: "Get ticket",
+            icon: <TicketIcon className="h-4 w-4" />,
+            href: "/game",
+          },
+        ]
+      : []),
+    ...(showTicketsOpeningSoon && game && nowMs != null
+      ? [
+          {
+            id: "tickets-opening",
+            badge: "Soon",
+            title: `Tickets in ${formatTimeDistance(ticketsOpenAtMs, nowMs)}`,
+            body: `Waffles #${formatGameNumber(game.gameNumber)} opens soon. Be ready when spots drop.`,
+            action: "Check game",
+            icon: <ClockIcon className="h-4 w-4" />,
+            href: "/game",
+          },
+        ]
+      : []),
+    ...(showGameStartsSoon && game && nowMs != null
+      ? [
+          {
+            id: "game-starting",
+            badge: "Ready",
+            title: `Game in ${formatTimeDistance(startsAtMs, nowMs)}`,
+            body: `You are in for Waffles #${formatGameNumber(game.gameNumber)}. Come back ready to play.`,
+            action: "Open game",
+            icon: <BoltIcon className="h-4 w-4" />,
+            href: `/game/${game.id}/live`,
+          },
+        ]
+      : []),
+    ...(showAlmostSoldOut
+      ? [
+          {
+            id: "almost-sold-out",
+            badge: "Scarcity",
+            title: `${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left`,
+            body: "This game is almost full. Grab your ticket before it closes.",
+            action: "Grab spot",
+            icon: <TicketIcon className="h-4 w-4" />,
+            href: "/game",
+          },
+        ]
+      : []),
+    ...(hasPrizeBoost && game
+      ? [
+          {
+            id: "prize-boost",
+            badge: "Pot",
+            title: `$${formatPrize(effectivePrizePool)} pot`,
+            body: `Waffles #${formatGameNumber(game.gameNumber)} has extra prize money in play.`,
+            action: "View game",
+            icon: <SparklesIcon className="h-4 w-4" />,
+            href: "/game",
+          },
+        ]
+      : []),
     ...(lastGameResult && winner
       ? [
           {
