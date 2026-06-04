@@ -10,10 +10,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import posthog from "posthog-js";
 import { QuestionCardHeader } from "./QuestionCardHeader";
 import { QuestionOption } from "./QuestionOption";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { GameImage } from "@/components/game/GameImage";
+import { isCloudinaryQuestionMediaUrl } from "@/lib/game/question-media";
 import type { LiveGameQuestion } from "../page";
 import type { AnswerResult } from "@/lib/game/tension";
 import type { QuestionAnswerer } from "@shared/protocol";
@@ -297,7 +299,14 @@ export default function QuestionView({
   onAdvance,
 }: QuestionViewProps) {
   const [loadedMediaUrl, setLoadedMediaUrl] = useState<string | null>(null);
-  const mediaLoaded = !question.mediaUrl || loadedMediaUrl === question.mediaUrl;
+  const [failedMediaUrl, setFailedMediaUrl] = useState<string | null>(null);
+  const mediaFailed = Boolean(
+    question.mediaUrl && failedMediaUrl === question.mediaUrl,
+  );
+  const mediaLoaded = Boolean(
+    !question.mediaUrl || loadedMediaUrl === question.mediaUrl,
+  );
+  const mediaReady = mediaLoaded || mediaFailed;
   const isLowTime = seconds <= 3 && seconds > 0;
   const isTimeUp = seconds === 0;
   const [buttonWidth, setButtonWidth] = useState(296);
@@ -315,10 +324,10 @@ export default function QuestionView({
 
   // Notify parent when media is ready
   useEffect(() => {
-    if (mediaLoaded && onMediaReady) {
+    if (mediaReady && onMediaReady) {
       onMediaReady();
     }
-  }, [mediaLoaded, onMediaReady]);
+  }, [mediaReady, onMediaReady]);
 
   useEffect(() => {
     if (!nextMediaUrl || nextMediaUrl === question.mediaUrl) return;
@@ -407,9 +416,19 @@ export default function QuestionView({
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
             >
               <div className="relative w-full aspect-video rounded-[10px] overflow-hidden bg-card border border-border shadow-[0_8px_0_#000]">
-                {!mediaLoaded && (
+                {!mediaReady && (
                   <div className="absolute inset-0 flex items-center justify-center z-10 bg-card">
                     <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  </div>
+                )}
+                {mediaFailed && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 z-10 bg-card px-5 text-center">
+                    <p className="font-body text-lg leading-none text-danger-soft">
+                      IMAGE FAILED TO LOAD
+                    </p>
+                    <p className="font-display text-[11px] leading-snug text-white/55">
+                      The question image could not load on this connection.
+                    </p>
                   </div>
                 )}
                 <GameImage
@@ -422,7 +441,35 @@ export default function QuestionView({
                   sizes="(max-width: 640px) 100vw, 500px"
                   priorityMode="critical"
                   quality={80}
-                  onLoad={() => setLoadedMediaUrl(question.mediaUrl)}
+                  unoptimized={isCloudinaryQuestionMediaUrl(question.mediaUrl)}
+                  onLoad={() => {
+                    setFailedMediaUrl(null);
+                    setLoadedMediaUrl(question.mediaUrl);
+                  }}
+                  onError={() => {
+                    if (!question.mediaUrl) return;
+
+                    let mediaUrl: URL | null = null;
+                    try {
+                      mediaUrl = new URL(question.mediaUrl, window.location.origin);
+                    } catch {
+                      mediaUrl = null;
+                    }
+                    const connection = (
+                      navigator as Navigator & {
+                        connection?: { effectiveType?: string };
+                      }
+                    ).connection;
+
+                    setFailedMediaUrl(question.mediaUrl);
+                    posthog.capture("question_media_load_failed", {
+                      question_id: question.id,
+                      media_host: mediaUrl?.host,
+                      media_path: mediaUrl?.pathname,
+                      user_agent: navigator.userAgent,
+                      connection: connection?.effectiveType,
+                    });
+                  }}
                 />
               </div>
             </motion.figure>

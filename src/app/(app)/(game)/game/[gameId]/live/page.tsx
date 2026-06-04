@@ -9,6 +9,7 @@ import {
   resolveRuntimePlatform,
 } from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
+import { normalizeQuestionMediaUrl } from "@/lib/game/question-media";
 import LiveGameScreen from "./LiveGameScreen";
 
 export const dynamic = "force-dynamic";
@@ -92,6 +93,7 @@ const getGame = cache(async (gameId: string, platform: UserPlatform) => {
     theme: game.theme,
     questions: game.questions.map((q) => ({
       ...q,
+      mediaUrl: normalizeQuestionMediaUrl(q.mediaUrl),
       durationSec: q.durationSec ?? 10,
     })),
   } satisfies LiveGameData;
