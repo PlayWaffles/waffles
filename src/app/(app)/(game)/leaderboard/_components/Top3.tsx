@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { LeaderboardEntry } from "@/lib/types";
 import { motion } from "framer-motion";
 import { getDisplayName } from "@/lib/address";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 interface Top3Props {
   entries: LeaderboardEntry[];
@@ -123,21 +124,18 @@ export function Top3({ entries, currentUserId, showScore = false }: Top3Props) {
                 }}
                 whileHover={{ scale: 1.2 }}
               >
-                {entry.pfpUrl ? (
-                  <Image
-                    unoptimized
-                    src={entry.pfpUrl}
-                    alt={displayName}
-                    width={28}
-                    height={28}
-                    className="rounded-full bg-[#F0F3F4] object-cover"
-                    draggable={false}
-                  />
-                ) : (
-                  <span className="absolute inset-0 flex items-center justify-center text-[calc(var(--pad)*0.6)] font-bold text-white/70">
-                    {displayName.charAt(0).toUpperCase()}
-                  </span>
-                )}
+                <Image
+                  unoptimized
+                  src={getPlayerAvatarUrl({
+                    pfpUrl: entry.pfpUrl,
+                    username: entry.username ?? displayName,
+                  })}
+                  alt={displayName}
+                  width={28}
+                  height={28}
+                  className="rounded-full bg-[#F0F3F4] object-cover"
+                  draggable={false}
+                />
               </motion.div>
               <span
                 title={displayName}
