@@ -12,6 +12,7 @@ import {
 
 import type { GameWithQuestionCount, LastGameResult } from "@/lib/game";
 import { usePendingPurchaseRecovery } from "@/hooks/usePendingPurchaseRecovery";
+import { useProfileGames } from "@/hooks/useProfileGames";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useUser } from "@/hooks/useUser";
 import {
@@ -85,11 +86,15 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   // User context for recovery
   const { address } = useAccount();
   const { user } = useUser();
-  const { refetchEntry } = useRealtime();
+  const { games: profileGames } = useProfileGames(10);
+  const { state: realtimeState, refetchEntry } = useRealtime();
   const isMiniPay = runtime === "minipay";
 
   const isHowToPlayOpen = searchParams.get("modal") === MODAL_HOW_TO_PLAY;
   const hasWinners = Boolean(lastGameResult?.winners.length);
+  const claimablePrizeGame = profileGames.find(
+    (profileGame) => profileGame.prize > 0 && profileGame.claimedAt == null,
+  );
 
   // Shared URL param helpers (computed once, used by both branches)
   const howToPlayHref = (() => {
@@ -317,7 +322,20 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         )}
 
         <BulletinCarousel
+          game={game}
           lastGameResult={lastGameResult}
+          claimablePrize={
+            claimablePrizeGame
+              ? {
+                  gameId: claimablePrizeGame.gameId,
+                  gameNumber: claimablePrizeGame.game.gameNumber,
+                  amount: claimablePrizeGame.prize,
+                }
+              : null
+          }
+          entry={realtimeState.entry}
+          playerCount={realtimeState.playerCount}
+          prizePool={realtimeState.prizePool}
           howToPlayHref={howToPlayHref}
           onOpenWinners={() => setIsWinnerAnnouncementOpen(true)}
         />
