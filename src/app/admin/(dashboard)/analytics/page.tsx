@@ -4,13 +4,10 @@ import {
     BanknotesIcon,
     UsersIcon,
     TrophyIcon,
-    ChartBarIcon,
     ArrowTrendingUpIcon,
-    ClockIcon,
     FireIcon,
     CurrencyDollarIcon,
     UserGroupIcon,
-    BoltIcon,
     CheckCircleIcon,
 } from "@heroicons/react/24/outline";
 import {
@@ -18,11 +15,7 @@ import {
     getDateRangeFromParam,
     KPICard,
     RevenueChart,
-    UserGrowthChart,
     GamePerformanceTable,
-    ReferralFunnel,
-    ActivityFeed,
-    GameInsights,
     QuestionDifficulty,
     PlayerEngagement,
     ChatAnalytics,
@@ -34,12 +27,12 @@ import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import { getGamePhase } from "@/lib/types";
 import {
     buildPlatformWhere,
+    buildPaidProductionEntryWhere,
     buildProductionEntryWhere,
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
 import { getStoredChatHistory } from "@/lib/partykit";
-import { TicketPurchaseSource } from "@prisma";
 
 // ============================================================
 // HELPERS
@@ -82,25 +75,14 @@ interface GameScoreAggregate {
     };
 }
 
-const FREE_TICKET_SOURCES = [
-    TicketPurchaseSource.FREE_ADMIN,
-    TicketPurchaseSource.FREE_PLAYER,
-] as const;
-
-function buildClaimedTicketWhere(
+function buildTicketPurchaseWhere(
     start: Date,
     end: Date,
     gpf: Record<string, unknown>,
 ) {
     return {
         ...gpf,
-        OR: [
-            { paidAt: { not: null, gte: start, lte: end } },
-            {
-                purchaseSource: { in: [...FREE_TICKET_SOURCES] },
-                createdAt: { gte: start, lte: end },
-            },
-        ],
+        paidAt: { not: null, gte: start, lte: end },
     };
 }
 
@@ -181,8 +163,8 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
-    const claimedTicketWhere = buildClaimedTicketWhere(start, end, gpf);
-    const previousClaimedTicketWhere = buildClaimedTicketWhere(previousStart, start, gpf);
+    const ticketPurchaseWhere = buildTicketPurchaseWhere(start, end, gpf);
+    const previousTicketPurchaseWhere = buildTicketPurchaseWhere(previousStart, start, gpf);
 
     // Helper to build date range for daily aggregation
     const buildDailyMap = (startDate: Date, endDate: Date) => {
@@ -205,7 +187,6 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         totalSignups,
         onboardedUsers,
         // Ticket activation
-        totalGamesInPeriod,
         totalEntriesInPeriod,
         previousEntriesInPeriod,
         // Ticket claim → completion (answered > 0)
@@ -265,32 +246,30 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
                 ],
             },
         }),
-        // Games in period
-        prisma.game.count({ where: { ...gamePf, startsAt: { gte: start, lte: end } } }),
         // Total entries (ticket purchases) in period
-        prisma.gameEntry.count({ where: claimedTicketWhere }),
+        prisma.gameEntry.count({ where: ticketPurchaseWhere }),
         // Previous period entries
-        prisma.gameEntry.count({ where: previousClaimedTicketWhere }),
+        prisma.gameEntry.count({ where: previousTicketPurchaseWhere }),
         // Completed entries (answered at least 1 question)
-        prisma.gameEntry.count({ where: { ...claimedTicketWhere, answered: { gt: 0 } } }),
+        prisma.gameEntry.count({ where: { ...ticketPurchaseWhere, answered: { gt: 0 } } }),
         // Left entries
-        prisma.gameEntry.count({ where: { ...claimedTicketWhere, leftAt: { not: null } } }),
+        prisma.gameEntry.count({ where: { ...ticketPurchaseWhere, leftAt: { not: null } } }),
         // D1: new users in period who also have an entry
         prisma.user.count({
             where: {
                 ...pf,
                 createdAt: { gte: start, lte: end },
-                entries: { some: { game: gamePf } },
+                entries: { some: { ...buildPaidProductionEntryWhere(platform), game: gamePf } },
             },
         }),
         // Average score
         prisma.gameEntry.aggregate({
-            where: { ...claimedTicketWhere, answered: { gt: 0 } },
+            where: { ...ticketPurchaseWhere, answered: { gt: 0 } },
             _avg: { score: true },
         }),
         // Entries with answers for speed computation
         prisma.gameEntry.findMany({
-            where: { ...claimedTicketWhere, answered: { gt: 0 } },
+            where: { ...ticketPurchaseWhere, answered: { gt: 0 } },
             select: { answers: true },
             take: 5000,
         }),
@@ -324,7 +303,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         }),
         prisma.gameEntry.groupBy({
             by: ["gameId"],
-            where: { ...claimedTicketWhere, answered: { gt: 0 } },
+            where: { ...ticketPurchaseWhere, answered: { gt: 0 } },
             _avg: { score: true },
         }),
     ]);
@@ -446,10 +425,9 @@ async function getRetentionData(
         // New vs returning in period
         newPlayersInPeriod,
         totalPlayersInPeriod,
-        newPlayersWithEntries,
         // Streak distribution
         streakDistribution,
-        // Ticket users in period for free vs paid breakdowns
+        // Ticket buyers in period
         entriesInPeriod,
         // Users with last session info
         usersWithLastEntry,
@@ -491,13 +469,6 @@ async function getRetentionData(
                 lastLoginAt: { not: null, gte: start, lte: end },
             },
         }),
-        prisma.user.count({
-            where: {
-                ...pf,
-                createdAt: { gte: start, lte: end },
-                entries: { some: { createdAt: { gte: start, lte: end }, ...gpf } },
-            },
-        }),
         // Login streak distribution from User model
         prisma.user.groupBy({
             by: ["currentStreak"],
@@ -506,10 +477,9 @@ async function getRetentionData(
             orderBy: { currentStreak: "asc" },
         }),
         prisma.gameEntry.findMany({
-            where: { createdAt: { gte: start, lte: end }, ...gpf },
+            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
             select: {
                 userId: true,
-                purchaseSource: true,
                 user: {
                     select: {
                         createdAt: true,
@@ -527,20 +497,15 @@ async function getRetentionData(
     const returningPlayers = totalPlayersInPeriod - newPlayersInPeriod;
     const entryUsers = new Map<string, {
         entryCount: number;
-        hasPaid: boolean;
         createdAt: Date;
     }>();
 
     entriesInPeriod.forEach((entry) => {
         const existing = entryUsers.get(entry.userId) ?? {
             entryCount: 0,
-            hasPaid: false,
             createdAt: entry.user.createdAt,
         };
         existing.entryCount += 1;
-        if (entry.purchaseSource === "PAID" || entry.purchaseSource === "DISCOUNTED") {
-            existing.hasPaid = true;
-        }
         entryUsers.set(entry.userId, existing);
     });
 
@@ -548,27 +513,12 @@ async function getRetentionData(
     const totalBuyers = usersWithEntries.length;
     const repeatBuyers = usersWithEntries.filter((user) => user.entryCount > 1).length;
     const repeatBuyerRate = totalBuyers > 0 ? (repeatBuyers / totalBuyers) * 100 : 0;
-    const newPlayersWithTicketPaid = usersWithEntries.filter(
-        (user) => user.createdAt >= start && user.createdAt <= end && user.hasPaid,
+    const newPlayersWithTicket = usersWithEntries.filter(
+        (user) => user.createdAt >= start && user.createdAt <= end,
     ).length;
-    const newPlayersWithTicketFree = Math.max(
-        newPlayersWithEntries - newPlayersWithTicketPaid,
-        0,
-    );
     const returningPlayersWithTicket = usersWithEntries.filter(
         (user) => user.createdAt < start,
     ).length;
-    const returningPlayersWithTicketPaid = usersWithEntries.filter(
-        (user) => user.createdAt < start && user.hasPaid,
-    ).length;
-    const returningPlayersWithTicketFree = Math.max(
-        returningPlayersWithTicket - returningPlayersWithTicketPaid,
-        0,
-    );
-    const repeatTicketUsersPaid = usersWithEntries.filter(
-        (user) => user.entryCount > 1 && user.hasPaid,
-    ).length;
-    const repeatTicketUsersFree = Math.max(repeatBuyers - repeatTicketUsersPaid, 0);
 
     const playerBaseTotal = isAllTime ? lifetimeUsers : newPlayersInPeriod + returningPlayers;
     const resolvedNewPlayers = isAllTime ? lifetimeUsers : newPlayersInPeriod;
@@ -576,12 +526,6 @@ async function getRetentionData(
     const resolvedReturningPlayersWithTicket = isAllTime
         ? repeatBuyers
         : returningPlayersWithTicket;
-    const resolvedReturningPlayersWithTicketPaid = isAllTime
-        ? repeatTicketUsersPaid
-        : returningPlayersWithTicketPaid;
-    const resolvedReturningPlayersWithTicketFree = isAllTime
-        ? repeatTicketUsersFree
-        : returningPlayersWithTicketFree;
 
     // Streak distribution buckets
     const streakBuckets = [
@@ -624,18 +568,12 @@ async function getRetentionData(
         isAllTime,
         playerBaseTotal,
         newPlayers: resolvedNewPlayers,
-        newPlayersWithTicket: newPlayersWithEntries,
-        newPlayersWithTicketPaid,
-        newPlayersWithTicketFree,
+        newPlayersWithTicket,
         returningPlayers: resolvedReturningPlayers,
         returningPlayersWithTicket: resolvedReturningPlayersWithTicket,
-        returningPlayersWithTicketPaid: resolvedReturningPlayersWithTicketPaid,
-        returningPlayersWithTicketFree: resolvedReturningPlayersWithTicketFree,
         repeatBuyerRate,
         repeatBuyers,
         totalBuyers,
-        repeatTicketUsersPaid,
-        repeatTicketUsersFree,
         streakDistribution: streakData,
         daysSinceLastSession: daysSinceData,
     };
@@ -647,7 +585,7 @@ async function getRetentionData(
 
 async function getGameplayData(start: Date, end: Date, platform?: string) {
     const gamePf = buildProductionGameWhere(platform);
-    const gpf = buildProductionEntryWhere(platform);
+    const gpf = buildPaidProductionEntryWhere(platform);
     const now = new Date();
 
     const latestFiveEndedGames = await prisma.game.findMany({
@@ -694,7 +632,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 leftAt: true,
                 createdAt: true,
                 paidAmount: true,
-                purchaseSource: true,
                 game: {
                     select: {
                         id: true,
@@ -730,7 +667,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         }),
         prisma.gameEntry.findMany({
             where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: { not: null } },
-            select: { rank: true, purchaseSource: true, createdAt: true, game: { select: { startsAt: true } } },
+            select: { rank: true, createdAt: true, game: { select: { startsAt: true } } },
         }),
         prisma.gameEntry.count({ where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: 1 } }),
         prisma.gameEntry.count({ where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: { not: null } } }),
@@ -779,7 +716,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 where: { gameId: currentOrNextGame.id, ...gpf },
                 select: {
                     userId: true,
-                    purchaseSource: true,
                 },
             }),
             previousComparableGame
@@ -787,7 +723,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                     where: { gameId: previousComparableGame.id, ...gpf },
                     select: {
                         userId: true,
-                        purchaseSource: true,
                         answered: true,
                     },
                 })
@@ -925,14 +860,8 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
     let playedCount = 0;
     let leftCount = 0;
     const questionStatsMap = new Map<string, { total: number; correct: number; totalMs: number; msCount: number }>();
-    const ticketTypeStats = {
-        paid: { entries: 0, noShow: 0, partial: 0, completedAll: 0, revenue: 0, noShowRevenue: 0 },
-        free: { entries: 0, noShow: 0, partial: 0, completedAll: 0, revenue: 0, noShowRevenue: 0 },
-    };
-    const answerQuality = {
-        paid: { correct: 0, answered: 0, totalMs: 0, msCount: 0, totalPoints: 0 },
-        free: { correct: 0, answered: 0, totalMs: 0, msCount: 0, totalPoints: 0 },
-    };
+    const ticketStats = { entries: 0, noShow: 0, partial: 0, completedAll: 0, revenue: 0, noShowRevenue: 0 };
+    const answerQuality = { correct: 0, answered: 0, totalMs: 0, msCount: 0, totalPoints: 0 };
     let lateEntries = 0;
     let latePlayed = 0;
     let lateNoShows = 0;
@@ -946,15 +875,11 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
     for (const entry of entries) {
         scores.push(entry.score);
         if (entry.leftAt) leftCount++;
-        const isPaid =
-            entry.purchaseSource === "PAID" || entry.purchaseSource === "DISCOUNTED";
-        const ticketBucket = isPaid ? ticketTypeStats.paid : ticketTypeStats.free;
-        const qualityBucket = isPaid ? answerQuality.paid : answerQuality.free;
         const questionCount = gameQuestionCounts.get(entry.game.id) ?? 0;
         const isLate = entry.createdAt > entry.game.startsAt;
 
-        ticketBucket.entries++;
-        ticketBucket.revenue += entry.paidAmount ?? 0;
+        ticketStats.entries++;
+        ticketStats.revenue += entry.paidAmount ?? 0;
         if (isLate) lateEntries++;
 
         const answers = entry.answers as Record<string, AnswerData> | null;
@@ -966,8 +891,8 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             playedCount++;
             if (isLate) latePlayed++;
         } else {
-            ticketBucket.noShow++;
-            ticketBucket.noShowRevenue += entry.paidAmount ?? 0;
+            ticketStats.noShow++;
+            ticketStats.noShowRevenue += entry.paidAmount ?? 0;
             if (isLate) lateNoShows++;
         }
 
@@ -991,9 +916,9 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
 
         if (questionCount > 0) {
             if (entry.answered >= questionCount) {
-                ticketBucket.completedAll++;
+                ticketStats.completedAll++;
             } else if (entry.answered > 0) {
-                ticketBucket.partial++;
+                ticketStats.partial++;
             }
         }
 
@@ -1001,12 +926,12 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             totalAnswered++;
             if (a.correct) totalCorrect++;
             if (a.ms > 0) { totalMs += a.ms; msCount++; }
-            qualityBucket.answered++;
-            if (a.correct) qualityBucket.correct++;
-            qualityBucket.totalPoints += a.points;
+            answerQuality.answered++;
+            if (a.correct) answerQuality.correct++;
+            answerQuality.totalPoints += a.points;
             if (a.ms > 0) {
-                qualityBucket.totalMs += a.ms;
-                qualityBucket.msCount++;
+                answerQuality.totalMs += a.ms;
+                answerQuality.msCount++;
             }
             // Per-question stats
             const existing = questionStatsMap.get(qId) || { total: 0, correct: 0, totalMs: 0, msCount: 0 };
@@ -1083,13 +1008,8 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         avgPrizePool: t._avg.prizePool || 0,
     }));
 
-    const paidTop10 = rankedEntries.filter(
-        (entry) => entry.rank !== null && entry.rank <= 10 &&
-            (entry.purchaseSource === "PAID" || entry.purchaseSource === "DISCOUNTED")
-    ).length;
-    const freeTop10 = rankedEntries.filter(
-        (entry) => entry.rank !== null && entry.rank <= 10 &&
-            entry.purchaseSource !== "PAID" && entry.purchaseSource !== "DISCOUNTED"
+    const ticketTop10 = rankedEntries.filter(
+        (entry) => entry.rank !== null && entry.rank <= 10
     ).length;
     const lateTop10 = rankedEntries.filter(
         (entry) => entry.rank !== null && entry.rank <= 10 && entry.createdAt > entry.game.startsAt
@@ -1157,45 +1077,24 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         .slice(0, 20)
         .map(([word, count]) => ({ word, count }));
 
-    const isPaidSource = (purchaseSource: string) =>
-        purchaseSource === "PAID" || purchaseSource === "DISCOUNTED";
-
-    const paidCurrentUsers = new Set(
-        currentComparableEntries
-            .filter((entry) => isPaidSource(entry.purchaseSource))
-            .map((entry) => entry.userId),
-    );
-    const freeCurrentUsers = new Set(
-        currentComparableEntries
-            .filter((entry) => !isPaidSource(entry.purchaseSource))
-            .map((entry) => entry.userId),
-    );
+    const currentTicketUsers = new Set(currentComparableEntries.map((entry) => entry.userId));
     const previousParticipants = new Set(
         previousComparableEntries
             .filter((entry) => entry.answered > 0)
             .map((entry) => entry.userId),
     );
-    const previousPaidUsers = new Set(
-        previousComparableEntries
-            .filter((entry) => isPaidSource(entry.purchaseSource))
-            .map((entry) => entry.userId),
-    );
-    const previousFreeUsers = new Set(
-        previousComparableEntries
-            .filter((entry) => !isPaidSource(entry.purchaseSource))
-            .map((entry) => entry.userId),
-    );
+    const previousTicketUsers = new Set(previousComparableEntries.map((entry) => entry.userId));
     const priorAnyTicketUsers = new Set(priorCurrentCohortUsers.map((entry) => entry.userId));
 
-    const summarizeCurrentCohort = (currentUsers: Set<string>, previousSameTypeUsers: Set<string>) => {
-        const count = currentUsers.size;
+    const summarizeCurrentTicketBuyers = () => {
+        const count = currentTicketUsers.size;
         let playedLastGame = 0;
-        let sameTypeLastGame = 0;
+        let boughtLastGame = 0;
         let firstTime = 0;
 
-        for (const userId of currentUsers) {
+        for (const userId of currentTicketUsers) {
             if (previousParticipants.has(userId)) playedLastGame++;
-            if (previousSameTypeUsers.has(userId)) sameTypeLastGame++;
+            if (previousTicketUsers.has(userId)) boughtLastGame++;
             if (!priorAnyTicketUsers.has(userId)) firstTime++;
         }
 
@@ -1203,29 +1102,18 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             count,
             playedLastGame,
             playedLastGameRate: count > 0 ? (playedLastGame / count) * 100 : 0,
-            sameTypeLastGame,
-            sameTypeLastGameRate: count > 0 ? (sameTypeLastGame / count) * 100 : 0,
+            boughtLastGame,
+            boughtLastGameRate: count > 0 ? (boughtLastGame / count) * 100 : 0,
             firstTime,
             firstTimeRate: count > 0 ? (firstTime / count) * 100 : 0,
         };
     };
 
-    let previousFreeToPaid = 0;
-    for (const userId of previousFreeUsers) {
-        if (paidCurrentUsers.has(userId)) previousFreeToPaid++;
-    }
-
-    const currentTicketCohorts = currentOrNextGame && previousComparableGame
+    const currentTicketBuyers = currentOrNextGame && previousComparableGame
         ? {
             currentGameTitle: currentOrNextGame.title,
             previousGameTitle: previousComparableGame.title,
-            paid: summarizeCurrentCohort(paidCurrentUsers, previousPaidUsers),
-            free: summarizeCurrentCohort(freeCurrentUsers, previousFreeUsers),
-            previousFreeToPaid,
-            previousFreeToPaidRate: previousFreeUsers.size > 0
-                ? (previousFreeToPaid / previousFreeUsers.size) * 100
-                : 0,
-            previousFreeCount: previousFreeUsers.size,
+            buyers: summarizeCurrentTicketBuyers(),
         }
         : null;
 
@@ -1243,29 +1131,22 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         totalRankedEntries,
         questions,
         themeParticipation: themeData,
-        currentTicketCohorts,
+        currentTicketBuyers,
         behavior: {
-            ticketMix: {
-                paidEntries: ticketTypeStats.paid.entries,
-                freeEntries: ticketTypeStats.free.entries,
-                paidCompletedAll: ticketTypeStats.paid.completedAll,
-                freeCompletedAll: ticketTypeStats.free.completedAll,
-                paidPartial: ticketTypeStats.paid.partial,
-                freePartial: ticketTypeStats.free.partial,
-                paidNoShow: ticketTypeStats.paid.noShow,
-                freeNoShow: ticketTypeStats.free.noShow,
-                paidNoShowRate: ticketTypeStats.paid.entries > 0
-                    ? (ticketTypeStats.paid.noShow / ticketTypeStats.paid.entries) * 100
-                    : 0,
-                freeNoShowRate: ticketTypeStats.free.entries > 0
-                    ? (ticketTypeStats.free.noShow / ticketTypeStats.free.entries) * 100
+            tickets: {
+                entries: ticketStats.entries,
+                completedAll: ticketStats.completedAll,
+                partial: ticketStats.partial,
+                noShow: ticketStats.noShow,
+                noShowRate: ticketStats.entries > 0
+                    ? (ticketStats.noShow / ticketStats.entries) * 100
                     : 0,
             },
             monetization: {
-                paidRevenue: ticketTypeStats.paid.revenue,
-                paidNoShowRevenue: ticketTypeStats.paid.noShowRevenue,
-                paidNoShowRevenueRate: ticketTypeStats.paid.revenue > 0
-                    ? (ticketTypeStats.paid.noShowRevenue / ticketTypeStats.paid.revenue) * 100
+                ticketRevenue: ticketStats.revenue,
+                noShowRevenue: ticketStats.noShowRevenue,
+                noShowRevenueRate: ticketStats.revenue > 0
+                    ? (ticketStats.noShowRevenue / ticketStats.revenue) * 100
                     : 0,
             },
             lateEntry: {
@@ -1283,28 +1164,18 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 finishRateAfterStart: startedEntries > 0 ? (reachedFinalQuestion / startedEntries) * 100 : 0,
             },
             answerQuality: {
-                paidAccuracy: answerQuality.paid.answered > 0
-                    ? (answerQuality.paid.correct / answerQuality.paid.answered) * 100
+                accuracy: answerQuality.answered > 0
+                    ? (answerQuality.correct / answerQuality.answered) * 100
                     : 0,
-                freeAccuracy: answerQuality.free.answered > 0
-                    ? (answerQuality.free.correct / answerQuality.free.answered) * 100
+                avgResponseMs: answerQuality.msCount > 0
+                    ? answerQuality.totalMs / answerQuality.msCount
                     : 0,
-                paidAvgResponseMs: answerQuality.paid.msCount > 0
-                    ? answerQuality.paid.totalMs / answerQuality.paid.msCount
-                    : 0,
-                freeAvgResponseMs: answerQuality.free.msCount > 0
-                    ? answerQuality.free.totalMs / answerQuality.free.msCount
-                    : 0,
-                paidAvgPointsPerAnswer: answerQuality.paid.answered > 0
-                    ? answerQuality.paid.totalPoints / answerQuality.paid.answered
-                    : 0,
-                freeAvgPointsPerAnswer: answerQuality.free.answered > 0
-                    ? answerQuality.free.totalPoints / answerQuality.free.answered
+                avgPointsPerAnswer: answerQuality.answered > 0
+                    ? answerQuality.totalPoints / answerQuality.answered
                     : 0,
             },
             leaderboard: {
-                paidTop10,
-                freeTop10,
+                ticketTop10,
             },
             chat: {
                 totalMessages,
@@ -1384,13 +1255,7 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
             where: {
                 ...gpf,
                 answered: { gt: 0 },
-                OR: [
-                    { paidAt: { not: null, gte: start, lte: end } },
-                    {
-                        purchaseSource: { in: [...FREE_TICKET_SOURCES] },
-                        createdAt: { gte: start, lte: end },
-                    },
-                ],
+                paidAt: { not: null, gte: start, lte: end },
             },
             _avg: { score: true },
         }),
@@ -1564,7 +1429,7 @@ function OverviewTab({
                 <KPICard
                     title="Onboarding Rate"
                     value={`${data.onboardingRate.toFixed(1)}%`}
-                    tooltip="The share of users created in the selected range who reached game access or claimed any ticket, free or paid."
+                    tooltip="The share of users created in the selected range who reached game access or bought a ticket."
                     icon={<CheckCircleIcon className="h-5 w-5 text-[#14B985]" />}
                     subtitle="signup → onboarded"
                     glowVariant="success"
@@ -1572,7 +1437,7 @@ function OverviewTab({
                 <KPICard
                     title="Purchase → Play"
                     value={`${data.purchaseToCompletionRate.toFixed(1)}%`}
-                    tooltip="The share of claimed tickets, free or paid, that answered at least one question. This shows how many ticketed players actually engage after entry."
+                    tooltip="The share of purchased tickets that answered at least one question. This shows how many ticketed players actually engage after entry."
                     icon={<ArrowTrendingUpIcon className="h-5 w-5 text-[#FB72FF]" />}
                     subtitle={`${data.leaveRate.toFixed(1)}% leave rate`}
                     glowVariant="pink"
@@ -1580,7 +1445,7 @@ function OverviewTab({
                 <KPICard
                     title="Activation Rate"
                     value={`${data.activationRate.toFixed(1)}%`}
-                    tooltip="The share of users created in the selected range who reached their first ticket, free or paid. This is signup-to-first-ticket activation, not retention."
+                    tooltip="The share of users created in the selected range who bought their first ticket. This is signup-to-first-ticket activation, not retention."
                     icon={<FireIcon className="h-5 w-5 text-[#FFC931]" />}
                     subtitle="signup → first ticket"
                 />
@@ -1596,7 +1461,7 @@ function OverviewTab({
 
             {/* Secondary KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average final score across ticketed entries, free or paid, with answer data in the selected range." />
+                <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average final score across purchased ticket entries with answer data in the selected range." />
                 <MiniStat label="Avg Answer Speed" value={`${(data.avgAnswerSpeed / 1000).toFixed(1)}s`} color="#00CFF2" tooltip="Average time taken to answer a question, based on stored per-answer latency in milliseconds." />
                 <MiniStat label="Fee / Game" value={`$${data.revenuePerGame.toFixed(2)}`} color="#14B985" tooltip="Average protocol revenue generated per ended game in the selected range." />
                 <MiniStat label="Claim Rate" value={`${data.claimRate.toFixed(1)}%`} color="#FB72FF" tooltip="The share of prize-winning entries that have already claimed their payouts." />
@@ -1639,12 +1504,8 @@ function OverviewTab({
                         total={retention.newPlayers}
                         color="#FB72FF"
                         tooltip={retention.isAllTime
-                            ? "Lifetime signups who have ever claimed at least one ticket, free or paid."
-                            : "New players created in the selected range who claimed at least one ticket in that same range."}
-                        segments={[
-                            { value: retention.newPlayersWithTicketPaid, color: "#14B985", label: "Paid" },
-                            { value: retention.newPlayersWithTicketFree, color: "#00CFF2", label: "Free" },
-                        ]}
+                            ? "Lifetime signups who have ever bought at least one ticket."
+                            : "New players created in the selected range who bought at least one ticket in that same range."}
                     />
                     <RetentionBar
                         label="Returning"
@@ -1661,12 +1522,8 @@ function OverviewTab({
                         total={retention.returningPlayers}
                         color="#14B985"
                         tooltip={retention.isAllTime
-                            ? "Returning users split by whether they ever held a paid ticket or only free tickets."
-                            : "Returning players who claimed at least one ticket in the selected range."}
-                        segments={[
-                            { value: retention.returningPlayersWithTicketPaid, color: "#14B985", label: "Paid" },
-                            { value: retention.returningPlayersWithTicketFree, color: "#00CFF2", label: "Free" },
-                        ]}
+                            ? "Returning users who bought more than one ticket."
+                            : "Returning players who bought at least one ticket in the selected range."}
                     />
                     <RetentionBar
                         label="Repeat Ticket Users"
@@ -1674,10 +1531,6 @@ function OverviewTab({
                         total={retention.totalBuyers}
                         color="#FFC931"
                         tooltip="Unique users with more than one ticket in the selected range."
-                        segments={[
-                            { value: retention.repeatTicketUsersPaid, color: "#14B985", label: "Has paid ticket" },
-                            { value: retention.repeatTicketUsersFree, color: "#00CFF2", label: "Free only" },
-                        ]}
                     />
                 </div>
             </div>
@@ -1703,58 +1556,35 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                 <MiniStat label="Leave Rate" value={`${data.leaveRate.toFixed(1)}%`} color="#EF4444" tooltip="The share of paid entries that left the game before the session was over." />
                 <MiniStat label="Win Rate" value={`${data.winRate.toFixed(2)}%`} color="#FB72FF" tooltip="Rank-1 finishes divided by all ranked paid entries in the selected range." />
                 <MiniStat label="Avg Score" value={data.avgScore.toFixed(0)} color="#FFC931" tooltip="Average score across the paid entries included in gameplay analysis." />
-                <MiniStat label="Answered / Last 5" value={data.answeredPlayersAcrossLastFiveGames.toLocaleString()} color="#14B985" tooltip="Unique players who answered at least one question across the latest 5 ended games, including both free and paid tickets." />
+                <MiniStat label="Answered / Last 5" value={data.answeredPlayersAcrossLastFiveGames.toLocaleString()} color="#14B985" tooltip="Unique ticket buyers who answered at least one question across the latest 5 ended games." />
             </div>
 
             <div className="rounded-2xl border border-white/10 p-6 space-y-6">
                 <div className="flex items-end justify-between gap-4">
                     <div>
-                        <h3 className="text-lg font-semibold text-white font-display">Current Ticket Cohorts</h3>
+                        <h3 className="text-lg font-semibold text-white font-display">Current Ticket Buyers</h3>
                         <p className="text-sm text-white/50">
-                            Repeat, first-time, and free-to-paid conversion signals for the current ticket-selling game
+                            Repeat and first-time buyer signals for the current ticket-selling game
                         </p>
                     </div>
-                    {data.currentTicketCohorts ? (
+                    {data.currentTicketBuyers ? (
                         <div className="text-right text-xs text-white/40">
-                            <div>{data.currentTicketCohorts.currentGameTitle}</div>
-                            <div>vs {data.currentTicketCohorts.previousGameTitle}</div>
+                            <div>{data.currentTicketBuyers.currentGameTitle}</div>
+                            <div>vs {data.currentTicketBuyers.previousGameTitle}</div>
                         </div>
                     ) : null}
                 </div>
 
-                {data.currentTicketCohorts ? (
-                    <>
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
-                                <h4 className="text-sm font-semibold text-white font-display mb-4">Paid Cohort</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <MiniStat label="Current Paid" value={data.currentTicketCohorts.paid.count.toLocaleString()} color="#FFC931" tooltip="Current paid or discounted ticket holders in the live or next game." />
-                                    <MiniStat label="Played Last Game" value={`${data.currentTicketCohorts.paid.playedLastGameRate.toFixed(1)}%`} color="#14B985" tooltip="Current paid ticket holders who answered at least one question in the previous comparable game." />
-                                    <MiniStat label="Paid Last Game" value={`${data.currentTicketCohorts.paid.sameTypeLastGameRate.toFixed(1)}%`} color="#00CFF2" tooltip="Current paid ticket holders who also held a paid ticket in the previous comparable game." />
-                                    <MiniStat label="First Ticket Ever" value={`${data.currentTicketCohorts.paid.firstTimeRate.toFixed(1)}%`} color="#FB72FF" tooltip="Current paid ticket holders with no earlier ticket history, free or paid." />
-                                </div>
-                            </div>
-
-                            <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
-                                <h4 className="text-sm font-semibold text-white font-display mb-4">Free Cohort</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <MiniStat label="Current Free" value={data.currentTicketCohorts.free.count.toLocaleString()} color="#00CFF2" tooltip="Current free-ticket holders in the live or next game." />
-                                    <MiniStat label="Played Last Game" value={`${data.currentTicketCohorts.free.playedLastGameRate.toFixed(1)}%`} color="#14B985" tooltip="Current free-ticket holders who answered at least one question in the previous comparable game." />
-                                    <MiniStat label="Free Last Game" value={`${data.currentTicketCohorts.free.sameTypeLastGameRate.toFixed(1)}%`} color="#00CFF2" tooltip="Current free-ticket holders who also had a free ticket in the previous comparable game." />
-                                    <MiniStat label="First Ticket Ever" value={`${data.currentTicketCohorts.free.firstTimeRate.toFixed(1)}%`} color="#FB72FF" tooltip="Current free-ticket holders with no earlier ticket history, free or paid." />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <MiniStat label="Prev Free Cohort" value={data.currentTicketCohorts.previousFreeCount.toLocaleString()} color="#00CFF2" tooltip="Free-ticket holders in the previous comparable game." />
-                            <MiniStat label="Free → Paid" value={data.currentTicketCohorts.previousFreeToPaid.toLocaleString()} color="#FFC931" tooltip="Previous free-ticket holders who now hold a paid ticket in the current game." />
-                            <MiniStat label="Free → Paid Rate" value={`${data.currentTicketCohorts.previousFreeToPaidRate.toFixed(1)}%`} color="#14B985" tooltip="Share of the previous free cohort that converted into paid tickets for the current game." />
-                        </div>
-                    </>
+                {data.currentTicketBuyers ? (
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                        <MiniStat label="Current Buyers" value={data.currentTicketBuyers.buyers.count.toLocaleString()} color="#FFC931" tooltip="Current ticket buyers in the live or next game." />
+                        <MiniStat label="Played Last Game" value={`${data.currentTicketBuyers.buyers.playedLastGameRate.toFixed(1)}%`} color="#14B985" tooltip="Current ticket buyers who answered at least one question in the previous comparable game." />
+                        <MiniStat label="Bought Last Game" value={`${data.currentTicketBuyers.buyers.boughtLastGameRate.toFixed(1)}%`} color="#00CFF2" tooltip="Current ticket buyers who also bought a ticket in the previous comparable game." />
+                        <MiniStat label="First Ticket Ever" value={`${data.currentTicketBuyers.buyers.firstTimeRate.toFixed(1)}%`} color="#FB72FF" tooltip="Current ticket buyers with no earlier ticket history." />
+                    </div>
                 ) : (
                     <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5 text-sm text-white/50">
-                        No live or upcoming game pair is available yet for current-ticket cohort analytics.
+                        No live or upcoming game pair is available yet for current-ticket buyer analytics.
                     </div>
                 )}
             </div>
@@ -1765,23 +1595,17 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                     <div>
                         <h3 className="text-lg font-semibold text-white font-display">Behavior Signals</h3>
                         <p className="text-sm text-white/50">
-                            No-shows, late joins, and paid-vs-free quality signals that explain how the lobby really behaved
+                            No-shows, late joins, and answer quality signals that explain how the lobby really behaved
                         </p>
                     </div>
                 </div>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <MiniStat
-                        label="Paid No-Show"
-                        value={`${data.behavior.ticketMix.paidNoShowRate.toFixed(1)}%`}
+                        label="No-Show"
+                        value={`${data.behavior.tickets.noShowRate.toFixed(1)}%`}
                         color="#FFC931"
-                        tooltip="Paid or discounted entries that never answered a question."
-                    />
-                    <MiniStat
-                        label="Free No-Show"
-                        value={`${data.behavior.ticketMix.freeNoShowRate.toFixed(1)}%`}
-                        color="#00CFF2"
-                        tooltip="Free entries that never answered a question."
+                        tooltip="Ticket buyers who never answered a question."
                     />
                     <MiniStat
                         label="Late Entry Rate"
@@ -1826,48 +1650,44 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
-                        <h4 className="text-sm font-semibold text-white font-display mb-4">Ticket Intent Split</h4>
+                        <h4 className="text-sm font-semibold text-white font-display mb-4">Ticket Outcomes</h4>
                         <div className="grid grid-cols-3 gap-3 text-center">
                             <div className="rounded-xl bg-[#FFC931]/10 border border-[#FFC931]/20 p-4">
-                                <div className="text-xs uppercase tracking-wider text-white/50">Paid</div>
-                                <div className="mt-2 text-2xl font-bold text-[#FFC931] font-body">{data.behavior.ticketMix.paidEntries}</div>
+                                <div className="text-xs uppercase tracking-wider text-white/50">Tickets</div>
+                                <div className="mt-2 text-2xl font-bold text-[#FFC931] font-body">{data.behavior.tickets.entries}</div>
                                 <div className="mt-1 text-[11px] text-white/40">
-                                    {data.behavior.ticketMix.paidCompletedAll} finished
+                                    {data.behavior.tickets.completedAll} finished
                                 </div>
                             </div>
                             <div className="rounded-xl bg-[#00CFF2]/10 border border-[#00CFF2]/20 p-4">
-                                <div className="text-xs uppercase tracking-wider text-white/50">Free</div>
-                                <div className="mt-2 text-2xl font-bold text-[#00CFF2] font-body">{data.behavior.ticketMix.freeEntries}</div>
+                                <div className="text-xs uppercase tracking-wider text-white/50">Partial</div>
+                                <div className="mt-2 text-2xl font-bold text-[#00CFF2] font-body">{data.behavior.tickets.partial}</div>
                                 <div className="mt-1 text-[11px] text-white/40">
-                                    {data.behavior.ticketMix.freeCompletedAll} finished
+                                    answered some questions
                                 </div>
                             </div>
                             <div className="rounded-xl bg-[#FB72FF]/10 border border-[#FB72FF]/20 p-4">
-                                <div className="text-xs uppercase tracking-wider text-white/50">Dead Money</div>
+                                <div className="text-xs uppercase tracking-wider text-white/50">No-Show Revenue</div>
                                 <div className="mt-2 text-2xl font-bold text-[#FB72FF] font-body">
-                                    ${data.behavior.monetization.paidNoShowRevenue.toFixed(2)}
+                                    ${data.behavior.monetization.noShowRevenue.toFixed(2)}
                                 </div>
                                 <div className="mt-1 text-[11px] text-white/40">
-                                    {data.behavior.monetization.paidNoShowRevenueRate.toFixed(1)}% of paid ticket revenue
+                                    {data.behavior.monetization.noShowRevenueRate.toFixed(1)}% of ticket revenue
                                 </div>
                             </div>
                         </div>
                         <div className="mt-4 space-y-2 text-sm text-white/60">
                             <div className="flex items-center justify-between">
-                                <span>Paid partial runs</span>
-                                <span className="font-body text-white">{data.behavior.ticketMix.paidPartial}</span>
+                                <span>Partial runs</span>
+                                <span className="font-body text-white">{data.behavior.tickets.partial}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span>Free partial runs</span>
-                                <span className="font-body text-white">{data.behavior.ticketMix.freePartial}</span>
+                                <span>No-shows</span>
+                                <span className="font-body text-white">{data.behavior.tickets.noShow}</span>
                             </div>
                             <div className="flex items-center justify-between">
-                                <span>Paid no-shows</span>
-                                <span className="font-body text-white">{data.behavior.ticketMix.paidNoShow}</span>
-                            </div>
-                            <div className="flex items-center justify-between">
-                                <span>Free no-shows</span>
-                                <span className="font-body text-white">{data.behavior.ticketMix.freeNoShow}</span>
+                                <span>Completed all questions</span>
+                                <span className="font-body text-white">{data.behavior.tickets.completedAll}</span>
                             </div>
                         </div>
                     </div>
@@ -1892,12 +1712,8 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                         </div>
                         <div className="mt-4 rounded-xl bg-white/5 border border-white/8 p-4">
                             <div className="flex items-center justify-between text-sm">
-                                <span className="text-white/60">Free players in top 10</span>
-                                <span className="font-body text-[#00CFF2]">{data.behavior.leaderboard.freeTop10}</span>
-                            </div>
-                            <div className="mt-2 flex items-center justify-between text-sm">
-                                <span className="text-white/60">Paid players in top 10</span>
-                                <span className="font-body text-[#FFC931]">{data.behavior.leaderboard.paidTop10}</span>
+                                <span className="text-white/60">Ticket buyers in top 10</span>
+                                <span className="font-body text-[#FFC931]">{data.behavior.leaderboard.ticketTop10}</span>
                             </div>
                         </div>
                     </div>
@@ -1925,33 +1741,33 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                     </div>
 
                     <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
-                        <h4 className="text-sm font-semibold text-white font-display mb-4">Paid vs Free Answer Quality</h4>
+                        <h4 className="text-sm font-semibold text-white font-display mb-4">Answer Quality</h4>
                         <div className="grid grid-cols-3 gap-3">
                             <div className="rounded-xl bg-white/5 border border-white/8 p-4">
-                                <div className="text-xs uppercase tracking-wider text-white/40">Accuracy gap</div>
+                                <div className="text-xs uppercase tracking-wider text-white/40">Accuracy</div>
                                 <div className="mt-2 text-xl font-bold text-[#14B985] font-body">
-                                    {Math.abs(data.behavior.answerQuality.paidAccuracy - data.behavior.answerQuality.freeAccuracy).toFixed(1)} pts
+                                    {data.behavior.answerQuality.accuracy.toFixed(1)}%
                                 </div>
                                 <div className="mt-1 text-[11px] text-white/40">
-                                    Paid {data.behavior.answerQuality.paidAccuracy.toFixed(1)}% vs free {data.behavior.answerQuality.freeAccuracy.toFixed(1)}%
+                                    correct answers
                                 </div>
                             </div>
                             <div className="rounded-xl bg-white/5 border border-white/8 p-4">
                                 <div className="text-xs uppercase tracking-wider text-white/40">Avg speed</div>
                                 <div className="mt-2 text-xl font-bold text-[#00CFF2] font-body">
-                                    {(data.behavior.answerQuality.paidAvgResponseMs / 1000).toFixed(1)}s
+                                    {(data.behavior.answerQuality.avgResponseMs / 1000).toFixed(1)}s
                                 </div>
                                 <div className="mt-1 text-[11px] text-white/40">
-                                    Free {(data.behavior.answerQuality.freeAvgResponseMs / 1000).toFixed(1)}s
+                                    per answer
                                 </div>
                             </div>
                             <div className="rounded-xl bg-white/5 border border-white/8 p-4">
                                 <div className="text-xs uppercase tracking-wider text-white/40">Points / answer</div>
                                 <div className="mt-2 text-xl font-bold text-[#FFC931] font-body">
-                                    {data.behavior.answerQuality.paidAvgPointsPerAnswer.toFixed(0)}
+                                    {data.behavior.answerQuality.avgPointsPerAnswer.toFixed(0)}
                                 </div>
                                 <div className="mt-1 text-[11px] text-white/40">
-                                    Free {data.behavior.answerQuality.freeAvgPointsPerAnswer.toFixed(0)}
+                                    average points
                                 </div>
                             </div>
                         </div>

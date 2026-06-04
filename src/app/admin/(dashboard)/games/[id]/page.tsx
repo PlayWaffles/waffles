@@ -14,7 +14,6 @@ import { getGamePhase } from "@/lib/types";
 import { SponsorGameCard } from "@/components/admin/SponsorGameCard";
 import { RoundupButton } from "@/components/admin/RoundupButton";
 import { formatAdminGameLabel } from "@/lib/game/labels";
-import { TicketPurchaseSource } from "@prisma";
 
 // ============================================
 // HELPER COMPONENTS
@@ -120,7 +119,7 @@ export default async function GameDetailPage({
 }) {
     const { id } = await params;
 
-    const [game, ticketMix] = await Promise.all([
+    const [game, ticketCount] = await Promise.all([
         prisma.game.findUnique({
             where: { id },
             select: {
@@ -149,11 +148,11 @@ export default async function GameDetailPage({
                     },
                 },
                 entries: {
+                    where: { paidAt: { not: null } },
                     orderBy: { score: "desc" },
                     take: 20,
                     select: {
                         paidAt: true,
-                        purchaseSource: true,
                         score: true,
                         rank: true,
                         prize: true,
@@ -165,11 +164,7 @@ export default async function GameDetailPage({
                 },
             },
         }),
-        prisma.gameEntry.groupBy({
-            by: ["purchaseSource"],
-            where: { gameId: id },
-            _count: true,
-        }),
+        prisma.gameEntry.count({ where: { gameId: id, paidAt: { not: null } } }),
     ]);
 
     if (!game) {
@@ -190,17 +185,6 @@ export default async function GameDetailPage({
     };
 
     const duration = Math.round((game.endsAt.getTime() - game.startsAt.getTime()) / (1000 * 60));
-    const paidEntriesCount = ticketMix
-        .filter((entry) => entry.purchaseSource === TicketPurchaseSource.PAID || entry.purchaseSource === TicketPurchaseSource.DISCOUNTED)
-        .reduce((sum, entry) => sum + entry._count, 0);
-    const freePlayerEntriesCount = ticketMix.find(
-        (entry) => entry.purchaseSource === TicketPurchaseSource.FREE_PLAYER,
-    )?._count ?? 0;
-    const freeAdminEntriesCount = ticketMix.find(
-        (entry) => entry.purchaseSource === TicketPurchaseSource.FREE_ADMIN,
-    )?._count ?? 0;
-    const freeEntriesCount = freePlayerEntriesCount + freeAdminEntriesCount;
-
     return (
         <div className="space-y-8 max-w-6xl">
             {/* Breadcrumb & Actions Header */}
@@ -331,14 +315,9 @@ export default async function GameDetailPage({
                 />
                 <StatCard
                     icon={TicketIcon}
-                    label="Ticket Mix"
-                    value={`${paidEntriesCount} paid`}
+                    label="Tickets"
+                    value={ticketCount}
                     color="gold"
-                    subtext={
-                        freeEntriesCount > 0
-                            ? `${freePlayerEntriesCount} play-only, ${freeAdminEntriesCount} admin free`
-                            : "No free tickets"
-                    }
                 />
                 <StatCard
                     icon={QuestionMarkCircleIcon}
@@ -371,10 +350,10 @@ export default async function GameDetailPage({
                     <span className="w-8 h-8 rounded-lg bg-[#FFC931]/10 flex items-center justify-center">
                         🏆
                     </span>
-                    Players ({game._count.entries})
+                    Players ({ticketCount})
                 </h2>
                 <p className="text-sm text-white/45 mb-4">
-                    Showing paid, play-only, and admin-issued free entrants.
+                    Showing players with purchased tickets.
                 </p>
 
                 {game.entries.length > 0 ? (
@@ -383,22 +362,6 @@ export default async function GameDetailPage({
                             const rank = entry.rank || i + 1;
                             const isWinner = (entry.prize || 0) > 0;
                             const hasClaimed = !!entry.claimedAt;
-                            const ticketType =
-                                entry.purchaseSource === TicketPurchaseSource.FREE_PLAYER
-                                    ? {
-                                        label: "Play Only",
-                                        className: "bg-[#00CFF2]/15 text-[#00CFF2]",
-                                    }
-                                    : entry.purchaseSource === TicketPurchaseSource.FREE_ADMIN
-                                        ? {
-                                            label: "Admin Free",
-                                            className: "bg-[#FFC931]/15 text-[#FFC931]",
-                                        }
-                                        : {
-                                            label: "Paid",
-                                            className: "bg-[#14B985]/15 text-[#14B985]",
-                                        };
-
                             return (
                                 <div
                                     key={i}
@@ -439,8 +402,8 @@ export default async function GameDetailPage({
                                                 <p className="text-white/50 text-xs">
                                                 {entry.score} pts
                                                 </p>
-                                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wide ${ticketType.className}`}>
-                                                    {ticketType.label}
+                                                <span className="px-2 py-0.5 rounded-full bg-[#14B985]/15 text-[#14B985] text-[10px] font-bold uppercase tracking-wide">
+                                                    Ticket
                                                 </span>
                                             </div>
                                         </div>

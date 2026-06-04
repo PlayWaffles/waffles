@@ -99,6 +99,13 @@ export function buildProductionEntryWhere(platform?: string) {
     return { game: gameWhere };
 }
 
+export function buildPaidProductionEntryWhere(platform?: string): Prisma.GameEntryWhereInput {
+    return {
+        ...buildProductionEntryWhere(platform),
+        paidAt: { not: null },
+    };
+}
+
 export function calculateProtocolRevenue(grossAmount: number | null | undefined) {
     return (grossAmount || 0) * PLATFORM_FEE_RATE;
 }
