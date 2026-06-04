@@ -8,7 +8,6 @@ import {
   resolveRuntimePlatform,
 } from "@/lib/platform/server";
 import {
-  entryWhere,
   gameWhere,
   isGameVisibleToPlatform,
   sharesBaseMainnetGames,
@@ -192,10 +191,14 @@ async function handleGame(
 ): Promise<NextResponse<LeaderboardResponse>> {
   // Resolve game ID - use provided or get latest
   let targetGameId = gameId;
+  const now = new Date();
 
   if (!targetGameId) {
     const latest = await prisma.game.findFirst({
-      where: gameWhere(platform, visibility),
+      where: {
+        ...gameWhere(platform, visibility),
+        startsAt: { lte: now },
+      },
       orderBy: { endsAt: "desc" },
       select: { id: true },
     });
@@ -237,6 +240,7 @@ async function handleGame(
       where: {
         ...platformGamesWhere,
         endsAt: { lt: game.endsAt! },
+        startsAt: { lte: now },
       },
       orderBy: { endsAt: "desc" },
       select: { id: true },
@@ -245,6 +249,7 @@ async function handleGame(
       where: {
         ...platformGamesWhere,
         endsAt: { gt: game.endsAt! },
+        startsAt: { lte: now },
       },
       orderBy: { endsAt: "asc" },
       select: { id: true },
