@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
 import { env } from "./env";
+import { normalizeQuestionMediaUrl } from "./game/question-media";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -17,21 +18,6 @@ export interface UploadOptions {
   key: string; // File path/name (becomes public_id)
   body: Buffer | Uint8Array | string;
   contentType: string;
-}
-
-const GAME_IMAGE_DELIVERY_TRANSFORMATION = {
-  width: 1280,
-  height: 720,
-  crop: "limit",
-  quality: "auto:good",
-  fetch_format: "auto",
-} as const;
-
-function getGameImageDeliveryUrl(publicId: string): string {
-  return cloudinary.url(publicId, {
-    secure: true,
-    transformation: [GAME_IMAGE_DELIVERY_TRANSFORMATION],
-  });
 }
 
 export async function uploadFile({
@@ -68,11 +54,15 @@ export async function uploadFile({
     overwrite: true,
   });
 
+  const isQuestionImage =
+    resourceType === "image" &&
+    contentType !== "image/svg+xml" &&
+    result.public_id.startsWith("waffles/questions/");
+
   return {
-    url:
-      resourceType === "image" && contentType !== "image/svg+xml"
-        ? getGameImageDeliveryUrl(result.public_id)
-        : result.secure_url,
+    url: isQuestionImage
+      ? (normalizeQuestionMediaUrl(result.secure_url) ?? result.secure_url)
+      : result.secure_url,
     key: result.public_id,
   };
 }
@@ -136,8 +126,11 @@ export async function listFiles(prefix = ""): Promise<FileInfo[]> {
         return {
           key: resource.public_id,
           url:
-            resource.resource_type === "image" && resource.format !== "svg"
-              ? getGameImageDeliveryUrl(resource.public_id)
+            resource.resource_type === "image" &&
+            resource.format !== "svg" &&
+            resource.public_id.startsWith("waffles/questions/")
+              ? (normalizeQuestionMediaUrl(resource.secure_url) ??
+                resource.secure_url)
               : resource.secure_url,
           size: resource.bytes || 0,
           lastModified: new Date(resource.created_at),
