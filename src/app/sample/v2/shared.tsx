@@ -70,17 +70,22 @@ export const PixelImg = ({
   alt = "",
   style,
   className,
+  priority = "visible",
 }: {
   src: string;
   size: number;
   alt?: string;
   style?: CSSProperties;
   className?: string;
+  priority?: "visible" | "deferred";
 }) => (
   <img
     src={src}
     alt={alt}
     className={className}
+    decoding="async"
+    fetchPriority={priority === "visible" ? "auto" : "low"}
+    loading={priority === "visible" ? "eager" : "lazy"}
     style={{
       width: size,
       height: size,
