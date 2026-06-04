@@ -13,6 +13,7 @@ import {
   attachWalletToFarcasterUser,
   resolveCanonicalFarcasterUser,
 } from "@/lib/user-wallets";
+import { generateUniqueMiniPayUsername } from "@/lib/usernames";
 
 const MAX_RETRIES = 10;
 
@@ -32,6 +33,10 @@ export type SyncUserResult =
 
 export type SyncFarcasterWalletResult =
   | { success: true; wallet: string; recovered: number }
+  | { success: false; error: string };
+
+export type UpdateMiniPayUsernameResult =
+  | { success: true; username: string }
   | { success: false; error: string };
 
 /**
@@ -68,7 +73,10 @@ export async function upsertUser(
         where: { id: existingUser.id },
         data: {
           platform,
-          username,
+          username:
+            platform === UserPlatform.MINIPAY
+              ? username ?? existingUser.username
+              : username,
           pfpUrl,
           fid: platform === "FARCASTER" ? fid ?? null : null,
           wallet: normalizedWallet,
@@ -83,13 +91,28 @@ export async function upsertUser(
         },
       });
     } else {
+      const initialUsername =
+        platform === UserPlatform.MINIPAY && !username
+          ? await generateUniqueMiniPayUsername(normalizedWallet!, (candidate) =>
+              prisma.user
+                .findFirst({
+                  where: {
+                    platform: UserPlatform.MINIPAY,
+                    username: { equals: candidate, mode: "insensitive" },
+                  },
+                  select: { id: true },
+                })
+                .then(Boolean),
+            )
+          : username;
+
       for (let i = 0; i < MAX_RETRIES; i++) {
         try {
           user = await prisma.user.create({
             data: {
               platform,
               fid: platform === "FARCASTER" ? fid ?? undefined : undefined,
-              username,
+              username: initialUsername,
               pfpUrl,
               wallet: normalizedWallet ?? undefined,
               inviteCode: generateInviteCode(),
@@ -143,6 +166,67 @@ export async function syncFarcasterWalletAndRecover(
     return {
       success: false,
       error: err instanceof Error ? err.message : "Wallet sync failed",
+    };
+  }
+}
+
+export async function updateMiniPayUsernameAction(
+  username: string,
+): Promise<UpdateMiniPayUsernameResult> {
+  const parsedUsername = z
+    .string()
+    .trim()
+    .min(3, "Username must be at least 3 characters")
+    .max(20, "Username must be at most 20 characters")
+    .regex(
+      /^[a-zA-Z0-9_]+$/,
+      "Username can only use letters, numbers, and underscores",
+    )
+    .safeParse(username);
+
+  if (!parsedUsername.success) {
+    return {
+      success: false,
+      error: parsedUsername.error.issues[0]?.message ?? "Invalid username",
+    };
+  }
+
+  try {
+    const { user } = await requireCurrentUser();
+
+    if (user.platform !== UserPlatform.MINIPAY) {
+      return { success: false, error: "Only MiniPay usernames can be edited here" };
+    }
+
+    const nextUsername = parsedUsername.data.toLowerCase();
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        id: { not: user.id },
+        platform: UserPlatform.MINIPAY,
+        username: { equals: nextUsername, mode: "insensitive" },
+      },
+      select: { id: true },
+    });
+
+    if (existingUser) {
+      return { success: false, error: "That username is already taken" };
+    }
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { username: nextUsername },
+    });
+
+    revalidatePath("/game");
+    revalidatePath("/profile");
+    revalidatePath("/(app)/(game)", "layout");
+
+    return { success: true, username: nextUsername };
+  } catch (err) {
+    console.error("updateMiniPayUsernameAction Error:", err);
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Username update failed",
     };
   }
 }
