@@ -13,6 +13,5 @@ export { ActivityFeed } from "./ActivityFeed";
 export { GameInsights } from "./GameInsights";
 export { QuestionDifficulty } from "./QuestionDifficulty";
 export { PlayerEngagement } from "./PlayerEngagement";
-export { ChatAnalytics } from "./ChatAnalytics";
 export { AnalyticsTabs } from "./AnalyticsTabs";
 export type { AnalyticsTab } from "./AnalyticsTabs";
