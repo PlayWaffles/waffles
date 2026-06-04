@@ -18,7 +18,6 @@ import {
     GamePerformanceTable,
     QuestionDifficulty,
     PlayerEngagement,
-    ChatAnalytics,
     AnalyticsTabs,
     MetricTooltip,
     type AnalyticsTab,
@@ -32,7 +31,6 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
-import { getStoredChatHistory } from "@/lib/partykit";
 
 // ============================================================
 // HELPERS
@@ -44,16 +42,6 @@ interface AnswerData {
     points: number;
     ms: number;
 }
-
-const CHAT_STOPWORDS = new Set([
-    "the", "and", "for", "that", "this", "with", "you", "your", "are", "was",
-    "have", "has", "not", "but", "all", "just", "can", "get", "out", "how",
-    "what", "when", "why", "who", "will", "from", "into", "they", "them", "their",
-    "our", "about", "was", "were", "too", "very", "then", "than", "its", "it's",
-    "im", "i'm", "ive", "i've", "dont", "don't", "cant", "can't", "lets", "let's",
-    "yeah", "nah", "lol", "lfg", "omg", "pls", "please", "rt", "amp", "http", "https",
-    "www", "com", "game", "waffles",
-]);
 
 interface RevenueEntryWithGame {
     paidAt: Date | null;
@@ -612,7 +600,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
     const [
         entries,
         questionsRaw,
-        gamesInRange,
         // Rank distribution
         rankedEntries,
         // Win rate (rank 1)
@@ -650,20 +637,10 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 gameId: true,
                 content: true,
                 correctIndex: true,
-                durationSec: true,
                 roundIndex: true,
                 orderInRound: true,
                 game: { select: { title: true } },
             },
-        }),
-        prisma.game.findMany({
-            where: { ...gamePf, startsAt: { gte: start, lte: end } },
-            select: {
-                id: true,
-                startsAt: true,
-                roundBreakSec: true,
-            },
-            take: 500,
         }),
         prisma.gameEntry.findMany({
             where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: { not: null } },
@@ -742,70 +719,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         })
         : [];
 
-    const chatsByGame = new Map<
-        string,
-        Array<{ text: string; createdAt: Date; username: string; gameId: string }>
-    >();
-    const dbChatsInRange = await prisma.chat.findMany({
-        where: {
-            gameId: { in: gamesInRange.map((game) => game.id) },
-        },
-        orderBy: { createdAt: "asc" },
-        select: {
-            gameId: true,
-            text: true,
-            createdAt: true,
-            user: {
-                select: {
-                    username: true,
-                },
-            },
-        },
-    });
-    const dbChatsByGame = new Map<
-        string,
-        Array<{ text: string; createdAt: Date; username: string; gameId: string }>
-    >();
-    for (const chat of dbChatsInRange) {
-        const existing = dbChatsByGame.get(chat.gameId) ?? [];
-        existing.push({
-            text: chat.text,
-            createdAt: chat.createdAt,
-            username: chat.user.username ?? "Unknown",
-            gameId: chat.gameId,
-        });
-        dbChatsByGame.set(chat.gameId, existing);
-    }
-    const storedChatResults = await Promise.all(
-        gamesInRange.map(async (game) => ({
-            gameId: game.id,
-            startsAt: game.startsAt,
-            roundBreakSec: game.roundBreakSec,
-            messages: await getStoredChatHistory(game.id),
-        })),
-    );
-    const gameMetaById = new Map(
-        gamesInRange.map((game) => [
-            game.id,
-            { startsAt: game.startsAt, roundBreakSec: game.roundBreakSec },
-        ]),
-    );
-    for (const result of storedChatResults) {
-        const fallbackMessages = dbChatsByGame.get(result.gameId) ?? [];
-        const messages = result.messages.length > 0
-            ? result.messages.map((message) => ({
-                text: message.text,
-                createdAt: new Date(message.ts),
-                username: message.username,
-                gameId: result.gameId,
-            }))
-            : fallbackMessages;
-        chatsByGame.set(
-            result.gameId,
-            messages,
-        );
-    }
-
     const gameQuestions = new Map<string, typeof questionsRaw>();
     for (const question of questionsRaw) {
         const existing = gameQuestions.get(question.gameId) ?? [];
@@ -826,31 +739,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         gameQuestionCounts.set(gameId, ordered.length);
     }
 
-    const roundWindows = new Map<string, Array<{ round: number; startMs: number; endMs: number }>>();
-    for (const [gameId, questions] of gameQuestions.entries()) {
-        const ordered = [...questions].sort((a, b) =>
-            a.roundIndex - b.roundIndex || a.orderInRound - b.orderInRound
-        );
-        const roundBreakSec = gameMetaById.get(gameId)?.roundBreakSec ?? 0;
-        let cursorMs = 0;
-        const windows: Array<{ round: number; startMs: number; endMs: number }> = [];
-
-        for (let index = 0; index < ordered.length; index++) {
-            const question = ordered[index];
-            const startMs = cursorMs;
-            const endMs = startMs + (question.durationSec * 1000);
-            windows.push({ round: question.roundIndex, startMs, endMs });
-            cursorMs = endMs;
-
-            const nextQuestion = ordered[index + 1];
-            if (nextQuestion && nextQuestion.roundIndex !== question.roundIndex) {
-                cursorMs += roundBreakSec * 1000;
-            }
-        }
-
-        roundWindows.set(gameId, windows);
-    }
-
     // Single pass over entries: accuracy, speed, completion, leave rate, and behavior stats
     let totalCorrect = 0;
     let totalAnswered = 0;
@@ -867,10 +755,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
     let lateNoShows = 0;
     let startedEntries = 0;
     let reachedFinalQuestion = 0;
-    const messagesByPlayer = new Map<string, number>();
-    const messagesByGame = new Map<string, number>();
-    const messagesByRoundMap = new Map<number, number>();
-    const keywordCounts = new Map<string, number>();
 
     for (const entry of entries) {
         scores.push(entry.score);
@@ -1018,65 +902,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         (entry) => entry.rank !== null && entry.rank <= 3 && entry.createdAt > entry.game.startsAt
     ).length;
 
-    const chats = Array.from(chatsByGame.entries()).flatMap(([gameId, messages]) =>
-        messages.map((message) => ({
-            ...message,
-            game: {
-                startsAt: gameMetaById.get(gameId)?.startsAt ?? start,
-            },
-        })),
-    );
-
-    for (const chat of chats) {
-        messagesByPlayer.set(chat.username, (messagesByPlayer.get(chat.username) ?? 0) + 1);
-        messagesByGame.set(chat.gameId, (messagesByGame.get(chat.gameId) ?? 0) + 1);
-
-        const elapsedMs = chat.createdAt.getTime() - chat.game.startsAt.getTime();
-        const gameWindows = roundWindows.get(chat.gameId) ?? [];
-        const matchingWindow = gameWindows.find((window) =>
-            elapsedMs >= window.startMs && elapsedMs <= window.endMs
-        );
-        if (matchingWindow) {
-            messagesByRoundMap.set(
-                matchingWindow.round,
-                (messagesByRoundMap.get(matchingWindow.round) ?? 0) + 1,
-            );
-        }
-
-        const normalizedWords = chat.text
-            .toLowerCase()
-            .replace(/https?:\/\/\S+/g, " ")
-            .replace(/[^a-z0-9\s]/g, " ")
-            .split(/\s+/)
-            .filter((word) => word.length >= 3 && !CHAT_STOPWORDS.has(word));
-
-        for (const word of normalizedWords) {
-            keywordCounts.set(word, (keywordCounts.get(word) ?? 0) + 1);
-        }
-    }
-
-    const totalMessages = chats.length;
-    const uniqueChatters = messagesByPlayer.size;
-    const avgMessagesPerChatter = uniqueChatters > 0 ? totalMessages / uniqueChatters : 0;
-    const avgMessagesPerEntry = entries.length > 0 ? totalMessages / entries.length : 0;
-    const chatParticipationRate = entries.length > 0 ? (uniqueChatters / entries.length) * 100 : 0;
-    const loudestChatterMessages = messagesByPlayer.size > 0
-        ? Math.max(...messagesByPlayer.values())
-        : 0;
-    const loudestChatterShare = totalMessages > 0
-        ? (loudestChatterMessages / totalMessages) * 100
-        : 0;
-    const avgMessagesPerGame = messagesByGame.size > 0
-        ? totalMessages / messagesByGame.size
-        : 0;
-    const messagesByRound = Array.from(messagesByRoundMap.entries())
-        .sort((a, b) => a[0] - b[0])
-        .map(([round, messages]) => ({ round, messages }));
-    const topKeywords = Array.from(keywordCounts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 20)
-        .map(([word, count]) => ({ word, count }));
-
     const currentTicketUsers = new Set(currentComparableEntries.map((entry) => entry.userId));
     const previousParticipants = new Set(
         previousComparableEntries
@@ -1176,18 +1001,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             },
             leaderboard: {
                 ticketTop10,
-            },
-            chat: {
-                totalMessages,
-                uniqueChatters,
-                participationRate: chatParticipationRate,
-                avgMessagesPerChatter,
-                avgMessagesPerEntry,
-                avgMessagesPerGame,
-                loudestChatterMessages,
-                loudestChatterShare,
-                messagesByRound,
-                topKeywords,
             },
         },
     };
@@ -1621,33 +1434,6 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                     />
                 </div>
 
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    <MiniStat
-                        label="Lobby Messages"
-                        value={data.behavior.chat.totalMessages.toLocaleString()}
-                        color="#FFC931"
-                        tooltip="Total chat messages sent inside game lobbies in the selected range."
-                    />
-                    <MiniStat
-                        label="Chat Participation"
-                        value={`${data.behavior.chat.participationRate.toFixed(1)}%`}
-                        color="#00CFF2"
-                        tooltip="Share of ticketed players who sent at least one lobby message."
-                    />
-                    <MiniStat
-                        label="Avg / Chatter"
-                        value={data.behavior.chat.avgMessagesPerChatter.toFixed(1)}
-                        color="#FB72FF"
-                        tooltip="Average number of messages sent by players who actually chatted."
-                    />
-                    <MiniStat
-                        label="Avg / Ticketed Player"
-                        value={data.behavior.chat.avgMessagesPerEntry.toFixed(2)}
-                        color="#14B985"
-                        tooltip="Average number of lobby messages per ticketed entry, including silent players."
-                    />
-                </div>
-
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
                         <h4 className="text-sm font-semibold text-white font-display mb-4">Ticket Outcomes</h4>
@@ -1774,59 +1560,7 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
-                        <h4 className="text-sm font-semibold text-white font-display mb-4">Lobby Chat Intensity</h4>
-                        <div className="grid grid-cols-2 gap-3">
-                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
-                                <div className="text-xs uppercase tracking-wider text-white/40">Avg messages / game</div>
-                                <div className="mt-2 text-2xl font-bold text-[#FFC931] font-body">
-                                    {data.behavior.chat.avgMessagesPerGame.toFixed(1)}
-                                </div>
-                                <div className="mt-1 text-[11px] text-white/40">
-                                    across games in the selected range
-                                </div>
-                            </div>
-                            <div className="rounded-xl bg-white/5 border border-white/8 p-4">
-                                <div className="text-xs uppercase tracking-wider text-white/40">Loudest chatter share</div>
-                                <div className="mt-2 text-2xl font-bold text-[#00CFF2] font-body">
-                                    {data.behavior.chat.loudestChatterShare.toFixed(1)}%
-                                </div>
-                                <div className="mt-1 text-[11px] text-white/40">
-                                    top chatter sent {data.behavior.chat.loudestChatterMessages} messages
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="rounded-2xl bg-white/[0.03] border border-white/8 p-5">
-                        <h4 className="text-sm font-semibold text-white font-display mb-4">Lobby Chat Read</h4>
-                        <div className="space-y-3 text-sm text-white/60">
-                            <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/8 p-4">
-                                <span>Unique chatters</span>
-                                <span className="font-body text-white">{data.behavior.chat.uniqueChatters}</span>
-                            </div>
-                            <div className="flex items-center justify-between rounded-xl bg-white/5 border border-white/8 p-4">
-                                <span>Silent ticketed players</span>
-                                <span className="font-body text-white">
-                                    {Math.max(data.totalPlayers - data.behavior.chat.uniqueChatters, 0)}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
-
-            <ChatAnalytics
-                data={{
-                    totalMessages: data.behavior.chat.totalMessages,
-                    uniqueChatters: data.behavior.chat.uniqueChatters,
-                    totalPlayers: data.totalPlayers,
-                    participationRate: data.behavior.chat.participationRate,
-                    messagesByRound: data.behavior.chat.messagesByRound,
-                    topKeywords: data.behavior.chat.topKeywords,
-                }}
-            />
 
             {/* Score + Rank Distribution */}
             <PlayerEngagement
