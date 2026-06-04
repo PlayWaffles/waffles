@@ -12,6 +12,7 @@ import {
 
 import type { LastGameResult, LastGameWinner } from "@/lib/game";
 import { springs } from "@/lib/animations";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 import { formatGameLabel } from "@/lib/game/labels";
 
 interface WinnerAnnouncementModalProps {
@@ -44,21 +45,18 @@ function WinnerAvatar({
       className="relative shrink-0 overflow-hidden rounded-full border border-white/20 bg-white/10"
       style={{ width: size, height: size }}
     >
-      {winner.pfpUrl ? (
-        <Image
-          unoptimized
-          src={winner.pfpUrl}
-          alt={`${name} avatar`}
-          width={size}
-          height={size}
-          className="h-full w-full object-cover"
-          draggable={false}
-        />
-      ) : (
-        <span className="absolute inset-0 flex items-center justify-center font-body text-white/70">
-          {name.charAt(0).toUpperCase()}
-        </span>
-      )}
+      <Image
+        unoptimized
+        src={getPlayerAvatarUrl({
+          pfpUrl: winner.pfpUrl,
+          username: winner.username,
+        })}
+        alt={`${name} avatar`}
+        width={size}
+        height={size}
+        className="h-full w-full object-cover"
+        draggable={false}
+      />
     </div>
   );
 }

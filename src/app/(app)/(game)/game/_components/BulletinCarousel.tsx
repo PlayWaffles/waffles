@@ -99,7 +99,7 @@ function BulletinCardView({ card }: { card: BulletinCard }) {
   );
 
   const className =
-    "flex h-[148px] w-[260px] shrink-0 snap-start flex-col rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 text-left transition-colors hover:bg-white/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold";
+    "flex h-[148px] w-[260px] shrink-0 snap-start flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 text-left transition-colors hover:bg-white/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold";
 
   if (card.href) {
     return (

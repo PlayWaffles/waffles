@@ -11,6 +11,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import type { GameWithQuestionCount, LastGameResult } from "@/lib/game";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 import { usePendingPurchaseRecovery } from "@/hooks/usePendingPurchaseRecovery";
 import { useProfileGames } from "@/hooks/useProfileGames";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
@@ -290,17 +291,16 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
                       className="w-7 h-7 rounded-full border-[1.5px] border-white/60 overflow-hidden bg-card shrink-0"
                       style={{ marginLeft: i > 0 ? "-6px" : "0", zIndex: 3 - i }}
                     >
-                      {w.pfpUrl ? (
-                        <Image
-                          src={w.pfpUrl}
-                          alt={w.username ?? "Winner"}
-                          width={28}
-                          height={28}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
-                      )}
+                      <Image
+                        src={getPlayerAvatarUrl({
+                          pfpUrl: w.pfpUrl,
+                          username: w.username,
+                        })}
+                        alt={w.username ?? "Winner"}
+                        width={28}
+                        height={28}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                   ))}
                 </div>
