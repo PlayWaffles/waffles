@@ -113,9 +113,9 @@ export function BulletinCarousel({
       : []),
     {
       id: "minipay-updates",
-      badge: "MiniPay",
-      title: "Updates live here",
-      body: "MiniPay cannot receive push alerts yet, so game notices will show in the Bulletin.",
+      badge: "Updates",
+      title: "You will see it here first",
+      body: "New games, prize news, feature drops, and important announcements will land in the Bulletin.",
       icon: <BellAlertIcon className="h-4 w-4" />,
     },
     {
