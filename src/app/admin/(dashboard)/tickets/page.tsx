@@ -1,18 +1,18 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
-import { TicketIcon, CheckCircleIcon, ClockIcon } from "@heroicons/react/24/outline";
+import { TicketIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import { GameFilter } from "./_components/GameFilter";
 import { TicketReconciliationCard } from "./_components/TicketReconciliationCard";
 import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
 import { RetryPendingPurchaseButton } from "./_components/RetryPendingPurchaseButton";
 import { ReplayPendingPurchasesButton } from "./_components/ReplayPendingPurchasesButton";
-import { TicketPurchaseSource } from "@prisma";
+import { Prisma, TicketPurchaseSource } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import {
-    buildProductionEntryWhere,
+    buildPaidProductionEntryWhere,
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
@@ -89,21 +89,10 @@ async function getTickets(searchParams: {
     const page = parseInt(searchParams.page || "1");
     const pageSize = 50;
     const skip = (page - 1) * pageSize;
-    const where: any = buildProductionEntryWhere();
+    const where: Prisma.GameEntryWhereInput = buildPaidProductionEntryWhere();
 
     // Filter by ticket status
-    if (searchParams.status === "paid") {
-        where.paidAt = { not: null };
-    } else if (searchParams.status === "free") {
-        where.purchaseSource = {
-            in: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
-        };
-    } else if (searchParams.status === "unpaid") {
-        where.paidAt = null;
-        where.purchaseSource = {
-            notIn: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
-        };
-    } else if (searchParams.status === "claimed") {
+    if (searchParams.status === "claimed") {
         where.claimedAt = { not: null };
     }
 
@@ -150,20 +139,11 @@ async function getTickets(searchParams: {
 }
 
 async function getStats() {
-    const productionEntriesWhere = buildProductionEntryWhere();
+    const paidProductionEntriesWhere = buildPaidProductionEntryWhere();
     const productionGamesWhere = buildProductionGameWhere();
-    const [totalEntries, paidEntries, freeEntries, claimedPrizes, games] = await Promise.all([
-        prisma.gameEntry.count({ where: productionEntriesWhere }),
-        prisma.gameEntry.count({ where: { ...productionEntriesWhere, paidAt: { not: null } } }),
-        prisma.gameEntry.count({
-            where: {
-                ...productionEntriesWhere,
-                purchaseSource: {
-                    in: [TicketPurchaseSource.FREE_ADMIN, TicketPurchaseSource.FREE_PLAYER],
-                },
-            },
-        }),
-        prisma.gameEntry.count({ where: { ...productionEntriesWhere, claimedAt: { not: null } } }),
+    const [totalTickets, claimedPrizes, games] = await Promise.all([
+        prisma.gameEntry.count({ where: paidProductionEntriesWhere }),
+        prisma.gameEntry.count({ where: { ...paidProductionEntriesWhere, claimedAt: { not: null } } }),
         prisma.game.findMany({
             where: productionGamesWhere,
             orderBy: { startsAt: "desc" },
@@ -173,15 +153,12 @@ async function getStats() {
     ]);
 
     const totalRevenue = await prisma.gameEntry.aggregate({
-        where: { ...productionEntriesWhere, paidAt: { not: null } },
+        where: paidProductionEntriesWhere,
         _sum: { paidAmount: true },
     });
 
     return {
-        totalEntries,
-        paidEntries,
-        freeEntries,
-        pendingEntries: totalEntries - paidEntries - freeEntries,
+        totalTickets,
         claimedPrizes,
         totalRevenue: calculateProtocolRevenue(totalRevenue._sum.paidAmount),
         games,
@@ -796,15 +773,15 @@ export default async function TicketsPage({
             <TicketReconciliationCard />
 
             {/* Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="rounded-2xl border border-white/10 p-5">
                     <div className="flex items-center gap-3">
                         <div className="p-2.5 rounded-xl bg-[#FFC931]/10">
                             <TicketIcon className="w-5 h-5 text-[#FFC931]" />
                         </div>
                         <div>
-                            <p className="text-white/50 text-sm">Total Entries</p>
-                            <p className="text-2xl font-bold text-white font-display">{stats.totalEntries}</p>
+                            <p className="text-white/50 text-sm">Tickets</p>
+                            <p className="text-2xl font-bold text-white font-display">{stats.totalTickets}</p>
                         </div>
                     </div>
                 </div>
@@ -814,19 +791,8 @@ export default async function TicketsPage({
                             <CheckCircleIcon className="w-5 h-5 text-[#14B985]" />
                         </div>
                         <div>
-                            <p className="text-white/50 text-sm">Paid</p>
-                            <p className="text-2xl font-bold text-[#14B985] font-display">{stats.paidEntries}</p>
-                        </div>
-                    </div>
-                </div>
-                <div className="rounded-2xl border border-white/10 p-5">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2.5 rounded-xl bg-[#FB72FF]/10">
-                            <ClockIcon className="w-5 h-5 text-[#FB72FF]" />
-                        </div>
-                        <div>
-                            <p className="text-white/50 text-sm">Pending</p>
-                            <p className="text-2xl font-bold text-[#FB72FF] font-display">{stats.pendingEntries}</p>
+                            <p className="text-white/50 text-sm">Claimed Prizes</p>
+                            <p className="text-2xl font-bold text-[#14B985] font-display">{stats.claimedPrizes}</p>
                         </div>
                     </div>
                 </div>
@@ -849,9 +815,6 @@ export default async function TicketsPage({
                 <div className="flex gap-2">
                     {[
                         { label: "All", value: undefined },
-                        { label: "Paid", value: "paid" },
-                        { label: "Free", value: "free" },
-                        { label: "Unpaid", value: "unpaid" },
                         { label: "Claimed", value: "claimed" },
                     ].map((filter) => (
                         <Link
@@ -946,14 +909,10 @@ export default async function TicketsPage({
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#00CFF2]/15 text-[#00CFF2]">
                                                     Claimed
                                                 </span>
-                                            ) : entry.purchaseSource === "FREE_ADMIN" || entry.purchaseSource === "FREE_PLAYER" ? (
-                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#FB72FF]/15 text-[#FB72FF]">
-                                                    Free
-                                                </span>
                                             ) : entry.paidAt ? (
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[#14B985]/15 text-[#14B985]">
                                                     <span className="w-1.5 h-1.5 bg-[#14B985] rounded-full mr-1.5" />
-                                                    Paid
+                                                    Ticket
                                                 </span>
                                             ) : (
                                                 <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/5 text-white/50">
