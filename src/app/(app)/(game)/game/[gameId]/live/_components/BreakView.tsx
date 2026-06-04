@@ -13,6 +13,7 @@ import {
   type AppRuntime,
 } from "@/lib/client/runtime";
 import { getDisplayName } from "@/lib/address";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 const MAX_LEADERBOARD_ENTRIES = 8;
 
@@ -192,14 +193,24 @@ export default function BreakView({
                 No players yet
               </div>
             ) : (
-              leaderboard.map((entry, index) => (
-                <motion.div
-                  key={entry.userId}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.4 + index * 0.05 }}
-                  className="flex items-center gap-1.5 sm:gap-2 w-full py-0.5 sm:py-1"
-                >
+              leaderboard.map((entry, index) => {
+                const displayName = getDisplayName({
+                  username: entry.username,
+                  wallet: entry.wallet,
+                });
+                const avatarUrl = getPlayerAvatarUrl({
+                  pfpUrl: entry.pfpUrl,
+                  username: displayName,
+                });
+
+                return (
+                  <motion.div
+                    key={entry.userId}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.3, delay: 0.4 + index * 0.05 }}
+                    className="flex items-center gap-1.5 sm:gap-2 w-full py-0.5 sm:py-1"
+                  >
                   {/* Rank Badge */}
                   <div className="flex justify-center items-center w-6 h-6 sm:w-7 sm:h-7 bg-white/10 rounded-full shrink-0">
                     <span className="text-[12px] sm:text-[14px] text-white font-medium">
@@ -208,30 +219,27 @@ export default function BreakView({
                   </div>
 
                   {/* Avatar */}
-                  {entry.pfpUrl ? (
-                    <Image
-                      width={20}
-                      height={20}
-                      unoptimized
-                      src={entry.pfpUrl}
-                      alt={entry.username || "User"}
-                      className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden shrink-0 object-cover"
-                    />
-                  ) : (
-                    <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-[#F0F3F4] overflow-hidden shrink-0" />
-                  )}
+                  <Image
+                    width={20}
+                    height={20}
+                    unoptimized
+                    src={avatarUrl}
+                    alt={displayName}
+                    className="w-5 h-5 sm:w-6 sm:h-6 rounded-full overflow-hidden shrink-0 object-cover bg-[#F0F3F4]"
+                  />
 
                   {/* Username */}
                   <span className="text-base sm:text-lg md:text-[20px] text-white truncate flex-1">
-                    {getDisplayName({ username: entry.username, wallet: entry.wallet })}
+                    {displayName}
                   </span>
 
                   {/* Score */}
                   <span className="text-sm sm:text-base text-white/60 shrink-0 font-medium">
                     {entry.score.toLocaleString()}
                   </span>
-                </motion.div>
-              ))
+                  </motion.div>
+                );
+              })
             )}
           </motion.div>
         </div>

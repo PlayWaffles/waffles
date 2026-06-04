@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import posthog from "posthog-js";
 import { formatAddress } from "@/lib/address";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 import Link from "next/link";
 
 // ==========================================
@@ -65,7 +66,10 @@ export default function ProfilePage() {
   }
 
   const safeUsername = user.username || formatAddress(user.wallet);
-  const safeAvatarUrl = user.pfpUrl || "/images/avatars/a.webp";
+  const safeAvatarUrl = getPlayerAvatarUrl({
+    pfpUrl: user.pfpUrl,
+    username: safeUsername,
+  });
   const showReferralButton = user.inviteQuota !== null && user.inviteQuota > 0;
   const canEditUsername = user.platform === "MINIPAY";
 

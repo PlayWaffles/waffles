@@ -22,6 +22,7 @@ import {
   type AppRuntime,
 } from "@/lib/client/runtime";
 import { getDisplayName } from "@/lib/address";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 import { FlashIcon, ArrowLeftIcon } from "@/components/icons";
 
 // ==========================================
@@ -363,17 +364,27 @@ export default function WaitingScreen({
                 </p>
               ) : (
                 <div className="flex flex-col gap-2">
-                  {leaderboard.map((entry, index) => (
-                    <motion.div
-                      key={entry.userId}
-                      initial={{ opacity: 0, x: -10 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
-                      className={`flex items-center gap-2.5 py-1.5 px-2 rounded-lg transition-colors ${entry.isCurrentUser
-                        ? "bg-[#14B985]/15 border border-[#14B985]/30"
-                        : "hover:bg-white/5"
-                        }`}
-                    >
+                  {leaderboard.map((entry, index) => {
+                    const displayName = getDisplayName({
+                      username: entry.username,
+                      wallet: entry.wallet,
+                    });
+                    const avatarUrl = getPlayerAvatarUrl({
+                      pfpUrl: entry.pfpUrl,
+                      username: displayName,
+                    });
+
+                    return (
+                      <motion.div
+                        key={entry.userId}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: 0.5 + index * 0.05 }}
+                        className={`flex items-center gap-2.5 py-1.5 px-2 rounded-lg transition-colors ${entry.isCurrentUser
+                          ? "bg-[#14B985]/15 border border-[#14B985]/30"
+                          : "hover:bg-white/5"
+                          }`}
+                      >
                       {/* Rank */}
                       <div
                         className={`flex items-center justify-center w-6 h-6 rounded-full shrink-0 ${entry.rank === 1
@@ -392,18 +403,14 @@ export default function WaitingScreen({
 
                       {/* Avatar */}
                       <div className="w-7 h-7 rounded-full overflow-hidden shrink-0 bg-[#F0F3F4]">
-                        {entry.pfpUrl ? (
-                          <Image
-                            src={entry.pfpUrl}
-                            alt=""
-                            width={28}
-                            height={28}
-                            className="w-full h-full object-cover"
-                            unoptimized
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
-                        )}
+                        <Image
+                          src={avatarUrl}
+                          alt=""
+                          width={28}
+                          height={28}
+                          className="w-full h-full object-cover"
+                          unoptimized
+                        />
                       </div>
 
                       {/* Username */}
@@ -411,7 +418,7 @@ export default function WaitingScreen({
                         className={`font-display text-[14px] truncate flex-1 ${entry.isCurrentUser ? "text-[#14B985]" : "text-white"
                           }`}
                       >
-                        {getDisplayName({ username: entry.username, wallet: entry.wallet })}
+                        {displayName}
                         {entry.isCurrentUser && (
                           <span className="ml-1 text-[10px] text-[#14B985]/70">
                             (you)
@@ -423,8 +430,9 @@ export default function WaitingScreen({
                       <span className="font-display text-[13px] text-white/60 shrink-0">
                         {entry.score.toLocaleString()}
                       </span>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    );
+                  })}
                 </div>
               )}
             </div>

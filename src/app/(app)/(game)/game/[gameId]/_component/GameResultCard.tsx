@@ -4,6 +4,7 @@ import Image from "next/image";
 import { FlashIcon, TrendIcon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 interface Props {
     prize: number;
@@ -22,6 +23,8 @@ export default function GameResultCard({
     pfpUrl,
     className,
 }: Props) {
+    const avatarUrl = getPlayerAvatarUrl({ pfpUrl, username });
+
     return (
         <motion.div
             className={cn("relative w-full rounded-[24px]", className)}
@@ -71,7 +74,7 @@ export default function GameResultCard({
                                     width={18}
                                     height={18}
                                     unoptimized={true}
-                                    src={pfpUrl || "/images/avatars/a.webp"}
+                                    src={avatarUrl}
                                     alt={username}
                                     className="object-cover w-full h-full"
                                 />
