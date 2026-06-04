@@ -121,17 +121,16 @@ export interface LastGameResult {
   winners: LastGameWinner[];
 }
 
-/**
- * Fetch top 3 winners from the highest-result game (Waffles #004).
- * Used for social proof on the lobby page.
- */
-const SHOWCASE_GAME_NUMBER = 4;
-
 export const getLastGameWinners = cache(
   async (platform: UserPlatform): Promise<LastGameResult | null> => {
     const visibility = await resolvePlatformGameVisibility(platform);
     const lastGame = await prisma.game.findFirst({
-      where: { ...gameWhere(platform, visibility), gameNumber: SHOWCASE_GAME_NUMBER },
+      where: {
+        ...gameWhere(platform, visibility),
+        endsAt: { lte: new Date() },
+        entries: { some: { prize: { gt: 0 } } },
+      },
+      orderBy: { endsAt: "desc" },
       select: {
         id: true,
         gameNumber: true,
@@ -140,7 +139,7 @@ export const getLastGameWinners = cache(
           select: { entries: { where: { prize: { gt: 0 } } } },
         },
         entries: {
-          where: { rank: { not: null, lte: 3 } },
+          where: { prize: { gt: 0 }, rank: { not: null } },
           orderBy: { rank: "asc" },
           take: 3,
           select: {
