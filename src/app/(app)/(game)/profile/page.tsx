@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { updateMiniPayUsernameAction } from "@/actions/users";
 import { useUser } from "@/hooks/useUser";
 import { useProfileStats } from "@/hooks/useProfileStats";
 import { useProfileGames } from "@/hooks/useProfileGames";
@@ -25,11 +26,14 @@ import Link from "next/link";
 
 export default function ProfilePage() {
   // SWR-based hooks - each fetches independently
-  const { user, isLoading: userLoading } = useUser();
+  const { user, isLoading: userLoading, refetch } = useUser();
   const { stats, isLoading: statsLoading } = useProfileStats();
   const { games, isLoading: gamesLoading } = useProfileGames(2); // Only 2 for preview
 
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [usernameDraft, setUsernameDraft] = useState("");
+  const [isUpdatingUsername, startUsernameUpdate] = useTransition();
 
   const isLoading = userLoading || statsLoading || gamesLoading;
 
@@ -63,6 +67,7 @@ export default function ProfilePage() {
   const safeUsername = user.username || formatAddress(user.wallet);
   const safeAvatarUrl = user.pfpUrl || "/images/avatars/a.webp";
   const showReferralButton = user.inviteQuota !== null && user.inviteQuota > 0;
+  const canEditUsername = user.platform === "MINIPAY";
 
   // Transform games for GameHistory component
   const recentGames = games.map((g) => ({
@@ -157,6 +162,87 @@ export default function ProfilePage() {
             }}
           />
         </motion.div>
+
+        {canEditUsername && (
+          <motion.div
+            variants={itemVariants}
+            className="shrink-0 mt-2 rounded-xl border border-white/8 bg-white/[0.04] px-3 py-3"
+          >
+            {isEditingUsername ? (
+              <form
+                className="flex flex-col gap-2"
+                onSubmit={(event) => {
+                  event.preventDefault();
+                  startUsernameUpdate(async () => {
+                    const result = await updateMiniPayUsernameAction(usernameDraft);
+                    if (!result.success) {
+                      notify.error(result.error);
+                      return;
+                    }
+
+                    notify.success("Leaderboard name updated");
+                    setIsEditingUsername(false);
+                    setUsernameDraft("");
+                    await refetch();
+                  });
+                }}
+              >
+                <input
+                  value={usernameDraft}
+                  onChange={(event) => setUsernameDraft(event.target.value)}
+                  minLength={3}
+                  maxLength={20}
+                  pattern="[A-Za-z0-9_]+"
+                  required
+                  autoFocus
+                  placeholder="crispy_ace"
+                  className="h-11 rounded-lg border border-white/10 bg-black/20 px-3 font-display text-sm text-white outline-none placeholder:text-white/30 focus:border-waffle-gold"
+                />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsEditingUsername(false);
+                      setUsernameDraft("");
+                    }}
+                    className="h-10 rounded-lg border border-white/10 font-display text-xs text-white/60"
+                    disabled={isUpdatingUsername}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="h-10 rounded-lg bg-waffle-gold font-display text-xs text-black disabled:opacity-50"
+                    disabled={isUpdatingUsername}
+                  >
+                    Save
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="font-display text-sm text-white">
+                    Want a better leaderboard name?
+                  </p>
+                  <p className="mt-1 font-display text-xs text-white/40">
+                    Pick the name other players will see.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsernameDraft(user.username ?? "");
+                    setIsEditingUsername(true);
+                  }}
+                  className="h-10 shrink-0 rounded-lg bg-white/10 px-3 font-display text-xs text-white"
+                >
+                  Edit
+                </button>
+              </div>
+            )}
+          </motion.div>
+        )}
 
         {/* Invite Button — tight with card above (same identity group) */}
         <motion.div variants={itemVariants} className="shrink-0 mt-2">
