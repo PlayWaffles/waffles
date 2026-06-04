@@ -50,6 +50,7 @@ export default function LiveGameScreen({ game }: { game: LiveGameData }) {
     advanceAfterReveal,
     onMediaReady,
   } = useLiveGame(game);
+  const nextQuestionMediaUrl = game.questions[questionNumber]?.mediaUrl ?? null;
 
   // Redirect to result page when game is complete
   useEffect(() => {
@@ -94,6 +95,7 @@ export default function LiveGameScreen({ game }: { game: LiveGameData }) {
         <>
           <QuestionView
             question={currentQuestion}
+            nextMediaUrl={nextQuestionMediaUrl}
             questionNumber={questionNumber}
             totalQuestions={totalQuestions}
             seconds={secondsRemaining}

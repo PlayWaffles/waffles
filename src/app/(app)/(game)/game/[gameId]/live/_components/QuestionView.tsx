@@ -9,11 +9,11 @@
  */
 
 import { useState, useEffect, useRef } from "react";
-import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { QuestionCardHeader } from "./QuestionCardHeader";
 import { QuestionOption } from "./QuestionOption";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
+import { GameImage } from "@/components/game/GameImage";
 import type { LiveGameQuestion } from "../page";
 import type { AnswerResult } from "@/lib/game/tension";
 import type { QuestionAnswerer } from "@shared/protocol";
@@ -190,13 +190,14 @@ function AnswererAvatars() {
               />
 
               <div className="w-full h-full rounded-[6px] overflow-hidden bg-gradient-to-br from-waffle-gold-warm to-[#FF6B35]">
-                <Image
+                <GameImage
                   src={getPlayerAvatarUrl(player)}
                   alt={player.username}
                   width={50}
                   height={50}
                   className="w-full h-full object-cover"
                   sizes="50px"
+                  priorityMode="deferred"
                 />
               </div>
               {player.correct !== null ? (
@@ -260,6 +261,7 @@ function AnswererAvatars() {
 
 interface QuestionViewProps {
   question: LiveGameQuestion;
+  nextMediaUrl?: string | null;
   questionNumber: number;
   totalQuestions: number;
   seconds: number;
@@ -280,6 +282,7 @@ interface QuestionViewProps {
 
 export default function QuestionView({
   question,
+  nextMediaUrl,
   questionNumber,
   totalQuestions,
   seconds,
@@ -293,7 +296,8 @@ export default function QuestionView({
   showAdvancePrompt,
   onAdvance,
 }: QuestionViewProps) {
-  const [mediaLoaded, setMediaLoaded] = useState(!question.mediaUrl);
+  const [loadedMediaUrl, setLoadedMediaUrl] = useState<string | null>(null);
+  const mediaLoaded = !question.mediaUrl || loadedMediaUrl === question.mediaUrl;
   const isLowTime = seconds <= 3 && seconds > 0;
   const isTimeUp = seconds === 0;
   const [buttonWidth, setButtonWidth] = useState(296);
@@ -316,10 +320,15 @@ export default function QuestionView({
     }
   }, [mediaLoaded, onMediaReady]);
 
-  // Reset mediaLoaded when question changes
   useEffect(() => {
-    setMediaLoaded(!question.mediaUrl);
-  }, [question.id, question.mediaUrl]);
+    if (!nextMediaUrl || nextMediaUrl === question.mediaUrl) return;
+
+    const image = new window.Image();
+    image.decoding = "async";
+    image.fetchPriority = "low";
+    image.src = nextMediaUrl;
+    void image.decode().catch(() => {});
+  }, [nextMediaUrl, question.mediaUrl]);
 
   const handleSelect = (index: number) => {
     if (hasAnswered) return;
@@ -403,7 +412,7 @@ export default function QuestionView({
                     <div className="w-8 h-8 border-2 border-white/20 border-t-white rounded-full animate-spin" />
                   </div>
                 )}
-                <Image
+                <GameImage
                   src={question.mediaUrl}
                   alt={question.content}
                   fill
@@ -411,10 +420,9 @@ export default function QuestionView({
                     mediaLoaded ? "opacity-100" : "opacity-0"
                   }`}
                   sizes="(max-width: 640px) 100vw, 500px"
-                  priority
-                  loading="eager"
+                  priorityMode="critical"
                   quality={80}
-                  onLoad={() => setMediaLoaded(true)}
+                  onLoad={() => setLoadedMediaUrl(question.mediaUrl)}
                 />
               </div>
             </motion.figure>

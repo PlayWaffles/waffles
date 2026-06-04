@@ -19,6 +19,21 @@ export interface UploadOptions {
   contentType: string;
 }
 
+const GAME_IMAGE_DELIVERY_TRANSFORMATION = {
+  width: 1280,
+  height: 720,
+  crop: "limit",
+  quality: "auto:good",
+  fetch_format: "auto",
+} as const;
+
+function getGameImageDeliveryUrl(publicId: string): string {
+  return cloudinary.url(publicId, {
+    secure: true,
+    transformation: [GAME_IMAGE_DELIVERY_TRANSFORMATION],
+  });
+}
+
 export async function uploadFile({
   key,
   body,
@@ -54,7 +69,10 @@ export async function uploadFile({
   });
 
   return {
-    url: result.secure_url,
+    url:
+      resourceType === "image" && contentType !== "image/svg+xml"
+        ? getGameImageDeliveryUrl(result.public_id)
+        : result.secure_url,
     key: result.public_id,
   };
 }
@@ -117,7 +135,10 @@ export async function listFiles(prefix = ""): Promise<FileInfo[]> {
 
         return {
           key: resource.public_id,
-          url: resource.secure_url,
+          url:
+            resource.resource_type === "image" && resource.format !== "svg"
+              ? getGameImageDeliveryUrl(resource.public_id)
+              : resource.secure_url,
           size: resource.bytes || 0,
           lastModified: new Date(resource.created_at),
           contentType: contentType,
