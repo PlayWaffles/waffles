@@ -21,6 +21,7 @@ import {
 } from "@/lib/client/runtime";
 
 import Image from "next/image";
+import { BulletinCarousel } from "./_components/BulletinCarousel";
 import { NextGameCard } from "./_components/NextGameCard";
 
 const GameChat = dynamic(
@@ -315,18 +316,11 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
           </div>
         )}
 
-        {/* How to Play link */}
-        <div className="mt-3">
-          <Link
-            href={howToPlayHref}
-            scroll={false}
-            className="group inline-flex items-center gap-1.5 font-display text-[13px] text-white/35 transition-colors hover:text-[#FFC931]/70"
-          >
-            <QuestionMarkCircleIcon className="w-3.5 h-3.5" />
-            How to play
-            <ChevronRightIcon className="w-3 h-3 transition-transform duration-200 group-hover:translate-x-0.5" />
-          </Link>
-        </div>
+        <BulletinCarousel
+          lastGameResult={lastGameResult}
+          howToPlayHref={howToPlayHref}
+          onOpenWinners={() => setIsWinnerAnnouncementOpen(true)}
+        />
       </section>
 
       {isMiniPay ? (
