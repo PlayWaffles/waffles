@@ -52,7 +52,7 @@ export default function Top3Leaderboard({ entries, className, gameId }: Props) {
   return (
     <motion.div
       className={clsx(
-        "flex flex-col items-start gap-2 sm:gap-[10px] w-full max-w-[361px] my-2",
+        "flex flex-col items-start gap-2 sm:gap-[10px] w-full my-2",
         className
       )}
       initial={{ opacity: 0, y: 20 }}
