@@ -6,6 +6,7 @@ import Link from "next/link";
 import { FlashIcon } from "@/components/icons";
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 // The medal SVGs (using public paths)
 const TROPHY_PATHS = [
@@ -148,7 +149,10 @@ export default function Top3Leaderboard({ entries, className, gameId }: Props) {
                   transition={{ duration: 0.2 }}
                 >
                   <Image
-                    src={e.pfpUrl ?? "/images/avatar-default.webp"}
+                    src={getPlayerAvatarUrl({
+                      pfpUrl: e.pfpUrl,
+                      username: e.username,
+                    })}
                     width={20}
                     height={20}
                     alt=""

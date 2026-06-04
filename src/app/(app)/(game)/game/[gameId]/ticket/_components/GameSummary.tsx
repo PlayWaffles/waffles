@@ -4,6 +4,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { useUser } from "@/hooks/useUser";
 import { formatAddress } from "@/lib/address";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 export function GameSummaryCard({
   theme,
@@ -16,7 +17,7 @@ export function GameSummaryCard({
 }) {
   const { user } = useUser();
   const username = user?.username || formatAddress(user?.wallet);
-  const avatarUrl = user?.pfpUrl;
+  const avatarUrl = getPlayerAvatarUrl({ pfpUrl: user?.pfpUrl, username });
 
   return (
     <motion.div
@@ -70,21 +71,14 @@ export function GameSummaryCard({
           whileHover={{ scale: 1.05 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          {avatarUrl ? (
-            <img
-              src={avatarUrl}
-              alt="User avatar"
-              width={54}
-              height={54}
-              className="object-cover w-full h-full"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <span className="font-body text-white text-[23px] leading-[130%]">
-                {username?.[0]?.toUpperCase() ?? "•"}
-              </span>
-            </div>
-          )}
+          <Image
+            src={avatarUrl}
+            alt="User avatar"
+            width={54}
+            height={54}
+            className="object-cover w-full h-full"
+            unoptimized
+          />
         </motion.div>
 
         {/* Username + subtitle */}

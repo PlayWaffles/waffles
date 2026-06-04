@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { useSounds } from "@/components/providers/SoundProvider";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 // Rotation angles from design specs
 const AVATAR_ROTATIONS = [-8.71, 5.85, -3.57, 7.56];
@@ -29,7 +30,6 @@ export function GameCountdownScreen({
 }: GameCountdownScreenProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [hasEnded, setHasEnded] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
   const [autoplayFailed, setAutoplayFailed] = useState(false);
   const { stopBgMusic } = useSounds();
 
@@ -47,7 +47,6 @@ export function GameCountdownScreen({
         setTimeout(() => {
           if (videoRef.current) {
             videoRef.current.muted = false;
-            setIsMuted(false);
           }
         }, 100);
       })
@@ -70,7 +69,6 @@ export function GameCountdownScreen({
 
     if (autoplayFailed) {
       video.muted = false;
-      setIsMuted(false);
       video.play().catch(() => {
         // If even user-gesture play fails, just skip
         onComplete();
@@ -81,7 +79,6 @@ export function GameCountdownScreen({
 
     if (video.muted) {
       video.muted = false;
-      setIsMuted(false);
     }
   }, [autoplayFailed, onComplete]);
 
@@ -161,41 +158,45 @@ export function GameCountdownScreen({
             {/* Avatar Stack - rotated rounded squares */}
             {entrants.length > 0 && (
               <div className="flex flex-row items-center">
-                {entrants.slice(0, 4).map((player, index) => (
-                  <motion.div
-                    key={player.username || index}
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{
-                      opacity: 1,
-                      scale: 1,
-                      rotate: AVATAR_ROTATIONS[index] || 0,
-                    }}
-                    transition={{
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 20,
-                      delay: 0.4 + index * 0.08,
-                    }}
-                    className="box-border w-[21px] h-[21px] rounded-[3px] overflow-hidden bg-[#F0F3F4] shrink-0"
-                    style={{
-                      marginLeft: index > 0 ? "-11px" : "0",
-                      zIndex: 4 - index,
-                      border: "1.5px solid #FFFFFF",
-                    }}
-                  >
-                    {player.pfpUrl ? (
+                {entrants.slice(0, 4).map((player, index) => {
+                  const avatarUrl = getPlayerAvatarUrl({
+                    pfpUrl: player.pfpUrl,
+                    username: player.username ?? `entrant-${index}`,
+                  });
+
+                  return (
+                    <motion.div
+                      key={player.username || index}
+                      initial={{ opacity: 0, scale: 0 }}
+                      animate={{
+                        opacity: 1,
+                        scale: 1,
+                        rotate: AVATAR_ROTATIONS[index] || 0,
+                      }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 20,
+                        delay: 0.4 + index * 0.08,
+                      }}
+                      className="box-border w-[21px] h-[21px] rounded-[3px] overflow-hidden bg-[#F0F3F4] shrink-0"
+                      style={{
+                        marginLeft: index > 0 ? "-11px" : "0",
+                        zIndex: 4 - index,
+                        border: "1.5px solid #FFFFFF",
+                      }}
+                    >
                       <Image
-                        src={player.pfpUrl}
+                        src={avatarUrl}
                         alt=""
                         width={21}
                         height={21}
                         className="w-full h-full object-cover"
+                        unoptimized
                       />
-                    ) : (
-                      <div className="w-full h-full bg-linear-to-br from-waffle-gold-warm to-[#FF6B35]" />
-                    )}
-                  </motion.div>
-                ))}
+                    </motion.div>
+                  );
+                })}
               </div>
             )}
 

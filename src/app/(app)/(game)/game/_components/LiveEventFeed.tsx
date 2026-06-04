@@ -4,6 +4,7 @@ import { memo, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { springs } from "@/lib/animations";
+import { getPlayerAvatarUrl } from "@/lib/avatar";
 
 // ==========================================
 // TYPES
@@ -23,6 +24,11 @@ interface FeedItem {
 // ==========================================
 
 const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
+  const avatarUrl = getPlayerAvatarUrl({
+    pfpUrl: item.pfp,
+    username: item.username,
+  });
+
   return (
     <motion.div
       layout
@@ -38,20 +44,12 @@ const FeedRow = memo(function FeedRow({ item }: { item: FeedItem }) {
         animate={{ scale: 1 }}
         transition={{ ...springs.bouncy, delay: 0.1 }}
       >
-        {item.pfp ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.pfp}
-            alt={item.username}
-            className="w-5 h-5 rounded-full object-cover shrink-0"
-          />
-        ) : (
-          <div className="w-5 h-5 rounded-full bg-white/20 shrink-0 flex items-center justify-center">
-            <span className="text-[10px] text-white/80">
-              {item.username?.charAt(0)?.toUpperCase() || "?"}
-            </span>
-          </div>
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={avatarUrl}
+          alt={item.username}
+          className="w-5 h-5 rounded-full object-cover shrink-0 bg-[#F0F3F4]"
+        />
       </motion.div>
 
       {/* Content - max-w prevents overlap with online indicator */}
