@@ -1,10 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { useTransition } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import {
     ArrowRightEndOnRectangleIcon,
     WalletIcon,
     Bars3Icon,
+    ArrowPathIcon,
 } from "@heroicons/react/24/outline";
 
 interface AdminHeaderProps {
@@ -14,12 +17,19 @@ interface AdminHeaderProps {
 }
 
 export function AdminHeader({ username, pfpUrl, onMenuToggle }: AdminHeaderProps) {
+    const router = useRouter();
+    const [isRefreshing, startRefresh] = useTransition();
     const { isConnected, address, chain } = useAccount();
 
     const { connect, connectors, isPending: isConnecting } = useConnect();
     const { disconnect } = useDisconnect();
     const preferredConnector = connectors.find((connector) => connector.id === "injected") || connectors[0];
 
+    const refreshRoute = () => {
+        startRefresh(() => {
+            router.refresh();
+        });
+    };
 
     return (
         <header className="bg-[#0a0a0b]/80 border-b border-white/6 backdrop-blur-xl flex h-16 items-center justify-between px-4 md:px-6">
@@ -42,6 +52,17 @@ export function AdminHeader({ username, pfpUrl, onMenuToggle }: AdminHeaderProps
 
             {/* Right: Wallet + User */}
             <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    onClick={refreshRoute}
+                    disabled={isRefreshing}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/5 text-white/60 transition-colors hover:bg-white/10 hover:text-white disabled:cursor-wait disabled:opacity-60"
+                    aria-label="Refresh admin data"
+                    title="Refresh"
+                >
+                    <ArrowPathIcon className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                </button>
+
                 {/* Wallet Section */}
                 {isConnected ? (
                     <div className="flex items-center gap-1.5">
