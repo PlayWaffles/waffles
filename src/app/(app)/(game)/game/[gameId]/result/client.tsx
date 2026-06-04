@@ -684,171 +684,173 @@ export default function ResultPageClient({
   return (
     <>
       <div className="w-full px-4 text-white flex flex-col items-center flex-1 overflow-y-auto">
-        <div className="flex flex-col justify-center items-center gap-3 w-full max-w-[315px] mb-4">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
-            animate={{ scale: 1, opacity: 1, rotate: 0 }}
-            transition={{
-              duration: 0.6,
-              ease: [0.34, 1.56, 0.64, 1],
-              delay: 0.1,
-            }}
-          >
-            <Image
-              src="/images/illustrations/waffles.svg"
-              alt="waffle"
-              width={228}
-              height={132}
-            />
-          </motion.div>
-
-          <motion.h1
-            className="font-body text-[44px] leading-[92%] text-center tracking-[-0.03em] text-white w-full"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-          >
-            WAFFLES #{String(gameNumber).padStart(3, "0")}
-          </motion.h1>
-
-          <motion.div
-            className="flex flex-row justify-center items-center gap-2.5 w-full mt-1"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <p className="font-display font-medium text-[16px] leading-[130%] text-center tracking-[-0.03em] text-[#99A0AE] capitalize">
-              {game?.theme?.toLowerCase() ?? "trivia"}
-            </p>
-          </motion.div>
-        </div>
-
-        <GameResultCard
-          prize={userScore.prize}
-          score={userScore.score}
-          rank={userScore.rank}
-          pfpUrl={user.pfpUrl ?? ""}
-          username={user.username ?? "Player"}
-        />
-        <div className="flex flex-col justify-center items-center gap-3 w-full max-w-[361px] mt-4">
-          {/* Percentile row */}
-          <motion.div
-            className="flex flex-row items-center gap-1.5"
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.4, delay: 0.6 }}
-          >
+        <div className="flex w-full max-w-[430px] flex-col items-center sm:max-w-[560px] md:max-w-[640px]">
+          <div className="flex flex-col justify-center items-center gap-3 w-full mb-4">
             <motion.div
-              animate={{
-                scale: [1, 1.2, 1],
-                rotate: [0, 10, -10, 0],
-              }}
+              initial={{ scale: 0.8, opacity: 0, rotate: -10 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
               transition={{
-                duration: 2,
-                repeat: Infinity,
-                repeatDelay: 3,
-                ease: "easeInOut",
+                duration: 0.6,
+                ease: [0.34, 1.56, 0.64, 1],
+                delay: 0.1,
               }}
             >
-              <FlashIcon className="w-4 h-4 text-[#FFC931]" />
+              <Image
+                src="/images/illustrations/waffles.svg"
+                alt="waffle"
+                width={228}
+                height={132}
+              />
             </motion.div>
-            <span className="font-display font-medium text-[12px] leading-[14px] tracking-[-0.03em] text-white">
-              You finished faster than {userScore.percentile}% of other players
-            </span>
-          </motion.div>
 
-          {/* Buttons container */}
-          <div className="flex flex-col items-start gap-3 w-full">
-            {/* Claim Prize Button - Only show for winners */}
-            {isWinner && (
-              <motion.div
-                className="w-full"
-                initial={{ opacity: 0, y: 15 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: 0.7 }}
-                whileHover={!isClaimDisabled ? { scale: 1.02 } : undefined}
-                whileTap={!isClaimDisabled ? { scale: 0.98 } : undefined}
-              >
-                <WaffleButton
-                  onClick={handleClaim}
-                  disabled={isClaimDisabled}
-                  className={
-                    claimState === "success" || hasClaimed
-                      ? "text-[#14B985] border-[#14B985] opacity-80"
-                      : !isClaimWindowOpen
-                        ? "text-amber-400 border-amber-400 opacity-80"
-                        : claimState === "pending"
-                          ? "text-amber-400 border-amber-400 opacity-80"
-                          : claimState === "error"
-                            ? "text-red-400 border-red-400"
-                            : "text-[#14B985] border-[#14B985]"
-                  }
-                >
-                  {(claimState === "confirming" || isSending) && (
-                    <Spinner className="w-4 h-4 mr-2" />
-                  )}
-                  {getClaimButtonText()}
-                </WaffleButton>
-                {claimState === "pending" && (
-                  <p className="text-amber-400 text-xs text-center mt-2">
-                    Admin is finalizing results. Check back soon!
-                  </p>
-                )}
-              </motion.div>
-            )}
-
-            {/* Share Score & Back to Home row */}
-            <motion.div
-              className="flex flex-row items-start gap-3 w-full"
-              initial={{ opacity: 0, y: 15 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4, delay: 0.8 }}
+            <motion.h1
+              className="font-body text-[44px] leading-[92%] text-center tracking-[-0.03em] text-white w-full"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
             >
-              {/* Share Score Button */}
-              <motion.button
-                className="flex flex-row justify-center items-center p-3 gap-2 flex-1 bg-white/9 border-2 border-white/40 rounded-[12px]"
-                onClick={handleShareScore}
-                whileHover={{
-                  scale: 1.03,
-                  backgroundColor: "rgba(255, 255, 255, 0.15)",
-                  borderColor: "rgba(255, 255, 255, 0.6)",
-                }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.2 }}
-              >
-                <span className="font-body font-normal text-[18px] leading-[115%] tracking-[-0.02em] text-white">
-                  SHARE SCORE
-                </span>
-              </motion.button>
+              WAFFLES #{String(gameNumber).padStart(3, "0")}
+            </motion.h1>
 
-              {/* Back to Home Button */}
-              <motion.div
-                className="flex-1"
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.2 }}
-              >
-                <Link
-                  href="/game"
-                  className="flex flex-row justify-center items-center p-3 gap-2 w-full bg-white/9 border-2 border-white/40 rounded-[12px] no-underline hover:bg-white/15 hover:border-white/60 transition-colors duration-200"
-                >
-                  <span className="font-body font-normal text-[18px] leading-[115%] tracking-[-0.02em] text-white">
-                    BACK TO HOME
-                  </span>
-                </Link>
-              </motion.div>
+            <motion.div
+              className="flex flex-row justify-center items-center gap-2.5 w-full mt-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+            >
+              <p className="font-display font-medium text-[16px] leading-[130%] text-center tracking-[-0.03em] text-[#99A0AE] capitalize">
+                {game?.theme?.toLowerCase() ?? "trivia"}
+              </p>
             </motion.div>
           </div>
-        </div>
 
-        <Top3Leaderboard
-          entries={top3Entries.map((e) => ({
-            username: e.user?.username ?? "anon",
-            pfpUrl: e.user?.pfpUrl ?? "",
-            score: e.score,
-          }))}
-          gameId={gameId}
-        />
+          <GameResultCard
+            prize={userScore.prize}
+            score={userScore.score}
+            rank={userScore.rank}
+            pfpUrl={user.pfpUrl ?? ""}
+            username={user.username ?? "Player"}
+          />
+          <div className="flex flex-col justify-center items-center gap-3 w-full mt-4">
+            {/* Percentile row */}
+            <motion.div
+              className="flex flex-row items-center gap-1.5"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.4, delay: 0.6 }}
+            >
+              <motion.div
+                animate={{
+                  scale: [1, 1.2, 1],
+                  rotate: [0, 10, -10, 0],
+                }}
+                transition={{
+                  duration: 2,
+                  repeat: Infinity,
+                  repeatDelay: 3,
+                  ease: "easeInOut",
+                }}
+              >
+                <FlashIcon className="w-4 h-4 text-[#FFC931]" />
+              </motion.div>
+              <span className="font-display font-medium text-[12px] leading-[14px] tracking-[-0.03em] text-white">
+                You finished faster than {userScore.percentile}% of other players
+              </span>
+            </motion.div>
+
+            {/* Buttons container */}
+            <div className="flex flex-col items-start gap-3 w-full">
+              {/* Claim Prize Button - Only show for winners */}
+              {isWinner && (
+                <motion.div
+                  className="w-full"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.7 }}
+                  whileHover={!isClaimDisabled ? { scale: 1.02 } : undefined}
+                  whileTap={!isClaimDisabled ? { scale: 0.98 } : undefined}
+                >
+                  <WaffleButton
+                    onClick={handleClaim}
+                    disabled={isClaimDisabled}
+                    className={
+                      claimState === "success" || hasClaimed
+                        ? "text-[#14B985] border-[#14B985] opacity-80"
+                        : !isClaimWindowOpen
+                          ? "text-amber-400 border-amber-400 opacity-80"
+                          : claimState === "pending"
+                            ? "text-amber-400 border-amber-400 opacity-80"
+                            : claimState === "error"
+                              ? "text-red-400 border-red-400"
+                              : "text-[#14B985] border-[#14B985]"
+                    }
+                  >
+                    {(claimState === "confirming" || isSending) && (
+                      <Spinner className="w-4 h-4 mr-2" />
+                    )}
+                    {getClaimButtonText()}
+                  </WaffleButton>
+                  {claimState === "pending" && (
+                    <p className="text-amber-400 text-xs text-center mt-2">
+                      Admin is finalizing results. Check back soon!
+                    </p>
+                  )}
+                </motion.div>
+              )}
+
+              {/* Share Score & Back to Home row */}
+              <motion.div
+                className="flex flex-row items-start gap-3 w-full"
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.4, delay: 0.8 }}
+              >
+                {/* Share Score Button */}
+                <motion.button
+                  className="flex flex-row justify-center items-center p-3 gap-2 flex-1 bg-white/9 border-2 border-white/40 rounded-[12px]"
+                  onClick={handleShareScore}
+                  whileHover={{
+                    scale: 1.03,
+                    backgroundColor: "rgba(255, 255, 255, 0.15)",
+                    borderColor: "rgba(255, 255, 255, 0.6)",
+                  }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <span className="font-body font-normal text-[18px] leading-[115%] tracking-[-0.02em] text-white">
+                    SHARE SCORE
+                  </span>
+                </motion.button>
+
+                {/* Back to Home Button */}
+                <motion.div
+                  className="flex-1"
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <Link
+                    href="/game"
+                    className="flex flex-row justify-center items-center p-3 gap-2 w-full bg-white/9 border-2 border-white/40 rounded-[12px] no-underline hover:bg-white/15 hover:border-white/60 transition-colors duration-200"
+                  >
+                    <span className="font-body font-normal text-[18px] leading-[115%] tracking-[-0.02em] text-white">
+                      BACK TO HOME
+                    </span>
+                  </Link>
+                </motion.div>
+              </motion.div>
+            </div>
+          </div>
+
+          <Top3Leaderboard
+            entries={top3Entries.map((e) => ({
+              username: e.user?.username ?? "anon",
+              pfpUrl: e.user?.pfpUrl ?? "",
+              score: e.score,
+            }))}
+            gameId={gameId}
+          />
+        </div>
       </div>
       <BottomNav />
     </>
