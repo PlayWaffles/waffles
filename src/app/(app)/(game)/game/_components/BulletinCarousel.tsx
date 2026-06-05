@@ -289,6 +289,13 @@ export function BulletinCarousel({
         ]
       : []),
     {
+      id: "top-15-winners",
+      badge: "Payouts",
+      title: "Top 15 now win",
+      body: "Large Waffles games now reward the top 15 players instead of only the top 10.",
+      icon: <TrophyIcon className="h-4 w-4" />,
+    },
+    {
       id: "minipay-updates",
       badge: "Updates",
       title: "You will see it here first",
@@ -308,7 +315,7 @@ export function BulletinCarousel({
       id: "how-to-play",
       badge: "Guide",
       title: "How to win",
-      body: "Buy a ticket, guess the scenes fast, and finish top 10 to split the pot.",
+      body: "Buy a ticket, guess the scenes fast, and finish top 15 in large games to split the pot.",
       action: "Read rules",
       icon: <QuestionMarkCircleIcon className="h-4 w-4" />,
       href: howToPlayHref,
