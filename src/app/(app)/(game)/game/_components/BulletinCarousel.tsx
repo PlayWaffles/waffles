@@ -79,16 +79,16 @@ function BulletinCardView({ card }: { card: BulletinCard }) {
           {card.badge}
         </span>
       </div>
-      <div className="min-w-0 space-y-1.5">
-        <h3 className="truncate font-body text-[17px] leading-none text-white">
+      <div className="min-w-0 space-y-1">
+        <h3 className="truncate font-body text-[17px] leading-tight text-white">
           {card.title}
         </h3>
-        <p className="line-clamp-2 min-h-[34px] font-display text-[12px] leading-[1.4] text-white/45">
+        <p className="line-clamp-2 font-display text-[12px] leading-[1.4] text-white/45">
           {card.body}
         </p>
       </div>
       {card.action && (
-        <div className="mt-auto flex items-center justify-between pt-2">
+        <div className="mt-auto flex items-center justify-between pt-1">
           <span className="font-display text-[12px] text-waffle-gold">
             {card.action}
           </span>
@@ -99,7 +99,7 @@ function BulletinCardView({ card }: { card: BulletinCard }) {
   );
 
   const className =
-    "flex h-[148px] w-[260px] shrink-0 snap-start flex-col gap-3 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 text-left transition-colors hover:bg-white/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold";
+    "flex h-[138px] w-[260px] shrink-0 snap-start flex-col gap-2 rounded-xl border border-white/[0.06] bg-white/[0.025] p-4 text-left transition-colors hover:bg-white/[0.045] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold";
 
   if (card.href) {
     return (
