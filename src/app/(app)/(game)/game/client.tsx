@@ -131,9 +131,9 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
     if (!lastGameResult || !hasWinners || isHowToPlayOpen) return;
 
     const storageKey = `${WINNER_ANNOUNCEMENT_STORAGE_PREFIX}:${lastGameResult.gameId}`;
-    if (sessionStorage.getItem(storageKey) === "seen") return;
+    if (localStorage.getItem(storageKey) === "seen") return;
 
-    sessionStorage.setItem(storageKey, "seen");
+    localStorage.setItem(storageKey, "seen");
     setIsWinnerAnnouncementOpen(true);
   }, [hasWinners, isHowToPlayOpen, lastGameResult]);
 
