@@ -8,8 +8,11 @@
  * - 1-4 paid entrants: top 1 gets 100%
  * - 5-9 paid entrants: top 3 get 50% / 30% / 20%
  * - 10-39 paid entrants: top 5 get 50% / 20% / 15% / 7.5% / 7.5%
- * - 40+ paid entrants: top 10 get
- *   50% / 15% / 10% / 5% / 5% / 3% / 3% / 2% / 2% / 2%
+ * - 40-100 paid entrants: top 10 get
+ *   50% / 15% / 10% / 5% / 5% / 4% / 4% / 2.5% / 2.5% / 2%
+ * - 101+ paid entrants: top 15 get
+ *   40% / 14% / 9% / 6% / 5% / 4% / 4% / 3% / 3% / 2.5% /
+ *   2% / 2% / 2% / 2% / 1.5%
  *
  * @module prizeDistribution
  */
@@ -19,7 +22,7 @@
 // ============================================================================
 
 /** Maximum number of players who receive prizes in the largest bracket */
-export const WINNERS_COUNT = 10;
+export const WINNERS_COUNT = 15;
 
 /** Platform fee in basis points (20% = 2000 bps) */
 export const PLATFORM_FEE_BPS = 2000;
@@ -29,6 +32,23 @@ const BRACKET_SCHEDULES = {
   small: [0.5, 0.3, 0.2],
   medium: [0.5, 0.2, 0.15, 0.075, 0.075],
   large: [0.5, 0.15, 0.1, 0.05, 0.05, 0.04, 0.04, 0.025, 0.025, 0.02],
+  expanded: [
+    0.4,
+    0.14,
+    0.09,
+    0.06,
+    0.05,
+    0.04,
+    0.04,
+    0.03,
+    0.03,
+    0.025,
+    0.02,
+    0.02,
+    0.02,
+    0.02,
+    0.015,
+  ],
 } as const;
 
 // ============================================================================
@@ -135,6 +155,7 @@ function getScheduleForPaidEntrants(paidEntrants: number): number[] {
   if (paidEntrants <= 4) return [...BRACKET_SCHEDULES.solo];
   if (paidEntrants < 10) return [...BRACKET_SCHEDULES.small];
   if (paidEntrants < 40) return [...BRACKET_SCHEDULES.medium];
+  if (paidEntrants > 100) return [...BRACKET_SCHEDULES.expanded];
   return [...BRACKET_SCHEDULES.large];
 }
 

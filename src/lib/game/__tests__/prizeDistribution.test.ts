@@ -106,11 +106,11 @@ describe("Prize Distribution Algorithm", () => {
     expect(result.runnersTotal).toBeCloseTo(3, 6);
   });
 
-  it("uses the top-10 bracket for 40+ paid entrants", () => {
+  it("uses the top-10 bracket for 40-100 paid entrants", () => {
     const result = calculatePrizeDistribution(createPlayers(100), 100);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
 
-    expect(winners).toHaveLength(WINNERS_COUNT);
+    expect(winners).toHaveLength(10);
     expect(winners[0].prize).toBeCloseTo(40, 6);
     expect(winners[1].prize).toBeCloseTo(12, 6);
     expect(winners[2].prize).toBeCloseTo(8, 6);
@@ -121,6 +121,28 @@ describe("Prize Distribution Algorithm", () => {
     expect(winners[7].prize).toBeCloseTo(2, 6);
     expect(winners[8].prize).toBeCloseTo(2, 6);
     expect(winners[9].prize).toBeCloseTo(1.6, 6);
+  });
+
+  it("uses the top-15 bracket for more than 100 paid entrants", () => {
+    const result = calculatePrizeDistribution(createPlayers(101), 20);
+    const winners = result.allocations.filter((allocation) => allocation.prize > 0);
+
+    expect(winners).toHaveLength(WINNERS_COUNT);
+    expect(winners[0].prize).toBeCloseTo(6.4, 6);
+    expect(winners[1].prize).toBeCloseTo(2.24, 6);
+    expect(winners[2].prize).toBeCloseTo(1.44, 6);
+    expect(winners[3].prize).toBeCloseTo(0.96, 6);
+    expect(winners[4].prize).toBeCloseTo(0.8, 6);
+    expect(winners[5].prize).toBeCloseTo(0.64, 6);
+    expect(winners[6].prize).toBeCloseTo(0.64, 6);
+    expect(winners[7].prize).toBeCloseTo(0.48, 6);
+    expect(winners[8].prize).toBeCloseTo(0.48, 6);
+    expect(winners[9].prize).toBeCloseTo(0.4, 6);
+    expect(winners[10].prize).toBeCloseTo(0.32, 6);
+    expect(winners[11].prize).toBeCloseTo(0.32, 6);
+    expect(winners[12].prize).toBeCloseTo(0.32, 6);
+    expect(winners[13].prize).toBeCloseTo(0.32, 6);
+    expect(winners[14].prize).toBeCloseTo(0.24, 6);
   });
 
   it("keeps unpaid entries ranked but prize-free", () => {
@@ -155,7 +177,7 @@ describe("Prize Distribution Algorithm", () => {
   });
 
   it("keeps the published constants intact", () => {
-    expect(WINNERS_COUNT).toBe(10);
+    expect(WINNERS_COUNT).toBe(15);
     expect(PLATFORM_FEE_BPS).toBe(2000);
   });
 });
