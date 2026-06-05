@@ -271,7 +271,13 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
 
   return (
     <>
-      <section className="shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4">
+      <section
+        className={
+          isMiniPay
+            ? "flex-1 min-h-0 flex flex-col justify-start items-center overflow-y-auto px-4 pt-4 pb-4"
+            : "shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4"
+        }
+      >
         <NextGameCard game={game} />
 
         {/* Last game winners — social proof */}
@@ -341,9 +347,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         />
       </section>
 
-      {isMiniPay ? (
-        <div className="flex-1 min-h-0" />
-      ) : (
+      {!isMiniPay && (
         <div
           className="flex-1 flex flex-col justify-end w-full px-4"
           style={{ minHeight: "clamp(60px, 12vh, 180px)" }}
