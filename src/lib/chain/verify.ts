@@ -1,10 +1,10 @@
 /**
  * On-Chain Payment Verification
  *
- * 3-layer verification to ensure ticket purchases are legitimate:
+ * Event-first verification to ensure ticket purchases are legitimate:
  * 1. Transaction receipt status check
  * 2. TicketPurchased event parsing and validation
- * 3. Contract state verification (hasTicket)
+ * 3. Latest contract state confirmation when available
  */
 
 import { decodeEventLog, formatUnits } from "viem";
@@ -194,7 +194,6 @@ async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
       abi: waffleGameAbi,
       functionName: "hasTicket",
       args: [expectedGameId, expectedBuyer],
-      blockNumber: receipt.blockNumber,
     })) as boolean;
 
     if (!hasTicket) {
@@ -254,10 +253,10 @@ async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
 /**
  * Verify a ticket purchase transaction on-chain.
  *
- * Performs 3-layer verification:
+ * Performs event-first verification:
  * 1. Transaction receipt - ensures tx succeeded
  * 2. Event logs - ensures TicketPurchased was emitted with correct params
- * 3. Contract state - ensures hasTicket() returns true (reorg protection)
+ * 3. Contract state - confirms hasTicket() on latest state when needed
  */
 export async function verifyTicketPurchase(
   input: VerifyTicketPurchaseInput,
@@ -272,7 +271,6 @@ export async function verifyTicketPurchase(
   } = input;
   const chainTarget = { platform, network };
   const contractAddress = getWaffleContractAddress(chainTarget);
-  const publicClient = getPublicClient(chainTarget);
 
   console.log("[verify-ticket-purchase]", {
     stage: "start",
@@ -470,7 +468,6 @@ export async function inspectTicketPurchase(input: {
       abi: waffleGameAbi,
       functionName: "hasTicket",
       args: [purchase.gameId, purchase.buyer],
-      blockNumber: receipt.blockNumber,
     })) as boolean;
 
     if (!hasTicket) {
@@ -554,10 +551,10 @@ export interface VerifyClaimInput {
 /**
  * Verify a prize claim transaction on-chain.
  *
- * Performs 3-layer verification:
+ * Performs event-first verification:
  * 1. Transaction receipt - ensures tx succeeded
  * 2. Event logs - ensures PrizeClaimed was emitted with correct params
- * 3. Contract state - ensures hasClaimed() returns true (reorg protection)
+ * 3. Contract state - confirms hasClaimed() on latest state when available
  */
 export async function verifyClaim(
   input: VerifyClaimInput,
@@ -648,28 +645,30 @@ export async function verifyClaim(
     // Layer 3: Contract State Verification (Reorg Protection)
     // =========================================================================
 
-    let hasClaimed: boolean;
     try {
-      hasClaimed = (await publicClient.readContract({
+      const hasClaimed = (await publicClient.readContract({
         address: contractAddress,
         abi: waffleGameAbi,
         functionName: "hasClaimed",
         args: [expectedGameId, expectedClaimer],
-        blockNumber: receipt.blockNumber,
       })) as boolean;
-    } catch {
-      return {
-        verified: false,
-        error: "Failed to verify claim on contract. Please try again.",
-      };
-    }
 
-    if (!hasClaimed) {
-      return {
-        verified: false,
-        error:
-          "Claim not recorded on-chain. Possible chain reorganization - please wait and try again.",
-      };
+      if (!hasClaimed) {
+        return {
+          verified: false,
+          error:
+            "Claim not recorded on-chain. Possible chain reorganization - please wait and try again.",
+        };
+      }
+    } catch (error) {
+      console.error("[verifyClaim]", {
+        stage: "claim-state-read-failed",
+        platform,
+        txHash,
+        expectedGameId,
+        expectedClaimer,
+        error: error instanceof Error ? error.message : "Unknown error",
+      });
     }
 
     // =========================================================================
