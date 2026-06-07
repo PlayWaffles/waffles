@@ -88,8 +88,9 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const spotsTotal = game.maxPlayers ?? 500;
   const spotsLeft = Math.max(0, spotsTotal - playerCount);
   const fillPercent = Math.min(100, (playerCount / spotsTotal) * 100);
+  const [nowMs, setNowMs] = useState<number | null>(null);
 
-  const now = Date.now();
+  const now = nowMs ?? game.startsAt.getTime();
   const hasEnded = now >= game.endsAt.getTime();
   const isLive = !hasEnded && now >= game.startsAt.getTime();
   const ticketsCloseAt = getTicketCloseTime(game.endsAt).getTime();
@@ -118,18 +119,41 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const [isSpotsAnimating, setIsSpotsAnimating] = useState(false);
 
   useEffect(() => {
+    const updateNow = () => setNowMs(Date.now());
+    updateNow();
+    const interval = window.setInterval(updateNow, 1000);
+    return () => window.clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
     if (prevPrizePool.current !== prizePool) {
-      setIsPrizeAnimating(true);
-      window.setTimeout(() => setIsPrizeAnimating(false), 400);
       prevPrizePool.current = prizePool;
+      let timeout: number | undefined;
+      const frame = window.requestAnimationFrame(() => {
+        setIsPrizeAnimating(true);
+        timeout = window.setTimeout(() => setIsPrizeAnimating(false), 400);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame);
+        if (timeout) window.clearTimeout(timeout);
+      };
     }
   }, [prizePool]);
 
   useEffect(() => {
     if (prevSpotsTaken.current !== playerCount) {
-      setIsSpotsAnimating(true);
-      window.setTimeout(() => setIsSpotsAnimating(false), 300);
       prevSpotsTaken.current = playerCount;
+      let timeout: number | undefined;
+      const frame = window.requestAnimationFrame(() => {
+        setIsSpotsAnimating(true);
+        timeout = window.setTimeout(() => setIsSpotsAnimating(false), 300);
+      });
+
+      return () => {
+        window.cancelAnimationFrame(frame);
+        if (timeout) window.clearTimeout(timeout);
+      };
     }
   }, [playerCount]);
 
@@ -268,6 +292,27 @@ export function NextGameCard({ game }: NextGameCardProps) {
           </div>
         </div>
 
+        {/* Button */}
+        <div className="relative flex flex-col justify-center items-center px-4 pb-4 z-10 shrink-0">
+          <WaffleButton
+            disabled={buttonConfig.disabled}
+            onClick={handleButtonClick}
+          >
+            {buttonConfig.text}
+          </WaffleButton>
+          {/* Inline error recovery */}
+          {purchaseError && purchaseErrorMsg && (
+            <p className="text-danger-soft text-xs font-display text-center mt-1">
+              {purchaseErrorMsg === MINIPAY_LOW_BALANCE_MESSAGE
+                ? MINIPAY_LOW_BALANCE_MESSAGE
+                : purchaseErrorMsg === "Transaction rejected"
+                  ? "Transaction cancelled."
+                  : purchaseErrorMsg}
+              {" "}Tap to try again.
+            </p>
+          )}
+        </div>
+
         {/* Stats Row */}
         <div className="relative flex flex-row items-stretch z-10 shrink-0 mx-4 mb-4 gap-3">
           <StatBlock
@@ -287,27 +332,6 @@ export function NextGameCard({ game }: NextGameCardProps) {
             value={`$${prizePool.toLocaleString()}`}
             isAnimating={isPrizeAnimating}
           />
-        </div>
-
-        {/* Button */}
-        <div className="relative flex justify-center items-center px-4 pb-3 z-10 shrink-0">
-          <WaffleButton
-            disabled={buttonConfig.disabled}
-            onClick={handleButtonClick}
-          >
-            {buttonConfig.text}
-          </WaffleButton>
-          {/* Inline error recovery */}
-          {purchaseError && purchaseErrorMsg && (
-            <p className="text-danger-soft text-xs font-display text-center mt-1">
-              {purchaseErrorMsg === MINIPAY_LOW_BALANCE_MESSAGE
-                ? MINIPAY_LOW_BALANCE_MESSAGE
-                : purchaseErrorMsg === "Transaction rejected"
-                  ? "Transaction cancelled."
-                  : purchaseErrorMsg}
-              {" "}Tap to try again.
-            </p>
-          )}
         </div>
 
         <p className="px-5 pb-2 text-center font-display text-[10px] leading-snug text-white/35">
