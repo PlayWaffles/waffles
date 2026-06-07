@@ -269,82 +269,107 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   // RENDER: Active Game
   // ==========================================
 
+  const lastWinnersCard =
+    lastGameResult && lastGameResult.winners.length > 0 ? (
+      <div className={isMiniPay ? "w-full" : "mt-3 w-full md:max-w-[361px]"}>
+        <button
+          type="button"
+          onClick={() => setIsWinnerAnnouncementOpen(true)}
+          className="group flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold"
+        >
+          <div className="flex items-center gap-3 min-w-0">
+            {/* Winner avatars — overlapping */}
+            <div className="flex items-center shrink-0">
+              {lastGameResult.winners.map((w, i) => (
+                <div
+                  key={i}
+                  className="w-7 h-7 rounded-full border-[1.5px] border-white/60 overflow-hidden bg-card shrink-0"
+                  style={{ marginLeft: i > 0 ? "-6px" : "0", zIndex: 3 - i }}
+                >
+                  <Image
+                    src={getPlayerAvatarUrl({
+                      pfpUrl: w.pfpUrl,
+                      username: w.username,
+                    })}
+                    alt={w.username ?? "Winner"}
+                    width={28}
+                    height={28}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Copy */}
+            <div className="flex flex-col min-w-0">
+              <span className="font-body text-[14px] text-white leading-tight truncate">
+                {lastGameResult.winners[0].username ?? "Player"} + {lastGameResult.totalWinners - 1} others
+              </span>
+              <span className="font-display text-[12px] text-waffle-gold leading-tight">
+                won ${lastGameResult.prizeAwarded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+
+          <ChevronRightIcon className="w-4 h-4 text-white/25 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-waffle-gold/50" />
+        </button>
+      </div>
+    ) : null;
+
+  const bulletinCarousel = (
+    <BulletinCarousel
+      game={game}
+      lastGameResult={lastGameResult}
+      claimablePrize={
+        claimablePrizeGame
+          ? {
+              gameId: claimablePrizeGame.gameId,
+              gameNumber: claimablePrizeGame.game.gameNumber,
+              amount: claimablePrizeGame.prize,
+            }
+          : null
+      }
+      entry={realtimeState.entry}
+      playerCount={realtimeState.playerCount}
+      prizePool={realtimeState.prizePool}
+      howToPlayHref={howToPlayHref}
+      onOpenWinners={() => setIsWinnerAnnouncementOpen(true)}
+    />
+  );
+
+  if (isMiniPay) {
+    return (
+      <>
+        <section className="flex-1 min-h-0 w-full overflow-y-scroll overscroll-contain touch-pan-y px-4 pt-4 pb-[calc(24px+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
+          <div className="mx-auto flex w-full max-w-[361px] flex-col items-center gap-3">
+            <NextGameCard game={game} />
+            {lastWinnersCard}
+            {bulletinCarousel}
+          </div>
+        </section>
+
+        {isHowToPlayOpen && (
+          <HowToPlayModal onClose={closeHowToPlay} showStepIcons={false} />
+        )}
+
+        {lastGameResult && isWinnerAnnouncementOpen && (
+          <WinnerAnnouncementModal
+            result={lastGameResult}
+            onClose={() => setIsWinnerAnnouncementOpen(false)}
+          />
+        )}
+      </>
+    );
+  }
+
   return (
     <>
-      <section
-        className={
-          isMiniPay
-            ? "flex-1 min-h-0 flex flex-col justify-start items-center overflow-y-auto px-4 pt-4 pb-4"
-            : "shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4"
-        }
-      >
+      <section className="shrink flex flex-col justify-start items-center overflow-hidden px-4 pt-4">
         <NextGameCard game={game} />
 
         {/* Last game winners — social proof */}
-        {lastGameResult && lastGameResult.winners.length > 0 && (
-          <div className="mt-3 w-full md:max-w-[361px]">
-            <button
-              type="button"
-              onClick={() => setIsWinnerAnnouncementOpen(true)}
-              className="group flex w-full items-center justify-between rounded-xl border border-white/[0.06] bg-white/[0.02] px-4 py-3 text-left transition-colors hover:bg-white/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-waffle-gold"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                {/* Winner avatars — overlapping */}
-                <div className="flex items-center shrink-0">
-                  {lastGameResult.winners.map((w, i) => (
-                    <div
-                      key={i}
-                      className="w-7 h-7 rounded-full border-[1.5px] border-white/60 overflow-hidden bg-card shrink-0"
-                      style={{ marginLeft: i > 0 ? "-6px" : "0", zIndex: 3 - i }}
-                    >
-                      <Image
-                        src={getPlayerAvatarUrl({
-                          pfpUrl: w.pfpUrl,
-                          username: w.username,
-                        })}
-                        alt={w.username ?? "Winner"}
-                        width={28}
-                        height={28}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                {/* Copy */}
-                <div className="flex flex-col min-w-0">
-                  <span className="font-body text-[14px] text-white leading-tight truncate">
-                    {lastGameResult.winners[0].username ?? "Player"} + {lastGameResult.totalWinners - 1} others
-                  </span>
-                  <span className="font-display text-[12px] text-waffle-gold leading-tight">
-                    won ${lastGameResult.prizeAwarded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                </div>
-              </div>
-
-              <ChevronRightIcon className="w-4 h-4 text-white/25 shrink-0 transition-transform group-hover:translate-x-0.5 group-hover:text-waffle-gold/50" />
-            </button>
-          </div>
-        )}
-
-        <BulletinCarousel
-          game={game}
-          lastGameResult={lastGameResult}
-          claimablePrize={
-            claimablePrizeGame
-              ? {
-                  gameId: claimablePrizeGame.gameId,
-                  gameNumber: claimablePrizeGame.game.gameNumber,
-                  amount: claimablePrizeGame.prize,
-                }
-              : null
-          }
-          entry={realtimeState.entry}
-          playerCount={realtimeState.playerCount}
-          prizePool={realtimeState.prizePool}
-          howToPlayHref={howToPlayHref}
-          onOpenWinners={() => setIsWinnerAnnouncementOpen(true)}
-        />
+        {lastWinnersCard}
+        {bulletinCarousel}
       </section>
 
       {!isMiniPay && (
