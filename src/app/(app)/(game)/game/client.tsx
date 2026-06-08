@@ -90,6 +90,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   const { games: profileGames } = useProfileGames(10);
   const { state: realtimeState, refetchEntry } = useRealtime();
   const isMiniPay = runtime === "minipay";
+  const usesMiniPayLayout = isMiniPay || game?.platform === "MINIPAY";
 
   const isHowToPlayOpen = searchParams.get("modal") === MODAL_HOW_TO_PLAY;
   const hasWinners = Boolean(lastGameResult?.winners.length);
@@ -271,7 +272,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
 
   const lastWinnersCard =
     lastGameResult && lastGameResult.winners.length > 0 ? (
-      <div className={isMiniPay ? "w-full" : "mt-3 w-full md:max-w-[361px]"}>
+      <div className={usesMiniPayLayout ? "w-full" : "mt-3 w-full md:max-w-[361px]"}>
         <button
           type="button"
           onClick={() => setIsWinnerAnnouncementOpen(true)}
@@ -337,11 +338,11 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
     />
   );
 
-  if (isMiniPay) {
+  if (usesMiniPayLayout) {
     return (
       <>
         <section className="flex-1 min-h-0 w-full overflow-y-scroll overscroll-contain touch-pan-y px-4 pt-4 pb-[calc(24px+env(safe-area-inset-bottom))] [-webkit-overflow-scrolling:touch]">
-          <div className="mx-auto flex w-full max-w-[361px] flex-col items-center gap-3">
+          <div className="mx-auto flex w-full flex-col items-center gap-3">
             <NextGameCard game={game} />
             {lastWinnersCard}
             {bulletinCarousel}
@@ -372,7 +373,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         {bulletinCarousel}
       </section>
 
-      {!isMiniPay && (
+      {!usesMiniPayLayout && (
         <div
           className="flex-1 flex flex-col justify-end w-full px-4"
           style={{ minHeight: "clamp(60px, 12vh, 180px)" }}
@@ -381,7 +382,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         </div>
       )}
 
-      {!isMiniPay && (
+      {!usesMiniPayLayout && (
         <div className="shrink-0 w-full bg-[#0E0E0E] border-t border-white/10 px-4 py-3">
           <div className="w-full max-w-lg mx-auto">
             <GameChat />
@@ -393,7 +394,7 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
         <HowToPlayModal onClose={closeHowToPlay} showStepIcons={false} />
       )}
 
-      {!isMiniPay && <CheerOverlay />}
+      {!usesMiniPayLayout && <CheerOverlay />}
 
       {lastGameResult && isWinnerAnnouncementOpen && (
         <WinnerAnnouncementModal
