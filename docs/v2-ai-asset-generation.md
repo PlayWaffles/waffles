@@ -235,6 +235,20 @@ Constraints: no logo, no words, no numbers, no watermark, no extra objects, no c
 Create a Waffles V2 skip power-up icon: a chunky curved fast-forward arrow wrapping around a small golden waffle tile, magenta arcade accents, premium pixel-inspired 3D mobile game style, crisp dark outline, high contrast, no text, no numbers, no logo. Centered with generous padding. Put it on a perfectly flat solid #00ff00 background, uniform edge to edge, with no shadow, no gradient, no glow on the background, no floor, no texture, and no #00ff00 in the object.
 ```
 
+### Power-Up 50/50
+
+- Source: `public/images/v2/generated/powerup-5050-ai-source.png`
+- Final: `public/images/v2/generated/powerup-5050-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 50/50 power-up icon without text: two chunky waffle answer tiles side by side, one bright maple-gold active tile and one dim charcoal disabled tile, separated by a cyan lightning slash. Premium pixel-inspired 3D mobile game icon, crisp black-brown outline, saturated arcade colors, soft bevels, high contrast. Centered object with generous padding. Perfectly flat solid #ff00ff background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #ff00ff anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
 ### Trophy
 
 - Source: `public/images/v2/generated/trophy-ai-source.png`
