@@ -11,7 +11,7 @@ const BigMedal = ({ size = 78 }: { color?: string; size?: number }) => (
 
 const ChestGlyph = ({ rank }: { rank: number }) => {
   const src = rank <= 5 ? ASSETS.chestRainbow : rank <= 20 ? ASSETS.chestPurple : ASSETS.chestBrown;
-  return <PixelImg src={src} size={22} alt="chest" />;
+  return <PixelImg src={src} size={34} alt="chest" />;
 };
 
 type Player = { rank: number; name: string; pts: number; color: string; avatar?: string; you?: boolean };
@@ -27,13 +27,13 @@ const LeaderRow = ({ p }: { p: Player }) => {
   const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
   const ptsColor = p.you ? "var(--maple-500)" : "var(--ink)";
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 22px", color: "var(--ink)" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "5px 18px", color: "var(--ink)" }}>
       <div style={{ width: 28, fontFamily: "var(--font-display)", fontSize: 14, color: rankColor, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{p.rank}</div>
-      <PixelImg src={av} size={44} alt="" />
+      <PixelImg src={av} size={56} alt="" />
       <div style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
         {!p.you && <ChestGlyph rank={p.rank} />}
-        <PixelImg src={ASSETS.trophy} size={22} alt="" />
+        <PixelImg src={ASSETS.trophy} size={34} alt="" />
         <span style={{ fontFamily: "var(--font-display)", fontSize: 14, color: ptsColor, fontVariantNumeric: "tabular-nums", minWidth: 38, textAlign: "right" }}>{p.pts.toLocaleString()}</span>
       </div>
     </div>
@@ -139,7 +139,7 @@ export const LeaderboardScreen = () => {
               {/* "You" row pinned to the bottom — uses the maple-tinted highlight
                   that the results screen uses for the player's row, so the two
                   leaderboards in the app share a visual language. */}
-              <div style={{ position: "sticky", bottom: 0, background: "var(--maple-100)", borderTop: "1.5px solid var(--maple-500)" }}>
+              <div style={{ position: "sticky", bottom: 0, background: "#191507", borderTop: "1.5px solid var(--maple-500)", boxShadow: "0 -10px 18px rgba(0, 0, 0, 0.45)" }}>
                 <LeaderRow p={you} />
               </div>
             </div>

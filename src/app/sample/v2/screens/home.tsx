@@ -64,7 +64,7 @@ const HomeContinueRun = () => {
       className="pressable"
       onClick={() => proto.goto("levels")}
       aria-label={`Continue to level ${next}`}
-      style={{ width: "100%", background: "linear-gradient(135deg, #1a2a1a 0%, var(--surface-1) 60%)", border: "1px solid rgba(0,207,242,.2)", borderRadius: 16, padding: "10px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 104 }}
+      style={{ width: "100%", background: "linear-gradient(135deg, #1a2a1a 0%, var(--surface-1) 60%)", border: "1px solid rgba(0,207,242,.2)", borderRadius: 16, padding: "12px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 124 }}
     >
       <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
         <div style={{ fontSize: 10, fontWeight: 800, color: "var(--leaf)", letterSpacing: 1, textTransform: "uppercase" }}>Next Level · Forest</div>
@@ -73,13 +73,13 @@ const HomeContinueRun = () => {
       </div>
       <PixelImg
         src={ASSETS.wally}
-        size={108}
+        size={136}
         alt=""
         style={{
           flexShrink: 0,
-          marginRight: -6,
-          marginBottom: -10,
-          marginTop: -8,
+          marginRight: -18,
+          marginBottom: -18,
+          marginTop: -14,
           // Wally has a quiet life — gentle idle bob every 5s so he feels alive
           // without yanking attention away from the CTA button he's sitting on.
           animation: "waffles-v2-wally-idle 5s ease-in-out infinite",
@@ -95,7 +95,6 @@ const HomeContinueRun = () => {
 export const HomeScreen = () => {
   const proto = useProto();
   const tickets = proto.tickets;
-  const level = proto.level;
   // XP overflow: when raw XP exceeds 500 we treat it as a level-up moment.
   // Display the *displayed* level (one above the current proto.level) and
   // wrap the XP into the next bucket (xp - 500). The displayed bar fills
@@ -151,7 +150,7 @@ export const HomeScreen = () => {
         <div style={{ display: "flex", gap: 10 }}>
           <div style={{ flex: 1, background: "#0F0F10", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 14px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <FlameIcon size={18} />
+              <FlameIcon size={28} />
               <span style={{ fontFamily: "Archivo Black", fontSize: 18, color: "#fff" }}>{streak}</span>
             </div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 2 }}>day streak</div>

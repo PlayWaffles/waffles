@@ -46,7 +46,7 @@ export const QuestionScreen = () => {
       ) : (
         <div style={{ position: "absolute", top: 78, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6 }}>
           {[1, 2, 3].map((h) => (
-            <PixelImg key={h} src={h <= hearts ? ASSETS.heartFull : ASSETS.heartEmpty} size={24} alt="heart" style={{ filter: h <= hearts ? "drop-shadow(0 0 4px rgba(252,25,25,.5))" : "none", transition: "filter .3s" }} />
+            <PixelImg key={h} src={h <= hearts ? ASSETS.heartFull : ASSETS.heartEmpty} size={32} alt="heart" style={{ filter: h <= hearts ? "drop-shadow(0 0 4px rgba(252,25,25,.5))" : "none", transition: "filter .3s" }} />
           ))}
         </div>
       )}

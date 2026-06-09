@@ -9,8 +9,8 @@ type LevelNode = { n: number; state: NodeState; isBoss: boolean };
 
 // Isometric grid cell — a 2:1 rhombus. The CSS floor renders one diamond
 // per SVG tile so each visible diamond on the floor is exactly GRID_W × GRID_H.
-const GRID_W = 96;
-const GRID_H = 48;
+const GRID_W = 120;
+const GRID_H = 60;
 
 // Waffle's TOP face matches one grid cell exactly. The 3D side panels hang
 // below the top face — that depth overlaps into the next iso row, which is
@@ -81,36 +81,36 @@ type Scenery = {
 // foreground/background depth without breaking the bounds.
 const SCENERY: Scenery[] = [
   // Pond + frog + flowers cluster (bottom-right, near Wally)
-  { src: ASSETS.forestPond,    x: "78%", anchor: "bottom", y: 70,  size: 70 },
-  { src: ASSETS.forestFrog,    x: "86%", anchor: "bottom", y: 92,  size: 24, z: 4 },
-  { src: ASSETS.forestFlowers, x: "82%", anchor: "bottom", y: 138, size: 38 },
+  { src: ASSETS.forestPond,    x: "74%", anchor: "bottom", y: 70,  size: 104 },
+  { src: ASSETS.forestFrog,    x: "86%", anchor: "bottom", y: 94,  size: 38, z: 4 },
+  { src: ASSETS.forestFlowers, x: "80%", anchor: "bottom", y: 154, size: 56 },
   // Signpost (bottom-left)
-  { src: ASSETS.forestSignpost, x: "1%",  anchor: "bottom", y: 50,  size: 60 },
-  { src: ASSETS.forestMushroom, x: "12%", anchor: "bottom", y: 60,  size: 24 },
+  { src: ASSETS.forestSignpost, x: "0%",  anchor: "bottom", y: 48,  size: 84 },
+  { src: ASSETS.forestMushroom, x: "13%", anchor: "bottom", y: 62,  size: 36 },
   // Cabin grove (left side)
-  { src: ASSETS.forestCabin,    x: "0%",  anchor: "bottom", y: 220, size: 70 },
-  { src: ASSETS.forestTreeBush, x: "12%", anchor: "bottom", y: 230, size: 36 },
+  { src: ASSETS.forestCabin,    x: "-3%", anchor: "bottom", y: 230, size: 104 },
+  { src: ASSETS.forestTreeBush, x: "13%", anchor: "bottom", y: 242, size: 54 },
   // Right tree pair with undergrowth
-  { src: ASSETS.forestTreePine, x: "84%", anchor: "bottom", y: 250, size: 64 },
-  { src: ASSETS.forestMushroom, x: "82%", anchor: "bottom", y: 245, size: 24 },
-  { src: ASSETS.forestFlowers,  x: "94%", anchor: "bottom", y: 280, size: 30 },
+  { src: ASSETS.forestTreePine, x: "82%", anchor: "bottom", y: 258, size: 96 },
+  { src: ASSETS.forestMushroom, x: "80%", anchor: "bottom", y: 250, size: 36 },
+  { src: ASSETS.forestFlowers,  x: "93%", anchor: "bottom", y: 298, size: 44 },
   // Lone tall pine (left)
-  { src: ASSETS.forestTreePine, x: "1%",  anchor: "bottom", y: 410, size: 60 },
-  { src: ASSETS.forestFlowers,  x: "9%",  anchor: "bottom", y: 408, size: 28 },
+  { src: ASSETS.forestTreePine, x: "-2%", anchor: "bottom", y: 420, size: 92 },
+  { src: ASSETS.forestFlowers,  x: "10%", anchor: "bottom", y: 420, size: 42 },
   // Right bush stand
-  { src: ASSETS.forestTreeBush, x: "82%", anchor: "bottom", y: 470, size: 50 },
-  { src: ASSETS.forestMushroom, x: "94%", anchor: "bottom", y: 510, size: 22 },
+  { src: ASSETS.forestTreeBush, x: "82%", anchor: "bottom", y: 490, size: 74 },
+  { src: ASSETS.forestMushroom, x: "94%", anchor: "bottom", y: 540, size: 34 },
   // Mushroom patch (left)
-  { src: ASSETS.forestMushroom, x: "3%",  anchor: "bottom", y: 580, size: 28 },
-  { src: ASSETS.forestMushroom, x: "11%", anchor: "bottom", y: 600, size: 20 },
+  { src: ASSETS.forestMushroom, x: "2%",  anchor: "bottom", y: 620, size: 42 },
+  { src: ASSETS.forestMushroom, x: "11%", anchor: "bottom", y: 642, size: 32 },
   // Tree + flowers (right)
-  { src: ASSETS.forestTreePine, x: "85%", anchor: "bottom", y: 650, size: 56 },
-  { src: ASSETS.forestFlowers,  x: "82%", anchor: "bottom", y: 680, size: 36 },
+  { src: ASSETS.forestTreePine, x: "84%", anchor: "bottom", y: 700, size: 86 },
+  { src: ASSETS.forestFlowers,  x: "82%", anchor: "bottom", y: 742, size: 54 },
   // Sparse decorations climbing toward locked region
-  { src: ASSETS.forestFlowers,  x: "1%",  anchor: "bottom", y: 760, size: 34 },
-  { src: ASSETS.forestTreeBush, x: "84%", anchor: "bottom", y: 820, size: 44 },
-  { src: ASSETS.forestMushroom, x: "8%",  anchor: "bottom", y: 880, size: 22 },
-  { src: ASSETS.forestFlowers,  x: "84%", anchor: "bottom", y: 920, size: 32 },
+  { src: ASSETS.forestFlowers,  x: "1%",  anchor: "bottom", y: 820, size: 50 },
+  { src: ASSETS.forestTreeBush, x: "84%", anchor: "bottom", y: 900, size: 66 },
+  { src: ASSETS.forestMushroom, x: "8%",  anchor: "bottom", y: 970, size: 34 },
+  { src: ASSETS.forestFlowers,  x: "84%", anchor: "bottom", y: 1020, size: 48 },
 ];
 
 const Tile = ({
@@ -216,12 +216,12 @@ const Tile = ({
         {node.isBoss && node.state !== "current" && (
           <PixelImg
             src={ASSETS.bossNightOwl}
-            size={42}
+            size={58}
             alt=""
             style={{
               position: "absolute",
               left: "50%",
-              top: -32,
+              top: -44,
               transform: "translateX(-50%)",
               pointerEvents: "none",
               zIndex: 2,
@@ -231,17 +231,15 @@ const Tile = ({
         {/* Isometric slab (the 3D-rendered tile). The active slab PNG was
             drawn with a thicker 3D side face than the done/locked slabs, so
             we squash it vertically to normalize the apparent depth. */}
-        <img
+        <PixelImg
           src={slab}
+          size={size}
           alt=""
-          aria-hidden="true"
           style={{
             position: "absolute",
             inset: 0,
             width: "100%",
             height: "100%",
-            objectFit: "contain",
-            imageRendering: "pixelated",
             transform: node.state === "current" ? "scaleY(0.86)" : undefined,
             transformOrigin: "top center",
             filter:
@@ -264,14 +262,14 @@ const Tile = ({
           }}
         >
           {node.state === "done" ? (
-            <PixelImg src={ASSETS.checkmark} size={28} alt="" />
+            <PixelImg src={ASSETS.checkmark} size={38} alt="" />
           ) : node.state === "locked" ? (
-            <PixelImg src={ASSETS.lock} size={22} alt="" />
+            <PixelImg src={ASSETS.lock} size={34} alt="" />
           ) : (
             <span
               style={{
                 fontFamily: "var(--font-display)",
-                fontSize: 22,
+                fontSize: 28,
                 color: "var(--frame)",
                 textShadow: "0 2px 0 rgba(255, 255, 255, 0.35)",
                 lineHeight: 1,
@@ -308,50 +306,6 @@ const Tile = ({
     </div>
   );
 };
-
-const SkyBand = () => (
-  <div
-    aria-hidden="true"
-    style={{
-      position: "absolute",
-      top: 0,
-      left: 0,
-      right: 0,
-      height: SKY_HEIGHT,
-      background:
-        "linear-gradient(180deg, #0b1730 0%, #1d2a4f 40%, #3b2f5e 75%, rgba(59, 47, 94, 0) 100%)",
-      pointerEvents: "none",
-      zIndex: 1,
-    }}
-  >
-    {[
-      [10, 36], [22, 18], [38, 52], [54, 24], [68, 60], [82, 30], [92, 70],
-      [16, 80], [44, 90], [76, 14], [60, 110], [28, 130], [88, 140],
-    ].map(([x, y], i) => (
-      <span
-        key={i}
-        style={{
-          position: "absolute",
-          left: `${x}%`,
-          top: y,
-          width: 3,
-          height: 3,
-          borderRadius: 99,
-          background: "#fdfbf6",
-          opacity: 0.7,
-          boxShadow: "0 0 6px rgba(253, 251, 246, 0.9)",
-          animation: `waffles-v2-twinkle ${2 + (i % 4)}s ease-in-out ${i * 0.3}s infinite`,
-        }}
-      />
-    ))}
-    <PixelImg
-      src={ASSETS.forestMoon}
-      size={84}
-      alt=""
-      style={{ position: "absolute", top: 28, right: 22 }}
-    />
-  </div>
-);
 
 const Fireflies = () => (
   <div aria-hidden="true" style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 7 }}>
@@ -556,7 +510,7 @@ export const LevelPath = () => {
             const seed = node.n;
             const onLeft = (seed * 11) % 2 === 0;
             const xPct = onLeft ? ((seed * 7) % 6) : 58 + ((seed * 7) % 8);
-            const size = 70 + ((seed * 13) % 24);
+            const size = 96 + ((seed * 13) % 32);
             return (
               <PixelImg
                 key={`stone-${node.n}`}
@@ -585,8 +539,8 @@ export const LevelPath = () => {
             if (node.n % 2 !== 0) return null;          // skip every other for density
             const y = PATH_TOP_PAD + i * ROW_STRIDE;
             const seed = node.n;
-            const xPct = ((seed * 31) % 56) + 2; // 2% .. 58%
-            const size = 80 + ((seed * 17) % 26); // 80-105
+            const xPct = ((seed * 31) % 48) + 2; // 2% .. 50%
+            const size = 104 + ((seed * 17) % 36); // 104-139
             const opacity = 0.78 + ((seed * 7) % 18) / 100;
             const dur = 8 + ((seed * 5) % 6);
             const delay = ((seed * 13) % 40) / 10;
@@ -653,8 +607,8 @@ export const LevelPath = () => {
               zIndex: 7,
             }}
           >
-            <PixelImg src={ASSETS.wallyStump} size={120} alt="" style={{ flexShrink: 0 }} />
-            <div className="bubble" style={{ marginBottom: 36, maxWidth: 200 }}>
+            <PixelImg src={ASSETS.wallyStump} size={158} alt="" style={{ flexShrink: 0 }} />
+            <div className="bubble" style={{ marginBottom: 48, maxWidth: 190 }}>
               Level <b>{proto.level}</b> — three away from your next ticket. Keep going!
             </div>
           </div>

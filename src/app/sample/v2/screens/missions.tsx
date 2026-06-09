@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, FlameIcon, Phone, PixelImg, TabBar } from "../shared";
+import { ASSETS, Phone, PixelImg, TabBar } from "../shared";
 
 export const MissionsScreen = () => {
   const proto = useProto();
@@ -56,7 +56,7 @@ export const MissionsScreen = () => {
         {tab === "daily" && (
           <>
             <div style={{ background: "linear-gradient(180deg, rgba(255,201,49,.14), rgba(255,201,49,.04))", border: "1px solid rgba(255,201,49,.25)", borderRadius: 14, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <PixelImg src={ASSETS.trophy} size={48} alt="" />
+              <PixelImg src={ASSETS.trophy} size={70} alt="" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", letterSpacing: 0.3 }}>Earn up to {totalDailyXP} XP today</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginTop: 2 }}>Resets in 17h 42m</div>
@@ -69,7 +69,7 @@ export const MissionsScreen = () => {
                 const done = m.p >= m.tot;
                 return (
                   <div key={i} style={{ background: "var(--surface-1)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: done ? 0.65 : 1 }}>
-                    <PixelImg src={m.icon} size={44} alt="" style={{ flexShrink: 0 }} />
+                    <PixelImg src={m.icon} size={58} alt="" style={{ flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>

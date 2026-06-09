@@ -79,6 +79,11 @@ export const ShopScreen = () => {
   const [boostBanner, setBoostBanner] = useState<string | null>(null);
   const [equippedToast, setEquippedToast] = useState<string | null>(null);
   const [ticketCountUp, setTicketCountUp] = useState<{ from: number; to: number; key: number } | null>(null);
+  const eventSeq = useRef(0);
+  const nextEventKey = () => {
+    eventSeq.current += 1;
+    return eventSeq.current;
+  };
 
   // ---- Snackbar lifecycle (4-second auto-commit window for power-ups) -------
   // Power-up purchases commit balance immediately and show a 4s snackbar; if
@@ -119,12 +124,12 @@ export const ShopScreen = () => {
     // Commit immediately, queue the snackbar with an undo handler that refunds.
     proto.update({ tickets: tickets - p.price });
     setSnackbar({
-      id: `pu-${p.id}-${Date.now()}`,
+      id: `pu-${p.id}-${nextEventKey()}`,
       label: `${p.label} purchased`,
       onUndo: () => {
         // Use a fresh state read via proto.update's functional patch.
         proto.update((s) => ({ tickets: s.tickets + p.price }));
-        setSnackbar((sb) => (sb ? { ...sb, label: "Refunded", refundedAt: Date.now(), onUndo: () => {} } : sb));
+        setSnackbar((sb) => (sb ? { ...sb, label: "Refunded", refundedAt: nextEventKey(), onUndo: () => {} } : sb));
       },
     });
   };
@@ -173,7 +178,7 @@ export const ShopScreen = () => {
     setTimeout(() => {
       const total = b.count + b.bonus;
       proto.update({ tickets: before + total });
-      setTicketCountUp({ from: before, to: before + total, key: Date.now() });
+      setTicketCountUp({ from: before, to: before + total, key: nextEventKey() });
       setFlow(null);
     }, 750);
   };
@@ -364,9 +369,9 @@ const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: b
   };
   return (
     <div style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-      <div style={{ display: "flex", alignItems: "flex-start", gap: 8 }}>
-        <div style={{ width: 36, height: 36, borderRadius: 10, background: `${item.color}1e`, border: `1px solid ${item.color}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <PixelImg src={item.icon} size={28} alt="" />
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
+        <div style={{ width: 56, height: 56, borderRadius: 12, background: `${item.color}1e`, border: `1px solid ${item.color}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <PixelImg src={item.icon} size={48} alt="" />
         </div>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "Archivo Black", fontSize: 14, color: "#fff", lineHeight: 1 }}>{item.label}</div>
