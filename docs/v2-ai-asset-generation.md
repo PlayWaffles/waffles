@@ -85,7 +85,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `trophy.webp` | Competition reward | Reward icon | Candidate generated |
 | `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Candidate generated |
 | `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Candidate generated |
-| `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Pending |
+| `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Candidate generated |
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Pending |
 | `avatar-*.webp` | Player avatars | Character cutout set | Pending |
 | `boss-night-owl.webp` | Boss marker | Character cutout | Pending |
@@ -275,6 +275,48 @@ Create a Waffles V2 time power-up icon without text: a chunky golden stopwatch s
 
 ```text
 Create a Waffles V2 shield power-up icon without text: a chunky protective shield with a golden waffle-grid face, cyan rim glow accents, maple-gold bevels, sturdy heroic silhouette, premium pixel-inspired 3D mobile game icon, crisp black-brown outline, saturated arcade colors, high contrast. Centered object with generous padding. Perfectly flat solid #ff00ff background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #ff00ff anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
+### Chest Rainbow
+
+- Source: `public/images/v2/generated/chest-rainbow-ai-source.png`
+- Final: `public/images/v2/generated/chest-rainbow-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then connected-background chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 rainbow reward chest icon without text: a chunky treasure chest with maple-gold waffle panels, rainbow gem trim, bright premium top-prize feel, crisp black-brown outline, soft bevels, saturated arcade colors, premium pixel-inspired 3D mobile game icon. Centered object with generous padding. Perfectly flat solid #ff00ff background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #ff00ff anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
+### Chest Purple
+
+- Source: `public/images/v2/generated/chest-purple-ai-source.png`
+- Final: `public/images/v2/generated/chest-purple-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 purple reward chest icon without text: a chunky treasure chest with maple-gold waffle panels, deep purple gem trim, mid-tier magical reward feel, crisp black-brown outline, soft bevels, saturated arcade colors, premium pixel-inspired 3D mobile game icon. Centered object with generous padding. Perfectly flat solid #00ff00 background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #00ff00 anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
+### Chest Brown
+
+- Source: `public/images/v2/generated/chest-brown-ai-source.png`
+- Final: `public/images/v2/generated/chest-brown-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 brown reward chest icon without text: a chunky wooden treasure chest with dark espresso-brown wood, maple-gold waffle panels and simple bronze trim, common reward feel, crisp black-brown outline, soft bevels, saturated arcade colors, premium pixel-inspired 3D mobile game icon. Centered object with generous padding. Perfectly flat solid #00ff00 background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #00ff00 anywhere in the icon. No words, no numbers, no logo, no watermark.
 ```
 
 ### Trophy
