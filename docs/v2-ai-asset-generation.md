@@ -89,7 +89,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Candidate generated |
 | `avatar-*.webp` | Player avatars | Character cutout set | Candidate generated |
 | `boss-night-owl.webp` | Boss marker | Character cutout | Candidate generated |
-| `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Pending |
+| `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Candidate generated |
 | `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Pending |
 | `forest-scene-hero.webp` | Full-screen level scene | Background scene | Pending |
 
@@ -611,6 +611,69 @@ Style: premium mobile game character sprite, chunky pixel-inspired 3D illustrati
 Composition: centered full-body character, orthographic/front three-quarter view, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Waffle Slab Active
+
+- Source: `public/images/v2/generated/waffle-slab-active-ai-source.png`
+- Final: `public/images/v2/generated/waffle-slab-active-ai.png`
+- Dimensions: 1536 x 1024
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game isometric map tile
+Primary request: Create the active waffle slab tile for the Waffles V2 level path.
+Subject: One isometric waffle slab occupying a 2:1 diamond top face, warm maple-gold waffle material, raised active rim, subtle cyan glow accents along the edges, and a clear playable-current-state feel without labels.
+Style: premium mobile game map tile, chunky pixel-inspired 3D illustration, crisp black-brown outline, soft bevels, saturated arcade color, maple-gold highlights, readable at 48px-96px.
+Composition: isolated tile centered in frame, top face aligned as a 2:1 isometric diamond, consistent depth, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no text, no numbers, no letters, no logo, no watermark, no extra scenery, no cast shadow, no reflection.
+```
+
+### Waffle Slab Done
+
+- Source: `public/images/v2/generated/waffle-slab-done-ai-source.png`
+- Final: `public/images/v2/generated/waffle-slab-done-ai.png`
+- Dimensions: 1536 x 1024
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game isometric map tile
+Primary request: Create the completed waffle slab tile for the Waffles V2 level path.
+Subject: One isometric waffle slab occupying a 2:1 diamond top face, warm maple-gold waffle material, completed-state polished surface, small raised checkmark-shaped maple-gold inset made from geometry only, subtle celebratory emerald accent trim, no labels.
+Style: premium mobile game map tile, chunky pixel-inspired 3D illustration, crisp black-brown outline, soft bevels, saturated arcade color, maple-gold highlights, readable at 48px-96px.
+Composition: isolated tile centered in frame, top face aligned as a 2:1 isometric diamond, consistent depth matching the active tile, generous padding, no cropping.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no numbers, no letters, no logo, no watermark, no extra scenery, no cast shadow, no reflection.
+```
+
+### Waffle Slab Locked
+
+- Source: `public/images/v2/generated/waffle-slab-locked-ai-source.png`
+- Final: `public/images/v2/generated/waffle-slab-locked-ai.png`
+- Dimensions: 1536 x 1024
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game isometric map tile
+Primary request: Create the locked waffle slab tile for the Waffles V2 level path.
+Subject: One isometric waffle slab occupying a 2:1 diamond top face, muted dark maple waffle material, locked-state reinforced rim, small chunky padlock-shaped inset made from geometry only, charcoal side panels, subtle dim blue-gray trim, no labels.
+Style: premium mobile game map tile, chunky pixel-inspired 3D illustration, crisp black-brown outline, soft bevels, saturated but muted arcade color, readable at 48px-96px.
+Composition: isolated tile centered in frame, top face aligned as a 2:1 isometric diamond, consistent depth matching the active tile, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no text, no numbers, no letters, no logo, no watermark, no extra scenery, no cast shadow, no reflection.
 ```
 
 ### Trophy
