@@ -80,9 +80,9 @@ Constraints: no text, no watermark, no extra props unless specified.
 | Asset | Role | Target treatment | Status |
 | --- | --- | --- | --- |
 | `wally.webp` | Main mascot and CTA character | Character cutout | Candidate generated |
-| `ticket.webp` | Ticket currency | Reward icon | Pending |
-| `flame.webp` | Streak indicator | Reward icon | Pending |
-| `trophy.webp` | Competition reward | Reward icon | Pending |
+| `ticket.webp` | Ticket currency | Reward icon | Candidate generated |
+| `flame.webp` | Streak indicator | Reward icon | Candidate generated |
+| `trophy.webp` | Competition reward | Reward icon | Candidate generated |
 | `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Pending |
 | `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Pending |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Pending |
@@ -114,4 +114,67 @@ Style: premium mobile game asset, chunky pixel-inspired 3D illustration, crisp s
 Composition: centered full-body character, orthographic/front three-quarter view, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no brand logos, no words, no watermark, no extra props, no cast shadow, no contact shadow, no reflection.
+```
+
+### Ticket Currency
+
+- Source: `public/images/v2/generated/ticket-ai-source.png`
+- Final: `public/images/v2/generated/ticket-ai.png`
+- Dimensions: 1449 x 1085
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game reward icon
+Primary request: Create the Waffles V2 ticket currency icon.
+Subject: A single golden waffle-themed tournament ticket, shaped like a small rounded admission ticket with subtle waffle-grid embossing and maple-gold highlights, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Streak Flame
+
+- Source: `public/images/v2/generated/flame-ai-source.png`
+- Final: `public/images/v2/generated/flame-ai.png`
+- Dimensions: 1234 x 1275
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game reward icon
+Primary request: Create the Waffles V2 streak flame icon.
+Subject: A single lively flame shaped like a maple-gold and coral arcade fire, with a small bright yellow inner flame and rounded chunky lobes, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, upright vertical flame, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Trophy
+
+- Source: `public/images/v2/generated/trophy-ai-source.png`
+- Final: `public/images/v2/generated/trophy-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game reward icon
+Primary request: Create the Waffles V2 trophy icon.
+Subject: A single golden trophy cup with waffle-grid embossing on the bowl, chunky handles, warm maple-gold highlights, and a small dark base, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
 ```
