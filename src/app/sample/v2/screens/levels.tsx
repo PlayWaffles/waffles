@@ -251,15 +251,8 @@ const Tile = ({
         {/* Centered label or icon, sitting on the slab's top face */}
         <div
           aria-hidden="true"
-          style={{
-            position: "absolute",
-            top: "32%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
-            zIndex: 1,
-            opacity: node.state === "locked" ? 0.7 : 1,
-            filter: node.state === "locked" ? "grayscale(0.25) brightness(0.85)" : "none",
-          }}
+          className="level-tile-mark"
+          data-state={node.state}
         >
           {node.state === "done" ? (
             <PixelImg src={ASSETS.checkmark} size={38} alt="" />
@@ -267,13 +260,8 @@ const Tile = ({
             <PixelImg src={ASSETS.lock} size={34} alt="" />
           ) : (
             <span
-              style={{
-                fontFamily: "var(--font-display)",
-                fontSize: 28,
-                color: "var(--frame)",
-                textShadow: "0 2px 0 rgba(255, 255, 255, 0.35)",
-                lineHeight: 1,
-              }}
+              className="level-tile-number"
+              data-digits={String(node.n).length}
             >
               {node.n}
             </span>

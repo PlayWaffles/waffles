@@ -1,7 +1,7 @@
 "use client";
 
 import { useProto } from "../state";
-import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg, TabBar, TicketIcon, TopHeader } from "../shared";
+import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg, TabBar, TicketIcon, TopHeader } from "../shared";
 
 export const ProfileScreen = () => {
   const proto = useProto();
@@ -18,7 +18,9 @@ export const ProfileScreen = () => {
       <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "0 16px", overflow: "hidden" }}>
         <div style={{ textAlign: "center", color: "var(--ink)", marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-            <PixelImg src={ASSETS.wally} size={172} alt="" />
+            <AssetWell size={184} accent="var(--maple-500)" radius={32} style={{ borderRadius: "44% 44% 38% 38%" }}>
+              <PixelImg src={ASSETS.wally} size={168} alt="" />
+            </AssetWell>
           </div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 22, lineHeight: 1 }}>@waffleeater</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-mute)", marginTop: 4 }}>Joined 2 weeks ago</div>
@@ -40,7 +42,9 @@ export const ProfileScreen = () => {
 
         <div style={{ background: "#0F0F10", border: "1px solid rgba(255,201,49,.2)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(255,201,49,.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <TicketIcon size={32} />
+            <AssetWell size={58} accent="var(--maple-500)" radius={14}>
+              <TicketIcon size={30} />
+            </AssetWell>
             <div style={{ flex: 1 }}>
               <div style={{ fontFamily: "Archivo Black", fontSize: 20, color: "#fff", lineHeight: 1 }}>{tickets} ticket{tickets === 1 ? "" : "s"}</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Earned from levels & top finishes</div>

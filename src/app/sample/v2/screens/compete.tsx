@@ -1,7 +1,7 @@
 "use client";
 
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg, TabBar, TopHeader } from "../shared";
+import { ASSETS, AssetWell, Phone, PixelImg, TabBar, TicketIcon, TopHeader } from "../shared";
 
 const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?: string; size?: number; state?: "current" | "locked" | "passed" }) => {
   const dim = state === "locked" ? 0.35 : 1;
@@ -32,10 +32,20 @@ const REWARD_PRESETS: { free: Reward; premium: Reward }[] = [
   { free: { type: "cosmetic", label: "Emote" }, premium: { type: "cosmetic", label: "Avatar" } },
 ];
 
-const REWARD_PALETTE: Record<RewardType, { bg: string; fg: string; glyph: string }> = {
-  xp:       { bg: "rgba(255, 201, 49, 0.10)", fg: "var(--maple-500)", glyph: "XP" },
-  ticket:   { bg: "rgba(0, 207, 242, 0.10)",  fg: "var(--leaf)",      glyph: "🎟" },
-  cosmetic: { bg: "rgba(251, 114, 255, 0.10)", fg: "var(--berry)",     glyph: "★" },
+const REWARD_PALETTE: Record<RewardType, { bg: string; fg: string }> = {
+  xp:       { bg: "rgba(255, 201, 49, 0.10)", fg: "var(--maple-500)" },
+  ticket:   { bg: "rgba(0, 207, 242, 0.10)",  fg: "var(--leaf)" },
+  cosmetic: { bg: "rgba(251, 114, 255, 0.10)", fg: "var(--berry)" },
+};
+
+const RewardAsset = ({ reward }: { reward: Reward }) => {
+  if (reward.type === "xp") {
+    return <PixelImg src={ASSETS.xpGem} size={28} alt="" />;
+  }
+  if (reward.type === "ticket") {
+    return <TicketIcon size={24} />;
+  }
+  return <PixelImg src={ASSETS.vipStar} size={28} alt="" />;
 };
 
 // One reward chip — keeps the reward visible in every state. Claimed cells
@@ -77,23 +87,9 @@ const PassRewardCell = ({
         color: "var(--ink)",
       }}
     >
-      <div
-        style={{
-          width: 36,
-          height: 36,
-          borderRadius: 8,
-          background: "rgba(0, 0, 0, 0.25)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontFamily: "Archivo Black",
-          fontSize: 16,
-          color: palette.fg,
-          flexShrink: 0,
-        }}
-      >
-        {palette.glyph}
-      </div>
+      <AssetWell size={38} accent={palette.fg} radius={9}>
+        <RewardAsset reward={reward} />
+      </AssetWell>
       <div style={{ minWidth: 0, flex: 1 }}>
         <div
           style={{
@@ -175,7 +171,7 @@ const PassRewardCell = ({
             justifyContent: "center",
           }}
         >
-          🔒
+          <PixelImg src={ASSETS.lock} size={12} alt="" style={{ filter: "none" }} />
         </div>
       )}
     </div>
@@ -254,10 +250,12 @@ export const CompeteScreen = () => {
         </div>
 
         <button onClick={() => proto.goto("missions")} style={{ margin: "12px 16px 0", background: "#0F0F10", borderRadius: 14, padding: "12px 14px", border: "1px solid rgba(255,255,255,.06)", display: "flex", alignItems: "center", gap: 12, cursor: "pointer", textAlign: "left", width: "auto" }}>
-          <div style={{ width: 42, height: 42, borderRadius: 10, background: "linear-gradient(180deg, rgba(255,201,49,.18), rgba(255,201,49,.06))", border: "1px solid rgba(255,201,49,.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, position: "relative" }}>
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-              <path d="M9 11.5l2 2 4-4M5 5h14a1 1 0 0 1 1 1v13l-4-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="#FFC931" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,201,49,.1)" />
-            </svg>
+          <div style={{ position: "relative", flexShrink: 0 }}>
+            <AssetWell size={48} accent="var(--maple-500)" radius={12}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                <path d="M9 11.5l2 2 4-4M5 5h14a1 1 0 0 1 1 1v13l-4-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="#FFC931" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,201,49,.1)" />
+              </svg>
+            </AssetWell>
             <div style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#FC1919", color: "#fff", fontFamily: "Archivo Black", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>7</div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>

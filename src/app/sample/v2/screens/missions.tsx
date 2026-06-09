@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg, TabBar } from "../shared";
+import { ASSETS, AssetWell, Phone, PixelImg, TabBar, TicketIcon } from "../shared";
 
 export const MissionsScreen = () => {
   const proto = useProto();
@@ -56,7 +56,9 @@ export const MissionsScreen = () => {
         {tab === "daily" && (
           <>
             <div style={{ background: "linear-gradient(180deg, rgba(255,201,49,.14), rgba(255,201,49,.04))", border: "1px solid rgba(255,201,49,.25)", borderRadius: 14, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
-              <PixelImg src={ASSETS.trophy} size={70} alt="" />
+              <AssetWell size={76} accent="var(--maple-500)" radius={16}>
+                <PixelImg src={ASSETS.trophy} size={62} alt="" />
+              </AssetWell>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", letterSpacing: 0.3 }}>Earn up to {totalDailyXP} XP today</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginTop: 2 }}>Resets in 17h 42m</div>
@@ -69,7 +71,9 @@ export const MissionsScreen = () => {
                 const done = m.p >= m.tot;
                 return (
                   <div key={i} style={{ background: "var(--surface-1)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: done ? 0.65 : 1 }}>
-                    <PixelImg src={m.icon} size={58} alt="" style={{ flexShrink: 0 }} />
+                    <AssetWell size={60} accent={m.icon === ASSETS.flame ? "var(--berry)" : m.icon === ASSETS.trophy ? "var(--maple-500)" : "var(--leaf)"} radius={14}>
+                      <PixelImg src={m.icon} size={46} alt="" />
+                    </AssetWell>
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
@@ -92,12 +96,9 @@ export const MissionsScreen = () => {
         {tab === "partner" && (
           <>
             <div style={{ background: "linear-gradient(180deg, rgba(0,207,242,.12), rgba(0,207,242,.03))", border: "1px solid rgba(0,207,242,.25)", borderRadius: 14, padding: "12px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
-              <div style={{ width: 38, height: 38, borderRadius: 10, background: "rgba(0,207,242,.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <svg width="22" height="16" viewBox="0 0 22 14" fill="none">
-                  <path d="M2 3a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a2 2 0 0 0 0-4V3z" fill="#00CFF2" />
-                  <path d="M9 3v8" stroke="#0F0F10" strokeWidth="1.2" strokeDasharray="1.5 1.5" />
-                </svg>
-              </div>
+              <AssetWell size={46} accent="var(--leaf)" radius={12}>
+                <TicketIcon size={24} />
+              </AssetWell>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "Archivo Black", fontSize: 13, color: "#fff", letterSpacing: 0.3 }}>Earn up to {totalPartnerTickets} 🎟 from offers</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>Sponsored by our partners · Verified rewards</div>
@@ -140,10 +141,7 @@ export const MissionsScreen = () => {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.15)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", padding: "4px 8px", borderRadius: 8, fontFamily: "Archivo Black", fontSize: 10 }}>
                       +{m.tickets}
-                      <svg width="11" height="9" viewBox="0 0 22 14" fill="none">
-                        <path d="M2 3a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V9a2 2 0 0 0 0-4V3z" fill="#00CFF2" />
-                        <path d="M9 3v8" stroke="#0F0F10" strokeWidth="1" strokeDasharray="1.5 1.5" />
-                      </svg>
+                      <TicketIcon size={14} />
                     </span>
                     <button style={{ background: "#fff", color: "#1e1e1e", border: "none", padding: "5px 10px", borderRadius: 7, fontFamily: "Archivo Black", fontSize: 9, letterSpacing: 0.4, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{m.cta} →</button>
                   </div>
