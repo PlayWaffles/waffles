@@ -84,7 +84,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `flame.webp` | Streak indicator | Reward icon | Candidate generated |
 | `trophy.webp` | Competition reward | Reward icon | Candidate generated |
 | `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Candidate generated |
-| `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Pending |
+| `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Partially generated |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Pending |
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Pending |
 | `avatar-*.webp` | Player avatars | Character cutout set | Pending |
@@ -219,6 +219,20 @@ Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp da
 Composition: centered object, front view with slight dimensional bevel, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Power-Up Skip
+
+- Source: `public/images/v2/generated/powerup-skip-ai-source.png`
+- Final: `public/images/v2/generated/powerup-skip-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 skip power-up icon: a chunky curved fast-forward arrow wrapping around a small golden waffle tile, magenta arcade accents, premium pixel-inspired 3D mobile game style, crisp dark outline, high contrast, no text, no numbers, no logo. Centered with generous padding. Put it on a perfectly flat solid #00ff00 background, uniform edge to edge, with no shadow, no gradient, no glow on the background, no floor, no texture, and no #00ff00 in the object.
 ```
 
 ### Trophy
