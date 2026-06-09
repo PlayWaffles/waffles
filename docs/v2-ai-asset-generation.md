@@ -83,6 +83,9 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `ticket.webp` | Ticket currency | Reward icon | Candidate generated |
 | `flame.webp` | Streak indicator | Reward icon | Candidate generated |
 | `trophy.webp` | Competition reward | Reward icon | Candidate generated |
+| `checkmark.webp`, `lock.webp` | Level state badges | UI status icon set | Candidate generated |
+| `vip-star.webp`, `xp-gem.webp`, `golden-coin.webp` | Rewards and currencies | Reward icon set | Candidate generated |
+| `icon-target.webp`, `icon-calendar.webp` | Mission icons | UI icon set | Candidate generated |
 | `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Candidate generated |
 | `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Candidate generated |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Candidate generated |
@@ -92,6 +95,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Candidate generated |
 | `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Candidate generated |
 | `forest-scene-hero.webp` | Full-screen level scene | Background scene | Candidate generated |
+| `wally-stump.webp` | Levels encouragement prop | Character prop cutout | Candidate generated |
 
 ## Generated Candidates
 
@@ -135,6 +139,153 @@ Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp da
 Composition: centered object, slight front three-quarter angle, generous padding.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Checkmark
+
+- Source: `public/images/v2/generated/checkmark-ai-source.png`
+- Final: `public/images/v2/generated/checkmark-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game UI status icon
+Primary request: Create the Waffles V2 checkmark icon.
+Subject: A single chunky checkmark made from maple-gold material with cyan highlight edge, compact and readable at 16px-40px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Lock
+
+- Source: `public/images/v2/generated/lock-ai-source.png`
+- Final: `public/images/v2/generated/lock-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game UI status icon
+Primary request: Create the Waffles V2 lock icon.
+Subject: A single chunky closed padlock, dark charcoal body with maple-gold shackle and waffle-grid bevel texture, compact and readable at 16px-40px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### VIP Star
+
+- Source: `public/images/v2/generated/vip-star-ai-source.png`
+- Final: `public/images/v2/generated/vip-star-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game VIP reward icon
+Primary request: Create the Waffles V2 VIP star icon.
+Subject: A single premium five-point star, maple-gold with tiny red-orange gem facets and a crisp dark outline, elite VIP feel, clear at 16px-48px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, saturated arcade color, soft bevels, warm highlights, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### XP Gem
+
+- Source: `public/images/v2/generated/xp-gem-ai-source.png`
+- Final: `public/images/v2/generated/xp-gem-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game XP reward icon
+Primary request: Create the Waffles V2 XP gem icon.
+Subject: A single bright experience gem, faceted cyan and violet crystal with small maple-gold core sparkle, compact and readable at 16px-48px.
+Style: premium mobile game reward icon, chunky pixel-inspired 3D illustration, crisp dark outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Mission Target
+
+- Source: `public/images/v2/generated/icon-target-ai-source.png`
+- Final: `public/images/v2/generated/icon-target-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game mission icon
+Primary request: Create the Waffles V2 target mission icon.
+Subject: A single chunky target bullseye, maple-gold and coral rings with cyan center dot, compact and readable at 16px-48px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, front view with slight dimensional bevel, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Mission Calendar
+
+- Source: `public/images/v2/generated/icon-calendar-ai-source.png`
+- Final: `public/images/v2/generated/icon-calendar-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game mission icon
+Primary request: Create the Waffles V2 calendar mission icon.
+Subject: A single chunky calendar icon, maple-gold frame with teal page face and small blank raised squares only, compact and readable at 16px-48px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Golden Coin
+
+- Source: `public/images/v2/generated/golden-coin-ai-source.png`
+- Final: `public/images/v2/generated/golden-coin-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game currency icon
+Primary request: Create the Waffles V2 golden coin icon.
+Subject: A single chunky golden coin with subtle waffle-grid embossing, maple-gold rim, small cyan shine accent, compact and readable at 16px-48px.
+Style: premium mobile game reward icon, chunky pixel-inspired 3D illustration, crisp dark outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
 ```
 
 ### Streak Flame
@@ -611,6 +762,27 @@ Style: premium mobile game character sprite, chunky pixel-inspired 3D illustrati
 Composition: centered full-body character, orthographic/front three-quarter view, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Wally Stump
+
+- Source: `public/images/v2/generated/wally-stump-ai-source.png`
+- Final: `public/images/v2/generated/wally-stump-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; wired into sample/v2 for review
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game character prop sprite
+Primary request: Create the Waffles V2 Wally on stump prop.
+Subject: Wally, the cute golden waffle mascot, sitting proudly on a small forest stump, tiny arms, square waffle-grid body, cheerful expression, stump with mossy teal accents. Readable at 80px-160px.
+Style: premium mobile game character prop, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated maple-gold highlights, dark readable outline, twilight forest accents, playful but polished, no text.
+Composition: centered full prop, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no cast shadow, no contact shadow, no reflection.
 ```
 
 ### Waffle Slab Active
