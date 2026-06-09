@@ -18,7 +18,7 @@ export const ProfileScreen = () => {
       <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "0 16px", overflow: "hidden" }}>
         <div style={{ textAlign: "center", color: "var(--ink)", marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
-            <PixelImg src={ASSETS.wally} size={132} alt="" />
+            <PixelImg src={ASSETS.wally} size={172} alt="" />
           </div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 22, lineHeight: 1 }}>@waffleeater</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-mute)", marginTop: 4 }}>Joined 2 weeks ago</div>

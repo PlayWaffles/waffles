@@ -25,17 +25,17 @@ export const ResultsScreen = () => {
 
       <div style={{ position: "absolute", top: 200, left: 18, right: 18, display: "flex", gap: 10 }}>
         <div style={{ flex: 1, background: "linear-gradient(180deg, #FFC931, #F5BB1B)", borderRadius: 14, padding: "12px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e" }}>
-          <PixelImg src={ASSETS.xpGem} size={28} alt="XP" />
+          <PixelImg src={ASSETS.xpGem} size={48} alt="XP" />
           <div style={{ fontFamily: "Archivo Black", fontSize: 18, color: "#1e1e1e", lineHeight: 1, marginTop: 2 }}>+{score}</div>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75 }}>XP EARNED</div>
         </div>
         <div style={{ flex: 1, background: "linear-gradient(180deg, #00CFF2, #00a3c2)", borderRadius: 14, padding: "12px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e" }}>
-          <TicketIcon size={26} color="#fff" />
+          <TicketIcon size={48} color="#fff" />
           <div style={{ fontFamily: "Archivo Black", fontSize: 18, color: "#1e1e1e", lineHeight: 1, marginTop: 2 }}>+1</div>
           <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75 }}>TICKET</div>
         </div>
         <div style={{ flex: 1, background: "linear-gradient(180deg, #FB72FF, #a83fb8)", borderRadius: 14, padding: "12px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", color: "#fff" }}>
-          <FlameIcon size={28} />
+          <FlameIcon size={48} />
           <div style={{ fontFamily: "Archivo Black", fontSize: 18, lineHeight: 1, marginTop: 2 }}>13</div>
           <div style={{ fontSize: 10, fontWeight: 800, opacity: 0.9 }}>DAY STREAK</div>
         </div>
@@ -57,7 +57,7 @@ export const ResultsScreen = () => {
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 8px", borderRadius: 10, background: p.you ? "rgba(255,201,49,.08)" : "transparent", border: p.you ? "1.5px solid var(--maple-500)" : "1.5px solid transparent", marginBottom: 4 }}>
               <div style={{ width: 24, fontFamily: "var(--font-display)", fontSize: 13, color: rankColor, textAlign: "center", flexShrink: 0 }}>{p.r}</div>
-              <PixelImg src={p.av} size={36} alt="" />
+              <PixelImg src={p.av} size={48} alt="" />
               <div style={{ flex: 1, fontSize: 13, fontWeight: 800, color: "var(--ink)", minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.n}</div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: p.you ? "var(--maple-500)" : "var(--ink)" }}>{p.s.toLocaleString()}</div>
             </div>

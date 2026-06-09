@@ -39,7 +39,7 @@ export const LevelIntroScreen = () => {
       <div style={{ position: "absolute", top: 236, left: "50%", transform: "translateX(-50%)", width: 172, height: 172 }}>
         <div style={{ position: "absolute", bottom: -20, left: "50%", transform: "translateX(-50%)", width: 200, height: 50, borderRadius: "50%", background: "radial-gradient(ellipse at center, rgba(255,201,49,.5), transparent 65%)" }} />
         <div style={{ position: "relative", width: "100%", height: "100%", borderRadius: "50%", background: "linear-gradient(180deg, #FB72FF 0%, #6a1f72 100%)", border: "4px solid #1e1e1e", boxShadow: "0 8px 0 #1e1e1e, 0 0 50px rgba(251,114,255,.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <PixelImg src={ASSETS.bossNightOwl} size={140} alt="Night Owl" />
+          <PixelImg src={ASSETS.bossNightOwl} size={170} alt="Night Owl" />
         </div>
         <div style={{ position: "absolute", top: -8, right: -8, width: 48, height: 48, borderRadius: 99, background: "linear-gradient(180deg, #FFC931, #F5BB1B)", border: "3px solid #1e1e1e", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "Archivo Black", fontSize: 18, color: "#1e1e1e", boxShadow: "0 4px 0 #1e1e1e" }}>{levelNum}</div>
       </div>
@@ -47,7 +47,7 @@ export const LevelIntroScreen = () => {
       <div style={{ position: "absolute", bottom: 120, left: 18, right: 18, background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ display: "flex", gap: 6 }}>
           {[1, 2, 3].map((h) => (
-            <PixelImg key={h} src={ASSETS.heartFull} size={26} alt="heart" />
+            <PixelImg key={h} src={ASSETS.heartFull} size={34} alt="heart" />
           ))}
         </div>
         <div style={{ flex: 1 }}>

@@ -32,9 +32,9 @@ export const LobbyScreen = () => {
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
               {[ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda, ASSETS.avatarOwl].map((src, i) => (
-                <PixelImg key={i} src={src} size={44} alt="" style={{ marginLeft: i ? -14 : 0 }} />
+                <PixelImg key={i} src={src} size={58} alt="" style={{ marginLeft: i ? -18 : 0 }} />
               ))}
-              <div aria-hidden="true" style={{ width: 32, height: 32, borderRadius: 99, background: "var(--maple-500)", color: "var(--frame)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, fontWeight: 800, marginLeft: -10, fontFamily: "var(--font-display)" }}>+2k</div>
+              <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 99, background: "var(--maple-500)", color: "var(--frame)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, marginLeft: -14, fontFamily: "var(--font-display)" }}>+2k</div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>
@@ -52,7 +52,7 @@ export const LobbyScreen = () => {
         <div style={{ background: "rgba(251,114,255,.08)", border: "1px solid rgba(251,114,255,.2)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10 }}>
           <div style={{ display: "flex", alignItems: "center" }}>
             {[ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit].map((src, i) => (
-              <PixelImg key={i} src={src} size={40} alt="" style={{ marginLeft: i ? -12 : 0 }} />
+              <PixelImg key={i} src={src} size={52} alt="" style={{ marginLeft: i ? -16 : 0 }} />
             ))}
           </div>
           <div style={{ flex: 1, fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>3 friends are in this round</div>
