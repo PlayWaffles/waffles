@@ -86,7 +86,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Candidate generated |
 | `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Candidate generated |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Candidate generated |
-| `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Pending |
+| `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Candidate generated |
 | `avatar-*.webp` | Player avatars | Character cutout set | Pending |
 | `boss-night-owl.webp` | Boss marker | Character cutout | Pending |
 | `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Pending |
@@ -317,6 +317,111 @@ Create a Waffles V2 purple reward chest icon without text: a chunky treasure che
 
 ```text
 Create a Waffles V2 brown reward chest icon without text: a chunky wooden treasure chest with dark espresso-brown wood, maple-gold waffle panels and simple bronze trim, common reward feel, crisp black-brown outline, soft bevels, saturated arcade colors, premium pixel-inspired 3D mobile game icon. Centered object with generous padding. Perfectly flat solid #00ff00 background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #00ff00 anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
+### Medal Apprentice
+
+- Source: `public/images/v2/generated/medal-apprentice-ai-source.png`
+- Final: `public/images/v2/generated/medal-apprentice-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game league badge reward icon
+Primary request: Create the Waffles V2 apprentice league medal icon.
+Subject: A single chunky beginner league medal, bronze-maple waffle medallion with a simple small ribbon loop, subtle waffle-grid embossing, friendly entry-tier feel, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp black-brown outline, saturated arcade colors, soft bevels, warm maple-gold highlights, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Medal Silver
+
+- Source: `public/images/v2/generated/medal-silver-ai-source.png`
+- Final: `public/images/v2/generated/medal-silver-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game league badge reward icon
+Primary request: Create the Waffles V2 silver league medal icon.
+Subject: A single chunky silver league medal with a waffle-grid medallion face, cool silver rim, cyan-blue ribbon loop, polished mid-tier feel, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp black-brown outline, saturated arcade colors, soft bevels, warm maple-gold accent highlights, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Medal Advanced
+
+- Source: `public/images/v2/generated/medal-advanced-ai-source.png`
+- Final: `public/images/v2/generated/medal-advanced-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game league badge reward icon
+Primary request: Create the Waffles V2 advanced league medal icon.
+Subject: A single chunky advanced league medal, polished emerald-green and maple-gold waffle medallion with angular gem trim and a compact ribbon loop, energetic upper-tier feel, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp black-brown outline, saturated arcade colors, soft bevels, warm maple-gold highlights, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Medal Genius
+
+- Source: `public/images/v2/generated/medal-genius-ai-source.png`
+- Final: `public/images/v2/generated/medal-genius-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game league badge reward icon
+Primary request: Create the Waffles V2 genius league medal icon.
+Subject: A single chunky genius league medal, violet-purple and bright maple-gold waffle medallion with star-like gem facets around the rim and a compact royal ribbon loop, brilliant high-tier feel, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp black-brown outline, saturated arcade colors, soft bevels, warm maple-gold highlights, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Medal Master
+
+- Source: `public/images/v2/generated/medal-master-ai-source.png`
+- Final: `public/images/v2/generated/medal-master-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game league badge reward icon
+Primary request: Create the Waffles V2 master league medal icon.
+Subject: A single chunky master league medal, premium black obsidian and radiant maple-gold waffle medallion with crown-like top facets, tiny red-orange jewel accents, ultimate champion feel, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp black-brown outline, saturated arcade colors, soft bevels, warm maple-gold highlights, high contrast, no text.
+Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
 ```
 
 ### Trophy
