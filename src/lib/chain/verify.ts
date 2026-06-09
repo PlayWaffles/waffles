@@ -25,6 +25,7 @@ import type { GameNetwork } from "./network";
 export interface VerifyTicketPurchaseResult {
   verified: boolean;
   error?: string;
+  retryable?: boolean;
   details?: TicketPurchaseDetails;
 }
 
@@ -38,6 +39,7 @@ export interface TicketPurchaseDetails {
 export interface InspectTicketPurchaseResult {
   found: boolean;
   error?: string;
+  retryable?: boolean;
   details?: TicketPurchaseDetails;
 }
 
@@ -143,6 +145,40 @@ function extractTransferAmountFromReceipt(params: {
   return null;
 }
 
+function isRetryableRpcError(error: unknown) {
+  const status =
+    typeof error === "object" && error !== null && "status" in error
+      ? Number((error as { status?: unknown }).status)
+      : null;
+
+  if (
+    status === 408 ||
+    status === 425 ||
+    status === 429 ||
+    (status !== null && status >= 500)
+  ) {
+    return true;
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  const details =
+    typeof error === "object" && error !== null && "details" in error
+      ? String((error as { details?: unknown }).details)
+      : "";
+  const text = `${message} ${details}`.toLowerCase();
+
+  return (
+    text.includes("too many requests") ||
+    text.includes("rate limit") ||
+    text.includes("exceeded") ||
+    text.includes("timeout") ||
+    text.includes("timed out") ||
+    text.includes("temporarily unavailable") ||
+    text.includes("http request failed") ||
+    text.includes("fetch failed")
+  );
+}
+
 async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
   const {
     platform,
@@ -161,13 +197,21 @@ async function verifyTicketPurchaseFallback(input: VerifyTicketPurchaseInput) {
   try {
     receipt = await publicClient.getTransactionReceipt({ hash: txHash });
   } catch (error) {
+    const retryable = isRetryableRpcError(error);
     console.error("[verify-ticket-purchase]", {
       stage: "fallback-receipt-failed",
       platform,
       txHash,
+      retryable,
       error: error instanceof Error ? error.message : "Unknown error",
     });
-    return null;
+    return retryable
+      ? {
+          verified: false,
+          retryable: true,
+          error: error instanceof Error ? error.message : "Temporary RPC error.",
+        }
+      : null;
   }
 
   if (receipt.status !== "success") {
@@ -289,6 +333,7 @@ export async function verifyTicketPurchase(
       if (fallback) return fallback;
       return {
         verified: false,
+        retryable: inspected.retryable,
         error: inspected.error || "TicketPurchased event not found.",
       };
     }
@@ -353,14 +398,17 @@ export async function verifyTicketPurchase(
       details: inspected.details,
     };
   } catch (error) {
+    const retryable = isRetryableRpcError(error);
     console.error("[verify-ticket-purchase]", {
       stage: "unexpected-error",
       platform,
       txHash,
+      retryable,
       error: error instanceof Error ? error.message : "Unknown error",
     });
     return {
       verified: false,
+      retryable,
       error: `Verification error: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
   }
@@ -379,10 +427,16 @@ export async function inspectTicketPurchase(input: {
   let receipt;
   try {
     receipt = await publicClient.getTransactionReceipt({ hash: txHash });
-  } catch {
+  } catch (error) {
+    const retryable = isRetryableRpcError(error);
     return {
       found: false,
-      error: "Transaction not found on this platform. It may still be pending.",
+      retryable,
+      error: retryable
+        ? error instanceof Error
+          ? error.message
+          : "Temporary RPC error."
+        : "Transaction not found on this platform. It may still be pending.",
     };
   }
 
