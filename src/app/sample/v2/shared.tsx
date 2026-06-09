@@ -107,9 +107,22 @@ export const Phone = ({ children }: { children: ReactNode; statusDark?: boolean;
 );
 
 // `color` arg kept for API compatibility but no longer used — pixel art has fixed palette.
-export const TicketIcon = ({ size = 18 }: { size?: number; color?: string }) => (
-  <PixelImg src={ASSETS.ticket} size={size} alt="ticket" />
-);
+export const TicketIcon = ({ size = 18 }: { size?: number; color?: string }) => {
+  const height = Math.max(size, 26);
+  const width = Math.round(height * 1.34);
+
+  return (
+    <PixelImg
+      src={ASSETS.ticket}
+      size={height}
+      alt="ticket"
+      style={{
+        width,
+        height,
+      }}
+    />
+  );
+};
 
 export const FlameIcon = ({ size = 16 }: { size?: number }) => (
   <PixelImg
