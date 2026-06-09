@@ -45,9 +45,9 @@ export const LevelIntroScreen = () => {
       </div>
 
       <div style={{ position: "absolute", bottom: 120, left: 18, right: 18, background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 14 }}>
-        <div style={{ display: "flex", gap: 6 }}>
+        <div style={{ display: "flex", alignItems: "center" }}>
           {[1, 2, 3].map((h) => (
-            <PixelImg key={h} src={ASSETS.heartFull} size={34} alt="heart" />
+            <PixelImg key={h} src={ASSETS.heartFull} size={34} alt="heart" style={{ marginLeft: h === 1 ? 0 : -8 }} />
           ))}
         </div>
         <div style={{ flex: 1 }}>
