@@ -95,9 +95,58 @@ export const PixelImg = ({
       imageRendering: "pixelated",
       display: "inline-block",
       flexShrink: 0,
+      filter: "drop-shadow(0 3px 0 rgba(0, 0, 0, 0.28)) drop-shadow(0 8px 10px rgba(0, 0, 0, 0.24))",
+      verticalAlign: "middle",
       ...style,
     }}
   />
+);
+
+export const AssetWell = ({
+  children,
+  size = 56,
+  accent = "var(--maple-500)",
+  radius = 12,
+  style,
+}: {
+  children: ReactNode;
+  size?: number;
+  accent?: string;
+  radius?: number;
+  style?: CSSProperties;
+}) => (
+  <div
+    style={{
+      width: size,
+      height: size,
+      borderRadius: radius,
+      background:
+        `radial-gradient(circle at 35% 25%, ${accent}38, transparent 58%), linear-gradient(180deg, rgba(253, 251, 246, 0.08), rgba(253, 251, 246, 0.015))`,
+      border: `1.5px solid ${accent}55`,
+      boxShadow: `inset 0 1px 0 rgba(253, 251, 246, 0.18), inset 0 -5px 12px rgba(0, 0, 0, 0.24), 0 4px 0 rgba(0, 0, 0, 0.28), 0 0 22px ${accent}22`,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      position: "relative",
+      overflow: "hidden",
+      flexShrink: 0,
+      ...style,
+    }}
+  >
+    <div
+      aria-hidden="true"
+      style={{
+        position: "absolute",
+        inset: 5,
+        borderRadius: Math.max(4, radius - 5),
+        border: "1px solid rgba(253, 251, 246, 0.07)",
+        pointerEvents: "none",
+      }}
+    />
+    <div style={{ position: "relative", zIndex: 1, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      {children}
+    </div>
+  </div>
 );
 
 export const Phone = ({ children }: { children: ReactNode; statusDark?: boolean; time?: string }) => (
@@ -186,7 +235,10 @@ export const Confetti = ({ pieces = 36 }: { pieces?: number }) => (
 // the bottom nav labels the screen, and ticket counts now live inline on
 // the screens that actually need them (Shop, Profile). The component is
 // kept as a no-op so existing call sites still compile without churn.
-export const TopHeader = (_: { tickets?: number; title?: string }) => null;
+export const TopHeader = (props: { tickets?: number; title?: string }) => {
+  void props;
+  return null;
+};
 
 export const TabBar = ({ active = "home" }: { active?: string }) => {
   const proto = useProto();

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useProto } from "../state";
-import { ASSETS, Confetti, Phone, PixelImg, SectionLabel, TabBar, TicketIcon, TopHeader } from "../shared";
+import { ASSETS, AssetWell, Confetti, Phone, PixelImg, SectionLabel, TabBar, TicketIcon, TopHeader } from "../shared";
 
 // ===== Catalog =================================================================
 // Pulled out of the component so the purchase sub-views can read items by id
@@ -370,9 +370,9 @@ const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: b
   return (
     <div style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: 12, display: "flex", flexDirection: "column", gap: 8 }}>
       <div style={{ display: "flex", alignItems: "flex-start", gap: 10 }}>
-        <div style={{ width: 56, height: 56, borderRadius: 12, background: `${item.color}1e`, border: `1px solid ${item.color}40`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+        <AssetWell size={62} accent={item.color} radius={14}>
           <PixelImg src={item.icon} size={48} alt="" />
-        </div>
+        </AssetWell>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontFamily: "Archivo Black", fontSize: 14, color: "#fff", lineHeight: 1 }}>{item.label}</div>
           <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{item.sub}</div>
@@ -423,9 +423,9 @@ const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable:
       textAlign: "left",
     }}
   >
-    <div style={{ width: 48, height: 48, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
-      <CosmeticGlyph item={item} size={48} />
-    </div>
+      <AssetWell size={54} accent={item.color} radius={13}>
+        <CosmeticGlyph item={item} size={48} />
+      </AssetWell>
     <div style={{ flex: 1, minWidth: 0 }}>
       <div style={{ fontFamily: "Archivo Black", fontSize: 14, color: "#fff", lineHeight: 1 }}>{item.label}</div>
       <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{item.type}</div>
@@ -456,7 +456,7 @@ const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable:
 const BundleCard = ({ bundle, onBuy }: { bundle: Bundle; onBuy: () => void }) => (
   <div style={{ background: "#0F0F10", border: bundle.badge ? "1.5px solid rgba(255,201,49,.4)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 6px", textAlign: "center", position: "relative", boxShadow: bundle.badge ? "0 0 20px rgba(255,201,49,.1)" : "none" }}>
     {bundle.badge && <div style={{ position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", background: "#FFC931", color: "#1e1e1e", padding: "2px 8px", borderRadius: 99, fontFamily: "Archivo Black", fontSize: 8, letterSpacing: 0.5, whiteSpace: "nowrap" }}>{bundle.badge}</div>}
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3, marginTop: 4 }}>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 }}>
       <TicketIcon size={20} />
       <span style={{ fontFamily: "Archivo Black", fontSize: 18, color: "#fff" }}>{bundle.count}</span>
     </div>
