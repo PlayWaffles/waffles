@@ -102,7 +102,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 - Dimensions: 1151 x 1367
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; approved as a style seed, not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -123,7 +123,7 @@ Constraints: no brand logos, no words, no watermark, no extra props, no cast sha
 - Dimensions: 1449 x 1085
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -144,7 +144,7 @@ Constraints: no logo, no words, no numbers, no watermark, no extra objects, no c
 - Dimensions: 1234 x 1275
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -165,7 +165,7 @@ Constraints: no logo, no words, no numbers, no watermark, no extra objects, no c
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -186,7 +186,7 @@ Constraints: no logo, no words, no numbers, no watermark, no extra objects, no c
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -207,7 +207,7 @@ Constraints: no logo, no words, no numbers, no watermark, no extra objects, no c
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -228,7 +228,7 @@ Constraints: no logo, no words, no numbers, no watermark, no extra objects, no c
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -242,7 +242,7 @@ Create a Waffles V2 skip power-up icon: a chunky curved fast-forward arrow wrapp
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -256,7 +256,7 @@ Create a Waffles V2 50/50 power-up icon without text: two chunky waffle answer t
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -270,7 +270,7 @@ Create a Waffles V2 time power-up icon without text: a chunky golden stopwatch s
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -284,7 +284,7 @@ Create a Waffles V2 shield power-up icon without text: a chunky protective shiel
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then connected-background chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -298,7 +298,7 @@ Create a Waffles V2 rainbow reward chest icon without text: a chunky treasure ch
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -312,7 +312,7 @@ Create a Waffles V2 purple reward chest icon without text: a chunky treasure che
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -326,7 +326,7 @@ Create a Waffles V2 brown reward chest icon without text: a chunky wooden treasu
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -347,7 +347,7 @@ Constraints: no logo, no words, no letters, no numbers, no watermark, no extra o
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -368,7 +368,7 @@ Constraints: no logo, no words, no letters, no numbers, no watermark, no extra o
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -389,7 +389,7 @@ Constraints: no logo, no words, no letters, no numbers, no watermark, no extra o
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -410,7 +410,7 @@ Constraints: no logo, no words, no letters, no numbers, no watermark, no extra o
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -431,7 +431,7 @@ Constraints: no logo, no words, no letters, no numbers, no watermark, no extra o
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -452,7 +452,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -473,7 +473,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -494,7 +494,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -515,7 +515,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -536,7 +536,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -557,7 +557,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -578,7 +578,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -599,7 +599,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -620,7 +620,7 @@ Constraints: no brand logos, no words, no letters, no numbers, no watermark, no 
 - Dimensions: 1536 x 1024
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -641,7 +641,7 @@ Constraints: no text, no numbers, no letters, no logo, no watermark, no extra sc
 - Dimensions: 1536 x 1024
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -662,7 +662,7 @@ Constraints: no text, no numbers, no letters, no logo, no watermark, no extra sc
 - Dimensions: 1536 x 1024
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -683,7 +683,7 @@ Constraints: no text, no numbers, no letters, no logo, no watermark, no extra sc
 - Dimensions: 1254 x 1254
 - Alpha: no
 - Mode: built-in image generation
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -704,7 +704,7 @@ Constraints: no text, no numbers, no letters, no logo, no watermark, no characte
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -725,7 +725,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -746,7 +746,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -767,7 +767,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1536 x 1024
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -788,7 +788,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -809,7 +809,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -830,7 +830,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -851,7 +851,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -872,7 +872,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -893,7 +893,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -914,7 +914,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -935,7 +935,7 @@ Constraints: no text, no symbols, no numbers, no letters, no watermark, no extra
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -956,7 +956,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -977,7 +977,7 @@ Constraints: no text, no watermark, no extra props, no cast shadow, no reflectio
 - Dimensions: 1024 x 1536
 - Alpha: no
 - Mode: built-in image generation
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text
@@ -998,7 +998,7 @@ Constraints: no text, no numbers, no letters, no logo, no watermark, no UI eleme
 - Dimensions: 1254 x 1254
 - Alpha: yes
 - Mode: built-in image generation, then local chroma-key removal
-- Status: first candidate; not yet wired into the sample
+- Status: first candidate; wired into sample/v2 for review
 - Prompt:
 
 ```text

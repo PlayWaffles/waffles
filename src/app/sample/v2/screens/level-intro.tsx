@@ -14,7 +14,8 @@ export const LevelIntroScreen = () => {
 
   return (
     <Phone statusDark>
-      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center 35%, #2a1f08 0%, #0a0a0b 65%)" }} />
+      <div style={{ position: "absolute", inset: 0, backgroundImage: `url(${ASSETS.forestSceneHero})`, backgroundSize: "cover", backgroundPosition: "center", imageRendering: "pixelated" }} />
+      <div style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center 35%, rgba(10,10,11,.18) 0%, rgba(10,10,11,.78) 68%), linear-gradient(180deg, rgba(7,7,5,.42), rgba(7,7,5,.88))" }} />
       <div style={{ position: "absolute", inset: 0, backgroundImage: "conic-gradient(from 90deg at 50% 35%, rgba(255,201,49,.12) 0deg, transparent 30deg, transparent 60deg, rgba(255,201,49,.08) 90deg, transparent 120deg, transparent 150deg, rgba(255,201,49,.12) 180deg, transparent 210deg, transparent 240deg, rgba(255,201,49,.08) 270deg, transparent 300deg, transparent 330deg)", mixBlendMode: "screen", opacity: 0.7 }} />
 
       <div style={{ position: "absolute", top: 50, left: 14, right: 14, display: "flex", alignItems: "center", justifyContent: "space-between", zIndex: 5 }}>
@@ -51,7 +52,7 @@ export const LevelIntroScreen = () => {
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontFamily: "Archivo Black", fontSize: 13, color: "#fff", lineHeight: 1 }}>3 hearts · {total} questions</div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 3 }}>Lose all hearts and you'll have to retry.</div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 3 }}>Lose all hearts and you&apos;ll have to retry.</div>
         </div>
       </div>
 
