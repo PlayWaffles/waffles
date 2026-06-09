@@ -87,7 +87,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Candidate generated |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Candidate generated |
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Candidate generated |
-| `avatar-*.webp` | Player avatars | Character cutout set | Pending |
+| `avatar-*.webp` | Player avatars | Character cutout set | Candidate generated |
 | `boss-night-owl.webp` | Boss marker | Character cutout | Pending |
 | `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Pending |
 | `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Pending |
@@ -422,6 +422,174 @@ Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp bl
 Composition: centered object, slight front three-quarter angle, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no logo, no words, no letters, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Avatar Fox
+
+- Source: `public/images/v2/generated/avatar-fox-ai-source.png`
+- Final: `public/images/v2/generated/avatar-fox-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 fox player avatar.
+Subject: A friendly orange fox adventurer avatar, head-and-shoulders bust with perky ears, confident small smile, teal neckerchief, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Bear
+
+- Source: `public/images/v2/generated/avatar-bear-ai-source.png`
+- Final: `public/images/v2/generated/avatar-bear-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 bear player avatar.
+Subject: A friendly cream-and-honey bear adventurer avatar, head-and-shoulders bust with round ears, warm curious expression, small purple collar scarf with a maple-gold badge accent, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Frog
+
+- Source: `public/images/v2/generated/avatar-frog-ai-source.png`
+- Final: `public/images/v2/generated/avatar-frog-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 frog player avatar.
+Subject: A cheerful green frog adventurer avatar, head-and-shoulders bust with big expressive eyes, rounded cheeks, small magenta bow tie, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #0000ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #0000ff anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Panda
+
+- Source: `public/images/v2/generated/avatar-panda-ai-source.png`
+- Final: `public/images/v2/generated/avatar-panda-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 panda player avatar.
+Subject: A playful panda adventurer avatar, head-and-shoulders bust with black-and-white face, bright cyan cap or headband, red-orange accent band, upbeat expression, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Owl
+
+- Source: `public/images/v2/generated/avatar-owl-ai-source.png`
+- Final: `public/images/v2/generated/avatar-owl-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 owl player avatar.
+Subject: A clever purple owl adventurer avatar, head-and-shoulders bust with round golden eyes, small teal goggles resting on the face or forehead, compact feathers, wise upbeat expression, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Cat
+
+- Source: `public/images/v2/generated/avatar-cat-ai-source.png`
+- Final: `public/images/v2/generated/avatar-cat-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 cat player avatar.
+Subject: A sleek gray cat adventurer avatar, head-and-shoulders bust with green eyes, small purple cape collar, tiny maple-gold pendant, calm clever expression, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Dog
+
+- Source: `public/images/v2/generated/avatar-dog-ai-source.png`
+- Final: `public/images/v2/generated/avatar-dog-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 dog player avatar.
+Subject: A happy golden dog adventurer avatar, head-and-shoulders bust with floppy ears, tongue-out smile, blue collar with tiny maple-gold charm, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Avatar Rabbit
+
+- Source: `public/images/v2/generated/avatar-rabbit-ai-source.png`
+- Final: `public/images/v2/generated/avatar-rabbit-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game player avatar character cutout
+Primary request: Create the Waffles V2 rabbit player avatar.
+Subject: A sweet white rabbit adventurer avatar, head-and-shoulders bust with tall ears, pink bow, small teal scarf, bright friendly expression, compact rounded proportions, clear at 32px-96px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
 ```
 
 ### Trophy
