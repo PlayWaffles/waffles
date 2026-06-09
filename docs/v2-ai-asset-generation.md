@@ -88,7 +88,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Candidate generated |
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Candidate generated |
 | `avatar-*.webp` | Player avatars | Character cutout set | Candidate generated |
-| `boss-night-owl.webp` | Boss marker | Character cutout | Pending |
+| `boss-night-owl.webp` | Boss marker | Character cutout | Candidate generated |
 | `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Pending |
 | `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Pending |
 | `forest-scene-hero.webp` | Full-screen level scene | Background scene | Pending |
@@ -588,6 +588,27 @@ Primary request: Create the Waffles V2 rabbit player avatar.
 Subject: A sweet white rabbit adventurer avatar, head-and-shoulders bust with tall ears, pink bow, small teal scarf, bright friendly expression, compact rounded proportions, clear at 32px-96px.
 Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated arcade colors, warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
 Composition: centered avatar bust, front three-quarter view, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
+```
+
+### Boss Night Owl
+
+- Source: `public/images/v2/generated/boss-night-owl-ai-source.png`
+- Final: `public/images/v2/generated/boss-night-owl-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game boss marker character cutout
+Primary request: Create the Waffles V2 Night Owl boss character.
+Subject: A dramatic twilight forest owl boss, full-body compact character with broad wings folded like a cloak, deep purple feathers, glowing golden eyes, tiny crown-like maple-gold brow feathers, sturdy talons, confident challenge pose. The character should feel tougher than the player avatars but still cute and readable at 80px-160px.
+Style: premium mobile game character sprite, chunky pixel-inspired 3D illustration, crisp silhouette, soft bevels, saturated twilight purple and midnight blue palette with warm maple-gold highlights, dark readable black-brown outline, playful but polished, no text.
+Composition: centered full-body character, orthographic/front three-quarter view, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no brand logos, no words, no letters, no numbers, no watermark, no extra props, no sparkles, no cast shadow, no contact shadow, no reflection.
 ```
