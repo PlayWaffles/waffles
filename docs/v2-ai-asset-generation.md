@@ -91,7 +91,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `boss-night-owl.webp` | Boss marker | Character cutout | Candidate generated |
 | `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Candidate generated |
 | `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Candidate generated |
-| `forest-scene-hero.webp` | Full-screen level scene | Background scene | Pending |
+| `forest-scene-hero.webp` | Full-screen level scene | Background scene | Candidate generated |
 
 ## Generated Candidates
 
@@ -968,6 +968,27 @@ Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp si
 Composition: centered isolated prop, front view, generous padding.
 Background: perfectly flat solid #0000ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #0000ff anywhere in the subject.
 Constraints: no text, no watermark, no extra props, no cast shadow, no reflection, no glow spilling onto the background.
+```
+
+### Forest Scene Hero
+
+- Source: `public/images/v2/generated/forest-scene-hero-ai-source.png`
+- Final: `public/images/v2/generated/forest-scene-hero-ai.png`
+- Dimensions: 1024 x 1536
+- Alpha: no
+- Mode: built-in image generation
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game full-screen level background scene
+Primary request: Create the Waffles V2 twilight forest hero scene.
+Subject: A full-screen enchanted twilight forest clearing for a mobile trivia level map, with layered dark teal pine trees, rounded bushes, mossy forest floor, a small glowing pond, a tiny warm cabin in the distance, firefly lights, and a crescent moon above. Keep the center and lower foreground open enough for game path tiles or UI elements to overlay later.
+Style: premium mobile game background, chunky pixel-inspired 3D illustration, saturated twilight forest palette, crisp readable silhouettes, soft bevels, warm maple-gold highlights, playful but polished, cohesive with Waffles V2 props and characters.
+Composition: vertical-friendly scene with depth layers, open playable foreground, horizon in upper third, no cropping of key scenery, no framed border.
+Background: full-frame scene, no chroma-key background, no transparency.
+Constraints: no text, no numbers, no letters, no logo, no watermark, no UI elements, no characters as the main subject, no photorealism.
 ```
 
 ### Trophy
