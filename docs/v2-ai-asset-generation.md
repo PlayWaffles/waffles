@@ -83,7 +83,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `ticket.webp` | Ticket currency | Reward icon | Candidate generated |
 | `flame.webp` | Streak indicator | Reward icon | Candidate generated |
 | `trophy.webp` | Competition reward | Reward icon | Candidate generated |
-| `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Pending |
+| `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Candidate generated |
 | `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Pending |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Pending |
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Pending |
@@ -154,6 +154,69 @@ Primary request: Create the Waffles V2 streak flame icon.
 Subject: A single lively flame shaped like a maple-gold and coral arcade fire, with a small bright yellow inner flame and rounded chunky lobes, clear at 24px-80px.
 Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
 Composition: centered object, upright vertical flame, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Heart Full
+
+- Source: `public/images/v2/generated/heart-full-ai-source.png`
+- Final: `public/images/v2/generated/heart-full-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game reward icon
+Primary request: Create the Waffles V2 full life heart icon.
+Subject: A single full heart-shaped life icon, glossy coral-red with a warm maple-gold inner highlight and subtle waffle-grid bevel texture, clear at 24px-80px.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, front view with slight dimensional bevel, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Heart Empty
+
+- Source: `public/images/v2/generated/heart-empty-ai-source.png`
+- Final: `public/images/v2/generated/heart-empty-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game reward icon
+Primary request: Create the Waffles V2 empty life heart icon.
+Subject: A single empty heart-shaped life icon, hollow dark frame with muted charcoal interior, thin maple-gold bevel accents, and subtle waffle-grid structure visible in the border, clear at 24px-80px. It should look like the inactive version of the full life heart.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated but muted arcade color, soft bevels, high contrast, no text.
+Composition: centered object, front view with slight dimensional bevel, generous padding, no cropping.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
+```
+
+### Heart Broken
+
+- Source: `public/images/v2/generated/heart-broken-ai-source.png`
+- Final: `public/images/v2/generated/heart-broken-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game reward icon
+Primary request: Create the Waffles V2 broken life heart icon.
+Subject: A single broken heart-shaped life icon, coral-red glossy heart split by one bold zigzag crack, slight separated halves but still one readable icon, warm maple-gold waffle-grid bevel texture, clear at 24px-80px. It should look like the damaged version of the full life heart.
+Style: premium mobile game icon, chunky pixel-inspired 3D illustration, crisp dark black-brown outline, saturated arcade color, soft bevels, high contrast, no text.
+Composition: centered object, front view with slight dimensional bevel, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no logo, no words, no numbers, no watermark, no extra objects, no cast shadow, no reflection.
 ```
