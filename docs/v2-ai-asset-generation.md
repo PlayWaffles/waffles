@@ -10,8 +10,9 @@ Waffles V2 assets should be generated as a single mobile-game asset family: chun
 2. Generate a source PNG from the approved prompt template.
 3. For cutout assets, generate on a removable chroma-key background and remove it locally.
 4. Save raw sources and final exports under `public/images/v2/generated`.
-5. Add the prompt, output path, dimensions, and approval status to this file.
-6. Only replace `public/images/v2/*.webp` after the generated candidate is approved in the V2 sample UI.
+5. Export runtime-sized WebP assets under `public/images/v2/optimized`.
+6. Add the prompt, output path, dimensions, and approval status to this file.
+7. Only replace `public/images/v2/*.webp` after the generated candidate is approved in the V2 sample UI.
 
 ## Shared Prompt Rules
 
