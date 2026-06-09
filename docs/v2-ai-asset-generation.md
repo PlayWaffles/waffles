@@ -84,7 +84,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `flame.webp` | Streak indicator | Reward icon | Candidate generated |
 | `trophy.webp` | Competition reward | Reward icon | Candidate generated |
 | `heart-full.webp`, `heart-empty.webp`, `heart-broken.webp` | Lives states | Reward icon set | Candidate generated |
-| `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Partially generated |
+| `powerup-5050.webp`, `powerup-time.webp`, `powerup-skip.webp`, `powerup-shield.webp` | Shop power-ups | Reward icon set | Candidate generated |
 | `chest-rainbow.webp`, `chest-purple.webp`, `chest-brown.webp` | League rewards | Reward icon set | Pending |
 | `medal-apprentice.webp`, `medal-silver.webp`, `medal-advanced.webp`, `medal-genius.webp`, `medal-master.webp` | League badges | Reward icon set | Pending |
 | `avatar-*.webp` | Player avatars | Character cutout set | Pending |
@@ -247,6 +247,34 @@ Create a Waffles V2 skip power-up icon: a chunky curved fast-forward arrow wrapp
 
 ```text
 Create a Waffles V2 50/50 power-up icon without text: two chunky waffle answer tiles side by side, one bright maple-gold active tile and one dim charcoal disabled tile, separated by a cyan lightning slash. Premium pixel-inspired 3D mobile game icon, crisp black-brown outline, saturated arcade colors, soft bevels, high contrast. Centered object with generous padding. Perfectly flat solid #ff00ff background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #ff00ff anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
+### Power-Up Time
+
+- Source: `public/images/v2/generated/powerup-time-ai-source.png`
+- Final: `public/images/v2/generated/powerup-time-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 time power-up icon without text: a chunky golden stopwatch shaped like a small waffle timer, cyan clock hand, maple-gold bevels, tiny spark accents, premium pixel-inspired 3D mobile game icon, crisp black-brown outline, saturated arcade colors, high contrast. Centered object with generous padding. Perfectly flat solid #ff00ff background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #ff00ff anywhere in the icon. No words, no numbers, no logo, no watermark.
+```
+
+### Power-Up Shield
+
+- Source: `public/images/v2/generated/powerup-shield-ai-source.png`
+- Final: `public/images/v2/generated/powerup-shield-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Create a Waffles V2 shield power-up icon without text: a chunky protective shield with a golden waffle-grid face, cyan rim glow accents, maple-gold bevels, sturdy heroic silhouette, premium pixel-inspired 3D mobile game icon, crisp black-brown outline, saturated arcade colors, high contrast. Centered object with generous padding. Perfectly flat solid #ff00ff background edge-to-edge for removal, no shadows, no glow on the background, no gradient, no floor, no texture. Do not use #ff00ff anywhere in the icon. No words, no numbers, no logo, no watermark.
 ```
 
 ### Trophy
