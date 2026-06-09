@@ -248,25 +248,24 @@ const Tile = ({
                 : "drop-shadow(0 3px 0 rgba(0, 0, 0, 0.3))",
           }}
         />
-        {/* Centered label or icon, sitting on the slab's top face */}
-        <div
-          aria-hidden="true"
-          className="level-tile-mark"
-          data-state={node.state}
-        >
-          {node.state === "done" ? (
-            <PixelImg src={ASSETS.checkmark} size={38} alt="" />
-          ) : node.state === "locked" ? (
-            <PixelImg src={ASSETS.lock} size={34} alt="" />
-          ) : (
-            <span
-              className="level-tile-number"
-              data-digits={String(node.n).length}
-            >
-              {node.n}
-            </span>
-          )}
-        </div>
+        {node.state !== "done" && (
+          <div
+            aria-hidden="true"
+            className="level-tile-mark"
+            data-state={node.state}
+          >
+            {node.state === "locked" ? (
+              <PixelImg src={ASSETS.lock} size={34} alt="" />
+            ) : (
+              <span
+                className="level-tile-number"
+                data-digits={String(node.n).length}
+              >
+                {node.n}
+              </span>
+            )}
+          </div>
+        )}
         {node.state === "current" && (
           <div
             aria-hidden="true"

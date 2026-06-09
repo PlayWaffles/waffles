@@ -14,7 +14,6 @@ export const ASSETS = {
   heartFull: `${OPTIMIZED_ASSETS_BASE}/heart-full.webp`,
   heartEmpty: `${OPTIMIZED_ASSETS_BASE}/heart-empty.webp`,
   heartBroken: `${OPTIMIZED_ASSETS_BASE}/heart-broken.webp`,
-  checkmark: `${OPTIMIZED_ASSETS_BASE}/checkmark.webp`,
   lock: `${OPTIMIZED_ASSETS_BASE}/lock.webp`,
   vipStar: `${OPTIMIZED_ASSETS_BASE}/vip-star.webp`,
   xpGem: `${OPTIMIZED_ASSETS_BASE}/xp-gem.webp`,
