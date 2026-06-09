@@ -90,7 +90,7 @@ Constraints: no text, no watermark, no extra props unless specified.
 | `avatar-*.webp` | Player avatars | Character cutout set | Candidate generated |
 | `boss-night-owl.webp` | Boss marker | Character cutout | Candidate generated |
 | `waffle-slab-active.webp`, `waffle-slab-done.webp`, `waffle-slab-locked.webp` | Level path tiles | Isometric world tile set | Candidate generated |
-| `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Pending |
+| `forest-*.webp`, `terrain-stone.webp`, `cloud.webp` | Level scenery | Forest prop set | Candidate generated |
 | `forest-scene-hero.webp` | Full-screen level scene | Background scene | Pending |
 
 ## Generated Candidates
@@ -674,6 +674,300 @@ Style: premium mobile game map tile, chunky pixel-inspired 3D illustration, cris
 Composition: isolated tile centered in frame, top face aligned as a 2:1 isometric diamond, consistent depth matching the active tile, generous padding, no cropping.
 Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
 Constraints: no text, no numbers, no letters, no logo, no watermark, no extra scenery, no cast shadow, no reflection.
+```
+
+### Forest Floor Tile
+
+- Source: `public/images/v2/generated/forest-floor-tile-ai-source.png`
+- Final: `public/images/v2/generated/forest-floor-tile-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: no
+- Mode: built-in image generation
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game repeatable terrain texture tile
+Primary request: Create the Waffles V2 twilight forest floor tile.
+Subject: A square top-down forest floor texture tile with soft moss, dark teal grass, tiny leaf shapes, subtle waffle-maple flecks, and enough edge continuity to work as a repeated CSS background. No large focal object.
+Style: premium mobile game terrain texture, chunky pixel-inspired 3D illustration, saturated twilight forest palette, soft bevels, dark readable shapes, warm maple-gold accent flecks, playful but polished.
+Composition: full-frame square texture, evenly distributed details, no central subject, no border, no labels.
+Background: full image is the texture tile; no chroma-key background.
+Constraints: no text, no numbers, no letters, no logo, no watermark, no characters, no UI elements, no hard seams.
+```
+
+### Cloud
+
+- Source: `public/images/v2/generated/cloud-ai-source.png`
+- Final: `public/images/v2/generated/cloud-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 cloud prop for the twilight forest level map.
+Subject: One soft compact cloud puff, pale blue-white with lavender twilight shadow, rounded chunky lobes, readable at 24px-80px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark subtle outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Terrain Stone
+
+- Source: `public/images/v2/generated/terrain-stone-ai-source.png`
+- Final: `public/images/v2/generated/terrain-stone-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 terrain stone prop for the twilight forest level map.
+Subject: A compact cluster of two or three faceted bluish-gray stones, chunky and readable at 24px-80px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accent edge highlights.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Cabin
+
+- Source: `public/images/v2/generated/forest-cabin-ai-source.png`
+- Final: `public/images/v2/generated/forest-cabin-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 forest cabin prop for the twilight forest level map.
+Subject: A tiny cozy forest cabin, compact wooden hut with maple-gold window glow, dark teal roof, sturdy readable silhouette at 48px-96px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Pond
+
+- Source: `public/images/v2/generated/forest-pond-ai-source.png`
+- Final: `public/images/v2/generated/forest-pond-ai.png`
+- Dimensions: 1536 x 1024
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 forest pond prop for the twilight forest level map.
+Subject: A small oval twilight pond with glossy deep cyan water, rounded mossy edge stones, a few maple-gold highlights, compact and readable at 48px-96px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, slight top/front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Frog
+
+- Source: `public/images/v2/generated/forest-frog-ai-source.png`
+- Final: `public/images/v2/generated/forest-frog-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 forest frog prop for the twilight forest level map.
+Subject: A tiny green forest frog sitting low with bright curious eyes, compact and readable at 16px-40px, simpler than the player avatar frog.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #0000ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #0000ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Tree Pine
+
+- Source: `public/images/v2/generated/forest-tree-pine-ai-source.png`
+- Final: `public/images/v2/generated/forest-tree-pine-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 pine tree prop for the twilight forest level map.
+Subject: A compact evergreen pine tree with stacked triangular boughs, dark teal needles, warm maple-gold edge highlights, sturdy short trunk, readable at 40px-96px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Tree Bush
+
+- Source: `public/images/v2/generated/forest-tree-bush-ai-source.png`
+- Final: `public/images/v2/generated/forest-tree-bush-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 rounded tree bush prop for the twilight forest level map.
+Subject: A compact rounded leafy bush or small tree clump, layered dark green and teal leaves, chunky base, warm maple-gold rim highlights, readable at 32px-80px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Mushroom
+
+- Source: `public/images/v2/generated/forest-mushroom-ai-source.png`
+- Final: `public/images/v2/generated/forest-mushroom-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 mushroom prop for the twilight forest level map.
+Subject: A small cluster of two chunky forest mushrooms with coral-red caps, cream spots, stout stems, teal shadow underside, readable at 20px-48px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #00ff00 chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #00ff00 anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Flowers
+
+- Source: `public/images/v2/generated/forest-flowers-ai-source.png`
+- Final: `public/images/v2/generated/forest-flowers-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 flowers prop for the twilight forest level map.
+Subject: A tiny cluster of bright forest flowers and leaves, maple-gold and cyan blossoms on dark teal foliage, compact and readable at 20px-48px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Stump
+
+- Source: `public/images/v2/generated/forest-stump-ai-source.png`
+- Final: `public/images/v2/generated/forest-stump-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 forest stump prop for the twilight forest level map.
+Subject: A small chunky cut tree stump with visible rings, dark bark sides, mossy teal accents, warm maple-gold top highlights, readable at 24px-64px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Signpost
+
+- Source: `public/images/v2/generated/forest-signpost-ai-source.png`
+- Final: `public/images/v2/generated/forest-signpost-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 forest signpost prop for the twilight forest level map.
+Subject: A compact wooden signpost with one blank arrow plank, maple-gold edge highlights, teal moss at the base, readable at 32px-80px. The sign surface must be completely blank.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front three-quarter view, generous padding.
+Background: perfectly flat solid #ff00ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #ff00ff anywhere in the subject.
+Constraints: no text, no symbols, no numbers, no letters, no watermark, no extra props, no cast shadow, no reflection.
+```
+
+### Forest Firefly
+
+- Source: `public/images/v2/generated/forest-firefly-ai-source.png`
+- Final: `public/images/v2/generated/forest-firefly-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 firefly prop for the twilight forest level map.
+Subject: One tiny glowing firefly light sprite, round maple-gold body with two small teal wings, warm glow contained inside the subject silhouette, readable at 12px-24px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front view, generous padding.
+Background: perfectly flat solid #0000ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #0000ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection, no glow spilling onto the background.
+```
+
+### Forest Moon
+
+- Source: `public/images/v2/generated/forest-moon-ai-source.png`
+- Final: `public/images/v2/generated/forest-moon-ai.png`
+- Dimensions: 1254 x 1254
+- Alpha: yes
+- Mode: built-in image generation, then local chroma-key removal
+- Status: first candidate; not yet wired into the sample
+- Prompt:
+
+```text
+Use case: stylized-concept
+Asset type: mobile game forest prop sprite
+Primary request: Create the Waffles V2 moon prop for the twilight forest level map.
+Subject: One crescent moon sprite, pale maple-gold crescent with soft lavender shadow side, compact and readable at 32px-80px.
+Style: premium mobile game prop, chunky pixel-inspired 3D illustration, crisp silhouette, dark subtle outline, saturated twilight forest palette with warm maple accents.
+Composition: centered isolated prop, front view, generous padding.
+Background: perfectly flat solid #0000ff chroma-key background for background removal. The background must be one uniform color with no shadows, gradients, texture, reflections, floor plane, or lighting variation. Do not use #0000ff anywhere in the subject.
+Constraints: no text, no watermark, no extra props, no cast shadow, no reflection, no glow spilling onto the background.
 ```
 
 ### Trophy
