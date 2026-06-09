@@ -13,7 +13,11 @@ function normalizeErrorMessage(error: string) {
 }
 
 function isRetryablePurchaseError(code?: string) {
-  return code === "VERIFICATION_FAILED" || code === "INTERNAL_ERROR";
+  return (
+    code === "CHAIN_RPC_ERROR" ||
+    code === "VERIFICATION_FAILED" ||
+    code === "INTERNAL_ERROR"
+  );
 }
 
 export async function registerPendingPurchase(input: {

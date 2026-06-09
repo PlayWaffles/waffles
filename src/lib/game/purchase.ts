@@ -236,7 +236,7 @@ export async function finalizeTicketPurchase(
       return {
         success: false,
         error: verification.error || "Payment verification failed",
-        code: "VERIFICATION_FAILED",
+        code: verification.retryable ? "CHAIN_RPC_ERROR" : "VERIFICATION_FAILED",
       };
     }
 
