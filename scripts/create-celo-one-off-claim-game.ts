@@ -198,6 +198,32 @@ async function createOneOffGame() {
   return { ...game, onchainId, createTxHash };
 }
 
+async function getExistingOneOffGame(gameId: string) {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: {
+      id: true,
+      title: true,
+      gameNumber: true,
+      platform: true,
+      network: true,
+      onchainId: true,
+      startsAt: true,
+      endsAt: true,
+    },
+  });
+
+  if (!game?.onchainId) {
+    throw new Error(`Game ${gameId} was not found or has no on-chain id.`);
+  }
+
+  return {
+    ...game,
+    onchainId: game.onchainId as `0x${string}`,
+    createTxHash: null,
+  };
+}
+
 async function waitForIndexedEntry(gameId: string, wallet: string | null, timeoutMs: number) {
   const deadline = Date.now() + timeoutMs;
 
@@ -314,18 +340,21 @@ async function main() {
     throw new Error("--timeout-ms must be a positive number.");
   }
 
-  const game = await createOneOffGame();
+  const existingGameId = process.env.ONE_OFF_GAME_ID;
+  const game = existingGameId
+    ? await getExistingOneOffGame(existingGameId)
+    : await createOneOffGame();
   const gameUrl = `${process.env.NEXT_PUBLIC_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/game/${game.id}`;
 
   console.log(
     JSON.stringify(
       {
-        step: "game_created",
+        step: existingGameId ? "watching_existing_game" : "game_created",
         gameId: game.id,
         title: game.title,
         gameNumber: game.gameNumber,
-        platform: PLATFORM,
-        network: NETWORK,
+        platform: game.platform,
+        network: game.network,
         onchainId: game.onchainId,
         ticketPrice: TICKET_PRICE,
         createTxHash: game.createTxHash,
