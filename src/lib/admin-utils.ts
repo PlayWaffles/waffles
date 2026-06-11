@@ -4,7 +4,7 @@ import { isLocalDevelopmentDeployment } from "@/lib/deployment";
 import type { GameNetwork } from "@/lib/chain/network";
 
 export type PlatformWhere = { platform: UserPlatform } | Record<string, never>;
-export const PLATFORM_FEE_RATE = 0.2;
+export const PLATFORM_FEE_RATE = 0.3;
 
 export function buildPlatformWhere(platform?: string): PlatformWhere {
     if (platform && Object.values(UserPlatform).includes(platform as UserPlatform)) {

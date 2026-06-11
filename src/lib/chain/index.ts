@@ -17,6 +17,11 @@ export {
   type ChainTarget,
   type GameNetwork,
 } from "./network";
+export {
+  formatPaymentTokenAmount,
+  getPaymentTokenSymbolForTarget,
+  isCeloPaymentTarget,
+} from "./token-display";
 // Game operations
 export {
   generateOnchainGameId,
