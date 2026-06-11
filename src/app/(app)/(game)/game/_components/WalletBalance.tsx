@@ -6,8 +6,10 @@ import { useEffect, useRef, useState } from "react";
 
 import { cn } from "@/lib/utils";
 import {
+  formatPaymentTokenAmount,
   getPaymentTokenAddress,
   getPlatformChain,
+  getPaymentTokenSymbolForTarget,
   PAYMENT_TOKEN_DECIMALS,
 } from "@/lib/chain";
 import { useCorrectChain } from "@/hooks/useCorrectChain";
@@ -17,7 +19,6 @@ import {
   runtimeToPlatform,
   type AppRuntime,
 } from "@/lib/client/runtime";
-import { MINIPAY_PAYMENT_TOKEN_SYMBOL } from "@/lib/minipay/compliance";
 
 // Animated Wallet Icon with coin drop effect
 function AnimatedWalletIcon({ triggerAnim }: { triggerAnim: boolean }) {
@@ -101,41 +102,46 @@ export function WalletBalance() {
 
   const tokenAddress = getPaymentTokenAddress(platform);
   const chain = getPlatformChain(platform);
+  const tokenSymbol = getPaymentTokenSymbolForTarget({ platform });
 
   // Fetch balance using the TARGET chain
   const { roundedBalance, status } = useGetTokenBalance(address as `0x${string}`, {
     address: tokenAddress as `0x${string}`,
     decimals: PAYMENT_TOKEN_DECIMALS,
-    name: platform === "MINIPAY" ? MINIPAY_PAYMENT_TOKEN_SYMBOL : "USDC",
-    symbol: platform === "MINIPAY" ? MINIPAY_PAYMENT_TOKEN_SYMBOL : "USDC",
+    name: tokenSymbol,
+    symbol: tokenSymbol,
     image: "/images/icons/icon-prizepool-cash.webp",
     chainId: chain.id,
   });
 
   // Track previous balance for animation trigger
   const prevBalance = useRef(roundedBalance);
-  const [displayBalance, setDisplayBalance] = useState<string>("");
   const [isBalanceAnimating, setIsBalanceAnimating] = useState(false);
 
   // Animate on balance change
   useEffect(() => {
-    if (status === "success" && roundedBalance !== undefined && roundedBalance !== "") {
-      setDisplayBalance(roundedBalance);
-    }
-
     if (prevBalance.current !== roundedBalance && roundedBalance !== undefined && roundedBalance !== "") {
-      setIsBalanceAnimating(true);
-      window.setTimeout(() => setIsBalanceAnimating(false), 300);
+      const frame = window.requestAnimationFrame(() => setIsBalanceAnimating(true));
+      const timeout = window.setTimeout(() => setIsBalanceAnimating(false), 300);
       prevBalance.current = roundedBalance;
+      return () => {
+        window.cancelAnimationFrame(frame);
+        window.clearTimeout(timeout);
+      };
     }
   }, [roundedBalance, status]);
 
+  const displayBalance =
+    status === "success" && roundedBalance !== undefined && roundedBalance !== ""
+      ? roundedBalance
+      : "";
   const balanceLabel =
     displayBalance !== ""
-      ? `$${Number(displayBalance).toLocaleString("en-US", {
+      ? formatPaymentTokenAmount(Number(displayBalance), {
+          platform,
           minimumFractionDigits: 2,
           maximumFractionDigits: 2,
-        })}`
+        })
       : "..."
 
   return (

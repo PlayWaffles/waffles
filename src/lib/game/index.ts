@@ -25,7 +25,6 @@ export {
   formatDistribution,
   validateDistribution,
   WINNERS_COUNT,
-  PLATFORM_FEE_BPS,
   type PlayerEntry,
   type PrizeAllocation,
   type DistributionResult,

@@ -1,8 +1,8 @@
 /**
  * Prize Distribution Algorithm
  *
- * Distributes the net prize pool with bracketed rank schedules based on the
- * number of paid entrants. A 20% platform fee is deducted before distribution.
+ * Distributes the claimable prize pool with bracketed rank schedules based on
+ * the number of paid entrants.
  *
  * Brackets:
  * - 1-4 paid entrants: top 1 gets 100%
@@ -23,9 +23,6 @@
 
 /** Maximum number of players who receive prizes in the largest bracket */
 export const WINNERS_COUNT = 15;
-
-/** Platform fee in basis points (20% = 2000 bps) */
-export const PLATFORM_FEE_BPS = 2000;
 
 const BRACKET_SCHEDULES = {
   solo: [1],
@@ -74,9 +71,7 @@ export interface PrizeAllocation {
 
 export interface DistributionResult {
   allocations: PrizeAllocation[];
-  grossPool: number;
-  platformFee: number;
-  netPool: number;
+  prizePool: number;
   podiumTotal: number;
   runnersTotal: number;
 }
@@ -87,11 +82,9 @@ export interface DistributionResult {
 
 export function calculatePrizeDistribution(
   entries: PlayerEntry[],
-  grossPrizePool: number
+  prizePool: number
 ): DistributionResult {
   const paidEntries = entries.filter((entry) => entry.paidAmount > 0);
-  const platformFee = grossPrizePool * (PLATFORM_FEE_BPS / 10000);
-  const netPool = grossPrizePool - platformFee;
 
   if (paidEntries.length === 0) {
     return {
@@ -103,16 +96,14 @@ export function calculatePrizeDistribution(
         username: entry.username,
         tier: "none",
       })),
-      grossPool: grossPrizePool,
-      platformFee,
-      netPool,
+      prizePool,
       podiumTotal: 0,
       runnersTotal: 0,
     };
   }
 
   const prizeAllocationByEntryId = new Map(
-    buildWinnerAllocations(paidEntries, netPool).map((allocation) => [
+    buildWinnerAllocations(paidEntries, prizePool).map((allocation) => [
       allocation.entryId,
       allocation,
     ]),
@@ -139,9 +130,7 @@ export function calculatePrizeDistribution(
 
   return {
     allocations,
-    grossPool: grossPrizePool,
-    platformFee,
-    netPool,
+    prizePool,
     podiumTotal,
     runnersTotal,
   };
@@ -161,9 +150,9 @@ function getScheduleForPaidEntrants(paidEntrants: number): number[] {
 
 function buildWinnerAllocations(
   paidEntries: PlayerEntry[],
-  netPool: number
+  prizePool: number
 ): PrizeAllocation[] {
-  if (netPool <= 0) {
+  if (prizePool <= 0) {
     return [];
   }
 
@@ -177,7 +166,7 @@ function buildWinnerAllocations(
     entryId: entry.id,
     userId: entry.userId,
     rank: index + 1,
-    prize: netPool * normalizedSchedule[index],
+    prize: prizePool * normalizedSchedule[index],
     username: entry.username,
     tier: index < 3 ? "podium" : "runner",
   }));
@@ -201,11 +190,11 @@ export function validateDistribution(result: DistributionResult): {
   const totalPrizes = result.allocations.reduce((sum, allocation) => sum + allocation.prize, 0);
   const tolerance = 0.01;
 
-  if (Math.abs(totalPrizes - result.netPool) > tolerance) {
+  if (Math.abs(totalPrizes - result.prizePool) > tolerance) {
     errors.push(
       `Prize sum (${totalPrizes.toFixed(
         6
-      )}) doesn't match net pool (${result.netPool.toFixed(6)})`
+      )}) doesn't match prize pool (${result.prizePool.toFixed(6)})`
     );
   }
 
@@ -226,11 +215,7 @@ export function validateDistribution(result: DistributionResult): {
 export function formatDistribution(result: DistributionResult): string {
   const lines = [
     `=== Prize Distribution ===`,
-    `Gross Pool: $${result.grossPool.toFixed(2)}`,
-    `Platform Fee: $${result.platformFee.toFixed(2)} (${
-      PLATFORM_FEE_BPS / 100
-    }%)`,
-    `Net Pool: $${result.netPool.toFixed(2)}`,
+    `Prize Pool: $${result.prizePool.toFixed(2)}`,
     `Podium Total: $${result.podiumTotal.toFixed(2)}`,
     `Runners Total: $${result.runnersTotal.toFixed(2)}`,
     ``,

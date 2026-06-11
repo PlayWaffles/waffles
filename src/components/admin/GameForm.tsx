@@ -122,6 +122,18 @@ export function GameForm({
 
   const includesMiniPay = platform === "MINIPAY" || createOnMultiplePlatforms;
   const minimumTicketPrice = includesMiniPay ? MINIPAY_MINIMUM_TICKET_PRICE : 0;
+  const ticketTokenLabel = createOnMultiplePlatforms
+    ? "USDC / USDT"
+    : platform === "MINIPAY"
+      ? "USDT"
+      : "USDC";
+  const ticketPricePrefix = platform === "MINIPAY" ? "USDT" : "$";
+  const formatTicketPriceLabel = (price: FormDataEntryValue | null) => {
+    const amount = String(price ?? "");
+    if (platform === "MINIPAY") return `${amount} USDT`;
+    if (createOnMultiplePlatforms) return `$${amount} USDC / ${amount} USDT`;
+    return `$${amount} USDC`;
+  };
 
   /**
    * Converts a datetime-local string to ISO 8601 format with timezone info.
@@ -221,7 +233,7 @@ export function GameForm({
       ...(enableTicketsOpen && ticketsOpenAt
         ? [{ label: "Tickets Open", value: new Date(ticketsOpenAt).toLocaleString() }]
         : [{ label: "Tickets Open", value: "Immediately" }]),
-      { label: "Ticket Price", value: `$${pendingFormData.get("ticketPrice")} USDC` },
+      { label: "Ticket Price", value: formatTicketPriceLabel(pendingFormData.get("ticketPrice")) },
     ];
   };
 
@@ -599,7 +611,13 @@ export function GameForm({
         <section className="bg-white/5 rounded-2xl border border-white/10 p-6">
           <div className="flex items-center gap-3 mb-5">
             <div className="p-2.5 rounded-xl bg-[#FFC931]/15">
-              <CurrencyDollarIcon className="h-5 w-5 text-[#FFC931]" />
+              {includesMiniPay ? (
+                <span className="flex h-5 min-w-5 items-center justify-center text-[10px] font-bold text-[#FFC931]">
+                  USDT
+                </span>
+              ) : (
+                <CurrencyDollarIcon className="h-5 w-5 text-[#FFC931]" />
+              )}
             </div>
             <div>
               <h3 className="font-bold text-white">Pricing & Settings</h3>
@@ -611,10 +629,10 @@ export function GameForm({
             {/* Ticket Price */}
             <div>
               <label htmlFor="ticketPrice" className="block text-sm font-medium text-white/70 mb-2">
-                Ticket Price (USDC)
+                Ticket Price ({ticketTokenLabel})
               </label>
               <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">$</span>
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40">{ticketPricePrefix}</span>
                 <input
                   type="number"
                   id="ticketPrice"
@@ -624,7 +642,7 @@ export function GameForm({
                   onChange={(e) => setTicketPrice(e.target.value)}
                   min={minimumTicketPrice}
                   step="0.01"
-                  className="w-full pl-7 pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all"
+                  className={`${platform === "MINIPAY" ? "pl-16" : "pl-7"} w-full pr-3 py-3 bg-white/5 border border-white/10 rounded-xl text-white focus:ring-2 focus:ring-[#FFC931]/50 focus:border-[#FFC931] transition-all`}
                 />
               </div>
               {includesMiniPay && (

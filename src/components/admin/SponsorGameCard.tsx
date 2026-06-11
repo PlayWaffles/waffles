@@ -28,9 +28,12 @@ import {
 } from "@/hooks/waffleContractHooks";
 import {
     PAYMENT_TOKEN_DECIMALS,
+    formatPaymentTokenAmount,
     getPaymentTokenAddress,
+    getPaymentTokenSymbolForTarget,
     getPlatformChain,
     getWaffleContractAddress,
+    isCeloPaymentTarget,
 } from "@/lib/chain";
 import { ERC20_ABI } from "@/lib/constants";
 import { wagmiConfig } from "@/lib/wagmi/config";
@@ -166,6 +169,8 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
     const targetChain = getPlatformChain(target);
     const contractAddress = getWaffleContractAddress(target);
     const configuredTokenAddress = getPaymentTokenAddress(target);
+    const tokenSymbol = getPaymentTokenSymbolForTarget(target);
+    const tokenPrefix = isCeloPaymentTarget(target) ? null : "$";
     const wagmiChainId = useChainId();
 
     const { address, isConnected } = useAccount();
@@ -207,6 +212,16 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
     const formattedPrizePool = totalPrizePool
         ? parseFloat(formatUnits(totalPrizePool as bigint, PAYMENT_TOKEN_DECIMALS)).toFixed(2)
         : "0.00";
+    const formattedPrizePoolLabel = formatPaymentTokenAmount(Number(formattedPrizePool), {
+        ...target,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
+    const formattedBalanceLabel = formatPaymentTokenAmount(Number(formattedBalance), {
+        ...target,
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+    });
     const allowanceBigInt = typeof allowance === "bigint" ? allowance : BigInt(0);
     const feePermyriadBigInt = typeof platformFeePermyriad === "bigint"
         ? platformFeePermyriad
@@ -458,7 +473,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
             });
 
             if (latestBalance < amountInUnits) {
-                throw new Error("Insufficient USDC balance for this sponsorship.");
+                throw new Error(`Insufficient ${tokenSymbol} balance for this sponsorship.`);
             }
 
             if (latestAllowance < amountInUnits) {
@@ -609,7 +624,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
     const submitLabel = (() => {
         if (step === "connecting" || isConnecting) return "Connecting Wallet...";
         if (step === "switching") return "Switching Network...";
-        if (step === "approving") return "Approving USDC...";
+        if (step === "approving") return `Approving ${tokenSymbol}...`;
         if (step === "confirming-approval") return "Confirming Approval...";
         if (step === "sponsoring") return "Submitting Sponsorship...";
         if (step === "confirming-sponsorship") return "Confirming Sponsorship...";
@@ -639,7 +654,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                 <div className="flex items-center gap-4">
                     <div className="text-right">
                         <p className="text-xs text-white/40">Current Pool</p>
-                        <p className="text-lg font-bold text-[#14B985]">${formattedPrizePool}</p>
+                        <p className="text-lg font-bold text-[#14B985]">{formattedPrizePoolLabel}</p>
                     </div>
                     <div className={`p-2 rounded-lg bg-white/10 transition-transform ${isExpanded ? "rotate-180" : ""}`}>
                         <svg className="h-5 w-5 text-white/50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -676,7 +691,9 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                             <div className="relative">
                                 <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
                                     <BanknotesIcon className="h-5 w-5 text-[#14B985]" />
-                                    <span className="text-[#14B985] font-medium">$</span>
+                                    {tokenPrefix && (
+                                        <span className="text-[#14B985] font-medium">{tokenPrefix}</span>
+                                    )}
                                 </div>
                                 <input
                                     type="number"
@@ -693,14 +710,14 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                                     className="w-full pl-16 pr-20 py-4 bg-white/5 border border-white/10 rounded-xl text-white text-lg font-medium placeholder-white/30 focus:ring-2 focus:ring-[#14B985]/50 focus:border-[#14B985] transition-all"
                                 />
                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
-                                    <span className="text-white/40 text-sm">USDC</span>
+                                    <span className="text-white/40 text-sm">{tokenSymbol}</span>
                                 </div>
                             </div>
 
                             {isConnected && (
                                 <div className="mt-2 flex items-center justify-between text-xs">
                                     <span className="text-white/40">
-                                        Balance: <span className="text-white/60">${formattedBalance} USDC</span>
+                                        Balance: <span className="text-white/60">{formattedBalanceLabel}</span>
                                     </span>
                                     <button
                                         type="button"

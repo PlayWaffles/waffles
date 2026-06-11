@@ -16,6 +16,11 @@ import type { TicketPricingSnapshot } from "@/lib/tickets";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import {
+  formatPaymentTokenAmount,
+  getPaymentTokenSymbolForTarget,
+  isCeloPaymentTarget,
+} from "@/lib/chain";
+import {
   getAppRuntime,
   isMiniPayRuntime,
   type AppRuntime,
@@ -44,8 +49,6 @@ export function BuyTicketModal({
   platform,
   network,
   onchainId,
-  theme,
-  themeIcon,
   pricing,
   username = "Player",
   userAvatar,
@@ -74,6 +77,11 @@ export function BuyTicketModal({
   const displayAvatar = userAvatar || user?.pfpUrl || undefined;
   const selectedPrice = pricing.currentPrice;
   const potentialPayout = Math.round(selectedPrice * 21.1);
+  const paymentTarget = { platform, network };
+  const currentPriceLabel = formatPaymentTokenAmount(selectedPrice, paymentTarget);
+  const potentialPayoutLabel = formatPaymentTokenAmount(potentialPayout, paymentTarget);
+  const tokenSymbol = getPaymentTokenSymbolForTarget(paymentTarget);
+  const showTokenNotice = isCeloPaymentTarget(paymentTarget);
 
   useEffect(() => {
     let cancelled = false;
@@ -149,20 +157,26 @@ export function BuyTicketModal({
 
   // Handle modal entrance animation
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) return;
+
+    const frame = requestAnimationFrame(() => {
       setIsClosing(false);
-      requestAnimationFrame(() => {
-        setIsAnimating(true);
-      });
-    }
+      setIsAnimating(true);
+    });
+
+    return () => cancelAnimationFrame(frame);
   }, [isOpen]);
 
   // Reset state when modal closes
   useEffect(() => {
-    if (!isOpen) {
+    if (isOpen) return;
+
+    const frame = requestAnimationFrame(() => {
       setIsAnimating(false);
-      resetPaid();
-    }
+    });
+    resetPaid();
+
+    return () => cancelAnimationFrame(frame);
   }, [isOpen, resetPaid]);
 
   // Computed states based on selected tier
@@ -319,10 +333,10 @@ export function BuyTicketModal({
           }}
         >
           <PurchaseView
-            theme={theme}
-            themeIcon={themeIcon}
-            currentPrice={pricing.currentPrice}
-            potentialPayout={potentialPayout}
+            currentPriceLabel={currentPriceLabel}
+            potentialPayoutLabel={potentialPayoutLabel}
+            tokenSymbol={tokenSymbol}
+            showTokenNotice={showTokenNotice}
             selectedTier={selectedTier}
             onSelectTier={setSelectedTier}
             isLoading={isLoading}

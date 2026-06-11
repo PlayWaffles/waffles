@@ -29,6 +29,10 @@ import {
   MINIPAY_USDT_ONLY_MESSAGE,
 } from "@/lib/minipay/compliance";
 import { getPlayerAvatarUrl } from "@/lib/avatar";
+import {
+  formatPaymentTokenAmount,
+  isCeloPaymentTarget,
+} from "@/lib/chain";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -215,6 +219,13 @@ export function NextGameCard({ game }: NextGameCardProps) {
   const isFarcasterWalletLoading =
     runtime === "farcaster" && !isWalletReady && !isPurchasing && !purchaseError;
   const selectedPrice = game.pricing.currentPrice;
+  const paymentTarget = useMemo(
+    () => ({ platform: game.platform, network: game.network }),
+    [game.network, game.platform],
+  );
+  const ticketPriceLabel = formatPaymentTokenAmount(selectedPrice, paymentTarget);
+  const prizePoolLabel = formatPaymentTokenAmount(prizePool, paymentTarget);
+  const showMiniPayTokenNotice = isCeloPaymentTarget(paymentTarget);
 
   // Button config
   const buttonConfig = useMemo(() => {
@@ -238,11 +249,11 @@ export function NextGameCard({ game }: NextGameCardProps) {
     if (purchaseError) return { text: "TRY AGAIN", disabled: false, action: "buy" as const };
     if (!isWalletReady) return { text: isFarcasterWalletLoading ? "LOADING WALLET..." : "CONNECTING...", disabled: true, action: "none" as const };
 
-    return { text: `BUY TICKET — $${selectedPrice}`, disabled: false, action: "buy" as const };
+    return { text: `BUY TICKET — ${ticketPriceLabel}`, disabled: false, action: "buy" as const };
   }, [
     isLoadingEntry, hasEnded, isLive, hasTicket, hookHasTicket, hasFinishedAnswering,
     ticketsClosed, ticketsNotYetOpen, salesClosed, isPurchasing, purchaseError,
-    purchaseStep, selectedPrice, isWalletReady, isFarcasterWalletLoading,
+    purchaseStep, selectedPrice, ticketPriceLabel, isWalletReady, isFarcasterWalletLoading,
     game.id, ticketSuccessHref,
   ]);
 
@@ -329,14 +340,16 @@ export function NextGameCard({ game }: NextGameCardProps) {
             icon="/images/illustrations/money-stack-mini.svg"
             iconSize={{ w: 30, h: 30 }}
             label="Prize pool"
-            value={`$${prizePool.toLocaleString()}`}
+            value={prizePoolLabel}
             isAnimating={isPrizeAnimating}
           />
         </div>
 
-        <p className="px-5 pb-2 text-center font-display text-[10px] leading-snug text-white/35">
-          {MINIPAY_USDT_ONLY_MESSAGE}
-        </p>
+        {showMiniPayTokenNotice && (
+          <p className="px-5 pb-2 text-center font-display text-[10px] leading-snug text-white/35">
+            {MINIPAY_USDT_ONLY_MESSAGE}
+          </p>
+        )}
 
         {/* Player Avatars Row */}
         <div className="flex flex-row justify-center items-center w-full px-4 pb-4 pt-1 gap-2 min-h-7">

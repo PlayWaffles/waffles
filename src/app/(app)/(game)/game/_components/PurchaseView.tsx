@@ -2,10 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import {
-  MINIPAY_PAYMENT_TOKEN_SYMBOL,
-  MINIPAY_USDT_ONLY_MESSAGE,
-} from "@/lib/minipay/compliance";
+import { MINIPAY_USDT_ONLY_MESSAGE } from "@/lib/minipay/compliance";
 
 export type PurchaseStep =
   | "idle"
@@ -29,10 +26,10 @@ const TIER_CONFIG = {
 } as const;
 
 interface PurchaseViewProps {
-  theme: string;
-  themeIcon?: string;
-  currentPrice: number;
-  potentialPayout: number;
+  currentPriceLabel: string;
+  potentialPayoutLabel: string;
+  tokenSymbol: string;
+  showTokenNotice: boolean;
   selectedTier: TicketTier;
   onSelectTier: (tier: TicketTier) => void;
   isLoading: boolean;
@@ -44,10 +41,10 @@ interface PurchaseViewProps {
 }
 
 export function PurchaseView({
-  theme,
-  themeIcon,
-  currentPrice,
-  potentialPayout,
+  currentPriceLabel,
+  potentialPayoutLabel,
+  tokenSymbol,
+  showTokenNotice,
   selectedTier,
   onSelectTier,
   isLoading,
@@ -57,24 +54,21 @@ export function PurchaseView({
   isButtonDisabled,
   onPurchase,
 }: PurchaseViewProps) {
-  const [isVisible, setIsVisible] = useState(false);
   const [showTiers, setShowTiers] = useState(false);
   const [showButton, setShowButton] = useState(false);
   const [hoveredTier, setHoveredTier] = useState<TicketTier | null>(null);
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setIsVisible(true), 50);
     const timer2 = setTimeout(() => setShowTiers(true), 200);
     const timer3 = setTimeout(() => setShowButton(true), 400);
     return () => {
-      clearTimeout(timer1);
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
   }, []);
 
   const tiers: { key: TicketTier; label: string; price: string; sublabel: string }[] = [
-    { key: "paid", label: "PAID", price: `$${currentPrice}`, sublabel: `${MINIPAY_PAYMENT_TOKEN_SYMBOL} only` },
+    { key: "paid", label: "PAID", price: currentPriceLabel, sublabel: `${tokenSymbol} only` },
   ];
 
   return (
@@ -95,9 +89,11 @@ export function PurchaseView({
         CHOOSE YOUR TICKET
       </h2>
 
-      <p className="w-full max-w-[361px] text-center font-display text-[11px] leading-snug text-white/45">
-        {MINIPAY_USDT_ONLY_MESSAGE}
-      </p>
+      {showTokenNotice && (
+        <p className="w-full max-w-[361px] text-center font-display text-[11px] leading-snug text-white/45">
+          {MINIPAY_USDT_ONLY_MESSAGE}
+        </p>
+      )}
 
       {/* Tier Cards */}
       <div
@@ -330,7 +326,7 @@ export function PurchaseView({
             transition: "all 0.3s ease",
           }}
         >
-          {selectedTier === "paid" ? `$${potentialPayout}` : "No prizes"}
+          {selectedTier === "paid" ? potentialPayoutLabel : "No prizes"}
         </span>
       </div>
 
