@@ -10,6 +10,7 @@
     "lint": "eslint",
     "duffel:check-nigeria-airlines": "node --import tsx scripts/check-duffel-nigeria-airlines.ts",
     "cloudinary:fetch": "node --import tsx scripts/fetch-cloudinary-images.ts",
+    "celo:one-off-claim-game": "node --import tsx scripts/create-celo-one-off-claim-game.ts",
     "postinstall": "prisma generate"
   },
   "dependencies": {
