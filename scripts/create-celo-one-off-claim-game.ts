@@ -26,14 +26,15 @@ const { formatGameLabel } = await import("@/lib/game/labels");
 const { PAYMENT_TOKEN_DECIMALS } = await import("@/lib/chain/config");
 const { GameTheme, Prisma, UserPlatform } = await import("@prisma");
 
-const PLATFORM = UserPlatform.MINIPAY;
-const NETWORK = "CELO_MAINNET" as const;
-const TICKET_PRICE = 1;
-const CLAIM_AMOUNT_USDC = 9.296;
+const PLATFORM = getPlatform();
+const NETWORK = getNetwork();
+const TICKET_PRICE = getNumberEnv("ONE_OFF_TICKET_PRICE", 1);
+const CLAIM_AMOUNT_USDC = getNumberEnv("ONE_OFF_CLAIM_AMOUNT", 9.296);
 const QUESTION_COUNT = 9;
 const POLL_INTERVAL_MS = 5_000;
 const DEFAULT_TIMEOUT_MS = 15 * 60 * 1000;
 const GAME_COVER_URL = "/images/movies-cover.png";
+const DEFAULT_LIVE_START_AT = "2026-06-10T13:00:00.000Z";
 
 function getArg(name: string) {
   const inline = process.argv.find((arg) => arg.startsWith(`${name}=`));
@@ -48,14 +49,67 @@ function normalizeAddress(address: string | undefined) {
   return value && /^0x[a-f0-9]{40}$/.test(value) ? value : null;
 }
 
+function getNumberEnv(name: string, fallback: number) {
+  const value = process.env[name];
+  if (!value) return fallback;
+
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    throw new Error(`${name} must be a positive number.`);
+  }
+
+  return parsed;
+}
+
+function getPlatform() {
+  const value = process.env.ONE_OFF_PLATFORM ?? UserPlatform.MINIPAY;
+  if (
+    value !== UserPlatform.FARCASTER &&
+    value !== UserPlatform.MINIPAY &&
+    value !== UserPlatform.BASE_APP
+  ) {
+    throw new Error("ONE_OFF_PLATFORM must be FARCASTER, MINIPAY, or BASE_APP.");
+  }
+
+  return value;
+}
+
+function getNetwork() {
+  const value =
+    process.env.ONE_OFF_NETWORK ??
+    (PLATFORM === UserPlatform.MINIPAY ? "CELO_MAINNET" : "BASE_MAINNET");
+
+  if (
+    value !== "BASE_MAINNET" &&
+    value !== "BASE_SEPOLIA" &&
+    value !== "CELO_MAINNET" &&
+    value !== "CELO_SEPOLIA"
+  ) {
+    throw new Error(
+      "ONE_OFF_NETWORK must be BASE_MAINNET, BASE_SEPOLIA, CELO_MAINNET, or CELO_SEPOLIA.",
+    );
+  }
+
+  return value;
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function createCeloGame() {
+function getInitialTiming() {
   const now = new Date();
-  const startsAt = new Date(now.getTime() + 10 * 60 * 1000);
+  const startsAt =
+    process.env.ONE_OFF_START_LIVE === "true"
+      ? new Date(process.env.ONE_OFF_START_AT ?? DEFAULT_LIVE_START_AT)
+      : new Date(now.getTime() + 10 * 60 * 1000);
   const endsAt = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+
+  return { now, startsAt, endsAt };
+}
+
+async function createOneOffGame() {
+  const { now, startsAt, endsAt } = getInitialTiming();
 
   const templates = await prisma.questionTemplate.findMany({
     where: { theme: GameTheme.MOVIES },
@@ -88,7 +142,7 @@ async function createCeloGame() {
       platform: PLATFORM,
       network: NETWORK,
       isTestnet: false,
-      description: "One-off Celo claim test",
+      description: `One-off ${NETWORK} claim test`,
       theme: GameTheme.MOVIES,
       coverUrl: GAME_COVER_URL,
       startsAt,
@@ -260,7 +314,7 @@ async function main() {
     throw new Error("--timeout-ms must be a positive number.");
   }
 
-  const game = await createCeloGame();
+  const game = await createOneOffGame();
   const gameUrl = `${process.env.NEXT_PUBLIC_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"}/game/${game.id}`;
 
   console.log(
