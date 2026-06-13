@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 
 type GlowVariant = "gold" | "cyan" | "pink" | "success";
+type TrendDirection = "up" | "down" | "flat";
 
 const glowClasses: Record<GlowVariant, string> = {
     gold: " text-[#FFC931]",
@@ -28,9 +29,11 @@ export function StatsCard({
     value: string | number;
     subtitle?: string;
     icon: React.ReactNode;
-    trend?: { value: string; isPositive: boolean };
+    trend?: { value: string; direction?: TrendDirection; isPositive?: boolean; label?: string };
     glowVariant?: GlowVariant;
 }) {
+    const trendDirection = trend?.direction ?? (trend?.isPositive ? "up" : "down");
+
     return (
         <div className={cn(
             "rounded-2xl border border-white/10 backdrop-blur-lg p-6 transition-all duration-300 font-display",
@@ -56,14 +59,17 @@ export function StatsCard({
                             <span
                                 className={cn(
                                     "text-sm font-medium font-display",
-                                    trend.isPositive
-                                        ? "text-[#14B985] "
-                                        : "text-red-400"
+                                    trendDirection === "up" && "text-[#14B985]",
+                                    trendDirection === "down" && "text-red-400",
+                                    trendDirection === "flat" && "text-white/50"
                                 )}
                             >
-                                {trend.isPositive ? "↑" : "↓"} {trend.value}
+                                {trendDirection === "up" && "↑ "}
+                                {trendDirection === "down" && "↓ "}
+                                {trendDirection === "flat" && "→ "}
+                                {trend.value}
                             </span>
-                            <span className="text-xs text-white/40">vs last week</span>
+                            <span className="text-xs text-white/40">{trend.label ?? "vs last week"}</span>
                         </div>
                     )}
                 </div>
@@ -77,4 +83,3 @@ export function StatsCard({
         </div>
     );
 }
-
