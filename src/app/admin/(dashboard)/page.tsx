@@ -19,9 +19,52 @@ import {
 } from "@/lib/admin-utils";
 import { getDisplayName } from "@/lib/address";
 
+type TrendDirection = "up" | "down" | "flat";
+type WeekOverWeekTrend = {
+    value: string;
+    direction: TrendDirection;
+    label?: string;
+};
+
+const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+function formatCompactNumber(value: number) {
+    return value.toLocaleString("en-US", {
+        maximumFractionDigits: value >= 10 ? 0 : 1,
+    });
+}
+
+function formatWeekOverWeekTrend(
+    current: number,
+    previous: number,
+    formatValue: (value: number) => string = formatCompactNumber
+): WeekOverWeekTrend {
+    if (current === previous) {
+        return { value: "0%", direction: "flat" };
+    }
+
+    if (previous === 0) {
+        return {
+            value: `+${formatValue(current)}`,
+            direction: "up",
+            label: "new this week",
+        };
+    }
+
+    const change = ((current - previous) / previous) * 100;
+    const absChange = Math.abs(change);
+    const formattedChange = absChange >= 10 ? absChange.toFixed(0) : absChange.toFixed(1);
+
+    return {
+        value: `${formattedChange}%`,
+        direction: change > 0 ? "up" : "down",
+    };
+}
+
 async function getStats(platform?: string) {
     const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(now.getTime() - ONE_WEEK_MS);
+    const fourteenDaysAgo = new Date(now.getTime() - 2 * ONE_WEEK_MS);
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
@@ -35,6 +78,10 @@ async function getStats(platform?: string) {
         paidEntries,
         recentUsers,
         recentEntries,
+        previousUsers,
+        recentGames,
+        previousGames,
+        previousEntries,
         totalPaidAmount,
     ] = await Promise.all([
         prisma.user.count({ where: pf }),
@@ -56,6 +103,33 @@ async function getStats(platform?: string) {
             },
             select: {
                 paidAt: true,
+                paidAmount: true,
+            },
+        }),
+        prisma.user.count({
+            where: {
+                ...pf,
+                createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+            },
+        }),
+        prisma.game.count({
+            where: {
+                ...gamePf,
+                createdAt: { gte: sevenDaysAgo },
+            },
+        }),
+        prisma.game.count({
+            where: {
+                ...gamePf,
+                createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
+            },
+        }),
+        prisma.gameEntry.findMany({
+            where: {
+                paidAt: { not: null, gte: fourteenDaysAgo, lt: sevenDaysAgo },
+                ...gpf,
+            },
+            select: {
                 paidAmount: true,
             },
         }),
@@ -82,6 +156,15 @@ async function getStats(platform?: string) {
             .reduce((sum: number, e: { paidAmount: number | null }) => sum + calculateProtocolRevenue(e.paidAmount), 0)
     }));
 
+    const currentRevenue = recentEntries.reduce(
+        (sum, entry) => sum + calculateProtocolRevenue(entry.paidAmount),
+        0
+    );
+    const previousRevenue = previousEntries.reduce(
+        (sum, entry) => sum + calculateProtocolRevenue(entry.paidAmount),
+        0
+    );
+
     return {
         totalUsers,
         activeUsers,
@@ -92,6 +175,16 @@ async function getStats(platform?: string) {
         totalRevenue: calculateProtocolRevenue(totalPaidAmount._sum.paidAmount),
         userGrowth,
         revenueData,
+        weekOverWeek: {
+            users: formatWeekOverWeekTrend(recentUsers.length, previousUsers),
+            games: formatWeekOverWeekTrend(recentGames, previousGames),
+            revenue: formatWeekOverWeekTrend(
+                currentRevenue,
+                previousRevenue,
+                (value) => `$${formatCompactNumber(value)}`
+            ),
+            tickets: formatWeekOverWeekTrend(recentEntries.length, previousEntries.length),
+        },
     };
 }
 
@@ -186,6 +279,7 @@ export default async function AdminDashboard({
                     title="Total Users"
                     value={stats.totalUsers.toLocaleString()}
                     subtitle={`${stats.activeUsers} signed in`}
+                    trend={stats.weekOverWeek.users}
                     icon={<UsersIcon className="h-6 w-6 text-[#00CFF2]" />}
                     glowVariant="cyan"
                 />
@@ -193,6 +287,7 @@ export default async function AdminDashboard({
                     title="Total Games"
                     value={stats.totalGames}
                     subtitle={`${stats.liveGames} live now`}
+                    trend={stats.weekOverWeek.games}
                     icon={<TrophyIcon className="h-6 w-6 text-[#FB72FF]" />}
                     glowVariant="pink"
                 />
@@ -200,6 +295,7 @@ export default async function AdminDashboard({
                     title="Protocol Revenue"
                     value={`$${stats.totalRevenue.toLocaleString()}`}
                     subtitle="20% fee share"
+                    trend={stats.weekOverWeek.revenue}
                     icon={<BanknotesIcon className="h-6 w-6 text-[#FFC931]" />}
                     glowVariant="gold"
                 />
@@ -207,6 +303,7 @@ export default async function AdminDashboard({
                     title="Tickets Sold"
                     value={stats.paidTickets.toLocaleString()}
                     subtitle={`${stats.totalTickets} total`}
+                    trend={stats.weekOverWeek.tickets}
                     icon={<TicketIcon className="h-6 w-6 text-[#14B985]" />}
                     glowVariant="success"
                 />
