@@ -63,6 +63,7 @@ const envSchema = z.object({
     .string()
     .min(1, "NEXT_PUBLIC_ONCHAINKIT_API_KEY is required"),
   NEXT_PUBLIC_POSTHOG_TOKEN: z.string().optional(),
+  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().optional(),
   NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
   NEXT_PUBLIC_BASE_MAINNET_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string().url().optional(),
@@ -125,6 +126,8 @@ const getEnv = () => {
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     NEXT_PUBLIC_ONCHAINKIT_API_KEY: process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
     NEXT_PUBLIC_POSTHOG_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_TOKEN,
+    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
+      process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
     NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_BASE_MAINNET_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL,
@@ -280,7 +283,8 @@ const getEnv = () => {
     cloudinaryApiSecret: data.CLOUDINARY_API_SECRET,
     // Client-side
     nextPublicOnchainkitApiKey: data.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
-    nextPublicPosthogToken: data.NEXT_PUBLIC_POSTHOG_TOKEN,
+    nextPublicPosthogToken:
+      data.NEXT_PUBLIC_POSTHOG_TOKEN || data.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
     nextPublicPosthogHost: data.NEXT_PUBLIC_POSTHOG_HOST,
     nextPublicBaseMainnetRpcUrl:
       data.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
