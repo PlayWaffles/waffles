@@ -33,6 +33,7 @@ import {
   formatPaymentTokenAmount,
   isCeloPaymentTarget,
 } from "@/lib/chain";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -263,6 +264,20 @@ export function NextGameCard({ game }: NextGameCardProps) {
       router.push(buttonConfig.href!);
     } else if (buttonConfig.action === "buy") {
       if (purchaseError) resetPurchase();
+      trackClientEvent(AnalyticsEvent.TicketCtaClicked, {
+        game_id: game.id,
+        game_number: game.gameNumber,
+        platform: game.platform,
+        network: game.network,
+        theme: game.theme,
+        price: selectedPrice,
+        prize_pool: prizePool,
+        player_count: playerCount,
+        spots_left: spotsLeft,
+        starts_at: game.startsAt.toISOString(),
+        wait_ms: Math.max(0, game.startsAt.getTime() - Date.now()),
+        retry: purchaseError,
+      });
       purchase();
     }
   };

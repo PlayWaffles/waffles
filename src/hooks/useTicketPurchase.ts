@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { useAccount, useWriteContract } from "wagmi";
 import { readContract, waitForTransactionReceipt } from "wagmi/actions";
-import { parseUnits, encodeFunctionData } from "viem";
+import { parseUnits } from "viem";
 
 import { useRealtime } from "@/components/providers/RealtimeProvider";
 import { useGetGame, useTokenAllowance } from "./waffleContractHooks";
@@ -20,12 +20,12 @@ import {
 } from "@/lib/chain";
 import { useCorrectChain } from "./useCorrectChain";
 import { useUser } from "./useUser";
-import posthog from "posthog-js";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import { wagmiConfig } from "@/lib/wagmi/config";
 import { authenticatedFetch } from "@/lib/client/runtime";
 import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const MAX_TICKET_APPROVAL_AMOUNT = "10";
 
@@ -187,6 +187,15 @@ export function useTicketPurchase(
 
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
+          trackClientEvent(AnalyticsEvent.TicketPurchaseSyncStarted, {
+            platform,
+            network,
+            game_id: gameId,
+            tx_hash: txHash,
+            price,
+            attempt: attempt + 1,
+          });
+
           console.log("[ticket-purchase]", {
             stage: "sync-start",
             platform,
@@ -220,6 +229,15 @@ export function useTicketPurchase(
             notify.success("Ticket purchased! 🎉");
             refetchEntry();
             router.refresh();
+            trackClientEvent(AnalyticsEvent.TicketPurchaseSyncSucceeded, {
+              platform,
+              network,
+              game_id: gameId,
+              tx_hash: txHash,
+              price,
+              attempt: attempt + 1,
+              entry_id: result.entryId,
+            });
             onSuccess?.();
             return;
           }
@@ -228,10 +246,30 @@ export function useTicketPurchase(
           if (result.code === "VERIFICATION_FAILED") {
             notify.error(result.error || "Payment verification failed");
             setState({ step: "error", error: result.error });
+            trackClientEvent(AnalyticsEvent.TicketPurchaseSyncFailed, {
+              platform,
+              network,
+              game_id: gameId,
+              tx_hash: txHash,
+              price,
+              attempt: attempt + 1,
+              code: result.code,
+              reason: result.error,
+            });
             return;
           }
 
           lastError = result.error || "Sync failed";
+          trackClientEvent(AnalyticsEvent.TicketPurchaseSyncFailed, {
+            platform,
+            network,
+            game_id: gameId,
+            tx_hash: txHash,
+            price,
+            attempt: attempt + 1,
+            code: result.code ?? null,
+            reason: result.error,
+          });
           console.error("[ticket-purchase]", {
             stage: "sync-result-error",
             platform,
@@ -243,6 +281,15 @@ export function useTicketPurchase(
           });
         } catch (err) {
           lastError = err instanceof Error ? err.message : "Sync failed";
+          trackClientEvent(AnalyticsEvent.TicketPurchaseSyncFailed, {
+            platform,
+            network,
+            game_id: gameId,
+            tx_hash: txHash,
+            price,
+            attempt: attempt + 1,
+            reason: lastError,
+          });
           console.error("[ticket-purchase]", {
             stage: "sync-exception",
             platform,
@@ -274,7 +321,7 @@ export function useTicketPurchase(
       notify.error("Sync failed. Your purchase will be verified shortly.");
       setState({ step: "error", error: lastError, txHash });
     },
-    [address, user?.id, gameId, price, refetchEntry, router, onSuccess],
+    [address, user?.id, gameId, network, platform, price, refetchEntry, router, onSuccess],
   );
 
   // ==========================================
@@ -288,6 +335,13 @@ export function useTicketPurchase(
         network,
         gameId,
       });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseBlocked, {
+        platform,
+        network,
+        game_id: gameId,
+        price,
+        reason: "no_onchain_id",
+      });
       notify.error("Game not available");
       return;
     }
@@ -299,6 +353,13 @@ export function useTicketPurchase(
         network,
         gameId,
         address,
+      });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseBlocked, {
+        platform,
+        network,
+        game_id: gameId,
+        price,
+        reason: "existing_ticket",
       });
       notify.error("You already have a ticket");
       return;
@@ -312,6 +373,13 @@ export function useTicketPurchase(
         gameId,
         onchainId,
         address,
+      });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseBlocked, {
+        platform,
+        network,
+        game_id: gameId,
+        price,
+        reason: "sales_closed",
       });
       notify.error("Ticket sales are closed for this game");
       return;
@@ -327,13 +395,21 @@ export function useTicketPurchase(
         isConnected,
         address: address ?? null,
       });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseBlocked, {
+        platform,
+        network,
+        game_id: gameId,
+        price,
+        reason: "wallet_unavailable",
+        is_connected: isConnected,
+      });
       notify.info("Wallet connecting... Please wait.");
       return;
     }
 
     setState({ step: "pending" });
 
-    posthog.capture("ticket_purchase_started", {
+    trackClientEvent(AnalyticsEvent.TicketPurchaseStarted, {
       game_id: gameId,
       platform,
       network,
@@ -366,6 +442,14 @@ export function useTicketPurchase(
 
         const msg = platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Insufficient funds";
         setState({ step: "error", error: msg });
+        trackClientEvent(AnalyticsEvent.TicketPurchaseBlocked, {
+          platform,
+          network,
+          game_id: gameId,
+          price,
+          reason: "insufficient_balance",
+          balance: tokenBalance.toString(),
+        });
         notify.error(msg);
         onInsufficientFunds?.();
         return;
@@ -401,6 +485,13 @@ export function useTicketPurchase(
           address,
           txHash: approvalHash,
         });
+        trackClientEvent(AnalyticsEvent.TicketApprovalSubmitted, {
+          platform,
+          network,
+          game_id: gameId,
+          tx_hash: approvalHash,
+          price,
+        });
 
         setState({ step: "confirming", txHash: approvalHash });
 
@@ -416,6 +507,13 @@ export function useTicketPurchase(
           onchainId,
           address,
           txHash: approvalHash,
+        });
+        trackClientEvent(AnalyticsEvent.TicketApprovalConfirmed, {
+          platform,
+          network,
+          game_id: gameId,
+          tx_hash: approvalHash,
+          price,
         });
       }
 
@@ -434,6 +532,14 @@ export function useTicketPurchase(
         address,
         txHash: purchaseHash,
       });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseTxSubmitted, {
+        platform,
+        network,
+        game_id: gameId,
+        tx_hash: purchaseHash,
+        price,
+        needs_approval: needsApproval,
+      });
 
       setState({ step: "confirming", txHash: purchaseHash });
 
@@ -450,6 +556,13 @@ export function useTicketPurchase(
         onchainId,
         address,
         txHash: purchaseHash,
+      });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseTxConfirmed, {
+        platform,
+        network,
+        game_id: gameId,
+        tx_hash: purchaseHash,
+        price,
       });
 
       setState({ step: "syncing", txHash: purchaseHash });
@@ -481,6 +594,14 @@ export function useTicketPurchase(
             : "Transaction failed";
 
       setState({ step: "error", error: msg });
+      trackClientEvent(AnalyticsEvent.TicketPurchaseFailed, {
+        platform,
+        network,
+        game_id: gameId,
+        price,
+        reason: msg,
+        raw_error: message,
+      });
       notify.error(msg);
     }
   }, [
@@ -488,11 +609,13 @@ export function useTicketPurchase(
     address,
     isConnected,
     onchainId,
+    chainTarget,
     hasTicket,
     contractAddress,
     ensureCorrectChain,
     gameId,
     needsApproval,
+    network,
     platform,
     price,
     priceInUnits,
