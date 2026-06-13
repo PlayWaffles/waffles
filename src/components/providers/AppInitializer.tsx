@@ -314,6 +314,21 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     return nextAddress;
   }, [address, connectAsync, connectors, isConnected]);
 
+  const markOnboardingCompleted = useCallback(async () => {
+    const response = await authenticatedFetch("/api/v1/users/me/onboarding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ completedAt: new Date().toISOString() }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(
+        body?.error ?? "Failed to record onboarding completion",
+      );
+    }
+  }, []);
+
   useEffect(() => {
     if (runtime !== "minipay" && runtime !== "browser") {
       return;
@@ -354,11 +369,13 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         console.log("[onboarding] addMiniApp() rejected:", err instanceof Error ? err.message : err);
       }
       setNotificationNudgeDismissed(true);
+      await markOnboardingCompleted();
     } else {
       onboardingAuthInProgressRef.current = true;
       try {
         const walletAddress = await connectWallet();
         await authenticateWallet(walletAddress);
+        await markOnboardingCompleted();
         await refetch();
       } catch (error) {
         console.error("Wallet auth during onboarding failed:", error);
@@ -375,7 +392,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       localStorage.setItem(onboardingKey, "1");
     }
     setShowOnboarding(false);
-  }, [authenticateWallet, connectWallet, onboardingKey, refetch, runtime]);
+  }, [authenticateWallet, connectWallet, markOnboardingCompleted, onboardingKey, refetch, runtime]);
 
   useEffect(() => {
     if (

@@ -37,6 +37,7 @@ model User {
   hasGameAccess   Boolean   @default(false)
   accessGrantedAt DateTime?
   accessGrantedBy String?
+  onboardingCompletedAt DateTime?
 
   // -- STREAKS --
   currentStreak Int       @default(0)
