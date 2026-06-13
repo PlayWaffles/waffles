@@ -12,6 +12,7 @@ import type { UserPlatform } from "@prisma";
 export type AppRuntime = "farcaster" | "minipay" | "browser";
 
 let runtimePromise: Promise<AppRuntime> | null = null;
+let resolvedRuntime: AppRuntime | null = null;
 
 export function isMiniPayRuntime() {
   if (typeof window === "undefined") return false;
@@ -38,7 +39,22 @@ export async function detectAppRuntime(): Promise<AppRuntime> {
 }
 
 export async function getAppRuntime(): Promise<AppRuntime> {
-  runtimePromise ??= detectAppRuntime();
+  if (isMiniPayRuntime()) {
+    resolvedRuntime = "minipay";
+    runtimePromise = Promise.resolve("minipay");
+    return "minipay";
+  }
+
+  if (resolvedRuntime) {
+    return resolvedRuntime;
+  }
+
+  runtimePromise ??= detectAppRuntime().then((runtime) => {
+    const currentRuntime = isMiniPayRuntime() ? "minipay" : runtime;
+    resolvedRuntime = currentRuntime;
+    return currentRuntime;
+  });
+
   return runtimePromise;
 }
 
@@ -87,7 +103,7 @@ export async function authenticatedFetch(
   input: RequestInfo | URL,
   init?: RequestInit,
 ) {
-  const runtime = await getAppRuntime();
+  const runtime = isMiniPayRuntime() ? "minipay" : await getAppRuntime();
   const platform = runtimeToPlatform(runtime);
   const headers = new Headers(init?.headers);
   headers.set(PLATFORM_HEADER, platform);
