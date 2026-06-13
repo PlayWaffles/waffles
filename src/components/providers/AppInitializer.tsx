@@ -25,6 +25,11 @@ import {
   setRuntimePlatformCookie,
   type AppRuntime,
 } from "@/lib/client/runtime";
+import {
+  AnalyticsEvent,
+  captureFirstTouchAttribution,
+  trackClientEvent,
+} from "@/lib/analytics";
 
 const OnboardingOverlay = dynamic(
   () => import("../OnboardingOverlay").then((mod) => mod.OnboardingOverlay),
@@ -64,6 +69,8 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const farcasterProfileSyncRef = useRef<string | null>(null);
   const onboardingAuthInProgressRef = useRef(false);
+  const appOpenedRef = useRef(false);
+  const onboardingStartedRef = useRef<string | null>(null);
   const onboardingKey = useMemo(() => {
     if (!runtime) return null;
     if (runtime === "farcaster") {
@@ -107,6 +114,15 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       if (!mounted) return;
 
       setRuntime(nextRuntime);
+      const attribution = captureFirstTouchAttribution();
+      if (!appOpenedRef.current) {
+        appOpenedRef.current = true;
+        trackClientEvent(AnalyticsEvent.AppOpened, {
+          runtime: nextRuntime,
+          path: window.location.pathname,
+          ...attribution,
+        });
+      }
 
       if (nextRuntime === "farcaster") {
         try {
@@ -221,11 +237,25 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       const shouldShow = Boolean(user) && !hasSeen;
       if (shouldShow) preloadOnboardingOverlay();
       setShowOnboarding(shouldShow);
+      if (shouldShow && onboardingKey && onboardingStartedRef.current !== onboardingKey) {
+        onboardingStartedRef.current = onboardingKey;
+        trackClientEvent(AnalyticsEvent.OnboardingStarted, {
+          runtime,
+          platform: user?.platform ?? null,
+        });
+      }
       return;
     }
 
     if (!hasSeen) preloadOnboardingOverlay();
     setShowOnboarding(!hasSeen);
+    if (!hasSeen && onboardingKey && onboardingStartedRef.current !== onboardingKey) {
+      onboardingStartedRef.current = onboardingKey;
+      trackClientEvent(AnalyticsEvent.OnboardingStarted, {
+        runtime,
+        platform: runtimeToPlatform(runtime),
+      });
+    }
   }, [onboardingKey, runtime, user]);
 
   useEffect(() => {
@@ -259,6 +289,10 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
     setAuthState("authenticating");
     setAuthError(null);
+    trackClientEvent(AnalyticsEvent.AuthStarted, {
+      runtime,
+      wallet: walletAddress.toLowerCase(),
+    });
 
     try {
       const nonceRes = await authenticatedFetch(
@@ -282,15 +316,24 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
       await refetch();
       setAuthState("idle");
+      trackClientEvent(AnalyticsEvent.AuthCompleted, {
+        runtime,
+        wallet: walletAddress.toLowerCase(),
+      });
     } catch (error) {
       console.error("Wallet auth failed:", error);
       setAuthState("error");
       setAuthError(
         error instanceof Error ? error.message : "Wallet authentication failed",
       );
+      trackClientEvent(AnalyticsEvent.AuthFailed, {
+        runtime,
+        wallet: walletAddress.toLowerCase(),
+        reason: error instanceof Error ? error.message : "Wallet authentication failed",
+      });
       throw error;
     }
-  }, [refetch, signMessageAsync]);
+  }, [refetch, runtime, signMessageAsync]);
 
   const connectWallet = useCallback(async () => {
     if (address && isConnected) {
@@ -360,6 +403,10 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   ]);
 
   const handleOnboardingComplete = useCallback(async () => {
+    if (!runtime) {
+      throw new Error("Runtime unavailable");
+    }
+
     if (runtime === "farcaster") {
       try {
         console.log("[onboarding] Calling sdk.actions.addMiniApp()");
@@ -370,6 +417,10 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       }
       setNotificationNudgeDismissed(true);
       await markOnboardingCompleted();
+      trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
+        runtime,
+        platform: user?.platform ?? null,
+      });
     } else {
       onboardingAuthInProgressRef.current = true;
       try {
@@ -377,11 +428,21 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         await authenticateWallet(walletAddress);
         await markOnboardingCompleted();
         await refetch();
+        trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
+          runtime,
+          platform: runtimeToPlatform(runtime),
+          wallet: walletAddress.toLowerCase(),
+        });
       } catch (error) {
         console.error("Wallet auth during onboarding failed:", error);
         setAuthError(
           error instanceof Error ? error.message : "Wallet connection failed",
         );
+        trackClientEvent(AnalyticsEvent.OnboardingFailed, {
+          runtime,
+          platform: runtimeToPlatform(runtime),
+          reason: error instanceof Error ? error.message : "Wallet connection failed",
+        });
         throw error;
       } finally {
         onboardingAuthInProgressRef.current = false;
@@ -392,7 +453,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       localStorage.setItem(onboardingKey, "1");
     }
     setShowOnboarding(false);
-  }, [authenticateWallet, connectWallet, markOnboardingCompleted, onboardingKey, refetch, runtime]);
+  }, [authenticateWallet, connectWallet, markOnboardingCompleted, onboardingKey, refetch, runtime, user?.platform]);
 
   useEffect(() => {
     if (

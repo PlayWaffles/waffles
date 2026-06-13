@@ -21,6 +21,7 @@ import {
   isMiniPayRuntime,
   type AppRuntime,
 } from "@/lib/client/runtime";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 import Image from "next/image";
 import { BulletinCarousel } from "./_components/BulletinCarousel";
@@ -135,7 +136,11 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
     if (localStorage.getItem(storageKey) === "seen") return;
 
     localStorage.setItem(storageKey, "seen");
-    setIsWinnerAnnouncementOpen(true);
+    const frame = window.requestAnimationFrame(() => {
+      setIsWinnerAnnouncementOpen(true);
+    });
+
+    return () => window.cancelAnimationFrame(frame);
   }, [hasWinners, isHowToPlayOpen, lastGameResult]);
 
   // Track game lobby view
@@ -143,14 +148,15 @@ export function GameHub({ game, lastGameResult }: GameHubProps) {
   useEffect(() => {
     if (game && hasTrackedView.current !== game.id) {
       hasTrackedView.current = game.id;
-      import("posthog-js").then(({ default: posthog }) => {
-        posthog.capture("game_viewed", {
-          game_id: game.id,
-          game_number: game.gameNumber,
-          theme: game.theme,
-          prize_pool: game.prizePool,
-          player_count: game.playerCount,
-        });
+      trackClientEvent(AnalyticsEvent.GameSeen, {
+        game_id: game.id,
+        game_number: game.gameNumber,
+        theme: game.theme,
+        prize_pool: game.prizePool,
+        player_count: game.playerCount,
+        platform: game.platform,
+        network: game.network,
+        starts_at: game.startsAt.toISOString(),
       });
     }
   }, [game]);
