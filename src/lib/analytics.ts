@@ -1,4 +1,5 @@
 export const AnalyticsEvent = {
+  PageViewed: "$pageview",
   AppOpened: "app_opened",
   AuthStarted: "auth_started",
   AuthCompleted: "auth_completed",
