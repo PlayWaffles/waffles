@@ -23,6 +23,7 @@ import {
     type AnalyticsTab,
 } from "@/components/admin/analytics";
 import { PlatformFilter } from "@/components/admin/PlatformFilter";
+import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { getGamePhase } from "@/lib/types";
 import {
     buildPlatformWhere,
@@ -31,6 +32,7 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
+import type { UserPlatform } from "@prisma";
 
 // ============================================================
 // HELPERS
@@ -61,6 +63,32 @@ interface GameScoreAggregate {
     _avg: {
         score: number | null;
     };
+}
+
+type OnboardingWaitBucket = {
+    label: string;
+    minMs: number;
+    maxMs: number;
+};
+
+const ONBOARDING_WAIT_BUCKETS: OnboardingWaitBucket[] = [
+    { label: "<15m", minMs: 0, maxMs: 15 * 60 * 1000 },
+    { label: "15m-1h", minMs: 15 * 60 * 1000, maxMs: 60 * 60 * 1000 },
+    { label: "1-3h", minMs: 60 * 60 * 1000, maxMs: 3 * 60 * 60 * 1000 },
+    { label: "3-12h", minMs: 3 * 60 * 60 * 1000, maxMs: 12 * 60 * 60 * 1000 },
+    { label: "12-24h", minMs: 12 * 60 * 60 * 1000, maxMs: 24 * 60 * 60 * 1000 },
+    { label: "1-3d", minMs: 24 * 60 * 60 * 1000, maxMs: 3 * 24 * 60 * 60 * 1000 },
+    { label: "3d+", minMs: 3 * 24 * 60 * 60 * 1000, maxMs: Infinity },
+];
+
+function rate(numerator: number, denominator: number) {
+    return denominator > 0 ? (numerator / denominator) * 100 : 0;
+}
+
+function getWaitBucket(waitMs: number) {
+    return ONBOARDING_WAIT_BUCKETS.find(
+        (bucket) => waitMs >= bucket.minMs && waitMs < bucket.maxMs,
+    ) ?? ONBOARDING_WAIT_BUCKETS[ONBOARDING_WAIT_BUCKETS.length - 1];
 }
 
 function buildTicketPurchaseWhere(
@@ -386,6 +414,141 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         revenueChartData,
         // Game performance table
         gamePerformance: attachAverageScores(gamesWithRevenue, gameScoreAverages),
+    };
+}
+
+// ============================================================
+// 1.5 ONBOARDING CONVERSION ANALYTICS
+// ============================================================
+
+async function getOnboardingConversionData(start: Date, end: Date, platform?: string) {
+    const pf = buildPlatformWhere(platform);
+    const gamePf = buildProductionGameWhere(platform);
+    const onboardedUsers = await prisma.user.findMany({
+        where: {
+            ...pf,
+            onboardingCompletedAt: { not: null, gte: start, lte: end },
+        },
+        select: {
+            id: true,
+            platform: true,
+            onboardingCompletedAt: true,
+            entries: {
+                where: {
+                    paidAt: { not: null },
+                    ...buildProductionEntryWhere(platform),
+                },
+                select: {
+                    gameId: true,
+                    paidAt: true,
+                    game: {
+                        select: {
+                            id: true,
+                            platform: true,
+                            network: true,
+                            isTestnet: true,
+                            startsAt: true,
+                        },
+                    },
+                },
+                orderBy: { paidAt: "asc" },
+            },
+        },
+    });
+
+    const completed = onboardedUsers.length;
+    const earliestCompletion = onboardedUsers.reduce<Date | null>((earliest, user) => {
+        const completedAt = user.onboardingCompletedAt;
+        if (!completedAt) return earliest;
+        return !earliest || completedAt < earliest ? completedAt : earliest;
+    }, null);
+
+    const games = earliestCompletion
+        ? await prisma.game.findMany({
+            where: {
+                ...gamePf,
+                startsAt: { gte: earliestCompletion },
+            },
+            select: {
+                id: true,
+                platform: true,
+                network: true,
+                isTestnet: true,
+                startsAt: true,
+            },
+            orderBy: { startsAt: "asc" },
+            take: 5000,
+        })
+        : [];
+
+    const bucketMap = new Map(ONBOARDING_WAIT_BUCKETS.map((bucket) => [
+        bucket.label,
+        {
+            label: bucket.label,
+            users: 0,
+            nextGameBuyers: 0,
+            conversionRate: 0,
+        },
+    ]));
+    let noUpcomingGameUsers = 0;
+    let noUpcomingGameBuyers = 0;
+    let ticketBuyers = 0;
+
+    for (const user of onboardedUsers) {
+        const completedAt = user.onboardingCompletedAt;
+        if (!completedAt) continue;
+
+        const visibleEntries = user.entries.filter((entry) =>
+            isGameVisibleToPlatform(entry.game, user.platform as UserPlatform) &&
+            entry.paidAt &&
+            entry.paidAt >= completedAt
+        );
+
+        if (visibleEntries.length > 0) {
+            ticketBuyers++;
+        }
+
+        const nextGame = games.find((game) =>
+            game.startsAt >= completedAt &&
+            isGameVisibleToPlatform(game, user.platform as UserPlatform)
+        );
+
+        if (!nextGame) {
+            noUpcomingGameUsers++;
+            if (visibleEntries.length > 0) noUpcomingGameBuyers++;
+            continue;
+        }
+
+        const waitMs = nextGame.startsAt.getTime() - completedAt.getTime();
+        const bucket = getWaitBucket(waitMs);
+        const row = bucketMap.get(bucket.label);
+        if (!row) continue;
+
+        row.users++;
+        if (visibleEntries.some((entry) =>
+            entry.gameId === nextGame.id &&
+            entry.paidAt &&
+            entry.paidAt <= nextGame.startsAt
+        )) {
+            row.nextGameBuyers++;
+        }
+    }
+
+    const waitBuckets = Array.from(bucketMap.values()).map((bucket) => ({
+        ...bucket,
+        conversionRate: rate(bucket.nextGameBuyers, bucket.users),
+    }));
+
+    return {
+        completed,
+        ticketBuyers,
+        ticketBuyerRate: rate(ticketBuyers, completed),
+        waitBuckets,
+        noUpcomingGame: {
+            users: noUpcomingGameUsers,
+            ticketBuyers: noUpcomingGameBuyers,
+            conversionRate: rate(noUpcomingGameBuyers, noUpcomingGameUsers),
+        },
     };
 }
 
@@ -1195,11 +1358,12 @@ async function AnalyticsContent({
     range: string;
 }) {
     if (activeTab === "overview") {
-        const [data, retention] = await Promise.all([
+        const [data, retention, onboarding] = await Promise.all([
             getCoreDashboard(start, end, platform),
             getRetentionData(start, end, platform, range),
+            getOnboardingConversionData(start, end, platform),
         ]);
-        return <OverviewTab data={data} retention={retention} />;
+        return <OverviewTab data={data} retention={retention} onboarding={onboarding} />;
     }
     if (activeTab === "games") {
         const gameplay = await getGameplayData(start, end, platform);
@@ -1222,9 +1386,11 @@ async function AnalyticsContent({
 function OverviewTab({
     data,
     retention,
+    onboarding,
 }: {
     data: Awaited<ReturnType<typeof getCoreDashboard>>;
     retention: Awaited<ReturnType<typeof getRetentionData>>;
+    onboarding: Awaited<ReturnType<typeof getOnboardingConversionData>>;
 }) {
     return (
         <div className="space-y-6">
@@ -1280,6 +1446,8 @@ function OverviewTab({
                 <MiniStat label="Claim Rate" value={`${data.claimRate.toFixed(1)}%`} color="#FB72FF" tooltip="The share of prize-winning entries that have already claimed their payouts." />
                 <MiniStat label="DAU/WAU" value={`${retention.dauWauRatio.toFixed(0)}%`} color="#FFC931" tooltip="Daily active users divided by weekly active users. Higher values usually mean better short-term stickiness." />
             </div>
+
+            <OnboardingConversionPanel data={onboarding} />
 
             {/* Revenue chart */}
             <RevenueChart data={data.revenueChartData} />
@@ -1351,6 +1519,84 @@ function OverviewTab({
             {/* Game performance table */}
             <GamePerformanceTable games={data.gamePerformance} />
         </div>
+    );
+}
+
+function OnboardingConversionPanel({
+    data,
+}: {
+    data: Awaited<ReturnType<typeof getOnboardingConversionData>>;
+}) {
+    const maxUsers = Math.max(1, ...data.waitBuckets.map((bucket) => bucket.users));
+
+    return (
+        <section className="rounded-2xl border border-white/10 p-6">
+            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h3 className="text-lg font-semibold text-white font-display">Onboarding Conversion</h3>
+                    <p className="text-sm text-white/50">
+                        Users who completed onboarding, then bought a paid ticket
+                    </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-right">
+                    <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                        <div className="text-xs uppercase tracking-wider text-white/40">Completed</div>
+                        <div className="mt-1 text-2xl font-bold text-[#00CFF2] font-body">
+                            {data.completed.toLocaleString()}
+                        </div>
+                    </div>
+                    <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
+                        <div className="text-xs uppercase tracking-wider text-white/40">Bought Ticket</div>
+                        <div className="mt-1 text-2xl font-bold text-[#14B985] font-body">
+                            {data.ticketBuyerRate.toFixed(1)}%
+                        </div>
+                        <div className="mt-1 text-[11px] text-white/40">
+                            {data.ticketBuyers.toLocaleString()} users
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-white/8">
+                <div className="grid grid-cols-[minmax(78px,0.8fr)_minmax(120px,1.5fr)_minmax(82px,0.8fr)_minmax(92px,0.8fr)] gap-3 border-b border-white/8 bg-white/[0.03] px-4 py-3 text-xs font-medium uppercase tracking-wider text-white/40">
+                    <span>Wait</span>
+                    <span>Onboarded Users</span>
+                    <span>Buyers</span>
+                    <span>Conversion</span>
+                </div>
+                <div className="divide-y divide-white/8">
+                    {data.waitBuckets.map((bucket) => (
+                        <div
+                            key={bucket.label}
+                            className="grid grid-cols-[minmax(78px,0.8fr)_minmax(120px,1.5fr)_minmax(82px,0.8fr)_minmax(92px,0.8fr)] items-center gap-3 px-4 py-3 text-sm"
+                        >
+                            <span className="font-body text-white">{bucket.label}</span>
+                            <div className="flex items-center gap-3">
+                                <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
+                                    <div
+                                        className="h-full rounded-full bg-[#00CFF2]"
+                                        style={{ width: `${(bucket.users / maxUsers) * 100}%` }}
+                                    />
+                                </div>
+                                <span className="w-12 text-right text-white/60">{bucket.users}</span>
+                            </div>
+                            <span className="text-white/70">{bucket.nextGameBuyers}</span>
+                            <span className="font-body text-[#14B985]">
+                                {bucket.conversionRate.toFixed(1)}%
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {data.noUpcomingGame.users > 0 ? (
+                <div className="mt-3 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-white/60">
+                    {data.noUpcomingGame.users.toLocaleString()} onboarded users had no upcoming production game in the tracked schedule;
+                    {" "}
+                    {data.noUpcomingGame.conversionRate.toFixed(1)}% later bought any paid ticket.
+                </div>
+            ) : null}
+        </section>
     );
 }
 

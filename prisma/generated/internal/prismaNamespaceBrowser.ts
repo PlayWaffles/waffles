@@ -99,6 +99,7 @@ export const UserScalarFieldEnum = {
   hasGameAccess: 'hasGameAccess',
   accessGrantedAt: 'accessGrantedAt',
   accessGrantedBy: 'accessGrantedBy',
+  onboardingCompletedAt: 'onboardingCompletedAt',
   currentStreak: 'currentStreak',
   bestStreak: 'bestStreak',
   lastLoginAt: 'lastLoginAt',
