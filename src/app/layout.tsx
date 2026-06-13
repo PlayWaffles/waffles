@@ -1,5 +1,4 @@
 import "./globals.css";
-import { Suspense } from "react";
 import { fontBody, fontDisplay, fontInput } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
@@ -67,9 +66,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
-        <Suspense fallback={null}>
-          <AnalyticsTracker />
-        </Suspense>
+        <AnalyticsTracker />
         {children}
         <DeferredVercelMetrics />
       </body>
