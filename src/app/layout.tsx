@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import { env } from "@/lib/env";
 import { DeferredVercelMetrics } from "@/components/providers/DeferredVercelMetrics";
+import { AnalyticsTracker } from "@/components/providers/AnalyticsTracker";
 
 export const metadata: Metadata = {
   title: "Waffles",
@@ -65,6 +66,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
+        <AnalyticsTracker />
         {children}
         <DeferredVercelMetrics />
       </body>
