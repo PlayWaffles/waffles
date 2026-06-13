@@ -1,14 +1,21 @@
 import { PostHog } from "posthog-node";
 
 export function createPostHogClient(): PostHog {
-  return new PostHog(
-    process.env.NEXT_PUBLIC_POSTHOG_TOKEN!,
-    {
-      host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
-      flushAt: 1,
-      flushInterval: 0,
-    },
-  );
+  const token =
+    process.env.NEXT_PUBLIC_POSTHOG_TOKEN ||
+    process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN;
+
+  if (!token) {
+    throw new Error(
+      "NEXT_PUBLIC_POSTHOG_TOKEN or NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN is required for PostHog server analytics",
+    );
+  }
+
+  return new PostHog(token, {
+    host: process.env.NEXT_PUBLIC_POSTHOG_HOST,
+    flushAt: 1,
+    flushInterval: 0,
+  });
 }
 
 export async function captureServerEvent(params: {
