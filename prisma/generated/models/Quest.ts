@@ -341,6 +341,7 @@ export type QuestWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Quest"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Quest"> | Date | string
   completions?: Prisma.CompletedQuestListRelationFilter
+  progress?: Prisma.QuestProgressListRelationFilter
 }
 
 export type QuestOrderByWithRelationInput = {
@@ -364,6 +365,7 @@ export type QuestOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   completions?: Prisma.CompletedQuestOrderByRelationAggregateInput
+  progress?: Prisma.QuestProgressOrderByRelationAggregateInput
 }
 
 export type QuestWhereUniqueInput = Prisma.AtLeast<{
@@ -390,6 +392,7 @@ export type QuestWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Quest"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Quest"> | Date | string
   completions?: Prisma.CompletedQuestListRelationFilter
+  progress?: Prisma.QuestProgressListRelationFilter
 }, "id" | "slug">
 
 export type QuestOrderByWithAggregationInput = {
@@ -465,6 +468,7 @@ export type QuestCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completions?: Prisma.CompletedQuestCreateNestedManyWithoutQuestInput
+  progress?: Prisma.QuestProgressCreateNestedManyWithoutQuestInput
 }
 
 export type QuestUncheckedCreateInput = {
@@ -488,6 +492,7 @@ export type QuestUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   completions?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutQuestInput
+  progress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutQuestInput
 }
 
 export type QuestUpdateInput = {
@@ -511,6 +516,7 @@ export type QuestUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completions?: Prisma.CompletedQuestUpdateManyWithoutQuestNestedInput
+  progress?: Prisma.QuestProgressUpdateManyWithoutQuestNestedInput
 }
 
 export type QuestUncheckedUpdateInput = {
@@ -534,6 +540,7 @@ export type QuestUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   completions?: Prisma.CompletedQuestUncheckedUpdateManyWithoutQuestNestedInput
+  progress?: Prisma.QuestProgressUncheckedUpdateManyWithoutQuestNestedInput
 }
 
 export type QuestCreateManyInput = {
@@ -713,6 +720,20 @@ export type QuestUpdateOneRequiredWithoutCompletionsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.QuestUpdateToOneWithWhereWithoutCompletionsInput, Prisma.QuestUpdateWithoutCompletionsInput>, Prisma.QuestUncheckedUpdateWithoutCompletionsInput>
 }
 
+export type QuestCreateNestedOneWithoutProgressInput = {
+  create?: Prisma.XOR<Prisma.QuestCreateWithoutProgressInput, Prisma.QuestUncheckedCreateWithoutProgressInput>
+  connectOrCreate?: Prisma.QuestCreateOrConnectWithoutProgressInput
+  connect?: Prisma.QuestWhereUniqueInput
+}
+
+export type QuestUpdateOneRequiredWithoutProgressNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestCreateWithoutProgressInput, Prisma.QuestUncheckedCreateWithoutProgressInput>
+  connectOrCreate?: Prisma.QuestCreateOrConnectWithoutProgressInput
+  upsert?: Prisma.QuestUpsertWithoutProgressInput
+  connect?: Prisma.QuestWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.QuestUpdateToOneWithWhereWithoutProgressInput, Prisma.QuestUpdateWithoutProgressInput>, Prisma.QuestUncheckedUpdateWithoutProgressInput>
+}
+
 export type QuestCreateWithoutCompletionsInput = {
   id?: string
   slug: string
@@ -733,6 +754,7 @@ export type QuestCreateWithoutCompletionsInput = {
   repeatFrequency?: $Enums.RepeatFrequency
   createdAt?: Date | string
   updatedAt?: Date | string
+  progress?: Prisma.QuestProgressCreateNestedManyWithoutQuestInput
 }
 
 export type QuestUncheckedCreateWithoutCompletionsInput = {
@@ -755,6 +777,7 @@ export type QuestUncheckedCreateWithoutCompletionsInput = {
   repeatFrequency?: $Enums.RepeatFrequency
   createdAt?: Date | string
   updatedAt?: Date | string
+  progress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutQuestInput
 }
 
 export type QuestCreateOrConnectWithoutCompletionsInput = {
@@ -793,6 +816,7 @@ export type QuestUpdateWithoutCompletionsInput = {
   repeatFrequency?: Prisma.EnumRepeatFrequencyFieldUpdateOperationsInput | $Enums.RepeatFrequency
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  progress?: Prisma.QuestProgressUpdateManyWithoutQuestNestedInput
 }
 
 export type QuestUncheckedUpdateWithoutCompletionsInput = {
@@ -815,6 +839,115 @@ export type QuestUncheckedUpdateWithoutCompletionsInput = {
   repeatFrequency?: Prisma.EnumRepeatFrequencyFieldUpdateOperationsInput | $Enums.RepeatFrequency
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  progress?: Prisma.QuestProgressUncheckedUpdateManyWithoutQuestNestedInput
+}
+
+export type QuestCreateWithoutProgressInput = {
+  id?: string
+  slug: string
+  title: string
+  description: string
+  iconUrl?: string | null
+  category?: $Enums.QuestCategory
+  sortOrder?: number
+  points?: number
+  type: $Enums.QuestType
+  actionUrl?: string | null
+  castHash?: string | null
+  targetFid?: number | null
+  requiredCount?: number
+  isActive?: boolean
+  startsAt?: Date | string | null
+  endsAt?: Date | string | null
+  repeatFrequency?: $Enums.RepeatFrequency
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completions?: Prisma.CompletedQuestCreateNestedManyWithoutQuestInput
+}
+
+export type QuestUncheckedCreateWithoutProgressInput = {
+  id?: string
+  slug: string
+  title: string
+  description: string
+  iconUrl?: string | null
+  category?: $Enums.QuestCategory
+  sortOrder?: number
+  points?: number
+  type: $Enums.QuestType
+  actionUrl?: string | null
+  castHash?: string | null
+  targetFid?: number | null
+  requiredCount?: number
+  isActive?: boolean
+  startsAt?: Date | string | null
+  endsAt?: Date | string | null
+  repeatFrequency?: $Enums.RepeatFrequency
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  completions?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutQuestInput
+}
+
+export type QuestCreateOrConnectWithoutProgressInput = {
+  where: Prisma.QuestWhereUniqueInput
+  create: Prisma.XOR<Prisma.QuestCreateWithoutProgressInput, Prisma.QuestUncheckedCreateWithoutProgressInput>
+}
+
+export type QuestUpsertWithoutProgressInput = {
+  update: Prisma.XOR<Prisma.QuestUpdateWithoutProgressInput, Prisma.QuestUncheckedUpdateWithoutProgressInput>
+  create: Prisma.XOR<Prisma.QuestCreateWithoutProgressInput, Prisma.QuestUncheckedCreateWithoutProgressInput>
+  where?: Prisma.QuestWhereInput
+}
+
+export type QuestUpdateToOneWithWhereWithoutProgressInput = {
+  where?: Prisma.QuestWhereInput
+  data: Prisma.XOR<Prisma.QuestUpdateWithoutProgressInput, Prisma.QuestUncheckedUpdateWithoutProgressInput>
+}
+
+export type QuestUpdateWithoutProgressInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  iconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumQuestCategoryFieldUpdateOperationsInput | $Enums.QuestCategory
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  type?: Prisma.EnumQuestTypeFieldUpdateOperationsInput | $Enums.QuestType
+  actionUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  repeatFrequency?: Prisma.EnumRepeatFrequencyFieldUpdateOperationsInput | $Enums.RepeatFrequency
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completions?: Prisma.CompletedQuestUpdateManyWithoutQuestNestedInput
+}
+
+export type QuestUncheckedUpdateWithoutProgressInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  iconUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  category?: Prisma.EnumQuestCategoryFieldUpdateOperationsInput | $Enums.QuestCategory
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  type?: Prisma.EnumQuestTypeFieldUpdateOperationsInput | $Enums.QuestType
+  actionUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  repeatFrequency?: Prisma.EnumRepeatFrequencyFieldUpdateOperationsInput | $Enums.RepeatFrequency
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  completions?: Prisma.CompletedQuestUncheckedUpdateManyWithoutQuestNestedInput
 }
 
 
@@ -824,10 +957,12 @@ export type QuestUncheckedUpdateWithoutCompletionsInput = {
 
 export type QuestCountOutputType = {
   completions: number
+  progress: number
 }
 
 export type QuestCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   completions?: boolean | QuestCountOutputTypeCountCompletionsArgs
+  progress?: boolean | QuestCountOutputTypeCountProgressArgs
 }
 
 /**
@@ -845,6 +980,13 @@ export type QuestCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extens
  */
 export type QuestCountOutputTypeCountCompletionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.CompletedQuestWhereInput
+}
+
+/**
+ * QuestCountOutputType without action
+ */
+export type QuestCountOutputTypeCountProgressArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuestProgressWhereInput
 }
 
 
@@ -869,6 +1011,7 @@ export type QuestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   createdAt?: boolean
   updatedAt?: boolean
   completions?: boolean | Prisma.Quest$completionsArgs<ExtArgs>
+  progress?: boolean | Prisma.Quest$progressArgs<ExtArgs>
   _count?: boolean | Prisma.QuestCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["quest"]>
 
@@ -941,6 +1084,7 @@ export type QuestSelectScalar = {
 export type QuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "description" | "iconUrl" | "category" | "sortOrder" | "points" | "type" | "actionUrl" | "castHash" | "targetFid" | "requiredCount" | "isActive" | "startsAt" | "endsAt" | "repeatFrequency" | "createdAt" | "updatedAt", ExtArgs["result"]["quest"]>
 export type QuestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   completions?: boolean | Prisma.Quest$completionsArgs<ExtArgs>
+  progress?: boolean | Prisma.Quest$progressArgs<ExtArgs>
   _count?: boolean | Prisma.QuestCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type QuestIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -950,6 +1094,7 @@ export type $QuestPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Quest"
   objects: {
     completions: Prisma.$CompletedQuestPayload<ExtArgs>[]
+    progress: Prisma.$QuestProgressPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1366,6 +1511,7 @@ readonly fields: QuestFieldRefs;
 export interface Prisma__QuestClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   completions<T extends Prisma.Quest$completionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Quest$completionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompletedQuestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  progress<T extends Prisma.Quest$progressArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Quest$progressArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestProgressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1823,6 +1969,30 @@ export type Quest$completionsArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.CompletedQuestScalarFieldEnum | Prisma.CompletedQuestScalarFieldEnum[]
+}
+
+/**
+ * Quest.progress
+ */
+export type Quest$progressArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the QuestProgress
+   */
+  select?: Prisma.QuestProgressSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the QuestProgress
+   */
+  omit?: Prisma.QuestProgressOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestProgressInclude<ExtArgs> | null
+  where?: Prisma.QuestProgressWhereInput
+  orderBy?: Prisma.QuestProgressOrderByWithRelationInput | Prisma.QuestProgressOrderByWithRelationInput[]
+  cursor?: Prisma.QuestProgressWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuestProgressScalarFieldEnum | Prisma.QuestProgressScalarFieldEnum[]
 }
 
 /**

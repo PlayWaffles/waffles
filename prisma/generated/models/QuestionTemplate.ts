@@ -29,12 +29,18 @@ export type AggregateQuestionTemplate = {
 export type QuestionTemplateAvgAggregateOutputType = {
   correctIndex: number | null
   durationSec: number | null
+  correctSet: number | null
+  pick: number | null
+  correctOrder: number | null
   usageCount: number | null
 }
 
 export type QuestionTemplateSumAggregateOutputType = {
   correctIndex: number | null
   durationSec: number | null
+  correctSet: number[]
+  pick: number | null
+  correctOrder: number[]
   usageCount: number | null
 }
 
@@ -43,6 +49,10 @@ export type QuestionTemplateMinAggregateOutputType = {
   content: string | null
   correctIndex: number | null
   durationSec: number | null
+  kind: $Enums.QuestionKind | null
+  pick: number | null
+  minefield: boolean | null
+  kicker: string | null
   mediaUrl: string | null
   soundUrl: string | null
   theme: $Enums.GameTheme | null
@@ -57,6 +67,10 @@ export type QuestionTemplateMaxAggregateOutputType = {
   content: string | null
   correctIndex: number | null
   durationSec: number | null
+  kind: $Enums.QuestionKind | null
+  pick: number | null
+  minefield: boolean | null
+  kicker: string | null
   mediaUrl: string | null
   soundUrl: string | null
   theme: $Enums.GameTheme | null
@@ -72,6 +86,14 @@ export type QuestionTemplateCountAggregateOutputType = {
   options: number
   correctIndex: number
   durationSec: number
+  kind: number
+  correctSet: number
+  pick: number
+  correctOrder: number
+  flags: number
+  minefield: number
+  kicker: number
+  clues: number
   mediaUrl: number
   soundUrl: number
   theme: number
@@ -86,12 +108,18 @@ export type QuestionTemplateCountAggregateOutputType = {
 export type QuestionTemplateAvgAggregateInputType = {
   correctIndex?: true
   durationSec?: true
+  correctSet?: true
+  pick?: true
+  correctOrder?: true
   usageCount?: true
 }
 
 export type QuestionTemplateSumAggregateInputType = {
   correctIndex?: true
   durationSec?: true
+  correctSet?: true
+  pick?: true
+  correctOrder?: true
   usageCount?: true
 }
 
@@ -100,6 +128,10 @@ export type QuestionTemplateMinAggregateInputType = {
   content?: true
   correctIndex?: true
   durationSec?: true
+  kind?: true
+  pick?: true
+  minefield?: true
+  kicker?: true
   mediaUrl?: true
   soundUrl?: true
   theme?: true
@@ -114,6 +146,10 @@ export type QuestionTemplateMaxAggregateInputType = {
   content?: true
   correctIndex?: true
   durationSec?: true
+  kind?: true
+  pick?: true
+  minefield?: true
+  kicker?: true
   mediaUrl?: true
   soundUrl?: true
   theme?: true
@@ -129,6 +165,14 @@ export type QuestionTemplateCountAggregateInputType = {
   options?: true
   correctIndex?: true
   durationSec?: true
+  kind?: true
+  correctSet?: true
+  pick?: true
+  correctOrder?: true
+  flags?: true
+  minefield?: true
+  kicker?: true
+  clues?: true
   mediaUrl?: true
   soundUrl?: true
   theme?: true
@@ -231,6 +275,14 @@ export type QuestionTemplateGroupByOutputType = {
   options: string[]
   correctIndex: number
   durationSec: number
+  kind: $Enums.QuestionKind
+  correctSet: number[]
+  pick: number | null
+  correctOrder: number[]
+  flags: string[]
+  minefield: boolean
+  kicker: string | null
+  clues: string[]
   mediaUrl: string | null
   soundUrl: string | null
   theme: $Enums.GameTheme
@@ -269,6 +321,14 @@ export type QuestionTemplateWhereInput = {
   options?: Prisma.StringNullableListFilter<"QuestionTemplate">
   correctIndex?: Prisma.IntFilter<"QuestionTemplate"> | number
   durationSec?: Prisma.IntFilter<"QuestionTemplate"> | number
+  kind?: Prisma.EnumQuestionKindFilter<"QuestionTemplate"> | $Enums.QuestionKind
+  correctSet?: Prisma.IntNullableListFilter<"QuestionTemplate">
+  pick?: Prisma.IntNullableFilter<"QuestionTemplate"> | number | null
+  correctOrder?: Prisma.IntNullableListFilter<"QuestionTemplate">
+  flags?: Prisma.StringNullableListFilter<"QuestionTemplate">
+  minefield?: Prisma.BoolFilter<"QuestionTemplate"> | boolean
+  kicker?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
+  clues?: Prisma.StringNullableListFilter<"QuestionTemplate">
   mediaUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   soundUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   theme?: Prisma.EnumGameThemeFilter<"QuestionTemplate"> | $Enums.GameTheme
@@ -284,6 +344,14 @@ export type QuestionTemplateOrderByWithRelationInput = {
   options?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  correctSet?: Prisma.SortOrder
+  pick?: Prisma.SortOrderInput | Prisma.SortOrder
+  correctOrder?: Prisma.SortOrder
+  flags?: Prisma.SortOrder
+  minefield?: Prisma.SortOrder
+  kicker?: Prisma.SortOrderInput | Prisma.SortOrder
+  clues?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   soundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
@@ -302,6 +370,14 @@ export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
   options?: Prisma.StringNullableListFilter<"QuestionTemplate">
   correctIndex?: Prisma.IntFilter<"QuestionTemplate"> | number
   durationSec?: Prisma.IntFilter<"QuestionTemplate"> | number
+  kind?: Prisma.EnumQuestionKindFilter<"QuestionTemplate"> | $Enums.QuestionKind
+  correctSet?: Prisma.IntNullableListFilter<"QuestionTemplate">
+  pick?: Prisma.IntNullableFilter<"QuestionTemplate"> | number | null
+  correctOrder?: Prisma.IntNullableListFilter<"QuestionTemplate">
+  flags?: Prisma.StringNullableListFilter<"QuestionTemplate">
+  minefield?: Prisma.BoolFilter<"QuestionTemplate"> | boolean
+  kicker?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
+  clues?: Prisma.StringNullableListFilter<"QuestionTemplate">
   mediaUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   soundUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   theme?: Prisma.EnumGameThemeFilter<"QuestionTemplate"> | $Enums.GameTheme
@@ -317,6 +393,14 @@ export type QuestionTemplateOrderByWithAggregationInput = {
   options?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  correctSet?: Prisma.SortOrder
+  pick?: Prisma.SortOrderInput | Prisma.SortOrder
+  correctOrder?: Prisma.SortOrder
+  flags?: Prisma.SortOrder
+  minefield?: Prisma.SortOrder
+  kicker?: Prisma.SortOrderInput | Prisma.SortOrder
+  clues?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   soundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
@@ -340,6 +424,14 @@ export type QuestionTemplateScalarWhereWithAggregatesInput = {
   options?: Prisma.StringNullableListFilter<"QuestionTemplate">
   correctIndex?: Prisma.IntWithAggregatesFilter<"QuestionTemplate"> | number
   durationSec?: Prisma.IntWithAggregatesFilter<"QuestionTemplate"> | number
+  kind?: Prisma.EnumQuestionKindWithAggregatesFilter<"QuestionTemplate"> | $Enums.QuestionKind
+  correctSet?: Prisma.IntNullableListFilter<"QuestionTemplate">
+  pick?: Prisma.IntNullableWithAggregatesFilter<"QuestionTemplate"> | number | null
+  correctOrder?: Prisma.IntNullableListFilter<"QuestionTemplate">
+  flags?: Prisma.StringNullableListFilter<"QuestionTemplate">
+  minefield?: Prisma.BoolWithAggregatesFilter<"QuestionTemplate"> | boolean
+  kicker?: Prisma.StringNullableWithAggregatesFilter<"QuestionTemplate"> | string | null
+  clues?: Prisma.StringNullableListFilter<"QuestionTemplate">
   mediaUrl?: Prisma.StringNullableWithAggregatesFilter<"QuestionTemplate"> | string | null
   soundUrl?: Prisma.StringNullableWithAggregatesFilter<"QuestionTemplate"> | string | null
   theme?: Prisma.EnumGameThemeWithAggregatesFilter<"QuestionTemplate"> | $Enums.GameTheme
@@ -355,6 +447,14 @@ export type QuestionTemplateCreateInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
   mediaUrl?: string | null
   soundUrl?: string | null
   theme?: $Enums.GameTheme
@@ -370,6 +470,14 @@ export type QuestionTemplateUncheckedCreateInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
   mediaUrl?: string | null
   soundUrl?: string | null
   theme?: $Enums.GameTheme
@@ -385,6 +493,14 @@ export type QuestionTemplateUpdateInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
@@ -400,6 +516,14 @@ export type QuestionTemplateUncheckedUpdateInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
@@ -415,6 +539,14 @@ export type QuestionTemplateCreateManyInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
   mediaUrl?: string | null
   soundUrl?: string | null
   theme?: $Enums.GameTheme
@@ -430,6 +562,14 @@ export type QuestionTemplateUpdateManyMutationInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
@@ -445,6 +585,14 @@ export type QuestionTemplateUncheckedUpdateManyInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
@@ -454,12 +602,28 @@ export type QuestionTemplateUncheckedUpdateManyInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
+export type IntNullableListFilter<$PrismaModel = never> = {
+  equals?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel> | null
+  has?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  hasEvery?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  hasSome?: number[] | Prisma.ListIntFieldRefInput<$PrismaModel>
+  isEmpty?: boolean
+}
+
 export type QuestionTemplateCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   content?: Prisma.SortOrder
   options?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  correctSet?: Prisma.SortOrder
+  pick?: Prisma.SortOrder
+  correctOrder?: Prisma.SortOrder
+  flags?: Prisma.SortOrder
+  minefield?: Prisma.SortOrder
+  kicker?: Prisma.SortOrder
+  clues?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   soundUrl?: Prisma.SortOrder
   theme?: Prisma.SortOrder
@@ -472,6 +636,9 @@ export type QuestionTemplateCountOrderByAggregateInput = {
 export type QuestionTemplateAvgOrderByAggregateInput = {
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  correctSet?: Prisma.SortOrder
+  pick?: Prisma.SortOrder
+  correctOrder?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
 }
 
@@ -480,6 +647,10 @@ export type QuestionTemplateMaxOrderByAggregateInput = {
   content?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  pick?: Prisma.SortOrder
+  minefield?: Prisma.SortOrder
+  kicker?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   soundUrl?: Prisma.SortOrder
   theme?: Prisma.SortOrder
@@ -494,6 +665,10 @@ export type QuestionTemplateMinOrderByAggregateInput = {
   content?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  kind?: Prisma.SortOrder
+  pick?: Prisma.SortOrder
+  minefield?: Prisma.SortOrder
+  kicker?: Prisma.SortOrder
   mediaUrl?: Prisma.SortOrder
   soundUrl?: Prisma.SortOrder
   theme?: Prisma.SortOrder
@@ -506,6 +681,9 @@ export type QuestionTemplateMinOrderByAggregateInput = {
 export type QuestionTemplateSumOrderByAggregateInput = {
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  correctSet?: Prisma.SortOrder
+  pick?: Prisma.SortOrder
+  correctOrder?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
 }
 
@@ -513,7 +691,47 @@ export type QuestionTemplateCreateoptionsInput = {
   set: string[]
 }
 
+export type QuestionTemplateCreatecorrectSetInput = {
+  set: number[]
+}
+
+export type QuestionTemplateCreatecorrectOrderInput = {
+  set: number[]
+}
+
+export type QuestionTemplateCreateflagsInput = {
+  set: string[]
+}
+
+export type QuestionTemplateCreatecluesInput = {
+  set: string[]
+}
+
 export type QuestionTemplateUpdateoptionsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type EnumQuestionKindFieldUpdateOperationsInput = {
+  set?: $Enums.QuestionKind
+}
+
+export type QuestionTemplateUpdatecorrectSetInput = {
+  set?: number[]
+  push?: number | number[]
+}
+
+export type QuestionTemplateUpdatecorrectOrderInput = {
+  set?: number[]
+  push?: number | number[]
+}
+
+export type QuestionTemplateUpdateflagsInput = {
+  set?: string[]
+  push?: string | string[]
+}
+
+export type QuestionTemplateUpdatecluesInput = {
   set?: string[]
   push?: string | string[]
 }
@@ -530,6 +748,14 @@ export type QuestionTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  kind?: boolean
+  correctSet?: boolean
+  pick?: boolean
+  correctOrder?: boolean
+  flags?: boolean
+  minefield?: boolean
+  kicker?: boolean
+  clues?: boolean
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
@@ -545,6 +771,14 @@ export type QuestionTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  kind?: boolean
+  correctSet?: boolean
+  pick?: boolean
+  correctOrder?: boolean
+  flags?: boolean
+  minefield?: boolean
+  kicker?: boolean
+  clues?: boolean
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
@@ -560,6 +794,14 @@ export type QuestionTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  kind?: boolean
+  correctSet?: boolean
+  pick?: boolean
+  correctOrder?: boolean
+  flags?: boolean
+  minefield?: boolean
+  kicker?: boolean
+  clues?: boolean
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
@@ -575,6 +817,14 @@ export type QuestionTemplateSelectScalar = {
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  kind?: boolean
+  correctSet?: boolean
+  pick?: boolean
+  correctOrder?: boolean
+  flags?: boolean
+  minefield?: boolean
+  kicker?: boolean
+  clues?: boolean
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
@@ -584,7 +834,7 @@ export type QuestionTemplateSelectScalar = {
   updatedAt?: boolean
 }
 
-export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "mediaUrl" | "soundUrl" | "theme" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
+export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
 
 export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "QuestionTemplate"
@@ -595,6 +845,14 @@ export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     options: string[]
     correctIndex: number
     durationSec: number
+    kind: $Enums.QuestionKind
+    correctSet: number[]
+    pick: number | null
+    correctOrder: number[]
+    flags: string[]
+    minefield: boolean
+    kicker: string | null
+    clues: string[]
     mediaUrl: string | null
     soundUrl: string | null
     theme: $Enums.GameTheme
@@ -1030,6 +1288,14 @@ export interface QuestionTemplateFieldRefs {
   readonly options: Prisma.FieldRef<"QuestionTemplate", 'String[]'>
   readonly correctIndex: Prisma.FieldRef<"QuestionTemplate", 'Int'>
   readonly durationSec: Prisma.FieldRef<"QuestionTemplate", 'Int'>
+  readonly kind: Prisma.FieldRef<"QuestionTemplate", 'QuestionKind'>
+  readonly correctSet: Prisma.FieldRef<"QuestionTemplate", 'Int[]'>
+  readonly pick: Prisma.FieldRef<"QuestionTemplate", 'Int'>
+  readonly correctOrder: Prisma.FieldRef<"QuestionTemplate", 'Int[]'>
+  readonly flags: Prisma.FieldRef<"QuestionTemplate", 'String[]'>
+  readonly minefield: Prisma.FieldRef<"QuestionTemplate", 'Boolean'>
+  readonly kicker: Prisma.FieldRef<"QuestionTemplate", 'String'>
+  readonly clues: Prisma.FieldRef<"QuestionTemplate", 'String[]'>
   readonly mediaUrl: Prisma.FieldRef<"QuestionTemplate", 'String'>
   readonly soundUrl: Prisma.FieldRef<"QuestionTemplate", 'String'>
   readonly theme: Prisma.FieldRef<"QuestionTemplate", 'GameTheme'>

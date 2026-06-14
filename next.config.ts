@@ -27,6 +27,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // v2 migration cutover: the player experience is the ported v2 SPA at /play
+  // (the old (game) routes are superseded — the SPA handles home/levels/compete/
+  // leaderboard/profile internally). Temporary (307) so it's trivially reversible.
+  redirects: async () => [
+    { source: "/", destination: "/play", permanent: false },
+    { source: "/game", destination: "/play", permanent: false },
+    { source: "/leaderboard", destination: "/play", permanent: false },
+    { source: "/profile", destination: "/play", permanent: false },
+  ],
   rewrites: async () => {
     const partykitHost =
       process.env.NEXT_PUBLIC_PARTYKIT_HOST || "http://127.0.0.1:1999";

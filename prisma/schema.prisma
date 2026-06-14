@@ -39,6 +39,14 @@ model User {
   accessGrantedBy String?
   onboardingCompletedAt DateTime?
 
+  // -- v2 PROGRESSION / ECONOMY --
+  xp            Int       @default(0)
+  ticketBalance Int       @default(3) // off-chain soft-currency balance (1 ticket = 0.1 USDT peg)
+  lives         Int       @default(5) @db.SmallInt
+  nextLifeAt    DateTime?
+  streakFreezes Int       @default(0) @db.SmallInt
+  avatarId      String?   @db.VarChar(40)
+
   // -- STREAKS --
   currentStreak Int       @default(0)
   bestStreak    Int       @default(0)
@@ -66,6 +74,21 @@ model User {
   auditLogs AuditLog[]
   wallets   UserWallet[]
   pendingPurchases PendingPurchase[]
+
+  // -- v2 MIGRATION RELATIONS --
+  ticketLedger      TicketLedger[]
+  levelProgress     LevelProgress[]
+  roundEntries      RoundEntry[]
+  winnings          Winning[]
+  announcementState AnnouncementState[]
+  questProgress     QuestProgress[]
+  leagueMembers     LeagueMember[]
+  purchases         Purchase[]
+  powerUps          PowerUpInventory[]
+  cosmetics         UserCosmetic[]
+  boosts            UserBoost[]
+  earnedBadges      UserBadge[]
+  dailyClaims       DailyRewardClaim[]
 }
 
 enum UserRole {
@@ -194,6 +217,7 @@ model Quest {
 
   // -- RELATIONS --
   completions CompletedQuest[]
+  progress    QuestProgress[]
 }
 
 model CompletedQuest {
@@ -319,6 +343,16 @@ model QuestionTemplate {
   options      String[]
   correctIndex Int      @db.SmallInt
   durationSec  Int      @default(10) @db.SmallInt
+
+  // -- FORMAT (v2 multi-format support) --
+  kind         QuestionKind @default(SINGLE)
+  correctSet   Int[]        @default([])
+  pick         Int?         @db.SmallInt
+  correctOrder Int[]        @default([])
+  flags        String[]     @default([])
+  minefield    Boolean      @default(false)
+  kicker       String?      @db.VarChar(120)
+  clues        String[]     @default([])
   mediaUrl     String?  @db.VarChar(255)
   soundUrl     String?  @db.VarChar(255)
 
@@ -354,6 +388,16 @@ model Question {
   soundUrl     String?  @db.VarChar(255)
   options      String[] // Native Postgres array
   correctIndex Int      @db.SmallInt
+
+  // -- FORMAT (v2 multi-format support; SINGLE = classic one-of-four) --
+  kind         QuestionKind @default(SINGLE)
+  correctSet   Int[]        @default([])
+  pick         Int?         @db.SmallInt
+  correctOrder Int[]        @default([])
+  flags        String[]     @default([])
+  minefield    Boolean      @default(false)
+  kicker       String?      @db.VarChar(120)
+  clues        String[]     @default([])
 
   // -- TIMING & SCORING --
   durationSec Int @default(10) @db.SmallInt
@@ -545,4 +589,308 @@ model InviteCode {
   usedBy User? @relation(fields: [usedById], references: [id])
 
   @@index([code])
+}
+
+// ==========================================
+// 8. V2 MIGRATION — PROGRESSION, ECONOMY & CONTENT
+// Backs the ported v2 screens (see docs/v2-migration.md). The `Proto` interface
+// in src/app/v2/_app/state.tsx is the contract these satisfy.
+// ==========================================
+
+enum QuestionKind {
+  SINGLE
+  MULTI
+  ORDER
+  SPATIAL
+}
+
+enum LevelTrack {
+  STANDARD
+  WORLD_CUP
+}
+
+enum TicketLedgerReason {
+  LEVEL_MILESTONE
+  TOURNAMENT_REWARD
+  TOURNAMENT_ENTRY
+  DAILY_REWARD
+  SHOP_PURCHASE
+  BUNDLE_TOPUP
+  LIVES_REFILL
+  WINNING_CONVERT
+  FIRST_TICKET_OFFER
+  ADMIN_ADJUST
+}
+
+enum WinningStatus {
+  PENDING
+  CLAIMED
+  CONVERTED
+}
+
+enum ShopItemKind {
+  POWERUP
+  COSMETIC
+  BUNDLE
+  BOOST
+  FEATURED
+}
+
+enum PowerUpKind {
+  FIFTY_FIFTY
+  EXTRA_TIME
+  SKIP
+  SHIELD
+}
+
+enum BoostKind {
+  DOUBLE_XP
+}
+
+enum CosmeticKind {
+  AVATAR_FRAME
+  NAME_COLOR
+  EMOTE
+}
+
+enum LeagueTier {
+  APPRENTICE_1
+  APPRENTICE_2
+  SILVER_1
+  SILVER_2
+  SILVER_3
+  ADVANCED_1
+  ADVANCED_2
+  GENIUS
+  MASTER_3
+  MASTER_2
+  MASTER_1
+}
+
+// -- Soft-currency ledger: every ticket balance change is recorded here; the
+//    denormalized running total lives on User.ticketBalance. --
+model TicketLedger {
+  id           String             @id @default(cuid())
+  user         User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  delta        Int
+  balanceAfter Int
+  reason       TicketLedgerReason
+  refId        String?            @db.VarChar(60)
+  note         String?            @db.VarChar(255)
+  createdAt    DateTime           @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+// -- Solo level campaign: independent progression per track. --
+model LevelProgress {
+  id        String     @id @default(cuid())
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  track     LevelTrack
+  level     Int        @default(1) @db.SmallInt
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, track])
+}
+
+// -- Hourly tournament round entry. roundId = epoch-ms bucket of the round
+//    window. Provisional until settled (rank/reward lock at close). --
+model RoundEntry {
+  id           String    @id @default(cuid())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  roundId      BigInt
+  score        Int?
+  bonus        Boolean   @default(false)
+  settled      Boolean   @default(false)
+  finalRank    Int?
+  reward       Int? // tickets
+  resultReadAt DateTime?
+  createdAt    DateTime  @default(now())
+  settledAt    DateTime?
+
+  @@unique([userId, roundId])
+  @@index([roundId, score(sort: Desc)])
+}
+
+// -- Prize Wallet: a tournament prize the player resolves by CLAIM (on-chain
+//    USDT via the existing merkle path) or CONVERT (credit to ticket balance). --
+model Winning {
+  id           String        @id @default(cuid())
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  roundId      BigInt?
+  rank         Int
+  tickets      Int // ticket-denominated value (USDT value derived via peg)
+  status       WinningStatus @default(PENDING)
+  wonAt        DateTime      @default(now())
+  resolvedAt   DateTime?
+  claimTxHash  String?       @db.VarChar(66)
+  merkleProof  Json?
+  merkleAmount String?       @db.VarChar(78)
+
+  @@index([userId, wonAt(sort: Desc)])
+}
+
+// -- In-app announcements + per-user read/dismiss state. --
+model Announcement {
+  id        String              @id @default(cuid())
+  slug      String              @unique @db.VarChar(60)
+  title     String              @db.VarChar(140)
+  body      String              @db.VarChar(1000)
+  ctaLabel  String?             @db.VarChar(60)
+  ctaAction String?             @db.VarChar(120)
+  kind      String              @default("info") @db.VarChar(30)
+  isActive  Boolean             @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  sortOrder Int                 @default(0) @db.SmallInt
+  createdAt DateTime            @default(now())
+  states    AnnouncementState[]
+}
+
+model AnnouncementState {
+  id             String       @id @default(cuid())
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  announcementId String
+  readAt         DateTime?
+  dismissedAt    DateTime?
+
+  @@unique([userId, announcementId])
+}
+
+// -- Per-user mission progress (counts toward Quest.requiredCount). --
+model QuestProgress {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  quest     Quest    @relation(fields: [questId], references: [id], onDelete: Cascade)
+  questId   String
+  count     Int      @default(0) @db.SmallInt
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, questId])
+}
+
+// -- Leagues: tier definitions (with reward ladder config) + per-user, per-season
+//    membership/standing. --
+model League {
+  id        String         @id @default(cuid())
+  tier      LeagueTier     @unique
+  label     String         @db.VarChar(40)
+  color     String         @db.VarChar(9)
+  sortOrder Int            @db.SmallInt
+  rewards   Json
+  members   LeagueMember[]
+}
+
+model LeagueMember {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  league    League   @relation(fields: [leagueId], references: [id])
+  leagueId  String
+  season    String   @db.VarChar(20)
+  points    Int      @default(0)
+  rank      Int?
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, season])
+  @@index([season, points(sort: Desc)])
+}
+
+// -- Shop catalog + purchases (power-ups, cosmetics, bundles, boosts, featured). --
+model ShopItem {
+  id           String       @id @default(cuid())
+  slug         String       @unique @db.VarChar(60)
+  kind         ShopItemKind
+  label        String       @db.VarChar(60)
+  sub          String?      @db.VarChar(120)
+  priceTickets Int?
+  priceFiat    Float?
+  payload      Json? // kind-specific config (powerup kind, bundle counts, boost charges…)
+  color        String?      @db.VarChar(9)
+  iconUrl      String?      @db.VarChar(255)
+  isActive     Boolean      @default(true)
+  sortOrder    Int          @default(0) @db.SmallInt
+  purchases    Purchase[]
+}
+
+model Purchase {
+  id           String   @id @default(cuid())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  item         ShopItem @relation(fields: [itemId], references: [id])
+  itemId       String
+  qty          Int      @default(1) @db.SmallInt
+  spentTickets Int      @default(0)
+  spentFiat    Float?
+  txHash       String?  @db.VarChar(66)
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+model PowerUpInventory {
+  id     String      @id @default(cuid())
+  user   User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  kind   PowerUpKind
+  count  Int         @default(0) @db.SmallInt
+
+  @@unique([userId, kind])
+}
+
+model UserCosmetic {
+  id         String       @id @default(cuid())
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  slug       String       @db.VarChar(60)
+  kind       CosmeticKind
+  equipped   Boolean      @default(false)
+  acquiredAt DateTime     @default(now())
+
+  @@unique([userId, slug])
+}
+
+model UserBoost {
+  id               String    @id @default(cuid())
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId           String
+  kind             BoostKind
+  remainingCharges Int?      @db.SmallInt
+  expiresAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@index([userId])
+}
+
+// -- Badge unlocks. Badge definitions stay in code (derived from stats); this
+//    persists the earned moment for the unlock celebration. --
+model UserBadge {
+  id       String   @id @default(cuid())
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String
+  badgeId  String   @db.VarChar(60)
+  earnedAt DateTime @default(now())
+
+  @@unique([userId, badgeId])
+}
+
+// -- Daily reward: one claim per calendar day; stores the weighted-random roll. --
+model DailyRewardClaim {
+  id         String   @id @default(cuid())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  dayKey     String   @db.VarChar(10) // YYYY-MM-DD
+  streak     Int      @default(1) @db.SmallInt
+  reward     Json // rolled prize { kind, amount }
+  usedFreeze Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, dayKey])
 }

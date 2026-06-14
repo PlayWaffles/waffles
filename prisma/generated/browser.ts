@@ -92,3 +92,83 @@ export type AuditLog = Prisma.AuditLogModel
  * 
  */
 export type InviteCode = Prisma.InviteCodeModel
+/**
+ * Model TicketLedger
+ * 
+ */
+export type TicketLedger = Prisma.TicketLedgerModel
+/**
+ * Model LevelProgress
+ * 
+ */
+export type LevelProgress = Prisma.LevelProgressModel
+/**
+ * Model RoundEntry
+ * 
+ */
+export type RoundEntry = Prisma.RoundEntryModel
+/**
+ * Model Winning
+ * 
+ */
+export type Winning = Prisma.WinningModel
+/**
+ * Model Announcement
+ * 
+ */
+export type Announcement = Prisma.AnnouncementModel
+/**
+ * Model AnnouncementState
+ * 
+ */
+export type AnnouncementState = Prisma.AnnouncementStateModel
+/**
+ * Model QuestProgress
+ * 
+ */
+export type QuestProgress = Prisma.QuestProgressModel
+/**
+ * Model League
+ * 
+ */
+export type League = Prisma.LeagueModel
+/**
+ * Model LeagueMember
+ * 
+ */
+export type LeagueMember = Prisma.LeagueMemberModel
+/**
+ * Model ShopItem
+ * 
+ */
+export type ShopItem = Prisma.ShopItemModel
+/**
+ * Model Purchase
+ * 
+ */
+export type Purchase = Prisma.PurchaseModel
+/**
+ * Model PowerUpInventory
+ * 
+ */
+export type PowerUpInventory = Prisma.PowerUpInventoryModel
+/**
+ * Model UserCosmetic
+ * 
+ */
+export type UserCosmetic = Prisma.UserCosmeticModel
+/**
+ * Model UserBoost
+ * 
+ */
+export type UserBoost = Prisma.UserBoostModel
+/**
+ * Model UserBadge
+ * 
+ */
+export type UserBadge = Prisma.UserBadgeModel
+/**
+ * Model DailyRewardClaim
+ * 
+ */
+export type DailyRewardClaim = Prisma.DailyRewardClaimModel

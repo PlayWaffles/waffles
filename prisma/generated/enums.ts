@@ -116,3 +116,100 @@ export const TicketPurchaseSource = {
 } as const
 
 export type TicketPurchaseSource = (typeof TicketPurchaseSource)[keyof typeof TicketPurchaseSource]
+
+
+export const QuestionKind = {
+  SINGLE: 'SINGLE',
+  MULTI: 'MULTI',
+  ORDER: 'ORDER',
+  SPATIAL: 'SPATIAL'
+} as const
+
+export type QuestionKind = (typeof QuestionKind)[keyof typeof QuestionKind]
+
+
+export const LevelTrack = {
+  STANDARD: 'STANDARD',
+  WORLD_CUP: 'WORLD_CUP'
+} as const
+
+export type LevelTrack = (typeof LevelTrack)[keyof typeof LevelTrack]
+
+
+export const TicketLedgerReason = {
+  LEVEL_MILESTONE: 'LEVEL_MILESTONE',
+  TOURNAMENT_REWARD: 'TOURNAMENT_REWARD',
+  TOURNAMENT_ENTRY: 'TOURNAMENT_ENTRY',
+  DAILY_REWARD: 'DAILY_REWARD',
+  SHOP_PURCHASE: 'SHOP_PURCHASE',
+  BUNDLE_TOPUP: 'BUNDLE_TOPUP',
+  LIVES_REFILL: 'LIVES_REFILL',
+  WINNING_CONVERT: 'WINNING_CONVERT',
+  FIRST_TICKET_OFFER: 'FIRST_TICKET_OFFER',
+  ADMIN_ADJUST: 'ADMIN_ADJUST'
+} as const
+
+export type TicketLedgerReason = (typeof TicketLedgerReason)[keyof typeof TicketLedgerReason]
+
+
+export const WinningStatus = {
+  PENDING: 'PENDING',
+  CLAIMED: 'CLAIMED',
+  CONVERTED: 'CONVERTED'
+} as const
+
+export type WinningStatus = (typeof WinningStatus)[keyof typeof WinningStatus]
+
+
+export const ShopItemKind = {
+  POWERUP: 'POWERUP',
+  COSMETIC: 'COSMETIC',
+  BUNDLE: 'BUNDLE',
+  BOOST: 'BOOST',
+  FEATURED: 'FEATURED'
+} as const
+
+export type ShopItemKind = (typeof ShopItemKind)[keyof typeof ShopItemKind]
+
+
+export const PowerUpKind = {
+  FIFTY_FIFTY: 'FIFTY_FIFTY',
+  EXTRA_TIME: 'EXTRA_TIME',
+  SKIP: 'SKIP',
+  SHIELD: 'SHIELD'
+} as const
+
+export type PowerUpKind = (typeof PowerUpKind)[keyof typeof PowerUpKind]
+
+
+export const BoostKind = {
+  DOUBLE_XP: 'DOUBLE_XP'
+} as const
+
+export type BoostKind = (typeof BoostKind)[keyof typeof BoostKind]
+
+
+export const CosmeticKind = {
+  AVATAR_FRAME: 'AVATAR_FRAME',
+  NAME_COLOR: 'NAME_COLOR',
+  EMOTE: 'EMOTE'
+} as const
+
+export type CosmeticKind = (typeof CosmeticKind)[keyof typeof CosmeticKind]
+
+
+export const LeagueTier = {
+  APPRENTICE_1: 'APPRENTICE_1',
+  APPRENTICE_2: 'APPRENTICE_2',
+  SILVER_1: 'SILVER_1',
+  SILVER_2: 'SILVER_2',
+  SILVER_3: 'SILVER_3',
+  ADVANCED_1: 'ADVANCED_1',
+  ADVANCED_2: 'ADVANCED_2',
+  GENIUS: 'GENIUS',
+  MASTER_3: 'MASTER_3',
+  MASTER_2: 'MASTER_2',
+  MASTER_1: 'MASTER_1'
+} as const
+
+export type LeagueTier = (typeof LeagueTier)[keyof typeof LeagueTier]
