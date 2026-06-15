@@ -62,6 +62,10 @@ Source of truth for "what data a screen needs": `waffles_v2/src/app/state.tsx` (
 - **Leagues** — `src/lib/v2/leagues.ts` (11-tier ladder, XP→tier assignment, seasonal `LeagueMember`). Seeded 11 `League` rows; `leagues.tsx` highlights the player's real current tier.
 - **On-chain payout** — `v2ResolveWinning('claim')` records the USDT payout amount (ticket value × 0.1 peg, 6-decimal units) on `Winning.merkleAmount` + marks CLAIMED; the settler infra fulfils the transfer + fills `claimTxHash`.
 
+**Real competitive data wired + verified (20/20):**
+- `rounds.roundStandings()` — real entrants, live rank by score or final rank once settled, + field size + your row.
+- Leaderboard → real latest-round standings (mock fallback in preview); Results → real field size + your real rank (settled `finalRank` when available); Home → real current-round entrant count. (Compete shows no field count.)
+
 **Genuinely remaining (runtime / ops):**
 - **Runtime UI parity eyeball** — drive every screen in a real Farcaster/MiniPay session (the only thing this environment can't do).
 - **Cleanup** — delete the old `(game)` routes + chat components once parity is confirmed.
