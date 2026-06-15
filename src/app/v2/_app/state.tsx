@@ -13,8 +13,10 @@ import { FORMATS, type VMedia, type VQuestion, type FormatDef } from "./world-cu
 import { THEMES, resolveThemeId } from "./theme";
 import {
   loadV2State,
+  v2AdvanceLevel,
   v2DismissAnnouncement,
   v2EnterRound,
+  v2LoseLife,
   v2RecordMissionProgress,
   v2RefillLives,
   v2ResolveWinning,
@@ -190,9 +192,9 @@ export function tournamentRank(score: number, totalQuestions: number): number {
 // ─── Hourly rounds ──────────────────────────────────────────────────────────
 // A round is the window [roundId, roundId + ROUND_MS). Players join anytime
 // inside it; standings stay PROVISIONAL until the round closes, then scores lock
-// and prizes settle. Compressed here so the whole loop is observable; production
-// is 60 * 60 * 1000.
-export const TOURNAMENT_ROUND_MS = 2 * 60 * 1000;
+// and prizes settle. Must match the server window in src/lib/v2/rounds.ts so
+// client-bucketed roundIds settle on schedule (was 2min in the prototype demo).
+export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000;
 export const roundIdFor = (now: number): number => Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS;
 export const roundCloseAt = (roundId: number): number => roundId + TOURNAMENT_ROUND_MS;
 
@@ -748,6 +750,7 @@ export function ProtoProvider({
             lives: Math.max(0, state.lives - 1),
             nextLifeAt: wasFull ? Date.now() + LIFE_REGEN_MS : state.nextLifeAt,
           });
+          void v2LoseLife(); // persist the life loss (regen clock is server-side too)
           goto("levelFail");
           return;
         }
@@ -758,6 +761,8 @@ export function ProtoProvider({
           // only promised in the UI). Advances only the active track.
           const milestoneTicket = isLevelTicketMilestone(newLevel) ? 1 : 0;
           update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
+          // Persist: advanceLevel credits the same milestone ticket + xp server-side.
+          void v2AdvanceLevel(track, state.score);
           goto("levelWin");
           return;
         }
