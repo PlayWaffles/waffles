@@ -27,7 +27,8 @@ export function useWalletSignIn() {
     setSigningIn(true);
     setError(null);
     try {
-      // 1. Ensure a wallet is connected (MiniPay injects; browser uses injected/first).
+      // 1. Ensure a wallet is connected. Base App + MiniPay both use the injected
+      //    connector (the Farcaster connector is a separate, now-unused config).
       let wallet = isConnected ? address : undefined;
       if (!wallet) {
         const connector = connectors.find((c) => c.id === "injected") || connectors[0];
