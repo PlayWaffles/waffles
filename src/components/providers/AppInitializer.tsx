@@ -10,7 +10,7 @@ import {
 } from "react";
 import dynamic from "next/dynamic";
 import sdk from "@farcaster/miniapp-sdk";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
 import { WaffleButton } from "../buttons/WaffleButton";
@@ -48,6 +48,12 @@ function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
 
 export function AppInitializer({ children }: { children: ReactNode }) {
   const router = useRouter();
+  // The ported v2 app (/play) has its OWN onboarding + handles unauthenticated
+  // state gracefully, so it must NOT be gated behind celo's legacy onboarding/
+  // auth overlay. Auth hooks below still run in the background (so a session can
+  // establish), but we render the v2 app directly instead of the old gates.
+  const pathname = usePathname();
+  const onV2App = pathname?.startsWith("/play") ?? false;
   const { address, isConnected } = useAccount();
   const { connectAsync, connectors, isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
@@ -750,6 +756,11 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         ) : null}
       </>
     );
+  }
+
+  // v2 app: bypass celo's legacy onboarding/auth gates entirely.
+  if (onV2App) {
+    return <>{children}</>;
   }
 
   if (showOnboarding) {
