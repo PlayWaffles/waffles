@@ -66,11 +66,12 @@ export function QuestionOption({
     return index < selectedOptionIndex ? -120 : 120;
   };
 
-  // Tremor when timer is low and no selection yet
-  const tremorX =
-    tremor > 0 && !hasSelection ? (Math.random() - 0.5) * tremor * 2 : 0;
-  const tremorY =
-    tremor > 0 && !hasSelection ? (Math.random() - 0.5) * tremor * 1.5 : 0;
+  // Tremor when timer is low and no selection yet. Intentional per-render
+  // decorative jitter — re-randomizing each frame is the desired effect.
+  // eslint-disable-next-line react-hooks/purity
+  const tremorX = tremor > 0 && !hasSelection ? (Math.random() - 0.5) * tremor * 2 : 0;
+  // eslint-disable-next-line react-hooks/purity
+  const tremorY = tremor > 0 && !hasSelection ? (Math.random() - 0.5) * tremor * 1.5 : 0;
 
   return (
     <motion.li
