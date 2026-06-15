@@ -68,6 +68,8 @@ try {
   check("settleRound (rank 1 → prize)", settle.settled === 1 && settle.prizes === 1, `settled=${settle.settled} prizes=${settle.prizes}`);
   const winnings = await prisma.winning.count({ where: { userId: uid } });
   check("winning written to prize wallet", winnings === 1);
+  const lb = await rounds.roundStandings({ roundId: rid, userId: uid });
+  check("roundStandings: real field size + your rank", lb.fieldSize === 1 && lb.you?.rank === 1, `field=${lb.fieldSize} rank=${lb.you?.rank}`);
 
   // 7. resolve winning (convert → tickets)
   const w = await prisma.winning.findFirstOrThrow({ where: { userId: uid }, select: { id: true, tickets: true } });

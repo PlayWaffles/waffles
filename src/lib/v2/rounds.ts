@@ -115,6 +115,62 @@ export async function settleRound(roundId: number): Promise<{ settled: number; p
   return { settled: entries.length, prizes };
 }
 
+export type RoundStanding = { rank: number; userId: string; name: string; score: number; you: boolean };
+export type RoundBoard = {
+  roundId: number | null;
+  fieldSize: number; // real number of entrants in the round
+  standings: RoundStanding[];
+  you: RoundStanding | null;
+  settled: boolean;
+};
+
+/**
+ * Real standings for a round (live position by score, or final rank once
+ * settled). When no roundId is given, uses the latest round that has entries —
+ * so the leaderboard always has the freshest real competition to show.
+ */
+export async function roundStandings(
+  opts: { roundId?: number; userId?: string; limit?: number } = {},
+): Promise<RoundBoard> {
+  let roundId = opts.roundId ?? null;
+  if (roundId == null) {
+    const latest = await prisma.roundEntry.findFirst({
+      orderBy: { roundId: "desc" },
+      select: { roundId: true },
+    });
+    roundId = latest ? Number(latest.roundId) : null;
+  }
+  if (roundId == null) return { roundId: null, fieldSize: 0, standings: [], you: null, settled: false };
+
+  const entries = await prisma.roundEntry.findMany({
+    where: { roundId: BigInt(roundId) },
+    orderBy: [{ score: { sort: "desc", nulls: "last" } }, { createdAt: "asc" }],
+    select: {
+      userId: true,
+      score: true,
+      settled: true,
+      finalRank: true,
+      user: { select: { username: true } },
+    },
+  });
+  const fieldSize = entries.length;
+  const ranked: RoundStanding[] = entries.map((e, i) => ({
+    rank: e.finalRank ?? i + 1,
+    userId: e.userId,
+    name: e.user.username ?? "Player",
+    score: e.score ?? 0,
+    you: !!opts.userId && opts.userId === e.userId,
+  }));
+  const limit = opts.limit ?? 20;
+  return {
+    roundId,
+    fieldSize,
+    standings: ranked.slice(0, limit),
+    you: opts.userId ? ranked.find((r) => r.you) ?? null : null,
+    settled: fieldSize > 0 && entries.every((e) => e.settled),
+  };
+}
+
 /**
  * Sweep all rounds that have closed but still have unsettled entries, and settle
  * each. Driven by the `settle-rounds` cron (Phase 5). Idempotent.

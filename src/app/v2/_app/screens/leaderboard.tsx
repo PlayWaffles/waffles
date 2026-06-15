@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, TabBar, ToastButton } from "../shared";
+import { v2LoadLeaderboard } from "@/actions/v2";
+import type { RoundBoard } from "@/lib/v2/rounds";
 
 // Pre-generated medal art replaces the synthesized SVG medal.
 const BigMedal = ({ size = 78 }: { color?: string; size?: number }) => (
@@ -44,7 +46,22 @@ export const LeaderboardScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"league" | "friends">("league");
 
-  const leaders: Player[] = [
+  // Real round standings (latest round with entrants). Falls back to the sample
+  // board below in the preview / unauthenticated context or before any round runs.
+  const [board, setBoard] = useState<RoundBoard | null>(null);
+  useEffect(() => {
+    let active = true;
+    v2LoadLeaderboard()
+      .then((b) => {
+        if (active && b && b.fieldSize > 0) setBoard(b);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const mockLeaders: Player[] = [
     { rank: 1, name: "wendy.maria.589", pts: 6543, color: "#FFC931", avatar: "photo" },
     { rank: 2, name: "alesandra.s.rodrigue", pts: 5150, color: "#a266ff" },
     { rank: 3, name: "spikeelmejor2026", pts: 5050, color: "#5db8ff" },
@@ -58,7 +75,12 @@ export const LeaderboardScreen = () => {
     { rank: 11, name: "bk.pixels", pts: 920, color: "#5db8ff" },
     { rank: 12, name: "tim.h", pts: 880, color: "#3dd17a" },
   ];
-  const you: Player = { rank: 40, name: proto.username || "you", pts: 0, color: "#3dd17a", you: true };
+  const leaders: Player[] = board
+    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, color: "#3dd17a", you: s.you }))
+    : mockLeaders;
+  const you: Player = board?.you
+    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true }
+    : { rank: 40, name: proto.username || "you", pts: 0, color: "#3dd17a", you: true };
 
   return (
     <Phone statusDark>

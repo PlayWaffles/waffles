@@ -2,6 +2,8 @@
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { FIRST_TICKET_DISCOUNT, isDailyBonusAvailable, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, roundCloseAt, roundIdFor, tournamentRank, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
+import { v2LoadRoundBoard } from "@/actions/v2";
+import type { RoundBoard } from "@/lib/v2/rounds";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
@@ -302,7 +304,24 @@ export const HomeScreen = () => {
   // Personalization hook: returning players are challenged to beat their last
   // finish; first-timers get the "Top 100 win tickets" pitch instead.
   const lastRank = proto.lastTournamentRank;
-  const lastPct = lastRank ? Math.max(1, Math.round((lastRank / TOURNAMENT_FIELD_SIZE) * 100)) : null;
+
+  // Real entrant count for the current round (falls back to the simulated field
+  // in preview / before any real entrants this round).
+  const [board, setBoard] = useState<RoundBoard | null>(null);
+  useEffect(() => {
+    let active = true;
+    v2LoadRoundBoard(roundIdFor(Date.now()))
+      .then((b) => {
+        if (active && b && b.fieldSize > 0) setBoard(b);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  const fieldSize = board && board.fieldSize > 0 ? board.fieldSize : TOURNAMENT_FIELD_SIZE;
+
+  const lastPct = lastRank ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
 
   return (
     <Phone statusDark>
@@ -387,7 +406,7 @@ export const HomeScreen = () => {
               <div style={{ fontFamily: "var(--font-display)", fontSize: 23, color: "#fff", display: "inline-flex", alignItems: "center", gap: 4, lineHeight: 1.1 }}>
                 <TicketIcon size={18} />{TOURNAMENT_TOP_PRIZE}
               </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(TOURNAMENT_TOP_PRIZE)} · {TOURNAMENT_FIELD_SIZE.toLocaleString()} in</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(TOURNAMENT_TOP_PRIZE)} · {fieldSize.toLocaleString()} in</div>
             </div>
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
@@ -476,7 +495,7 @@ export const HomeScreen = () => {
                   ) : nearMiss ? (
                     <>You finished #{r.rank} — just {gap} spot{gap === 1 ? "" : "s"} from {missed.label}. Run it back?</>
                   ) : (
-                    <>You finished #{r.rank} of {TOURNAMENT_FIELD_SIZE.toLocaleString()}.</>
+                    <>You finished #{r.rank} of {fieldSize.toLocaleString()}.</>
                   )}
                 </div>
                 {won ? (

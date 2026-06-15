@@ -22,7 +22,7 @@ import {
   type V2PlayerState,
   type V2Track,
 } from "@/lib/v2/playerState";
-import { enterRound, submitRoundScore } from "@/lib/v2/rounds";
+import { enterRound, roundStandings, submitRoundScore, type RoundBoard } from "@/lib/v2/rounds";
 import { claimDailyReward, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
 import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/v2/missions";
 import { loadLeague, type V2League } from "@/lib/v2/leagues";
@@ -65,6 +65,18 @@ export async function v2SubmitRoundScore(roundId: number, score: number): Promis
   const user = await getCurrentUser();
   if (!user) return;
   await submitRoundScore(user.id, roundId, score);
+}
+
+/** Real leaderboard: standings of the latest round with entries (+ your row). */
+export async function v2LoadLeaderboard(): Promise<RoundBoard | null> {
+  const user = await getCurrentUser();
+  return roundStandings({ userId: user?.id, limit: 50 });
+}
+
+/** Real standings for a specific round — drives results/home/compete read-back. */
+export async function v2LoadRoundBoard(roundId: number): Promise<RoundBoard | null> {
+  const user = await getCurrentUser();
+  return roundStandings({ roundId, userId: user?.id, limit: 3 });
 }
 
 export async function v2ClaimDaily(): Promise<DailyClaimResult | null> {
