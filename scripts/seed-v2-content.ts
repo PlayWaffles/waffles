@@ -1,0 +1,62 @@
+/**
+ * Seeds Announcement rows (ids match the client's stable announcement ids, so
+ * AnnouncementState read/dismiss FK-resolves) + a parity set of multi-format
+ * QuestionTemplates (multi / order / spatial).
+ *
+ *   node --env-file=.env --import tsx scripts/seed-v2-content.ts
+ */
+const { prisma } = await import("@/lib/db");
+const { GameTheme, Difficulty, QuestionKind } = await import("@prisma");
+
+// ── Announcements (id = the client's announcement id, mirrors announcements.tsx) ──
+const ANNOUNCEMENTS = [
+  { id: "world-cup-season", title: "The World Cup is here", body: "Football trivia, live every hour, with real prizes on the line. See what's new this season.", sortOrder: 1 },
+  { id: "prize-wallet", title: "Cash out your winnings", body: "Tournament prizes are paid in USDT. Claim them anytime from your new Prize Wallet.", sortOrder: 2 },
+  { id: "double-xp-weekend", title: "Double XP weekend", body: "Every tournament you play this weekend earns 2× XP. Climb the leagues faster.", sortOrder: 3 },
+  { id: "prize-pool-boost", title: "Prize pool boosted", body: "Top of the Hour now pays out up to 25 tickets — finish Top 100 to win.", sortOrder: 4 },
+];
+
+for (const a of ANNOUNCEMENTS) {
+  await prisma.announcement.upsert({
+    where: { id: a.id },
+    create: { id: a.id, slug: a.id, title: a.title, body: a.body, sortOrder: a.sortOrder, isActive: true },
+    update: { title: a.title, body: a.body, sortOrder: a.sortOrder, isActive: true },
+  });
+}
+
+// ── Multi-format question parity (mirrors FORMAT_REGISTRY in state.tsx) ──
+const MULTI = [
+  { content: "Pick the 3 nations that have WON the World Cup", options: ["Brazil", "Germany", "Argentina", "Netherlands", "Mexico", "Croatia"], kind: QuestionKind.MULTI, correctSet: [0, 1, 2], pick: 3 },
+  { content: "Pick the 3 host nations of the 2026 World Cup", options: ["USA", "Canada", "Mexico", "Qatar", "Brazil", "Spain"], kind: QuestionKind.MULTI, correctSet: [0, 1, 2], pick: 3 },
+  { content: "Order these World Cup winners — oldest to newest", options: ["France", "Argentina", "Spain", "Germany"], kind: QuestionKind.ORDER, correctOrder: [2, 3, 0, 1] },
+  { content: "Tap the country that HOSTED the 2022 World Cup", options: ["Russia", "Brazil", "Qatar", "Japan", "Mexico", "Germany"], kind: QuestionKind.SPATIAL, correctIndex: 2, flags: ["🇷🇺", "🇧🇷", "🇶🇦", "🇯🇵", "🇲🇽", "🇩🇪"] },
+  { content: "Tap the country that WON the 2018 World Cup", options: ["France", "Croatia", "England", "Belgium", "Brazil", "Argentina"], kind: QuestionKind.SPATIAL, correctIndex: 0, flags: ["🇫🇷", "🇭🇷", "🏴", "🇧🇪", "🇧🇷", "🇦🇷"] },
+];
+
+// Idempotent-ish: clear prior multi-format rows (non-SINGLE) then insert.
+await prisma.questionTemplate.deleteMany({ where: { kind: { not: QuestionKind.SINGLE } } });
+for (const m of MULTI) {
+  await prisma.questionTemplate.create({
+    data: {
+      content: m.content,
+      options: m.options,
+      correctIndex: m.correctIndex ?? 0,
+      theme: GameTheme.FOOTBALL,
+      difficulty: Difficulty.MEDIUM,
+      kind: m.kind,
+      correctSet: m.correctSet ?? [],
+      pick: m.pick,
+      correctOrder: m.correctOrder ?? [],
+      flags: m.flags ?? [],
+    },
+  });
+}
+
+const [ann, multi] = await Promise.all([
+  prisma.announcement.count(),
+  prisma.questionTemplate.count({ where: { kind: { not: QuestionKind.SINGLE } } }),
+]);
+console.log(`seeded ${ann} announcements, ${multi} multi-format questions`);
+await prisma.$disconnect();
+
+export {};

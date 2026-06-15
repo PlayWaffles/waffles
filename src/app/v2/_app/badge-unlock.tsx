@@ -5,6 +5,7 @@ import { useProto } from "./state";
 import { badgeById, deriveBadgeStats, earnedBadgeIds, type Badge } from "./data/badges";
 import { Confetti, PixelImg } from "./shared";
 import { playSound } from "./sound";
+import { v2RecordBadge } from "@/actions/v2";
 
 // "Badge unlocked!" celebration.
 //
@@ -69,6 +70,7 @@ export function BadgeUnlockWatcher() {
     if (fresh.length === 0) return;
 
     fresh.forEach((id) => seen.add(id));
+    fresh.forEach((id) => void v2RecordBadge(id)); // persist the unlock server-side
     writeSeen(seen);
     const newly = fresh.map(badgeById).filter((b): b is Badge => Boolean(b));
     // Defer the state update out of the effect body (keeps it off the synchronous

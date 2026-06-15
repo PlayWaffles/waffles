@@ -102,6 +102,25 @@ try {
   await ps.resolveWinning(uid, w2.id, "claim");
   const claimed = await prisma.winning.findUniqueOrThrow({ where: { id: w2.id }, select: { status: true, merkleAmount: true } });
   check("claim records USDT payout units", claimed.status === "CLAIMED" && claimed.merkleAmount === "1000000", `amount=${claimed.merkleAmount}`);
+
+  // 12. announcement read/dismiss (FK to seeded Announcement — must not throw)
+  await ps.setAnnouncementRead(uid, ["world-cup-season"]);
+  await ps.setAnnouncementDismissed(uid, "prize-wallet");
+  const st = await ps.loadPlayerState(uid);
+  check("announcement read/dismiss persists (FK ok)", st.annRead.includes("world-cup-season") && st.annDismissed.includes("prize-wallet"));
+
+  // 13. streak freeze purchase
+  const fz = await econ.buyStreakFreeze(uid);
+  check("buy streak freeze (tickets + freeze)", fz !== null && fz.freezes >= 1, `freezes=${fz?.freezes} tickets=${fz?.tickets}`);
+
+  // 14. bundle top-up
+  const bb = await econ.buyBundle(uid, "bundle-25");
+  check("bundle top-up credits tickets", bb !== null && (bb?.tickets ?? 0) > 0, `tickets=${bb?.tickets}`);
+
+  // 15. badge unlock persistence
+  await ps.recordBadge(uid, "first-win");
+  const badges = await prisma.userBadge.count({ where: { userId: uid } });
+  check("badge unlock persists", badges === 1);
 } finally {
   // Cascade-deletes ledger, progress, entries, winnings, daily claims, etc.
   await prisma.user.delete({ where: { id: uid } });

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } fro
 import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
 import { ASSETS, AssetWell, Button, Card, Confetti, InfoButton, Phone, PixelImg, Sheet, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
-import { v2Purchase } from "@/actions/v2";
+import { v2BuyBundle, v2Purchase } from "@/actions/v2";
 
 const TICKET_INFO = `Tickets are the in-app currency — each is worth ${USDT_PER_TICKET} USDT. Spend them on tournament entries today, with power-ups and cosmetics coming soon. Prizes you win in tournaments are paid in USDT and can be claimed from your Prize Wallet.`;
 
@@ -209,6 +209,7 @@ export const ShopScreen = () => {
       const total = b.count + b.bonus;
       playSound("purchase");
       proto.update({ tickets: before + total });
+      void v2BuyBundle(`bundle-${b.count}`); // persist top-up (payment rail TBD)
       setTicketCountUp({ from: before, to: before + total, key: nextEventKey() });
       setFlow(null);
     }, 750);

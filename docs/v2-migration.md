@@ -66,11 +66,20 @@ Source of truth for "what data a screen needs": `waffles_v2/src/app/state.tsx` (
 - `rounds.roundStandings()` — real entrants, live rank by score or final rank once settled, + field size + your row.
 - Leaderboard → real latest-round standings (mock fallback in preview); Results → real field size + your real rank (settled `finalRank` when available); Home → real current-round entrant count. (Compete shows no field count.)
 
-**Genuinely remaining (runtime / ops):**
-- **Runtime UI parity eyeball** — drive every screen in a real Farcaster/MiniPay session (the only thing this environment can't do).
-- **Cleanup** — delete the old `(game)` routes + chat components once parity is confirmed.
-- **Ops** — register `POST /api/cron/settle-rounds` in the external scheduler; decide the **bundle payment rail** (only the fiat top-up path is stubbed).
-- **Optional** — extra mission-accrual events (streak-10, play-5-days, win-tournament); partner offers stay external/sponsored placeholders.
+**Now finished (verified 24/24):**
+- **Streak-freeze purchase** persists (`buyStreakFreeze` → `v2BuyStreakFreeze`, wired in daily-reward).
+- **Bundle top-up** credits tickets server-side (`buyBundle` → `v2BuyBundle`, wired in shop) — *payment still simulated; see payment rail below*.
+- **Badge unlocks** persist to `UserBadge` (`recordBadge` → `v2RecordBadge`, wired in the badge watcher).
+- **Announcements** seeded (`scripts/seed-v2-content.ts`, ids match client) — **fixes a latent FK bug**: read/dismiss `AnnouncementState` would have thrown without `Announcement` rows.
+- **Multi-format questions** seeded to `QuestionTemplate` (multi/order/spatial parity).
+- **Cron**: `local-cron.sh` now ticks `settle-rounds` too; `setAvatar`/`v2SetAvatar` available for a future avatar picker.
+
+**Genuinely remaining (cannot complete here — environment / decision / net-new):**
+- **Runtime UI parity eyeball** — drive every screen in a real Farcaster/MiniPay session. *Only this environment's wallet/auth runtime can do it.*
+- **Real bundle payment rail** — *product decision*. Off-chain credit is wired (mirrors the prototype's simulated checkout); real fiat/USDC verification needs the chosen rail (`buyBundle` already accepts a `txHash` for the on-chain path).
+- **Register `settle-rounds` in the external prod scheduler** — same Bearer-POST setup as `roundup-games`; I can't reach your scheduler.
+- **Delete old `(game)`/chat code** — *intentionally deferred*: harmless dead code behind the `/`→`/play` redirect; removing it means untangling `root page.tsx` imports, best as a separate cleanup PR.
+- **Net-new beyond the prototype** — power-up *consumption* in gameplay and an avatar *picker*; the prototype labels these "coming soon"/decorative, so they were never functional to migrate.
 
 > **Verification boundary:** Phases 5–6 (PartyKit round settlement, on-chain USDT claim, end-to-end parity) require the live miniapp runtime (wallets, Farcaster/MiniPay context, PartyKit server) — buildable here, but final verification happens in that runtime.
 

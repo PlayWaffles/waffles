@@ -306,3 +306,16 @@ export async function setAnnouncementDismissed(userId: string, id: string): Prom
 export async function setUsername(userId: string, username: string): Promise<void> {
   await prisma.user.update({ where: { id: userId }, data: { username: username.slice(0, 100) } });
 }
+
+export async function setAvatar(userId: string, avatarId: string): Promise<void> {
+  await prisma.user.update({ where: { id: userId }, data: { avatarId: avatarId.slice(0, 40) } });
+}
+
+// ── Badges (persist the earned moment; definitions stay client-derived) ──────
+export async function recordBadge(userId: string, badgeId: string): Promise<void> {
+  await prisma.userBadge.upsert({
+    where: { userId_badgeId: { userId, badgeId } },
+    create: { userId, badgeId },
+    update: {},
+  });
+}
