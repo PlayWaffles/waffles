@@ -74,12 +74,13 @@ Source of truth for "what data a screen needs": `waffles_v2/src/app/state.tsx` (
 - **Multi-format questions** seeded to `QuestionTemplate` (multi/order/spatial parity).
 - **Cron**: `local-cron.sh` now ticks `settle-rounds` too; `setAvatar`/`v2SetAvatar` available for a future avatar picker.
 
-**Genuinely remaining (cannot complete here — environment / decision / net-new):**
-- **Runtime UI parity eyeball** — drive every screen in a real Farcaster/MiniPay session. *Only this environment's wallet/auth runtime can do it.*
-- **Real bundle payment rail** — *product decision*. Off-chain credit is wired (mirrors the prototype's simulated checkout); real fiat/USDC verification needs the chosen rail (`buyBundle` already accepts a `txHash` for the on-chain path).
-- **Register `settle-rounds` in the external prod scheduler** — same Bearer-POST setup as `roundup-games`; I can't reach your scheduler.
-- **Delete old `(game)`/chat code** — *intentionally deferred*: harmless dead code behind the `/`→`/play` redirect; removing it means untangling `root page.tsx` imports, best as a separate cleanup PR.
-- **Net-new beyond the prototype** — power-up *consumption* in gameplay and an avatar *picker*; the prototype labels these "coming soon"/decorative, so they were never functional to migrate.
+**Old experience retired (DONE):** root `/`→`/play`; deleted the old `(game)` `game/leaderboard/profile/layout` routes + `RealtimeProvider`/`useLiveGame`/`useTicketPurchase` (~70k lines); relocated the 3 still-reused quiz components to `src/components/quiz/`. `/game`→307→`/play`; source tsc 0; services 24/24.
+
+**Genuinely remaining (cannot complete here — environment / decision / out-of-scope):**
+- **Runtime UI parity eyeball** — drive every screen in a real Farcaster/MiniPay session. *Only your wallet/auth runtime can do it; not a code task.*
+- **Real bundle payment rail** — *your product decision*. Off-chain credit is wired; `buyBundle` accepts a `txHash` for the on-chain path once you pick the rail.
+- **Register `settle-rounds` in your prod scheduler** — same Bearer-POST as `roundup-games`; I have no access to your scheduler.
+- **Power-up *consumption* / avatar *picker*** — the prototype has neither ("coming soon"/decorative); building them invents new UI and **violates the "screens are canonical" rule** — out of scope by design.
 
 > **Verification boundary:** Phases 5–6 (PartyKit round settlement, on-chain USDT claim, end-to-end parity) require the live miniapp runtime (wallets, Farcaster/MiniPay context, PartyKit server) — buildable here, but final verification happens in that runtime.
 
