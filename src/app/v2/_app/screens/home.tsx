@@ -283,7 +283,15 @@ export const HomeScreen = () => {
   // or buy. The card and the sticky CTA both route through `openJoin`. If already
   // entered this round, tapping the card views the standing instead.
   const [gate, setGate] = useState<"confirm" | "shortfall" | null>(null);
-  const openJoin = () => setGate(tickets >= TOURNAMENT_TICKET_COST ? "confirm" : "shortfall");
+  const openJoin = () => {
+    // Already entered this round and it hasn't settled — view your standing
+    // instead of re-charging a ticket (one paid entry per round).
+    if (entered) {
+      proto.goto("results");
+      return;
+    }
+    setGate(tickets >= TOURNAMENT_TICKET_COST ? "confirm" : "shortfall");
+  };
   const onCardTap = () => (entered ? proto.goto("results") : openJoin());
 
   // First-timer half-price ticket offer (client-read, hydration-safe).
@@ -437,8 +445,14 @@ export const HomeScreen = () => {
 
       <div className="cta-row sticky">
         <button className="cta" data-coach="home-join" onClick={openJoin} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          JOIN NEXT TOURNAMENT
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 3, opacity: 0.85 }}><TicketIcon size={15} color="currentColor" />{TOURNAMENT_TICKET_COST}</span>
+          {entered ? (
+            "VIEW YOUR STANDING"
+          ) : (
+            <>
+              JOIN NEXT TOURNAMENT
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, opacity: 0.85 }}><TicketIcon size={15} color="currentColor" />{TOURNAMENT_TICKET_COST}</span>
+            </>
+          )}
         </button>
       </div>
       <div className="bottom-bar">
