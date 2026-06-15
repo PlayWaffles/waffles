@@ -203,6 +203,41 @@ export async function purchaseShopItem(userId: string, slug: string): Promise<Pu
   });
 }
 
+// ── Power-up inventory: load + consume (used in the live quiz) ───────────────
+export async function loadPowerUps(userId: string): Promise<Record<PowerUpKind, number>> {
+  const rows = await prisma.powerUpInventory.findMany({
+    where: { userId },
+    select: { kind: true, count: true },
+  });
+  const out: Record<PowerUpKind, number> = {
+    [PowerUpKind.FIFTY_FIFTY]: 0,
+    [PowerUpKind.EXTRA_TIME]: 0,
+    [PowerUpKind.SKIP]: 0,
+    [PowerUpKind.SHIELD]: 0,
+  };
+  for (const r of rows) out[r.kind] = r.count;
+  return out;
+}
+
+export async function consumePowerUp(
+  userId: string,
+  kind: PowerUpKind,
+): Promise<{ ok: boolean; remaining: number }> {
+  return prisma.$transaction(async (tx) => {
+    const inv = await tx.powerUpInventory.findUnique({
+      where: { userId_kind: { userId, kind } },
+      select: { count: true },
+    });
+    if (!inv || inv.count <= 0) return { ok: false, remaining: inv?.count ?? 0 };
+    const updated = await tx.powerUpInventory.update({
+      where: { userId_kind: { userId, kind } },
+      data: { count: { decrement: 1 } },
+      select: { count: true },
+    });
+    return { ok: true, remaining: updated.count };
+  });
+}
+
 // ── Streak freeze (bought with tickets; consumed by claimDailyReward) ────────
 export const STREAK_FREEZE_COST = 2;
 

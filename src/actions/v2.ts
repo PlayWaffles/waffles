@@ -25,7 +25,8 @@ import {
   type V2Track,
 } from "@/lib/v2/playerState";
 import { enterRound, roundStandings, submitRoundScore, type RoundBoard } from "@/lib/v2/rounds";
-import { buyBundle, buyStreakFreeze, claimDailyReward, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
+import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
+import { PowerUpKind } from "@prisma";
 import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/v2/missions";
 import { loadLeague, type V2League } from "@/lib/v2/leagues";
 import { TicketLedgerReason } from "@prisma";
@@ -177,4 +178,20 @@ export async function v2BuyBundle(slug: string, txHash?: string): Promise<{ tick
   const user = await getCurrentUser();
   if (!user) return null;
   return buyBundle(user.id, slug, txHash);
+}
+
+export type V2PowerUps = Record<keyof typeof PowerUpKind, number>;
+
+export async function v2LoadPowerUps(): Promise<V2PowerUps | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return loadPowerUps(user.id) as Promise<V2PowerUps>;
+}
+
+export async function v2ConsumePowerUp(
+  kind: keyof typeof PowerUpKind,
+): Promise<{ ok: boolean; remaining: number } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return consumePowerUp(user.id, PowerUpKind[kind]);
 }

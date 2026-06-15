@@ -5,7 +5,16 @@ import { roundIdFor, useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
 import { Illustration } from "../world-cup/components/parts";
-import { v2LoadRoundBoard } from "@/actions/v2";
+import { v2LoadPowerUps, v2LoadRoundBoard } from "@/actions/v2";
+import type { PowerUpName } from "../state";
+
+// Power-ups available to activate during a question (icon + label per kind).
+const POWERUP_DEFS: { kind: PowerUpName; label: string; icon: string }[] = [
+  { kind: "FIFTY_FIFTY", label: "50/50", icon: ASSETS.powerup5050 },
+  { kind: "EXTRA_TIME", label: "+5s", icon: ASSETS.powerupTime },
+  { kind: "SKIP", label: "Skip", icon: ASSETS.powerupSkip },
+  { kind: "SHIELD", label: "Shield", icon: ASSETS.powerupShield },
+];
 
 // "People answering" social-presence strip (tournament only). REAL data only:
 // the avatar row + count come from actual round entrants in the DB — no
@@ -76,6 +85,26 @@ export const QuestionScreen = () => {
   const cat = q.cat;
   const catCol = CATEGORY_COLORS[cat] || { fg: "#FB72FF" };
   const hearts = proto.hearts;
+
+  // Owned power-ups (from the shop). Loaded once; decremented locally on use.
+  const [powerUps, setPowerUps] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let active = true;
+    v2LoadPowerUps()
+      .then((p) => {
+        if (active && p) setPowerUps(p);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  const activatePowerUp = (kind: PowerUpName) => {
+    if ((powerUps[kind] ?? 0) <= 0 || proto.qAnswered != null) return;
+    if (kind === "SHIELD" && proto.shieldActive) return;
+    setPowerUps((p) => ({ ...p, [kind]: (p[kind] ?? 0) - 1 }));
+    proto.usePowerUp(kind);
+  };
 
   const isMulti = q.kind === "multi";
   const isOrder = q.kind === "order";
@@ -228,9 +257,35 @@ export const QuestionScreen = () => {
           )}
         </div>
 
+      {answered == null && POWERUP_DEFS.some((pu) => (powerUps[pu.kind] ?? 0) > 0) && (
+        <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 10, flexShrink: 0 }}>
+          {POWERUP_DEFS.map((pu) => {
+            const n = powerUps[pu.kind] ?? 0;
+            if (n <= 0) return null;
+            const shieldOn = pu.kind === "SHIELD" && proto.shieldActive;
+            return (
+              <button
+                key={pu.kind}
+                type="button"
+                onClick={() => activatePowerUp(pu.kind)}
+                disabled={shieldOn}
+                aria-label={`Use ${pu.label} power-up (${n} left)`}
+                style={{ display: "flex", alignItems: "center", gap: 5, background: shieldOn ? "var(--leaf)" : "var(--surface-2)", border: "2px solid var(--frame)", borderRadius: 99, padding: "5px 9px", color: "var(--ink)", font: "inherit", fontWeight: 800, fontSize: 11, cursor: shieldOn ? "default" : "pointer", opacity: shieldOn ? 0.7 : 1 }}
+              >
+                <PixelImg src={pu.icon} size={18} alt="" />
+                <span>{pu.label}</span>
+                <span style={{ color: "var(--ink-mute)" }}>×{n}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       <div style={{ display: "grid", gridTemplateColumns: isSpatial ? "1fr 1fr 1fr" : "1fr 1fr", gap: 10, flexShrink: 0 }}>
         {q.answers.map((text, i) => {
-          let state: "idle" | "selected" | "correct" | "wrong" | "dim" = "idle";
+          // 50/50 power-up removed this wrong option for this question.
+          const isEliminated = !isMulti && !isOrder && answered == null && proto.eliminated.includes(i);
+          let state: "idle" | "selected" | "correct" | "wrong" | "dim" = isEliminated ? "dim" : "idle";
           if (isMulti) {
             if (answered != null) state = correctSet.includes(i) ? "correct" : picks.includes(i) ? "wrong" : "dim";
             else state = picks.includes(i) ? "selected" : "idle";
@@ -246,7 +301,7 @@ export const QuestionScreen = () => {
           const stateBg = { idle: "var(--cream-pure)", selected: "var(--maple-500)", correct: "var(--leaf)", wrong: "var(--live-red)", dim: "rgba(253,251,246,.4)" }[state];
           const stateColor = state === "wrong" ? "var(--ink)" : state === "correct" ? "var(--frame)" : "#191919";
           const onTap = () => {
-            if (answered != null) return;
+            if (answered != null || isEliminated) return;
             if (isMulti) {
               setPicks((p) => (p.includes(i) ? p.filter((x) => x !== i) : p.length < pick ? [...p, i] : p));
             } else if (isOrder) {
@@ -260,11 +315,11 @@ export const QuestionScreen = () => {
             <button
               key={i}
               type="button"
-              disabled={answered != null}
+              disabled={answered != null || isEliminated}
               onClick={onTap}
               aria-label={`Answer: ${text}`}
               aria-pressed={isMulti || isOrder ? picks.includes(i) : undefined}
-              style={{ position: "relative", background: stateBg, borderRadius: 12, padding: "12px 14px", minHeight: 66, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", textAlign: "left", color: stateColor, border: "5px solid var(--frame)", borderTop: 0, borderLeft: 0, font: "inherit", cursor: answered == null ? "pointer" : "default", transition: "background .2s var(--ease-out-quart), transform .2s var(--ease-out-quart)", transform: state === "correct" || state === "selected" ? "scale(1.03)" : "scale(1)" }}
+              style={{ position: "relative", background: stateBg, borderRadius: 12, padding: "12px 14px", minHeight: 66, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", textAlign: "left", color: stateColor, border: "5px solid var(--frame)", borderTop: 0, borderLeft: 0, font: "inherit", cursor: answered == null ? "pointer" : "default", transition: "background .2s var(--ease-out-quart), transform .2s var(--ease-out-quart)", transform: state === "correct" || state === "selected" ? "scale(1.03)" : "scale(1)", opacity: isEliminated ? 0.3 : 1 }}
             >
               {orderPos != null && (
                 <span style={{ position: "absolute", top: -8, left: -8, width: 22, height: 22, borderRadius: 99, background: "var(--frame)", color: "var(--maple-500)", fontFamily: "var(--font-display)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--maple-500)" }}>{orderPos}</span>
