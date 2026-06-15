@@ -23,6 +23,18 @@ Source of truth for "what data a screen needs": `waffles_v2/src/app/state.tsx` (
   - Ticket **bundles** (buy tickets for money) = the on-ramp; payment rail still an open question, stub the credit until decided.
 - **Hourly rounds:** start by reusing celo's time-derived `Game` lifecycle (presented as rounds); add a dedicated round entity only if the UI needs sub-game cadence the `Game` model can't express. _(Revisit in Phase 3.)_
 
+## ⚠️ Verification lesson
+A bare `HTTP 200` on `/play` was **misleading** — it was celo's `AppInitializer`
+onboarding/auth gate (the "Guess the scene / Try a question" overlay), not the v2
+app. The v2 app is client-rendered, so SSR/200 checks can't confirm it. **Verify
+the real render with headless Chrome** (client hydration):
+```
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --headless \
+  --disable-gpu --dump-dom --virtual-time-budget=9000 http://localhost:3002/play
+```
+Confirmed: DOM contains `waffles-v2-stage`/`waffles-v2-onb-in`, no celo gate.
+Fix: `AppInitializer` now bypasses the legacy gates for `/play` (commit 10cc882).
+
 ## Status legend
 ⬜ not started · 🟡 in progress · 🔵 wired, needs verify · ✅ verified on dev server
 
