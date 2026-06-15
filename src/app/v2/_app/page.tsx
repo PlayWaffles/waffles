@@ -11,6 +11,7 @@ import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-t
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
+import { V2AuthBootstrap } from "./auto-signin";
 
 // First-load budget: only the screens needed for the first paint ship in the
 // initial bundle — Home (the SSR-prerendered landing) and Onboarding (the
@@ -202,6 +203,7 @@ export default function V2Page() {
     <div className="waffles-v2 waffles-v2-stage" data-theme={themeId}>
       <ThemeProvider value={THEMES[themeId]}>
         <ProtoProvider>
+          <V2AuthBootstrap />
           <CoachmarkProvider>
             <Stage />
           </CoachmarkProvider>
