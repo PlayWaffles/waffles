@@ -203,6 +203,51 @@ export async function purchaseShopItem(userId: string, slug: string): Promise<Pu
   });
 }
 
+// ── Streak freeze (bought with tickets; consumed by claimDailyReward) ────────
+export const STREAK_FREEZE_COST = 2;
+
+export async function buyStreakFreeze(userId: string): Promise<{ tickets: number; freezes: number } | null> {
+  return prisma.$transaction(async (tx) => {
+    const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { ticketBalance: true } });
+    if (u.ticketBalance < STREAK_FREEZE_COST) return null;
+    const tickets = await adjustTickets(userId, -STREAK_FREEZE_COST, TicketLedgerReason.SHOP_PURCHASE, {
+      note: "streak-freeze",
+      tx,
+    });
+    const updated = await tx.user.update({
+      where: { id: userId },
+      data: { streakFreezes: { increment: 1 } },
+      select: { streakFreezes: true },
+    });
+    return { tickets, freezes: updated.streakFreezes };
+  });
+}
+
+// ── Bundle top-up (buy tickets) ───────────────────────────────────────────────
+// Credits the bundle's tickets and records the purchase. NOTE: this does NOT yet
+// verify a real payment — the fiat/crypto payment rail is the one open product
+// decision. `txHash` is accepted for the future on-chain-verified path; until a
+// rail is chosen this mirrors the prototype's simulated checkout (off-chain credit).
+export async function buyBundle(
+  userId: string,
+  slug: string,
+  txHash?: string,
+): Promise<{ tickets: number } | null> {
+  const item = await prisma.shopItem.findUnique({ where: { slug } });
+  if (!item || item.kind !== ShopItemKind.BUNDLE) return null;
+  const payload = (item.payload ?? {}) as { count?: number; bonus?: number };
+  const total = (payload.count ?? 0) + (payload.bonus ?? 0);
+  if (total <= 0) return null;
+
+  return prisma.$transaction(async (tx) => {
+    const tickets = await adjustTickets(userId, total, TicketLedgerReason.BUNDLE_TOPUP, { refId: slug, tx });
+    await tx.purchase.create({
+      data: { userId, itemId: item.id, spentTickets: 0, spentFiat: item.priceFiat ?? null, txHash: txHash ?? null },
+    });
+    return { tickets };
+  });
+}
+
 // transaction-scoped powerup grant (the exported grantPowerUp uses its own client)
 async function grantPowerUpTx(
   tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],

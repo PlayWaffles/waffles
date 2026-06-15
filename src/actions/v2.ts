@@ -14,16 +14,18 @@ import {
   advanceLevel,
   loadPlayerState,
   loseLife,
+  recordBadge,
   refillLives,
   resolveWinning,
   setAnnouncementDismissed,
   setAnnouncementRead,
+  setAvatar,
   setUsername,
   type V2PlayerState,
   type V2Track,
 } from "@/lib/v2/playerState";
 import { enterRound, roundStandings, submitRoundScore, type RoundBoard } from "@/lib/v2/rounds";
-import { claimDailyReward, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
+import { buyBundle, buyStreakFreeze, claimDailyReward, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
 import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/v2/missions";
 import { loadLeague, type V2League } from "@/lib/v2/leagues";
 import { TicketLedgerReason } from "@prisma";
@@ -150,4 +152,28 @@ export async function v2SetUsername(username: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
   await setUsername(user.id, username);
+}
+
+export async function v2SetAvatar(avatarId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  await setAvatar(user.id, avatarId);
+}
+
+export async function v2RecordBadge(badgeId: string): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  await recordBadge(user.id, badgeId);
+}
+
+export async function v2BuyStreakFreeze(): Promise<{ tickets: number; freezes: number } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return buyStreakFreeze(user.id);
+}
+
+export async function v2BuyBundle(slug: string, txHash?: string): Promise<{ tickets: number } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return buyBundle(user.id, slug, txHash);
 }

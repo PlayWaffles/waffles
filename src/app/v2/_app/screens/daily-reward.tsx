@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, FlameIcon, PixelImg, Sheet, TicketIcon } from "../shared";
 import { playSound } from "../sound";
-import { v2ClaimDaily } from "@/actions/v2";
+import { v2BuyStreakFreeze, v2ClaimDaily } from "@/actions/v2";
 
 // Daily reward + streak. The single biggest retention lever for a no-push app
 // is loss-aversion around a streak (returning users with a 7+ day streak are
@@ -157,6 +157,7 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
       return;
     }
     proto.update((s) => ({ tickets: s.tickets - STREAK_FREEZE_COST }));
+    void v2BuyStreakFreeze(); // persist the spend + freeze server-side
     const updated = freezes + 1;
     setFreezes(updated);
     writeDaily({ lastClaim: claimed ? todayKey() : readDaily().lastClaim, streak: claimed ? baseStreak + 1 : baseStreak, freezes: updated });
