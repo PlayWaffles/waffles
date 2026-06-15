@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, roundCloseAt, useProto } from "../state";
+import { v2LoadRoundBoard } from "@/actions/v2";
+import type { RoundBoard } from "@/lib/v2/rounds";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon, useNow } from "../shared";
 import { playSound } from "../sound";
 
@@ -74,11 +76,31 @@ export const ResultsScreen = () => {
   const total = proto.totalQuestions;
   const score = entry?.score ?? proto.score;
   const liveRank = tournamentRank(score, total);
-  const rank = settled ? entry?.finalRank ?? liveRank : liveRank;
+  const simRank = settled ? entry?.finalRank ?? liveRank : liveRank;
+
+  // Real round read-back: real entrant count + your real rank among them
+  // (live position by score, or final rank once settled). Falls back to the
+  // simulated field in the preview / before any real entrants.
+  const [board, setBoard] = useState<RoundBoard | null>(null);
+  useEffect(() => {
+    if (!entry) return;
+    let active = true;
+    v2LoadRoundBoard(entry.roundId)
+      .then((b) => {
+        if (active && b && b.fieldSize > 0) setBoard(b);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [entry?.roundId]);
+  const fieldSize = board?.fieldSize ?? FIELD_SIZE;
+  const rank = board?.you?.rank ?? simRank;
+
   // XP actually credited — doubled by the first-tournament-of-the-day bonus.
   const xpMult = proto.tournamentBonus ? 2 : 1;
   const xpEarned = score * xpMult;
-  const pct = Math.max(1, Math.round((rank / FIELD_SIZE) * 100));
+  const pct = Math.max(1, Math.round((rank / fieldSize) * 100));
   // Prize: settled = the locked reward; provisional = "if it holds" (not yet
   // awarded — it only pays at settlement).
   const won = settled ? entry?.reward ?? 0 : tournamentReward(rank);
@@ -127,8 +149,8 @@ export const ResultsScreen = () => {
         {/* Rank header */}
         <div style={{ textAlign: "center", color: "#fff", flexShrink: 0 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 2, color: "rgba(255,255,255,.6)", animation: "waffles-v2-lvl-rise .4s ease-out both" }}>{settled ? "YOU FINISHED" : "YOU'RE IN — CURRENTLY"}</div>
-          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFC931", textShadow: "0 0 32px rgba(255,201,49,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>#<CountUp from={FIELD_SIZE} to={rank} /></div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>of {FIELD_SIZE.toLocaleString()} · Top {pct}%</div>
+          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFC931", textShadow: "0 0 32px rgba(255,201,49,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>#<CountUp from={fieldSize} to={rank} /></div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>of {fieldSize.toLocaleString()} · Top {pct}%</div>
           {provisional && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "5px 12px", borderRadius: 999, background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", color: "#fff", fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
               ⏱ Standings lock in {closeIn}
