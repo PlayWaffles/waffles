@@ -8,9 +8,8 @@ import {
   useRef,
   type ReactNode,
 } from "react";
-import dynamic from "next/dynamic";
 import sdk from "@farcaster/miniapp-sdk";
-import { usePathname, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
 
 import { WaffleButton } from "../buttons/WaffleButton";
@@ -31,15 +30,6 @@ import {
   trackClientEvent,
 } from "@/lib/analytics";
 
-const OnboardingOverlay = dynamic(
-  () => import("../OnboardingOverlay").then((mod) => mod.OnboardingOverlay),
-  { ssr: false },
-);
-
-function preloadOnboardingOverlay() {
-  void import("../OnboardingOverlay");
-}
-
 function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
   return userId
     ? `waffles:onboarded:${runtime}:${userId}`
@@ -48,12 +38,6 @@ function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
 
 export function AppInitializer({ children }: { children: ReactNode }) {
   const router = useRouter();
-  // The ported v2 app (/play) has its OWN onboarding + handles unauthenticated
-  // state gracefully, so it must NOT be gated behind celo's legacy onboarding/
-  // auth overlay. Auth hooks below still run in the background (so a session can
-  // establish), but we render the v2 app directly instead of the old gates.
-  const pathname = usePathname();
-  const onV2App = pathname?.startsWith("/play") ?? false;
   const { address, isConnected } = useAccount();
   const { connectAsync, connectors, isPending: isConnecting } = useConnect();
   const { disconnect } = useDisconnect();
@@ -241,7 +225,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
     if (runtime === "farcaster") {
       const shouldShow = Boolean(user) && !hasSeen;
-      if (shouldShow) preloadOnboardingOverlay();
       setShowOnboarding(shouldShow);
       if (shouldShow && onboardingKey && onboardingStartedRef.current !== onboardingKey) {
         onboardingStartedRef.current = onboardingKey;
@@ -253,7 +236,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!hasSeen) preloadOnboardingOverlay();
     setShowOnboarding(!hasSeen);
     if (!hasSeen && onboardingKey && onboardingStartedRef.current !== onboardingKey) {
       onboardingStartedRef.current = onboardingKey;
@@ -682,136 +664,10 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     user?.notificationsEnabled === false &&
     !notificationNudgeDismissed;
 
-  if (!runtime) {
-    return null;
-  }
-
-  if (runtime === "farcaster") {
-    if (isLoading) {
-      return null;
-    }
-
-    if (!user) {
-      return (
-        <div className="fixed inset-0 z-80 flex items-center justify-center app-background px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/70 p-6 text-center">
-            <h2 className="font-body text-3xl text-white">Authentication needed</h2>
-            <p className="mt-3 font-display text-sm text-white/60">
-              Open Waffles inside Farcaster to continue with your Farcaster profile.
-            </p>
-            <WaffleButton
-              className="mt-6 w-full"
-              onClick={() => refetch().catch(console.error)}
-            >
-              Retry
-            </WaffleButton>
-          </div>
-        </div>
-      );
-    }
-
-    if (showOnboarding) {
-      return (
-        <OnboardingOverlay
-          onComplete={handleOnboardingComplete}
-          errorMessage={authError}
-          demoQuestion={demoQuestion}
-        />
-      );
-    }
-
-    return (
-      <>
-        {children}
-        {shouldShowNotificationNudge ? (
-          <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">
-            <div className="pointer-events-auto w-full max-w-md rounded-[28px] border border-white/10 bg-black/80 p-4 shadow-2xl backdrop-blur">
-              <div className="space-y-2">
-                <p className="font-body text-2xl text-white">Turn on alerts</p>
-                <p className="text-sm text-white/65">
-                  Get nudges for tickets, almost sold out games, live updates, and results in Farcaster.
-                </p>
-              </div>
-              <div className="mt-4 flex flex-col gap-3">
-                <WaffleButton
-                  className="h-12 max-w-none border-(--brand-cyan) px-4 text-base"
-                  onClick={() => enableNotifications().catch(console.error)}
-                  disabled={isEnablingNotifications}
-                >
-                  {isEnablingNotifications ? "Opening..." : "Enable Notifications"}
-                </WaffleButton>
-                <button
-                  type="button"
-                  className="text-sm text-white/60 underline"
-                  onClick={dismissNotificationNudge}
-                >
-                  Not now
-                </button>
-                {notificationNudgeError ? (
-                  <p className="text-sm text-red-300">{notificationNudgeError}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </>
-    );
-  }
-
-  // v2 app: bypass celo's legacy onboarding/auth gates entirely.
-  if (onV2App) {
-    return <>{children}</>;
-  }
-
-  if (showOnboarding) {
-    return (
-      <OnboardingOverlay
-        onComplete={handleOnboardingComplete}
-        errorMessage={authError}
-        demoQuestion={demoQuestion}
-      />
-    );
-  }
-
-  if (authState === "authenticating" || isLoading) {
-    return null;
-  }
-
-  if (!user) {
-    return (
-      <div className="fixed inset-0 z-80 flex items-center justify-center app-background px-4">
-        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/70 p-6 text-center">
-          <h2 className="font-body text-3xl text-white">Authentication needed</h2>
-          <p className="mt-3 font-display text-sm text-white/60">
-            Sign the wallet message to continue into the MiniPay app.
-          </p>
-          <WaffleButton
-            className="mt-6 w-full"
-            onClick={async () => {
-              try {
-                const walletAddress = await connectWallet();
-                await authenticateWallet(walletAddress);
-              } catch (error) {
-                console.error(error);
-              }
-            }}
-            disabled={isConnecting}
-          >
-            {isConnecting ? "Connecting..." : "Retry Sign-In"}
-          </WaffleButton>
-          <button
-            className="mt-3 text-sm text-white/60 underline"
-            onClick={() => disconnect()}
-          >
-            Disconnect wallet
-          </button>
-          {authError ? (
-            <p className="mt-3 text-sm text-red-300">{authError}</p>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
+  // Auth + runtime initialization runs entirely in the effects above. Rendering
+  // is now unconditional — no legacy onboarding/auth-gate UI. The player
+  // experience is the ported v2 app (its own onboarding + the useWalletSignIn
+  // hook handle sign-in); other (app) routes just render their content. Keeps
+  // the wallet/Farcaster auth machinery, drops the legacy OnboardingOverlay.
   return <>{children}</>;
 }

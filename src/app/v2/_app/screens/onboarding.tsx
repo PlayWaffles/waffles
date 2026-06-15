@@ -4,6 +4,7 @@ import { useState, type CSSProperties, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, Phone, PixelImg } from "../shared";
 import { LegalSheet, type LegalTab } from "../legal";
+import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 
 // First-launch onboarding. New players were dropped on Home with no idea what
 // the core loop is (live tournaments vs. the solo level path vs. tickets). This
@@ -139,6 +140,7 @@ export const OnboardingScreen = ({
   onSkip: () => void;
 }) => {
   const proto = useProto();
+  const { signIn } = useWalletSignIn();
   const [step, setStep] = useState(0);
   const [username, setUsernameInput] = useState("");
   const [connecting, setConnecting] = useState(false);
@@ -157,13 +159,15 @@ export const OnboardingScreen = ({
       return;
     }
     if (signupStep) {
-      // "Sign up" = connect wallet (simulated in the prototype). Show a brief
-      // connecting state, then advance to the username step.
+      // "Sign up" = connect wallet + authenticate (real MiniPay/browser session).
+      // Advance regardless of the result so a wallet-less browser preview is never
+      // stuck: success establishes a real session (real data), failure proceeds on
+      // local/mock state.
       setConnecting(true);
-      setTimeout(() => {
+      void signIn().finally(() => {
         setConnecting(false);
         setStep((s) => s + 1);
-      }, 850);
+      });
       return;
     }
     setStep((s) => s + 1);
