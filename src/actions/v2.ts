@@ -75,10 +75,11 @@ export async function v2LoadLeaderboard(): Promise<RoundBoard | null> {
   return roundStandings({ userId: user?.id, limit: 50 });
 }
 
-/** Real standings for a specific round — drives results/home/compete read-back. */
+/** Real standings for a specific round — drives results/home read-back + the
+ *  in-quiz "people answering" presence strip. */
 export async function v2LoadRoundBoard(roundId: number): Promise<RoundBoard | null> {
   const user = await getCurrentUser();
-  return roundStandings({ roundId, userId: user?.id, limit: 3 });
+  return roundStandings({ roundId, userId: user?.id, limit: 10 });
 }
 
 export async function v2ClaimDaily(): Promise<DailyClaimResult | null> {
