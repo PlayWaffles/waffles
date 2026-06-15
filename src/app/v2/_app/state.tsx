@@ -17,6 +17,7 @@ import {
   v2DismissAnnouncement,
   v2EnterRound,
   v2LoseLife,
+  v2ConsumePowerUp,
   v2RecordMissionProgress,
   v2RefillLives,
   v2ResolveWinning,
@@ -59,6 +60,9 @@ const SCREEN_ORDER: ScreenName[] = [
 ];
 
 export type GameMode = "tournament" | "level";
+
+// Shop power-ups consumed in the live quiz.
+export type PowerUpName = "FIFTY_FIFTY" | "EXTRA_TIME" | "SKIP" | "SHIELD";
 
 // Entry to a live tournament costs a ticket. Tickets are otherwise *earned*
 // for free along the level path (curved milestone rewards — see below) and by
@@ -523,6 +527,10 @@ type State = {
   score: number;
   qAnswered: number | null; // single-select index, -1 timeout, -2 multi submitted, null unanswered
   qSelection: number[] | null; // multi-select picks (set on submit)
+  // Power-ups: option indices removed by 50/50 this question; shield absorbs the
+  // next wrong answer (level mode) before it costs a heart.
+  eliminated: number[];
+  shieldActive: boolean;
   countdownSec: number;
   timer: number;
   // The selected questions for the current game (tournament round or level).
@@ -572,6 +580,8 @@ const initialState = (tweaks: Tweaks): State => ({
   score: 0,
   qAnswered: null,
   qSelection: null,
+  eliminated: [],
+  shieldActive: false,
   countdownSec: tweaks.lobbyCountdown,
   timer: tweaks.questionTime,
   roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
@@ -606,6 +616,7 @@ export type Proto = State & {
   retryLevel: () => void;
   refillLives: () => void;
   playAgain: () => void;
+  usePowerUp: (kind: PowerUpName) => void;
 };
 
 const ProtoContext = createContext<Proto | null>(null);
@@ -685,7 +696,7 @@ export function ProtoProvider({
     if (state.screen !== "lobby") return;
     if (state.countdownSec <= 0) {
       const t = setTimeout(() => {
-        update({ qIdx: 0, score: 0, qAnswered: null, qSelection: null, timer: state.roundQuestions[0]?.time ?? tweaks.questionTime });
+        update({ qIdx: 0, score: 0, qAnswered: null, qSelection: null, eliminated: [], shieldActive: false, timer: state.roundQuestions[0]?.time ?? tweaks.questionTime });
         goto("question");
       }, 0);
       return () => clearTimeout(t);
@@ -741,7 +752,9 @@ export function ProtoProvider({
       const totalQs = state.roundQuestions.length;
 
       if (state.mode === "level") {
-        const newHearts = wrong ? state.hearts - 1 : state.hearts;
+        // Shield absorbs one wrong answer instead of costing a heart.
+        const shielded = wrong && state.shieldActive;
+        const newHearts = wrong && !state.shieldActive ? state.hearts - 1 : state.hearts;
         if (newHearts <= 0) {
           // Failing a level costs a life; start the regen clock if we were full.
           const wasFull = state.lives >= LIVES_MAX;
@@ -771,6 +784,8 @@ export function ProtoProvider({
           qIdx: state.qIdx + 1,
           qAnswered: null,
           qSelection: null,
+          eliminated: [],
+          shieldActive: shielded ? false : state.shieldActive,
           timer: state.roundQuestions[state.qIdx + 1]?.time ?? tweaks.questionTime,
         });
         return;
@@ -799,6 +814,7 @@ export function ProtoProvider({
           qIdx: state.qIdx + 1,
           qAnswered: null,
           qSelection: null,
+          eliminated: [],
           timer: state.roundQuestions[state.qIdx + 1]?.time ?? tweaks.questionTime,
         });
       }
@@ -1011,11 +1027,46 @@ export function ProtoProvider({
         qIdx: 0,
         score: 0,
         qAnswered: null,
+        eliminated: [],
+        shieldActive: false,
         timer: rq[0]?.time ?? tweaks.questionTime,
         roundQuestions: rq,
       };
     });
     goto("question");
+  };
+
+  // Activate a shop power-up in the live quiz (consumes one from inventory).
+  const usePowerUp = (kind: PowerUpName) => {
+    void v2ConsumePowerUp(kind);
+    if (kind === "EXTRA_TIME") {
+      update((s) => ({ timer: s.timer + 5 }));
+      return;
+    }
+    if (kind === "SHIELD") {
+      update({ shieldActive: true });
+      return;
+    }
+    if (kind === "FIFTY_FIFTY") {
+      const q = state.roundQuestions[state.qIdx];
+      if (q && (q.kind ?? "single") === "single" && state.qAnswered === null) {
+        const wrongIdx = q.answers.map((_, i) => i).filter((i) => i !== q.correct);
+        update({ eliminated: sample(wrongIdx, Math.min(2, wrongIdx.length)) });
+      }
+      return;
+    }
+    if (kind === "SKIP") {
+      update((s) => {
+        if (s.qAnswered !== null || s.qIdx + 1 >= s.roundQuestions.length) return {}; // can't skip after answering or on the last Q
+        return {
+          qIdx: s.qIdx + 1,
+          qAnswered: null,
+          qSelection: null,
+          eliminated: [],
+          timer: s.roundQuestions[s.qIdx + 1]?.time ?? tweaks.questionTime,
+        };
+      });
+    }
   };
 
   const playAgain = () => {
@@ -1067,6 +1118,7 @@ export function ProtoProvider({
     retryLevel,
     refillLives,
     playAgain,
+    usePowerUp,
   };
 
   return <ProtoContext.Provider value={value}>{children}</ProtoContext.Provider>;

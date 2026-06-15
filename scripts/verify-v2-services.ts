@@ -121,6 +121,14 @@ try {
   await ps.recordBadge(uid, "first-win");
   const badges = await prisma.userBadge.count({ where: { userId: uid } });
   check("badge unlock persists", badges === 1);
+
+  // 16. power-ups: load + consume (FIFTY_FIFTY was granted by the pu-5050 purchase)
+  const pu = await econ.loadPowerUps(uid);
+  check("load power-ups (50/50 owned)", pu.FIFTY_FIFTY === 1, `5050=${pu.FIFTY_FIFTY}`);
+  const c1 = await econ.consumePowerUp(uid, "FIFTY_FIFTY");
+  check("consume power-up decrements", c1.ok === true && c1.remaining === 0, `ok=${c1.ok} left=${c1.remaining}`);
+  const c2 = await econ.consumePowerUp(uid, "FIFTY_FIFTY");
+  check("consume when empty fails", c2.ok === false);
 } finally {
   // Cascade-deletes ledger, progress, entries, winnings, daily claims, etc.
   await prisma.user.delete({ where: { id: uid } });
