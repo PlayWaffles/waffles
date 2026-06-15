@@ -1,43 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useProto } from "../state";
+import { roundIdFor, useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
 import { Illustration } from "../world-cup/components/parts";
+import { v2LoadRoundBoard } from "@/actions/v2";
 
-// Live "people answering" social-presence strip (tournament only). With no
-// backend, we simulate the WebSocket feed waffles-celo gets: fake players
-// trickle in answering the current question — a recent-PFP row plus a climbing
-// count. Mounted with key={questionIdx} so each question starts fresh.
+// "People answering" social-presence strip (tournament only). REAL data only:
+// the avatar row + count come from actual round entrants in the DB — no
+// simulated trickle. Mounted with key={questionIdx} so each question starts fresh.
 const LIVE_AVATARS = [
   ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda,
   ASSETS.avatarOwl, ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit,
 ];
+// Deterministic avatar per real player name (stable across renders).
+const avatarFor = (name: string) =>
+  LIVE_AVATARS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % LIVE_AVATARS.length];
 
 function LiveAnswerers() {
+  const proto = useProto();
   const [people, setPeople] = useState<{ id: number; av: string }[]>([]);
   const [count, setCount] = useState(0);
 
+  // Real DB participants only — actual entrants of this round.
   useEffect(() => {
-    let cancelled = false;
-    let id = 0;
-    let timer: number;
-    const tick = () => {
-      if (cancelled) return;
-      id += 1;
-      const av = LIVE_AVATARS[Math.floor(Math.random() * LIVE_AVATARS.length)];
-      setPeople((p) => [{ id, av }, ...p].slice(0, 5));
-      // The count climbs faster than the visible row — a field of thousands.
-      setCount((c) => c + 1 + Math.floor(Math.random() * 4));
-      timer = window.setTimeout(tick, 300 + Math.random() * 650);
-    };
-    timer = window.setTimeout(tick, 420);
+    let active = true;
+    const roundId = proto.entry?.roundId ?? roundIdFor(Date.now());
+    v2LoadRoundBoard(roundId)
+      .then((b) => {
+        if (!active || !b) return;
+        setPeople(b.standings.slice(0, 5).map((s, i) => ({ id: i + 1, av: avatarFor(s.name) })));
+        setCount(b.fieldSize);
+      })
+      .catch(() => {});
     return () => {
-      cancelled = true;
-      window.clearTimeout(timer);
+      active = false;
     };
-  }, []);
+  }, [proto.entry?.roundId]);
 
   // Compact top pill — sits above the timer where the answer-result banner (which
   // owns the bottom) can never cover it, so it stays live before AND after you
