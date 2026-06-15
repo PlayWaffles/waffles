@@ -3,13 +3,12 @@
 import {
   useState,
   useEffect,
-  useCallback,
   useRef,
   type ReactNode,
 } from "react";
 import sdk from "@farcaster/miniapp-sdk";
 import { useRouter } from "next/navigation";
-import { useAccount, useConnect, useSignMessage } from "wagmi";
+import { useConnect } from "wagmi";
 
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
@@ -29,20 +28,16 @@ import {
 
 export function AppInitializer({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
   const { connectors } = useConnect();
-  const { signMessageAsync } = useSignMessage();
   const { hideSplash } = useSplash();
-  const { user, isUnauthenticated, refetch } = useUser();
+  const { user, refetch } = useUser();
 
-  const [authState, setAuthState] = useState<"idle" | "authenticating" | "error">("idle");
   const [showOnboarding] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
   const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
   const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const farcasterProfileSyncRef = useRef<string | null>(null);
-  const onboardingAuthInProgressRef = useRef(false);
   const appOpenedRef = useRef(false);
 
   // Identify user in PostHog once user data is available
@@ -186,83 +181,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         })) ?? [],
     });
   }, [connectors, runtime]);
-
-  const authenticateWallet = useCallback(async (walletAddress: string) => {
-    if (!walletAddress) return;
-
-    setAuthState("authenticating");
-    trackClientEvent(AnalyticsEvent.AuthStarted, {
-      runtime,
-      wallet: walletAddress.toLowerCase(),
-    });
-
-    try {
-      const nonceRes = await authenticatedFetch(
-        `/api/v1/auth/nonce?address=${encodeURIComponent(walletAddress)}`,
-      );
-      if (!nonceRes.ok) {
-        throw new Error("Failed to start wallet authentication");
-      }
-
-      const { message } = await nonceRes.json();
-      const signature = await signMessageAsync({ message });
-      const verifyRes = await authenticatedFetch("/api/v1/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: walletAddress, signature }),
-      });
-
-      if (!verifyRes.ok) {
-        throw new Error("Wallet signature verification failed");
-      }
-
-      await refetch();
-      setAuthState("idle");
-      trackClientEvent(AnalyticsEvent.AuthCompleted, {
-        runtime,
-        wallet: walletAddress.toLowerCase(),
-      });
-    } catch (error) {
-      console.error("Wallet auth failed:", error);
-      setAuthState("error");
-      trackClientEvent(AnalyticsEvent.AuthFailed, {
-        runtime,
-        wallet: walletAddress.toLowerCase(),
-        reason: error instanceof Error ? error.message : "Wallet authentication failed",
-      });
-      throw error;
-    }
-  }, [refetch, runtime, signMessageAsync]);
-
-  useEffect(() => {
-    if (runtime !== "minipay" && runtime !== "browser") {
-      return;
-    }
-
-    if (showOnboarding) {
-      return;
-    }
-
-    // Prevent racing with handleOnboardingComplete which already
-    // calls authenticateWallet right before flipping showOnboarding off.
-    if (onboardingAuthInProgressRef.current) {
-      return;
-    }
-
-    if (!isConnected || !address || !isUnauthenticated || authState !== "idle") {
-      return;
-    }
-
-    authenticateWallet(address).catch(console.error);
-  }, [
-    address,
-    authState,
-    authenticateWallet,
-    isConnected,
-    isUnauthenticated,
-    runtime,
-    showOnboarding,
-  ]);
 
   useEffect(() => {
     if (
