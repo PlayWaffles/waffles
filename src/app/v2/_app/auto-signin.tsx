@@ -5,9 +5,10 @@ import { useUser } from "@/hooks/useUser";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 
 /**
- * Auto wallet sign-in for the v2 app (MiniPay only — Base/Farcaster are no longer
- * supported). On load, if there's no session, silently run the MiniPay wallet
- * sign-in so real DB data flows without anyone hunting for a button.
+ * Auto wallet sign-in for the v2 app. Supported platforms: Base App + MiniPay
+ * (Farcaster dropped). Both authenticate the same way — injected wallet signature
+ * → session cookie (the verify route tags the platform server-side). On load, if
+ * there's no session, silently sign in so real DB data flows without a button.
  *
  * Scope: only RETURNING players (already past the v2 onboarding). First-timers
  * authenticate via the onboarding SIGN UP step, so we never double-prompt the
