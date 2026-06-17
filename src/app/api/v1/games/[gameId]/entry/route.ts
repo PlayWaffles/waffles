@@ -7,7 +7,6 @@ import {
 } from "@/lib/platform/server";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { hasPlayableTicket } from "@/lib/tickets";
-import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 type Params = { gameId: string };
 
@@ -24,10 +23,6 @@ export async function GET(
     const requestPlatform = await resolveRuntimePlatform(request);
     const { gameId } = await params;
     if (!gameId) {
-      await trackServerEvent({
-        name: "legacy_game_entry_view_failed",
-        properties: { reason: "invalid_input" },
-      });
       return NextResponse.json<ApiError>(
         { error: "Invalid game ID", code: "INVALID_INPUT" },
         { status: 400 }
@@ -38,30 +33,19 @@ export async function GET(
     const expectedPlatform = auth?.platform ?? requestPlatform;
     const visibility = await resolvePlatformGameVisibility(expectedPlatform, request);
     const fidParam = new URL(request.url).searchParams.get("fid");
-    const legacyFid = fidParam ? parseInt(fidParam, 10) : NaN;
     const game = await prisma.game.findUnique({
       where: { id: gameId },
       select: { id: true, platform: true, isTestnet: true, network: true },
     });
 
     if (!game || !isGameVisibleToPlatform(game, expectedPlatform, visibility)) {
-      await trackServerEvent({
-        name: "legacy_game_entry_view_failed",
-        userId: auth?.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: expectedPlatform,
-          auth_present: Boolean(auth),
-          legacy_fid_present: !isNaN(legacyFid),
-          reason: "not_found",
-        },
-      });
       return NextResponse.json<ApiError>(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
       );
     }
 
+    const legacyFid = fidParam ? parseInt(fidParam, 10) : NaN;
     const user = auth
       ? await prisma.user.findUnique({
           where: { id: auth.userId },
@@ -75,17 +59,6 @@ export async function GET(
         : null;
 
     if (!user) {
-      await trackServerEvent({
-        name: "legacy_game_entry_view_failed",
-        userId: auth?.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: expectedPlatform,
-          auth_present: Boolean(auth),
-          legacy_fid_present: !isNaN(legacyFid),
-          reason: "user_not_found",
-        },
-      });
       return NextResponse.json<ApiError>(
         { error: "User not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -115,15 +88,6 @@ export async function GET(
     });
 
     if (!entry) {
-      await trackServerEvent({
-        name: "legacy_game_entry_view_failed",
-        userId: user.id,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: expectedPlatform,
-          reason: "entry_not_found",
-        },
-      });
       return NextResponse.json<ApiError>(
         { error: "Entry not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -133,20 +97,6 @@ export async function GET(
     // Extract answered question IDs from the answers JSON
     const answersObj = (entry.answers as Record<string, unknown>) || {};
     const answeredQuestionIds = Object.keys(answersObj);
-    await trackServerEvent({
-      name: "legacy_game_entry_viewed",
-      userId: user.id,
-      properties: {
-        game_id_hash: hashServerAnalyticsId(gameId),
-        platform: expectedPlatform,
-        has_ticket: hasPlayableTicket(entry),
-        answered_count: answeredQuestionIds.length,
-        score_after: entry.score,
-        rank: entry.rank,
-        prize_amount: entry.prize,
-        claimed: Boolean(entry.claimedAt),
-      },
-    });
 
     return NextResponse.json({
       ...entry,
@@ -156,10 +106,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("GET /api/v1/games/:gameId/entry Error:", error);
-    await trackServerEvent({
-      name: "legacy_game_entry_view_failed",
-      properties: { reason: error instanceof Error ? error.name : "unknown" },
-    });
     return NextResponse.json<ApiError>(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
       { status: 500 }

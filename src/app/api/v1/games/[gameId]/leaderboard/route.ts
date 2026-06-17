@@ -5,7 +5,6 @@ import {
   resolveRuntimePlatform,
 } from "@/lib/platform/server";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
-import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 type Params = { gameId: string };
 
@@ -36,10 +35,6 @@ export async function GET(
     const { gameId } = await context.params;
 
     if (!gameId) {
-      await trackServerEvent({
-        name: "legacy_game_leaderboard_failed",
-        properties: { reason: "invalid_param" },
-      });
       return NextResponse.json(
         { error: "Invalid game ID", code: "INVALID_PARAM" },
         { status: 400 }
@@ -59,16 +54,6 @@ export async function GET(
     });
 
     if (!game || !isGameVisibleToPlatform(game, platform, visibility)) {
-      await trackServerEvent({
-        name: "legacy_game_leaderboard_failed",
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform,
-          limit,
-          offset,
-          reason: "not_found",
-        },
-      });
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -111,18 +96,6 @@ export async function GET(
       },
     });
 
-    await trackServerEvent({
-      name: "legacy_game_leaderboard_viewed",
-      properties: {
-        game_id_hash: hashServerAnalyticsId(gameId),
-        platform,
-        limit,
-        offset,
-        returned_count: leaderboard.length,
-        total_count: totalCount,
-      },
-    });
-
     return NextResponse.json({
       leaderboard,
       pagination: {
@@ -134,10 +107,6 @@ export async function GET(
     });
   } catch (error) {
     console.error("GET /api/v1/games/[gameId]/leaderboard Error:", error);
-    await trackServerEvent({
-      name: "legacy_game_leaderboard_failed",
-      properties: { reason: error instanceof Error ? error.name : "unknown" },
-    });
     return NextResponse.json(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
       { status: 500 }
