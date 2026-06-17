@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Phone, Confetti } from "../../shared";
 import type { FormatDef, VQuestion } from "../data";
 import { ACCENT, BackBar, Illustration, Kicker, ProgressDots, TimerRing } from "./parts";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 export function FormatRunner({ format, onExit }: { format: FormatDef; onExit: () => void }) {
   const questions = format.questions ?? [];
@@ -14,10 +15,26 @@ export function FormatRunner({ format, onExit }: { format: FormatDef; onExit: ()
   const [score, setScore] = useState(0);
   const [correctCount, setCorrectCount] = useState(0);
   const [done, setDone] = useState(false);
+  const presentedRef = useRef<string | null>(null);
 
   const q: VQuestion | undefined = questions[qIdx];
   const totalTime = q?.durationSec ?? 10;
   const [timeLeft, setTimeLeft] = useState(totalTime);
+  useEffect(() => {
+    if (!q) return;
+    const key = `${format.id}:${qIdx}`;
+    if (presentedRef.current === key) return;
+    presentedRef.current = key;
+    trackClientEvent(AnalyticsEvent.FormatQuestionPresented, {
+      format_id: format.id,
+      format_name: format.name,
+      format_engine: format.engine,
+      question_index: qIdx + 1,
+      question_count: total,
+      timer_start_sec: totalTime,
+      category: q.category,
+    });
+  }, [format.engine, format.id, format.name, q, qIdx, total, totalTime]);
 
   // Tick while the question is live.
   const active = !done && answered === null && timeLeft > 0;
@@ -36,15 +53,68 @@ export function FormatRunner({ format, onExit }: { format: FormatDef; onExit: ()
   function finalize(pick: number) {
     if (answered !== null) return;
     const isCorrect = pick >= 0 && pick === q!.correctIndex;
+    const responseMs = Math.round((totalTime - timeLeft) * 1000);
+    const scoreDelta = isCorrect ? Math.round(100 + timeLeft * 20) : 0;
+    if (pick === -1) {
+      trackClientEvent(AnalyticsEvent.FormatQuestionTimeout, {
+        format_id: format.id,
+        format_name: format.name,
+        format_engine: format.engine,
+        question_index: qIdx + 1,
+        question_count: total,
+        time_remaining_sec: 0,
+        score_after: score,
+      });
+    } else {
+      trackClientEvent(AnalyticsEvent.FormatAnswerSubmitted, {
+        format_id: format.id,
+        format_name: format.name,
+        format_engine: format.engine,
+        question_index: qIdx + 1,
+        question_count: total,
+        selected_index: pick,
+        response_ms: responseMs,
+        time_remaining_sec: timeLeft,
+      });
+    }
     setAnswered(pick);
     if (isCorrect) {
-      setScore((s) => s + Math.round(100 + timeLeft * 20));
+      setScore((s) => s + scoreDelta);
       setCorrectCount((c) => c + 1);
     }
+    trackClientEvent(AnalyticsEvent.FormatAnswerResult, {
+      format_id: format.id,
+      format_name: format.name,
+      format_engine: format.engine,
+      question_index: qIdx + 1,
+      question_count: total,
+      is_correct: isCorrect,
+      response_ms: pick === -1 ? undefined : responseMs,
+      time_remaining_sec: Math.max(0, timeLeft),
+      score_delta: scoreDelta,
+      score_after: score + scoreDelta,
+    });
   }
 
   function advance() {
+    trackClientEvent(AnalyticsEvent.FormatNextClicked, {
+      format_id: format.id,
+      format_name: format.name,
+      format_engine: format.engine,
+      question_index: qIdx + 1,
+      question_count: total,
+      score_after: score,
+      correct_count: correctCount,
+    });
     if (qIdx + 1 >= total) {
+      trackClientEvent(AnalyticsEvent.FormatCompleted, {
+        format_id: format.id,
+        format_name: format.name,
+        format_engine: format.engine,
+        question_count: total,
+        score_after: score,
+        correct_count: correctCount,
+      });
       setDone(true);
       return;
     }
@@ -55,6 +125,15 @@ export function FormatRunner({ format, onExit }: { format: FormatDef; onExit: ()
   }
 
   function replay() {
+    trackClientEvent(AnalyticsEvent.FormatReplayed, {
+      format_id: format.id,
+      format_name: format.name,
+      format_engine: format.engine,
+      question_count: total,
+      score_after: score,
+      correct_count: correctCount,
+    });
+    presentedRef.current = null;
     setQIdx(0);
     setAnswered(null);
     setScore(0);

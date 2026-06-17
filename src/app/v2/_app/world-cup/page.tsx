@@ -6,48 +6,99 @@ import { CORE_FORMATS, EXPANSION_FORMATS, getFormat, type FormatDef } from "./da
 import { ACCENT } from "./components/parts";
 import { FormatRunner } from "./components/runner";
 import { Bingo, MapClick, Ordering } from "./components/expansion";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 export default function WorldCupPage() {
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [deepLinked, setDeepLinked] = useState(false);
   const active = activeId ? getFormat(activeId) : null;
 
   // Deep-link: /world-cup?f=<format-id>. One-shot read on mount.
   useEffect(() => {
+    trackClientEvent(AnalyticsEvent.FormatLabViewed, {
+      screen: "world_cup_format_lab",
+      core_format_count: CORE_FORMATS.length,
+      expansion_format_count: EXPANSION_FORMATS.length,
+    });
     const f = new URLSearchParams(window.location.search).get("f");
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (f && getFormat(f)) setActiveId(f);
+    const format = f ? getFormat(f) : null;
+    if (format) {
+      trackClientEvent(AnalyticsEvent.FormatStageOpened, {
+        format_id: format.id,
+        format_name: format.name,
+        format_engine: format.engine,
+        section: format.tier,
+        deep_linked: true,
+      });
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDeepLinked(true);
+      setActiveId(f);
+    }
   }, []);
 
   return (
     <div className="waffles-v2 waffles-v2-stage">
       <div className="waffles-v2-frame">
         {active ? (
-          <FormatStage format={active} onExit={() => setActiveId(null)} />
+          <FormatStage
+            format={active}
+            deepLinked={deepLinked}
+            onExit={() => {
+              trackClientEvent(AnalyticsEvent.FormatStageExited, {
+                format_id: active.id,
+                format_name: active.name,
+                format_engine: active.engine,
+                section: active.tier,
+                deep_linked: deepLinked,
+              });
+              setActiveId(null);
+              setDeepLinked(false);
+            }}
+          />
         ) : (
-          <Gallery onOpen={setActiveId} />
+          <Gallery
+            onOpen={(format) => {
+              trackClientEvent(AnalyticsEvent.FormatCardClicked, {
+                format_id: format.id,
+                format_name: format.name,
+                format_engine: format.engine,
+                section: format.tier,
+                deep_linked: false,
+              });
+              trackClientEvent(AnalyticsEvent.FormatStageOpened, {
+                format_id: format.id,
+                format_name: format.name,
+                format_engine: format.engine,
+                section: format.tier,
+                deep_linked: false,
+              });
+              setDeepLinked(false);
+              setActiveId(format.id);
+            }}
+          />
         )}
       </div>
     </div>
   );
 }
 
-function FormatStage({ format, onExit }: { format: FormatDef; onExit: () => void }) {
+function FormatStage({ format, deepLinked, onExit }: { format: FormatDef; deepLinked: boolean; onExit: () => void }) {
   switch (format.engine) {
     case "choice":
     case "set":
       return <FormatRunner format={format} onExit={onExit} />;
     case "map":
-      return <MapClick onExit={onExit} />;
+      return <MapClick deepLinked={deepLinked} onExit={onExit} />;
     case "ordering":
-      return <Ordering onExit={onExit} />;
+      return <Ordering deepLinked={deepLinked} onExit={onExit} />;
     case "bingo":
-      return <Bingo onExit={onExit} />;
+      return <Bingo deepLinked={deepLinked} onExit={onExit} />;
     default:
       return null;
   }
 }
 
-function Gallery({ onOpen }: { onOpen: (id: string) => void }) {
+function Gallery({ onOpen }: { onOpen: (format: FormatDef) => void }) {
   return (
     <Phone statusDark>
       <div className="bg-deep" />
@@ -83,12 +134,12 @@ function SectionHeader({ title, count, note }: { title: string; count: number; n
   );
 }
 
-function FormatCard({ format, onOpen }: { format: FormatDef; onOpen: (id: string) => void }) {
+function FormatCard({ format, onOpen }: { format: FormatDef; onOpen: (format: FormatDef) => void }) {
   const accent = ACCENT[format.accent];
   return (
     <button
       type="button"
-      onClick={() => onOpen(format.id)}
+      onClick={() => onOpen(format)}
       className="card pressable"
       style={{ display: "flex", alignItems: "center", gap: 12, padding: 12, textAlign: "left", cursor: "pointer", width: "100%" }}
     >
