@@ -42,6 +42,7 @@ for (const m of MULTI) {
       options: m.options,
       correctIndex: m.correctIndex ?? 0,
       theme: GameTheme.FOOTBALL,
+      category: "Sports",
       difficulty: Difficulty.MEDIUM,
       kind: m.kind,
       correctSet: m.correctSet ?? [],
