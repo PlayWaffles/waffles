@@ -3,9 +3,9 @@
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/v2";
+import { v2GetTournament, v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/v2";
 import type { TournamentBoard } from "@/lib/v2/tournamentGames";
-import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
+import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 
@@ -66,7 +66,9 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 // sheet (with both the free earn-by-playing route and a buy route) when they
 // can't. Both share the shop's sheet visual language.
 
-const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null }) => (
+const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null }) => {
+  const usd = (n: number) => `$${n.toFixed(2)}`;
+  return (
     <Sheet onClose={onClose} ariaLabel="Enter the Top of the Hour tournament">
       {(close) => (
       <>
@@ -83,10 +85,21 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error }: { o
         </div>
       </div>
 
-      <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: error ? 8 : 14 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase" }}>Paid entry</span>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--maple-500)" }}>Pay in your wallet</span>
+      {/* Entry = 1 ticket, paid in USDC. First ticket is half price. */}
+      <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: fee?.firstEntry ? 8 : error ? 8 : 14 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 5 }}>
+          Entry · 1 <TicketIcon size={14} />
+        </span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
+          {fee?.firstEntry && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</span>}
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: fee?.firstEntry ? "var(--leaf)" : "var(--maple-500)" }}>{fee ? usd(fee.entryFee) : "—"}</span>
+        </span>
       </div>
+      {fee?.firstEntry && (
+        <div style={{ textAlign: "center", marginBottom: error ? 8 : 14 }}>
+          <span className="chip" style={{ background: "rgba(255,201,49,.12)", color: "var(--maple-500)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(255,201,49,.32)" }}>🎟 First ticket — half price</span>
+        </div>
+      )}
 
       {error && (
         <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 12 }}>{error}</div>
@@ -95,13 +108,14 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error }: { o
       <div style={{ display: "flex", gap: 10 }}>
         <Button variant="ghost" flex={1} onClick={close}>CANCEL</Button>
         <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Confirm tournament entry in your wallet">
-          {pending ? (stepLabel ?? "Working…") : "JOIN"}
+          {pending ? (stepLabel ?? "Working…") : fee ? `JOIN · ${usd(fee.entryFee)}` : "JOIN"}
         </Button>
       </div>
       </>
       )}
     </Sheet>
-);
+  );
+};
 
 // Decorative icon bucket for a mission, derived from its title (the Missions
 // screen uses richer art; the Home card uses a 3-glyph set).
@@ -259,6 +273,29 @@ export const HomeScreen = () => {
   // ticket gate — the wallet reports an insufficient balance on confirm.
   const [entering, setEntering] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
+  // This user's entry fee + whether their first ticket is half price, plus the
+  // current round's close time (for the live countdown).
+  const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
+  const [closeAt, setCloseAt] = useState<number | null>(null);
+  const now = useNow();
+  useEffect(() => {
+    let active = true;
+    v2GetTournament()
+      .then((t) => {
+        if (!active || !t) return;
+        setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
+        setCloseAt(new Date(t.game.endsAt).getTime());
+      })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+  // Time left until the round closes, broken into HH:MM:SS.
+  const remainMs = closeAt ? Math.max(0, closeAt - now) : 0;
+  const cd = {
+    hrs: String(Math.floor(remainMs / 3_600_000)).padStart(2, "0"),
+    min: String(Math.floor((remainMs % 3_600_000) / 60_000)).padStart(2, "0"),
+    sec: String(Math.floor((remainMs % 60_000) / 1000)).padStart(2, "0"),
+  };
   const confirmEntry = async () => {
     setEntryError(null);
     setEntering(true);
@@ -375,7 +412,7 @@ export const HomeScreen = () => {
           </div>
 
           <div style={{ marginTop: 13, display: "flex", alignItems: "center", gap: 6 }}>
-            {[["00", "HRS"], ["17", "MIN"], ["42", "SEC"]].map(([v, l], i, a) => (
+            {[[cd.hrs, "HRS"], [cd.min, "MIN"], [cd.sec, "SEC"]].map(([v, l], i, a) => (
               <Fragment key={l}>
                 <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
                   <div style={{ width: 46, height: 40, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 21, color: "#F5BB1B", background: "linear-gradient(180deg, rgba(245,187,27,0.1), rgba(245,187,27,0.04))", border: "1px solid rgba(245,187,27,0.15)", fontVariantNumeric: "tabular-nums" }}>{v}</div>
@@ -415,7 +452,8 @@ export const HomeScreen = () => {
             </div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: 0.8, marginTop: 2 }}>day streak</div>
           </button>
-          <XpBar baseLevel={proto.level} rawXp={rawXp} onOpen={() => proto.goto("levels")} />
+          {/* Pure XP/account level (LVL = total XP / 500); not the campaign level. */}
+          <XpBar baseLevel={0} rawXp={rawXp} onOpen={() => proto.goto("levels")} />
         </div>
         </div>
       </div>
@@ -438,6 +476,7 @@ export const HomeScreen = () => {
 
       {gate === "confirm" && (
         <JoinConfirmSheet
+          fee={fee}
           pending={entering}
           stepLabel={proto.tournamentStep ? txStepLabel(proto.tournamentStep) : null}
           error={entryError}

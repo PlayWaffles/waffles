@@ -13,6 +13,7 @@ import {
   useProto,
 } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
+import { v2GetTournament } from "@/actions/v2";
 import { playSound } from "../sound";
 
 // One-time tournament upsell, shown the first time a player clears a level —
@@ -41,6 +42,17 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
   const rank = tournamentRank(score, total);
   const pct = Math.max(1, Math.min(99, Math.round((rank / TOURNAMENT_FIELD_SIZE) * 100)));
   const bonus = isDailyBonusAvailable();
+
+  // This user's entry fee (their first-ever entry is discounted to half price).
+  const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
+  useEffect(() => {
+    let active = true;
+    v2GetTournament()
+      .then((t) => { if (active && t) setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry }); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, []);
+  const usd = (n: number) => `$${n.toFixed(2)}`;
 
   const enter = () => {
     onClose();
@@ -71,6 +83,24 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
           </span>
         </div>
 
+        {/* First-ever entry is half price (server-verified, one-time). */}
+        {fee?.firstEntry && (
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
+            <div style={{ position: "relative", flexShrink: 0 }}>
+              <PixelImg src={ASSETS.trophy} size={28} alt="" />
+              <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>First-timer offer</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first entry, half price</div>
+            </div>
+            <div style={{ textAlign: "right", flexShrink: 0 }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--leaf)" }}>{usd(fee.entryFee)}</div>
+            </div>
+          </div>
+        )}
+
         {bonus && (
           <div style={{ textAlign: "center", marginBottom: 12 }}>
             <span className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(0,207,242,.35)" }}>⚡ Your first tournament today earns 2× XP</span>
@@ -78,7 +108,7 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
         )}
 
         <button type="button" className="cta maple" onClick={enter} style={{ width: "100%", marginBottom: 6 }}>
-          ENTER LIVE TOURNAMENT
+          {fee ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "ENTER LIVE TOURNAMENT"}
         </button>
         <button type="button" onClick={close} style={{ width: "100%", background: "transparent", border: "none", color: "var(--ink-faint)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 12, cursor: "pointer", padding: 6 }}>
           Keep practicing

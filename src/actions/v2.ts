@@ -31,16 +31,20 @@ import {
   enterTournamentOnChain,
   getTournamentClaim,
   getTournamentClientQuestions,
+  getUserEntryFee,
   latestTournamentStandings,
   loadTournamentClaims,
   submitTournamentAnswers,
   tournamentStandings,
+  TOURNAMENT_FIRST_FEE_USDC,
+  TOURNAMENT_STANDARD_FEE_USDC,
   type EnterResult,
   type TournamentBoard,
   type TournamentClaim,
   type TournamentClaimItem,
   type TournamentGame,
 } from "@/lib/v2/tournamentGames";
+import { getMigrationNotice, dismissMigrationNotice } from "@/lib/v2/migrationNotice";
 import type { RoundAnswer } from "@/lib/v2/scoring";
 import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
 import { PowerUpKind } from "@prisma";
@@ -125,14 +129,31 @@ export async function v2GetLevelQuestions(
 /** The current on-chain tournament round for the player's platform, plus its
  *  questions. Null when unauthenticated or no game is scheduled. */
 export async function v2GetTournament(): Promise<
-  { game: TournamentGame; questions: ClientRoundQuestion[] } | null
+  {
+    game: TournamentGame;
+    questions: ClientRoundQuestion[];
+    /** This user's entry fee (first-ever entry is discounted), + the standard
+     *  price for showing the strike-through, and whether the discount applies. */
+    entryFee: number;
+    standardFee: number;
+    firstEntry: boolean;
+  } | null
 > {
   const user = await getCurrentUser();
   if (!user) return null;
   const game = await currentTournamentGame(user.platform);
   if (!game) return null;
   const questions = await getTournamentClientQuestions(game.id);
-  return { game, questions };
+  const entryFee = await getUserEntryFee(user.id);
+  const firstEntry = entryFee === TOURNAMENT_FIRST_FEE_USDC;
+  // Override the game's floor price with this user's actual fee for the client.
+  return {
+    game: { ...game, entryFee },
+    questions,
+    entryFee,
+    standardFee: TOURNAMENT_STANDARD_FEE_USDC,
+    firstEntry,
+  };
 }
 
 /** Record a tournament entry after the player's on-chain `buyTicket` deposit.
@@ -267,6 +288,20 @@ export async function v2SetAnnouncementsRead(ids: string[]): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
   await setAnnouncementRead(user.id, ids);
+}
+
+/** One-time v2-migration welcome modal: whether to show it (migrated + not yet
+ *  dismissed), and dismissal. */
+export async function v2GetMigrationNotice(): Promise<{ show: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) return { show: false };
+  return getMigrationNotice(user.id);
+}
+
+export async function v2DismissMigrationNotice(): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  await dismissMigrationNotice(user.id);
 }
 
 export async function v2DismissAnnouncement(id: string): Promise<void> {
