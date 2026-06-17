@@ -16,7 +16,7 @@ import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
 // World Cup ends.
 const DEFAULT_GAME_THEME = GameTheme.FOOTBALL;
 const DEFAULT_GAME_COVER_URL = "/images/themes/football-moments.webp";
-const AUTO_QUESTION_COUNT = 9;
+const AUTO_QUESTION_COUNT = 6;
 const GAME_NUMBER_RETRY_LIMIT = 3;
 
 function isGameNumberConflict(error: unknown) {
