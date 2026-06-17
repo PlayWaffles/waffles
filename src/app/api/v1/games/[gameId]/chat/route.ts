@@ -7,6 +7,7 @@ import {
 } from "@/lib/platform/server";
 import { gameWhere } from "@/lib/platform/query";
 import { z } from "zod";
+import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 type Params = { gameId: string };
 
@@ -39,6 +40,10 @@ export async function GET(
     const { gameId } = await context.params;
 
     if (!gameId) {
+      await trackServerEvent({
+        name: "legacy_game_chat_view_failed",
+        properties: { reason: "invalid_param" },
+      });
       return NextResponse.json(
         { error: "Invalid game ID", code: "INVALID_PARAM" },
         { status: 400 }
@@ -54,6 +59,14 @@ export async function GET(
     });
 
     if (!game) {
+      await trackServerEvent({
+        name: "legacy_game_chat_view_failed",
+        properties: {
+          game_id_hash: hashServerAnalyticsId(gameId),
+          platform,
+          reason: "not_found",
+        },
+      });
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -89,9 +102,23 @@ export async function GET(
       user: m.user,
     }));
 
+    await trackServerEvent({
+      name: "legacy_game_chat_viewed",
+      properties: {
+        game_id_hash: hashServerAnalyticsId(gameId),
+        platform,
+        limit,
+        returned_count: response.length,
+      },
+    });
+
     return NextResponse.json({ messages: response });
   } catch (error) {
     console.error("GET /api/v1/games/[gameId]/chat Error:", error);
+    await trackServerEvent({
+      name: "legacy_game_chat_view_failed",
+      properties: { reason: error instanceof Error ? error.name : "unknown" },
+    });
     return NextResponse.json(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
       { status: 500 }
@@ -108,8 +135,21 @@ export const POST = withAuth<Params>(
     try {
       const gameId = params.gameId;
       const visibility = await resolvePlatformGameVisibility(auth.platform, request);
+      await trackServerEvent({
+        name: "legacy_game_chat_send_started",
+        userId: auth.userId,
+        properties: {
+          game_id_hash: hashServerAnalyticsId(gameId),
+          platform: auth.platform,
+        },
+      });
 
       if (!gameId) {
+        await trackServerEvent({
+          name: "legacy_game_chat_send_failed",
+          userId: auth.userId,
+          properties: { reason: "invalid_param" },
+        });
         return NextResponse.json<ApiError>(
           { error: "Invalid game ID", code: "INVALID_PARAM" },
           { status: 400 }
@@ -120,6 +160,15 @@ export const POST = withAuth<Params>(
       const validation = sendMessageSchema.safeParse(body);
 
       if (!validation.success) {
+        await trackServerEvent({
+          name: "legacy_game_chat_send_failed",
+          userId: auth.userId,
+          properties: {
+            game_id_hash: hashServerAnalyticsId(gameId),
+            platform: auth.platform,
+            reason: "validation_error",
+          },
+        });
         return NextResponse.json<ApiError>(
           {
             error: validation.error.issues[0]?.message || "Invalid input",
@@ -135,6 +184,15 @@ export const POST = withAuth<Params>(
       });
 
       if (!game) {
+        await trackServerEvent({
+          name: "legacy_game_chat_send_failed",
+          userId: auth.userId,
+          properties: {
+            game_id_hash: hashServerAnalyticsId(gameId),
+            platform: auth.platform,
+            reason: "not_found",
+          },
+        });
         return NextResponse.json<ApiError>(
           { error: "Game not found", code: "NOT_FOUND" },
           { status: 404 }
@@ -165,9 +223,28 @@ export const POST = withAuth<Params>(
         user: message.user,
       };
 
+      await trackServerEvent({
+        name: "legacy_game_chat_send_succeeded",
+        userId: auth.userId,
+        properties: {
+          game_id_hash: hashServerAnalyticsId(gameId),
+          platform: auth.platform,
+          message_length: validation.data.text.length,
+        },
+      });
+
       return NextResponse.json(response, { status: 201 });
     } catch (error) {
       console.error("POST /api/v1/games/[gameId]/chat Error:", error);
+      await trackServerEvent({
+        name: "legacy_game_chat_send_failed",
+        userId: auth.userId,
+        properties: {
+          game_id_hash: hashServerAnalyticsId(params.gameId),
+          platform: auth.platform,
+          reason: error instanceof Error ? error.name : "unknown",
+        },
+      });
       return NextResponse.json<ApiError>(
         { error: "Internal server error", code: "INTERNAL_ERROR" },
         { status: 500 }
