@@ -6,6 +6,7 @@ import { badgeById, deriveBadgeStats, earnedBadgeIds, type Badge } from "./data/
 import { Confetti, PixelImg } from "./shared";
 import { playSound } from "./sound";
 import { v2RecordBadge } from "@/actions/v2";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // "Badge unlocked!" celebration.
 //
@@ -21,6 +22,12 @@ import { v2RecordBadge } from "@/actions/v2";
 // earned-id diff.
 
 const SEEN_KEY = "waffles.v2.badges.seen";
+const badgeAnalyticsCategory = (id: string) => {
+  if (["rookie", "veteran", "legend"].includes(id)) return "progression";
+  if (["on-fire", "unstoppable"].includes(id)) return "retention";
+  if (["in-the-money", "sharpshooter", "champion", "collector"].includes(id)) return "prize";
+  return "economy";
+};
 
 const writeSeen = (ids: Set<string>) => {
   try {
@@ -70,7 +77,15 @@ export function BadgeUnlockWatcher() {
     if (fresh.length === 0) return;
 
     fresh.forEach((id) => seen.add(id));
-    fresh.forEach((id) => void v2RecordBadge(id)); // persist the unlock server-side
+    fresh.forEach((id) => {
+      const badge = badgeById(id);
+      trackClientEvent(AnalyticsEvent.BadgeUnlocked, {
+        badge_id: id,
+        badge_category: badge ? badgeAnalyticsCategory(id) : "unknown",
+        unlock_source: "derived_state",
+      });
+      void v2RecordBadge(id);
+    });
     writeSeen(seen);
     const newly = fresh.map(badgeById).filter((b): b is Badge => Boolean(b));
     // Defer the state update out of the effect body (keeps it off the synchronous
@@ -86,12 +101,25 @@ export function BadgeUnlockWatcher() {
 function BadgeUnlockOverlay({ badge, onDismiss, more }: { badge: Badge | undefined; onDismiss: () => void; more: boolean }) {
   // Fanfare each time a fresh badge surfaces.
   useEffect(() => {
-    if (badge) playSound("victory");
+    if (!badge) return;
+    playSound("victory");
+    trackClientEvent(AnalyticsEvent.BadgeUnlockOverlayViewed, {
+      badge_id: badge.id,
+      badge_category: badgeAnalyticsCategory(badge.id),
+      queued_badges: more ? 1 : 0,
+    });
   }, [badge?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!badge) return null;
   const current = badge;
-  const dismiss = onDismiss;
+  const dismiss = () => {
+    trackClientEvent(AnalyticsEvent.BadgeUnlockDismissed, {
+      badge_id: current.id,
+      badge_category: badgeAnalyticsCategory(current.id),
+      action: more ? "next" : "dismiss",
+    });
+    onDismiss();
+  };
 
   return (
     <div

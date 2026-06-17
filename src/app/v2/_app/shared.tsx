@@ -4,6 +4,7 @@ import type { CSSProperties, ReactNode } from "react";
 import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useProto } from "./state";
 import { playSound, soundManager } from "./sound";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const ASSETS_BASE = "/images/v2";
 const OPTIMIZED_ASSETS_BASE = `${ASSETS_BASE}/optimized`;
@@ -326,6 +327,10 @@ export const SoundToggle = ({ size = 30 }: { size?: number }) => {
   const toggle = () => {
     const next = soundManager.toggleMute();
     if (!next) playSound("click");
+    trackClientEvent(AnalyticsEvent.SoundToggled, {
+      component: "sound_toggle",
+      muted: next,
+    });
   };
   return (
     <button
@@ -358,7 +363,14 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
       shop: "shop",
       me: "profile",
     };
-    proto.goto((map[id] || id) as Parameters<typeof proto.goto>[0]);
+    const target = map[id] || id;
+    trackClientEvent(AnalyticsEvent.BottomNavClicked, {
+      component: "bottom_nav",
+      label: id,
+      target_screen: target,
+      source_screen: proto.screen,
+    });
+    proto.goto(target as Parameters<typeof proto.goto>[0]);
   };
   const tabs: { id: string; label: string; icon: ReactNode }[] = [
     {
@@ -471,7 +483,13 @@ export const InfoButton = ({
         type="button"
         aria-haspopup="dialog"
         aria-label={`About ${title}`}
-        onClick={() => setOpen(true)}
+        onClick={() => {
+          trackClientEvent(AnalyticsEvent.InfoOpened, {
+            component: "info_button",
+            info_title: title,
+          });
+          setOpen(true);
+        }}
         style={{
           width: size,
           height: size,
@@ -500,7 +518,13 @@ export const InfoButton = ({
           role="dialog"
           aria-modal="true"
           aria-label={title}
-          onClick={() => setOpen(false)}
+          onClick={() => {
+            trackClientEvent(AnalyticsEvent.InfoClosed, {
+              component: "info_button",
+              info_title: title,
+            });
+            setOpen(false);
+          }}
           style={{
             position: "fixed",
             inset: 0,
@@ -535,7 +559,14 @@ export const InfoButton = ({
             <button
               type="button"
               className="pressable"
-              onClick={() => setOpen(false)}
+              onClick={() => {
+                trackClientEvent(AnalyticsEvent.InfoClosed, {
+                  component: "info_button",
+                  info_title: title,
+                  action: "got_it",
+                });
+                setOpen(false);
+              }}
               style={{
                 marginTop: 18,
                 width: "100%",
@@ -767,13 +798,23 @@ export const Sheet = ({
   zIndex?: number;
 }) => {
   const [closing, setClosing] = useState(false);
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.SheetOpened, {
+      component: "sheet",
+      sheet_name: ariaLabel,
+    });
+  }, [ariaLabel]);
   // Animate out, then tell the parent to unmount after the slide finishes. No-op
   // when onClose is absent (e.g. a sheet that disables dismissal mid-action).
   const close = useCallback(() => {
     if (!onClose) return;
+    trackClientEvent(AnalyticsEvent.SheetClosed, {
+      component: "sheet",
+      sheet_name: ariaLabel,
+    });
     setClosing(true);
     window.setTimeout(onClose, SHEET_EXIT_MS);
-  }, [onClose]);
+  }, [ariaLabel, onClose]);
 
   return (
     <div

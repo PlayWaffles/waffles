@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Sheet } from "./shared";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Tabbed legal/support sheet (Terms · Privacy · Support). Content borrowed from
 // the waffles-celo legal pages. Opened from the onboarding consent line (and any
@@ -68,7 +69,13 @@ const Doc = ({ intro, sections }: { intro: string; sections: Section[] }) => (
   </div>
 );
 
-const SupportDoc = () => (
+const SupportDoc = ({
+  onTelegramClick,
+  onEmailClick,
+}: {
+  onTelegramClick: () => void;
+  onEmailClick: () => void;
+}) => (
   <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
     <p style={{ ...bodyStyle, color: "var(--ink-faint)" }}>
       Need help with a ticket, prize, deposit, or account issue? Contact the
@@ -80,12 +87,14 @@ const SupportDoc = () => (
         href="https://t.me/+QTFub8AHqQRmMDlk"
         target="_blank"
         rel="noopener noreferrer"
+        onClick={onTelegramClick}
         style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", padding: "14px 16px", fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", textDecoration: "none" }}
       >
         Telegram: Waffles Support Group
       </a>
       <a
         href="mailto:support@playwaffles.fun"
+        onClick={onEmailClick}
         style={{ borderRadius: 12, border: "1px solid rgba(255,255,255,.1)", background: "rgba(255,255,255,.04)", padding: "14px 16px", fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", textDecoration: "none" }}
       >
         Email: support@playwaffles.fun
@@ -112,9 +121,33 @@ const SupportDoc = () => (
 
 export const LegalSheet = ({ initialTab = "terms", onClose }: { initialTab?: LegalTab; onClose: () => void }) => {
   const [tab, setTab] = useState<LegalTab>(initialTab);
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.LegalSheetViewed, {
+      initial_tab: initialTab,
+      tab: initialTab,
+    });
+  }, [initialTab]);
+
+  const closeLegalSheet = () => {
+    trackClientEvent(AnalyticsEvent.LegalSheetClosed, {
+      initial_tab: initialTab,
+      tab,
+    });
+    onClose();
+  };
+
+  const selectTab = (next: LegalTab) => {
+    if (next !== tab) {
+      trackClientEvent(AnalyticsEvent.LegalTabChanged, {
+        previous_tab: tab,
+        tab: next,
+      });
+    }
+    setTab(next);
+  };
 
   return (
-    <Sheet ariaLabel="Legal and support" onClose={onClose} zIndex={120}>
+    <Sheet ariaLabel="Legal and support" onClose={closeLegalSheet} zIndex={120}>
       {(close) => (
       <>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
@@ -136,7 +169,7 @@ export const LegalSheet = ({ initialTab = "terms", onClose }: { initialTab?: Leg
               type="button"
               role="tab"
               aria-selected={on}
-              onClick={() => setTab(t.id)}
+              onClick={() => selectTab(t.id)}
               style={{
                 flex: 1,
                 padding: "8px 0",
@@ -160,7 +193,18 @@ export const LegalSheet = ({ initialTab = "terms", onClose }: { initialTab?: Leg
       <div style={{ maxHeight: "56vh", overflowY: "auto", WebkitOverflowScrolling: "touch", paddingRight: 2 }}>
         {tab === "terms" && <Doc intro={TERMS.intro} sections={TERMS.sections} />}
         {tab === "privacy" && <Doc intro={PRIVACY.intro} sections={PRIVACY.sections} />}
-        {tab === "support" && <SupportDoc />}
+        {tab === "support" && (
+          <SupportDoc
+            onTelegramClick={() => trackClientEvent(AnalyticsEvent.SupportTelegramClicked, {
+              initial_tab: initialTab,
+              tab,
+            })}
+            onEmailClick={() => trackClientEvent(AnalyticsEvent.SupportEmailClicked, {
+              initial_tab: initialTab,
+              tab,
+            })}
+          />
+        )}
       </div>
       </>
       )}

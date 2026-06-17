@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // ===== Theme / Season system =================================================
 // A theme reskins the WHOLE app (not a separate route) along a few layers:
@@ -49,6 +50,18 @@ export const THEMES: Record<ThemeId, Theme> = {
   },
 };
 
+const trackedThemeResolutions = new Set<string>();
+
+function trackThemeResolved(themeId: ThemeId, source: "default" | "query" | "local_storage") {
+  const key = `${source}:${themeId}`;
+  if (trackedThemeResolutions.has(key)) return;
+  trackedThemeResolutions.add(key);
+  trackClientEvent(AnalyticsEvent.ThemeResolved, {
+    theme_id: themeId,
+    source,
+  });
+}
+
 // Resolve the active theme. The World Cup is the live season, so it's the
 // default skin for EVERYONE — not an opt-in. An explicit override (?theme= or
 // localStorage) can still force another skin (e.g. ?theme=default for QA).
@@ -58,12 +71,19 @@ export function resolveThemeId(): ThemeId {
   const isValid = (v: string | null): v is ThemeId => v === "default" || v === "world-cup";
   try {
     const q = new URLSearchParams(window.location.search).get("theme");
-    if (isValid(q)) return q;
+    if (isValid(q)) {
+      trackThemeResolved(q, "query");
+      return q;
+    }
     const stored = localStorage.getItem("waffles.v2.theme");
-    if (isValid(stored)) return stored;
+    if (isValid(stored)) {
+      trackThemeResolved(stored, "local_storage");
+      return stored;
+    }
   } catch {
     /* storage/url unavailable — fall through to the season default */
   }
+  trackThemeResolved("world-cup", "default");
   return "world-cup";
 }
 
@@ -72,6 +92,10 @@ export function resolveThemeId(): ThemeId {
 export function setThemeOverride(id: ThemeId): void {
   try {
     localStorage.setItem("waffles.v2.theme", id);
+    trackClientEvent(AnalyticsEvent.ThemeOverrideApplied, {
+      theme_id: id,
+      source: "local_storage",
+    });
   } catch {
     /* storage disabled — can't persist the choice */
   }
