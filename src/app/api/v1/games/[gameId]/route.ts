@@ -7,6 +7,7 @@ import {
 } from "@/lib/platform/server";
 import { getTicketPricingSnapshot } from "@/lib/tickets";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
+import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 type Params = { gameId: string };
 
@@ -71,6 +72,14 @@ export async function GET(
     });
 
     if (!game || !isGameVisibleToPlatform(game, platform, visibility)) {
+      await trackServerEvent({
+        name: "legacy_game_view_failed",
+        properties: {
+          game_id_hash: hashServerAnalyticsId(gameId),
+          platform,
+          reason: "not_found",
+        },
+      });
       return NextResponse.json(
         { error: "Game not found", code: "NOT_FOUND" },
         { status: 404 }
@@ -84,9 +93,27 @@ export async function GET(
       pricing: getTicketPricingSnapshot(game),
     };
 
+    await trackServerEvent({
+      name: "legacy_game_viewed",
+      properties: {
+        game_id_hash: hashServerAnalyticsId(game.id),
+        platform,
+        phase: gameWithPhase.status,
+        player_count: game.playerCount,
+        question_count: game._count.questions,
+        entry_count: game._count.entries,
+      },
+    });
+
     return NextResponse.json(gameWithPhase);
   } catch (error) {
     console.error("GET /api/v1/games/[gameId] Error:", error);
+    await trackServerEvent({
+      name: "legacy_game_view_failed",
+      properties: {
+        reason: error instanceof Error ? error.name : "unknown",
+      },
+    });
     return NextResponse.json(
       { error: "Internal server error", code: "INTERNAL_ERROR" },
       { status: 500 }
