@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useProto } from "../state";
-import { ASSETS, FlameIcon, PixelImg, Sheet, TicketIcon } from "../shared";
+import { syrupLabel, useProto } from "../state";
+import { ASSETS, FlameIcon, PixelImg, Sheet, SyrupIcon } from "../shared";
 import { playSound } from "../sound";
 import { v2BuyStreakFreeze, v2ClaimDaily } from "@/actions/v2";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -100,7 +100,7 @@ const resolveToday = (s: DailyState): { state: DailyState; claimable: boolean } 
 export const hasUnclaimedDailyReward = (): boolean => readDaily().lastClaim !== todayKey();
 
 const RewardGlyph = ({ reward, size = 22 }: { reward: { type: "ticket" | "xp" }; size?: number }) =>
-  reward.type === "ticket" ? <TicketIcon size={size} /> : <PixelImg src={ASSETS.xpGem} size={size} alt="" />;
+  reward.type === "ticket" ? <SyrupIcon size={size} /> : <PixelImg src={ASSETS.xpGem} size={size} alt="" />;
 
 export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
   const proto = useProto();
@@ -293,7 +293,7 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
               <>
                 <RewardGlyph reward={reward} size={44} />
                 <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 20, color: "var(--ink)", lineHeight: 1 }}>
-                  +{reward.amount} {reward.type === "xp" ? "XP" : reward.amount === 1 ? "ticket" : "tickets"}
+                  +{reward.type === "xp" ? `${reward.amount} XP` : syrupLabel(reward.amount)}
                 </div>
                 {reward.rarity !== "common" && (
                   <div
@@ -340,10 +340,10 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
             type="button"
             className="pressable"
             onClick={buyFreeze}
-            aria-label={`Buy a streak freeze for ${STREAK_FREEZE_COST} tickets`}
+            aria-label={`Buy a streak freeze for ${syrupLabel(STREAK_FREEZE_COST)}`}
             style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "var(--maple-500)", color: "var(--frame)", border: "2px solid var(--frame)", borderRadius: 10, padding: "7px 12px", fontFamily: "var(--font-body)", fontWeight: 900, fontSize: 12, boxShadow: "0 3px 0 var(--frame)", cursor: "pointer", flexShrink: 0 }}
           >
-            <TicketIcon size={14} />
+            <SyrupIcon size={14} />
             {STREAK_FREEZE_COST}
           </button>
         </div>

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg } from "../shared";
+import { ASSETS, Phone, PixelImg, SyrupIcon } from "../shared";
 import { LegalSheet, type LegalTab } from "../legal";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -60,7 +60,7 @@ const LevelVisual = () => (
 
 const RewardVisual = () => (
   <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 18 }}>
-    <PixelImg src={ASSETS.ticket} size={84} alt="" />
+    <SyrupIcon size={84} />
     <PixelImg src={ASSETS.trophy} size={104} alt="" style={{ marginBottom: 4 }} />
   </div>
 );
@@ -115,7 +115,7 @@ const SLIDES: Slide[] = [
     kicker: "WHAT YOU PLAY FOR",
     kickerColor: "var(--maple-500)",
     title: "Win real rewards",
-    body: "Finish near the top to earn tickets, rise through the leagues, and unlock the shop.",
+    body: "Finish near the top to earn Syrup, rise through the leagues, and unlock the shop.",
     visual: <RewardVisual />,
   },
 ];

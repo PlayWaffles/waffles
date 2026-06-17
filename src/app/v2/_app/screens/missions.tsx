@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useProto } from "../state";
-import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, TabBar, TicketIcon } from "../shared";
+import { syrupLabel, useProto } from "../state";
+import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
 import { v2LoadMissions, v2LoadPartnerOffers, v2ClaimPartnerOffer } from "@/actions/v2";
 import type { V2Mission } from "@/lib/v2/missions";
 import type { V2PartnerOffer } from "@/lib/v2/partnerOffers";
@@ -96,7 +96,7 @@ export const MissionsScreen = () => {
       <div style={{ position: "absolute", top: 6, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "#fff", gap: 8 }}>
         <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
         <div style={{ flex: 1, fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 0.5, textAlign: "center" }}>MISSIONS</div>
-        <InfoButton title="Missions" text="Complete missions to earn rewards. Daily missions refresh every 24 hours and grant XP toward your level. Partner offers are sponsored tasks that pay out bonus tickets." />
+        <InfoButton title="Missions" text="Complete missions to earn rewards. Daily missions refresh every 24 hours and grant XP toward your level. Partner offers are sponsored tasks that pay out bonus Syrup." />
       </div>
 
       <div style={{ position: "absolute", top: 96, left: 14, right: 14, background: "#0F0F10", borderRadius: 99, padding: 4, border: "1px solid rgba(255,255,255,.06)", display: "flex", gap: 2 }}>
@@ -155,10 +155,10 @@ export const MissionsScreen = () => {
           <>
             <div style={{ background: "linear-gradient(180deg, rgba(0,207,242,.12), rgba(0,207,242,.03))", border: "1px solid rgba(0,207,242,.25)", borderRadius: 14, padding: "12px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
               <AssetWell size={46} accent="var(--leaf)" radius={12}>
-                <TicketIcon size={24} />
+                <SyrupIcon size={24} />
               </AssetWell>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", letterSpacing: 0.3 }}>Earn up to {totalPartnerTickets} 🎟 from offers</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", letterSpacing: 0.3 }}>Earn up to {syrupLabel(totalPartnerTickets)} from offers</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>Sponsored by our partners · Verified rewards</div>
               </div>
             </div>
@@ -199,7 +199,7 @@ export const MissionsScreen = () => {
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.15)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10 }}>
                       +{m.tickets}
-                      <TicketIcon size={14} />
+                      <SyrupIcon size={14} />
                     </span>
                     {claimedSlugs.has(m.slug) ? (
                       <span style={{ background: "rgba(0,207,242,.15)", color: "#00CFF2", border: "1px solid rgba(0,207,242,.35)", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>✓ Claimed</span>
@@ -211,7 +211,7 @@ export const MissionsScreen = () => {
               ))}
             </div>
 
-            <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 14, lineHeight: 1.5, textAlign: "center", padding: "0 12px" }}>Tickets are credited within 24h after the offer is verified by the partner. By engaging with offers you accept our partner terms.</div>
+            <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 14, lineHeight: 1.5, textAlign: "center", padding: "0 12px" }}>Syrup is credited within 24h after the offer is verified by the partner. By engaging with offers you accept our partner terms.</div>
           </>
         )}
       </div>

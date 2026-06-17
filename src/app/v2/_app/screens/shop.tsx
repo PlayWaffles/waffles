@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
-import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
-import { ASSETS, AssetWell, Button, Card, Confetti, InfoButton, Phone, PixelImg, Sheet, TabBar, TicketIcon, TopHeader } from "../shared";
+import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, syrupLabel, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
+import { ASSETS, AssetWell, Button, Card, Confetti, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
 import { v2BuyBundle, v2Purchase } from "@/actions/v2";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
-const TICKET_INFO = `Tickets are the in-app currency — each is worth ${USDT_PER_TICKET} USDT. Spend them on tournament entries today, with power-ups and cosmetics coming soon. Prizes you win in tournaments are paid in USDT and can be claimed from your Prize Wallet.`;
+const TICKET_INFO = `Syrup is earned by playing — daily rewards, levels and missions. Spend it on lives, power-ups for solo levels, and cosmetics. Tournaments are entered with USDC and prizes are paid in USDT from your Prize Wallet.`;
 
 // ===== Catalog =================================================================
 // Pulled out of the component so the purchase sub-views can read items by id
@@ -390,26 +390,24 @@ export const ShopScreen = () => {
       <TopHeader tickets={tickets} title="SHOP" />
 
       <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "4px 14px 14px", overflow: "auto" }}>
-        {/* Balance header — ticket count on the left, its USDT cash value on the
-            right (what the info icon explains), so the bar reads as a real wallet
-            instead of a few items crammed against the edge. */}
+        {/* Balance header — Syrup count on the left with help text on the right. */}
         <Card accent="var(--maple-500)" radius={14} pad="12px 14px" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, boxShadow: "0 0 24px rgba(255,201,49,.06)" }}>
           <AssetWell size={52} accent="var(--maple-500)" radius={13}>
-            <TicketIcon size={28} />
+            <SyrupIcon size={28} />
           </AssetWell>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
               <span style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "#fff", lineHeight: 1 }}>{tickets}</span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.45)", letterSpacing: 0.8, textTransform: "uppercase" }}>tickets</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.45)", letterSpacing: 0.8, textTransform: "uppercase" }}>Syrup</span>
             </div>
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 3 }}>Your balance</div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--leaf)", lineHeight: 1 }}>≈ {(tickets * USDT_PER_TICKET).toFixed(2)} USDT</span>
-              <InfoButton title="Ticket value" text={TICKET_INFO} size={18} />
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--leaf)", lineHeight: 1 }}>{syrupLabel(tickets)}</span>
+              <InfoButton title="Syrup" text={TICKET_INFO} size={18} />
             </div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: 0.8, textTransform: "uppercase" }}>cash value</div>
+            <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: 0.8, textTransform: "uppercase" }}>balance</div>
           </div>
         </Card>
 
@@ -419,7 +417,7 @@ export const ShopScreen = () => {
           <button
             type="button"
             onClick={tryOpenFeatured}
-            aria-label={`Featured offer — ${FEATURED.title} for ${FEATURED.price} tickets`}
+            aria-label={`Featured offer — ${FEATURED.title} for ${syrupLabel(FEATURED.price)}`}
             style={{
               background: `linear-gradient(135deg, ${FEATURED.accent}33, #0F0F10 70%)`,
               border: `1px solid ${FEATURED.accent}55`,
@@ -441,31 +439,27 @@ export const ShopScreen = () => {
               <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 2 }}>{FEATURED.sub}</div>
             </div>
             <div style={{ background: FEATURED.accent, color: "#1e1e1e", padding: "8px 12px", borderRadius: 10, fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 0.3, boxShadow: "0 3px 0 rgba(0,0,0,.3)", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-              <TicketIcon size={14} />{FEATURED.price}
+              <SyrupIcon size={14} />{FEATURED.price}
             </div>
           </button>
         </ComingSoonVeil>
 
-        <ComingSoonLabel>POWER-UPS</ComingSoonLabel>
-        <ComingSoonVeil note="In-game boosts land here soon.">
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-            {POWER_UPS.map((p) => (
-              <PowerUpCard key={p.id} item={p} affordable={tickets >= p.price} onBuy={() => tryBuyPowerUp(p)} />
-            ))}
-          </div>
-        </ComingSoonVeil>
+        <ShopSectionLabel>POWER-UPS · solo levels</ShopSectionLabel>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
+          {POWER_UPS.map((p) => (
+            <PowerUpCard key={p.id} item={p} affordable={tickets >= p.price} onBuy={() => tryBuyPowerUp(p)} />
+          ))}
+        </div>
 
-        <ComingSoonLabel>COSMETICS</ComingSoonLabel>
-        <ComingSoonVeil note="Frames, name colors & emotes drop soon.">
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            {COSMETICS.map((c) => (
-              <CosmeticRow key={c.id} item={c} affordable={tickets >= c.price} onOpen={() => tryOpenCosmetic(c)} />
-            ))}
-          </div>
-        </ComingSoonVeil>
+        <ShopSectionLabel>COSMETICS</ShopSectionLabel>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
+          {COSMETICS.map((c) => (
+            <CosmeticRow key={c.id} item={c} affordable={tickets >= c.price} onOpen={() => tryOpenCosmetic(c)} />
+          ))}
+        </div>
 
-        <ComingSoonLabel>TICKETS</ComingSoonLabel>
-        <ComingSoonVeil note="Buy tickets with USDT here soon — for now, earn them by playing.">
+        <ComingSoonLabel>SYRUP</ComingSoonLabel>
+        <ComingSoonVeil note="Buy Syrup with USDT here soon — for now, earn it by playing.">
           {showFirstTicketOffer && (
             <button
               type="button"
@@ -619,6 +613,13 @@ const ComingSoonLabel = ({ children }: { children: ReactNode }) => (
   </div>
 );
 
+// Plain section header for shipped (interactive) shop sections.
+const ShopSectionLabel = ({ children }: { children: ReactNode }) => (
+  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 2 }}>
+    <span style={{ fontFamily: "var(--font-display)", fontSize: 11, color: "rgba(255,255,255,.7)", letterSpacing: 1.2 }}>{children}</span>
+  </div>
+);
+
 const ComingSoonVeil = ({ note, children }: { note: string; children: ReactNode }) => (
   <div style={{ position: "relative", marginBottom: 14 }}>
     <div aria-hidden="true" inert style={{ opacity: 0.4, filter: "saturate(.55)", pointerEvents: "none", userSelect: "none" }}>
@@ -657,7 +658,7 @@ const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: b
       </div>
       <button
         type="button"
-        aria-label={`Buy ${item.label} for ${item.price} tickets`}
+        aria-label={`Buy ${item.label} for ${syrupLabel(item.price)}`}
         onClick={click}
         style={{
           background: committed ? "rgba(0, 207, 242, 0.25)" : affordable ? "rgba(255,201,49,.1)" : "rgba(253,251,246,0.04)",
@@ -676,7 +677,7 @@ const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: b
           transform: committed ? "scale(1.04)" : "scale(1)",
         }}
       >
-        {committed ? "✓" : (<><TicketIcon size={13} />{item.price}</>)}
+        {committed ? "✓" : (<><SyrupIcon size={13} />{item.price}</>)}
       </button>
     </Card>
   );
@@ -685,7 +686,7 @@ const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: b
 const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable: boolean; onOpen: () => void }) => (
   <button
     type="button"
-    aria-label={`${item.label} — ${item.owned ? "owned, preview" : `buy for ${item.price} tickets`}`}
+    aria-label={`${item.label} — ${item.owned ? "owned, preview" : `buy for ${syrupLabel(item.price)}`}`}
     onClick={onOpen}
     style={{
       background: "#0F0F10",
@@ -724,7 +725,7 @@ const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable:
           boxShadow: affordable ? "0 3px 0 rgba(0,0,0,.25)" : undefined,
         }}
       >
-        <TicketIcon size={13} color={affordable ? "#1e1e1e" : undefined} />{item.price}
+        <SyrupIcon size={13} />{item.price}
       </div>
     )}
   </button>
@@ -734,7 +735,7 @@ const BundleCard = ({ bundle, onBuy }: { bundle: Bundle; onBuy: () => void }) =>
   <div style={{ background: "#0F0F10", border: bundle.badge ? "1.5px solid rgba(255,201,49,.4)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 6px", textAlign: "center", position: "relative", boxShadow: bundle.badge ? "0 0 20px rgba(255,201,49,.1)" : "none" }}>
     {bundle.badge && <div style={{ position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", background: "#FFC931", color: "#1e1e1e", padding: "2px 8px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 8, letterSpacing: 0.5, whiteSpace: "nowrap" }}>{bundle.badge}</div>}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 }}>
-      <TicketIcon size={20} />
+      <SyrupIcon size={20} />
       <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff" }}>{bundle.count}</span>
     </div>
     {bundle.bonus > 0 ? (
@@ -745,7 +746,7 @@ const BundleCard = ({ bundle, onBuy }: { bundle: Bundle; onBuy: () => void }) =>
     <button
       type="button"
       onClick={onBuy}
-      aria-label={`Buy ${bundle.count + bundle.bonus} tickets for ${bundle.price}`}
+      aria-label={`Buy ${syrupLabel(bundle.count + bundle.bonus)} for ${bundle.price}`}
       style={{ marginTop: 6, width: "100%", background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: "#fff", borderRadius: 8, padding: "5px 0", fontFamily: "var(--font-display)", fontSize: 11, cursor: "pointer" }}
     >
       {bundle.price}
@@ -913,8 +914,8 @@ const CosmeticSheet = ({ item, canAfford, onClose, onConfirm }: { item: Cosmetic
           <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
             <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase" }}>Cost</span>
             <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: item.color, display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <TicketIcon size={18} />
-              {item.price} ticket{item.price === 1 ? "" : "s"}
+              <SyrupIcon size={18} />
+              {syrupLabel(item.price)}
             </span>
           </div>
         )}
@@ -947,7 +948,7 @@ const BundleSheet = ({ bundle, phase, onClose, onConfirm }: { bundle: Bundle; ph
   const total = bundle.count + bundle.bonus;
   const accent = "#FFC931";
   return (
-      <Sheet onClose={phase === "processing" ? undefined : onClose} accent={accent} ariaLabel={`Buy ${total} tickets for ${bundle.price}`}>
+      <Sheet onClose={phase === "processing" ? undefined : onClose} accent={accent} ariaLabel={`Buy ${syrupLabel(total)} for ${bundle.price}`}>
         {(close) => (
         <>
         {/* Hero */}
@@ -963,20 +964,20 @@ const BundleSheet = ({ bundle, phase, onClose, onConfirm }: { bundle: Bundle; ph
               gap: 10,
             }}
           >
-            <TicketIcon size={48} />
+            <SyrupIcon size={48} />
             <div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "var(--ink)", lineHeight: 1 }}>{total}</div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: accent, letterSpacing: 0.6, textTransform: "uppercase", marginTop: 2 }}>Tickets</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: accent, letterSpacing: 0.6, textTransform: "uppercase", marginTop: 2 }}>Syrup</div>
             </div>
           </div>
         </div>
 
         {/* Receipt */}
         <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "12px 14px", marginBottom: 14, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 13, color: "var(--ink)" }}>
-          <ReceiptRow label="Tickets" value={`${bundle.count}`} />
+          <ReceiptRow label="Syrup" value={`${bundle.count}`} />
           {bundle.bonus > 0 && <ReceiptRow label="Bonus" value={`+${bundle.bonus}`} valueColor="var(--leaf)" />}
           <div style={{ height: 1, background: "rgba(253,251,246,0.08)", margin: "8px 0" }} />
-          <ReceiptRow label="Total" value={`${total} 🎟`} bold />
+          <ReceiptRow label="Total" value={syrupLabel(total)} bold />
           <ReceiptRow label="Pay" value={bundle.price} bold valueColor={accent} />
         </div>
 
@@ -984,7 +985,7 @@ const BundleSheet = ({ bundle, phase, onClose, onConfirm }: { bundle: Bundle; ph
           {phase === "confirm" ? (
             <>
               <Button variant="ghost" flex={1} onClick={close}>CANCEL</Button>
-              <Button flex={1.4} onClick={onConfirm} accent={accent} ariaLabel={`Pay ${bundle.price} for ${total} tickets`}>
+              <Button flex={1.4} onClick={onConfirm} accent={accent} ariaLabel={`Pay ${bundle.price} for ${syrupLabel(total)}`}>
                 PAY {bundle.price}
               </Button>
             </>
@@ -1050,7 +1051,7 @@ const FeaturedSheet = ({ featured, canAfford, onClose, onConfirm }: { featured: 
     }, 480);
   };
   return (
-      <Sheet onClose={onClose} accent={featured.accent} ariaLabel={`Activate ${featured.title} for ${featured.price} tickets`}>
+      <Sheet onClose={onClose} accent={featured.accent} ariaLabel={`Activate ${featured.title} for ${syrupLabel(featured.price)}`}>
         {(close) => (
         <>
         {bursting && <Confetti pieces={36} />}
@@ -1098,7 +1099,7 @@ const FeaturedSheet = ({ featured, canAfford, onClose, onConfirm }: { featured: 
             accent={featured.accent}
             style={canAfford ? undefined : { background: "var(--surface-3)", color: "var(--ink-faint)" }}
           >
-            ACTIVATE — <TicketIcon size={14} />{featured.price}
+            ACTIVATE — <SyrupIcon size={14} />{featured.price}
           </Button>
         </div>
         </>
@@ -1122,23 +1123,23 @@ const ShortfallSheet = ({ intent, haveTickets, onClose, onTopUp }: { intent: Spe
   const suggested = suggestBundleFor(shortfall);
   const suggestedIdx = BUNDLES.indexOf(suggested);
   return (
-      <Sheet onClose={onClose} accent="#FFC931" ariaLabel={`Need more tickets to buy ${itemLabel}`}>
+      <Sheet onClose={onClose} accent="#FFC931" ariaLabel={`Need more Syrup to buy ${itemLabel}`}>
         {(close) => (
         <>
         <div style={{ textAlign: "center", marginBottom: 14 }}>
-          <div style={{ fontSize: 26, marginBottom: 4 }}>🎟</div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--ink)" }}>Need {shortfall} more ticket{shortfall === 1 ? "" : "s"}</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>You have {haveTickets} · {itemLabel} costs {need}</div>
+          <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}><SyrupIcon size={26} /></div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--ink)" }}>Need {shortfall} more Syrup</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>You have {syrupLabel(haveTickets)} · {itemLabel} costs {syrupLabel(need)}</div>
         </div>
 
         <div style={{ background: "var(--surface-2)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{ flexShrink: 0, width: 56, height: 56, borderRadius: 12, background: "rgba(255,201,49,0.18)", border: "1px solid rgba(255,201,49,0.4)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-            <TicketIcon size={22} />
+            <SyrupIcon size={22} />
             <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--ink)" }}>{suggested.count + suggested.bonus}</span>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>Quick top up</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{suggested.count + suggested.bonus} tickets · {suggested.price}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{syrupLabel(suggested.count + suggested.bonus)} · {suggested.price}</div>
             {suggested.bonus > 0 && (
               <div style={{ fontSize: 10, fontWeight: 700, color: "var(--leaf)", marginTop: 2 }}>Includes {suggested.bonus} bonus</div>
             )}
@@ -1264,10 +1265,10 @@ const TicketCountUp = ({ from, to, onDone }: { from: number; to: number; onDone:
         animation: "waffles-v2-tile-enter 280ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}
     >
-      <TicketIcon size={36} />
+      <SyrupIcon size={36} />
       <div>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "var(--maple-500)", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{v}</div>
-        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.8, textTransform: "uppercase", marginTop: 2 }}>Tickets</div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.8, textTransform: "uppercase", marginTop: 2 }}>Syrup</div>
       </div>
     </div>
   );

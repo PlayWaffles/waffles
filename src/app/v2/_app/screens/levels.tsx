@@ -2,8 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
-import { LIVES_MAX, LIVES_REFILL_COST, useProto, type LevelTrack } from "../state";
-import { ASSETS, Phone, PixelImg, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
+import { LIVES_MAX, LIVES_REFILL_COST, syrupLabel, useProto, type LevelTrack } from "../state";
+import { ASSETS, Phone, PixelImg, SyrupIcon, TabBar, TopHeader, useNow } from "../shared";
 
 // The two parallel solo campaigns the levels-page tab switches between. Each has
 // its own progression (state.levelByTrack); the active accent skins the tab.
@@ -967,7 +967,7 @@ const LevelPathInner = () => {
           </div>
         </div>
 
-        {/* Sticky free-ticket banner — floats on the field */}
+        {/* Sticky free Syrup banner — floats on the field */}
         <div
           style={{
             position: "sticky",
@@ -984,10 +984,10 @@ const LevelPathInner = () => {
             zIndex: 10,
           }}
         >
-          <TicketIcon size={28} />
+          <SyrupIcon size={28} />
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--frame)", lineHeight: 1 }}>
-              Level 21 · Free Ticket
+              Level 21 · Free Syrup
             </div>
             <div style={{ fontSize: 11, color: "var(--frame)", fontWeight: 700, opacity: 0.75 }}>
               3 levels away
@@ -1031,8 +1031,8 @@ const LevelPathInner = () => {
           </svg>
         </button>
         {outOfLives ? (
-          <button className="cta maple" onClick={() => proto.refillLives()} disabled={!canRefill} style={!canRefill ? { opacity: 0.55, cursor: "default" } : undefined} aria-label={canRefill ? `Refill lives for ${LIVES_REFILL_COST} ticket` : `Next life in ${nextLifeIn}`}>
-            {canRefill ? <>REFILL <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><TicketIcon size={14} />{LIVES_REFILL_COST}</span></> : `NEXT LIFE ${nextLifeIn}`}
+          <button className="cta maple" onClick={() => proto.refillLives()} disabled={!canRefill} style={!canRefill ? { opacity: 0.55, cursor: "default" } : undefined} aria-label={canRefill ? `Refill lives for ${syrupLabel(LIVES_REFILL_COST)}` : `Next life in ${nextLifeIn}`}>
+            {canRefill ? <>REFILL <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><SyrupIcon size={14} />{LIVES_REFILL_COST}</span></> : `NEXT LIFE ${nextLifeIn}`}
           </button>
         ) : (
           <button className="cta" data-coach="levels-play" onClick={() => startLevel()}>PLAY LEVEL {proto.level}</button>
