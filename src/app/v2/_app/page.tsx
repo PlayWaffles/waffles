@@ -12,6 +12,7 @@ import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
 import { V2AuthBootstrap } from "./auto-signin";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // First-load budget: only the screens needed for the first paint ship in the
 // initial bundle — Home (the SSR-prerendered landing) and Onboarding (the
@@ -105,7 +106,14 @@ const Stage = () => {
     // right away. No "first run" flag needed — the Home gate does the waiting.
     if (!showOnboarding && proto.screen === "home" && !hasSeenWorldCupTakeover()) {
       // rAF so the flip isn't a synchronous setState in the effect body.
-      const id = requestAnimationFrame(() => setShowWcTakeover(true));
+      const id = requestAnimationFrame(() => {
+        trackClientEvent(AnalyticsEvent.WorldCupTakeoverAutoOpened, {
+          screen: "home",
+          theme_id: resolveThemeId(),
+          entry_reason: "first_visit",
+        });
+        setShowWcTakeover(true);
+      });
       return () => cancelAnimationFrame(id);
     }
   }, [showOnboarding, proto.screen]);
@@ -115,6 +123,10 @@ const Stage = () => {
   useEffect(() => {
     if (!showOnboarding && !showWcTakeover && screen === "home" && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
       dailyAutoShown.current = true;
+      trackClientEvent(AnalyticsEvent.DailyRewardAutoOpened, {
+        screen: "home",
+        entry_reason: "unclaimed_reward",
+      });
       update({ dailyOpen: true });
     }
   }, [showOnboarding, showWcTakeover, screen, update]);

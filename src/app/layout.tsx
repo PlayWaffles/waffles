@@ -6,8 +6,8 @@ import Script from "next/script";
 import { env } from "@/lib/env";
 import { DeferredVercelMetrics } from "@/components/providers/DeferredVercelMetrics";
 
-const UMAMI_HOST = "https://analytics.cyberverse.cloud";
-const UMAMI_WEBSITE_ID = "c93b9fef-6a59-4006-adb3-48d2bb001e8d";
+const UMAMI_HOST = process.env.NEXT_PUBLIC_UMAMI_HOST;
+const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
 
 export const metadata: Metadata = {
   title: "Waffles",
@@ -71,13 +71,15 @@ export default function RootLayout({
       <body className="antialiased" suppressHydrationWarning>
         {children}
         <DeferredVercelMetrics />
-        <Script
-          defer
-          src={`${UMAMI_HOST}/script.js`}
-          data-website-id={UMAMI_WEBSITE_ID}
-          data-domains="playwaffles.fun,www.playwaffles.fun"
-          strategy="afterInteractive"
-        />
+        {UMAMI_HOST && UMAMI_WEBSITE_ID ? (
+          <Script
+            defer
+            src={`${UMAMI_HOST.replace(/\/$/, "")}/script.js`}
+            data-website-id={UMAMI_WEBSITE_ID}
+            data-domains="playwaffles.fun,www.playwaffles.fun,miniapp.playwaffles.fun"
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useRef } from "react";
 import { useUser } from "@/hooks/useUser";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 /**
  * Auto wallet sign-in for the v2 app. Supported platforms: Base App + MiniPay
@@ -21,7 +22,14 @@ export function V2AuthBootstrap() {
   const tried = useRef(false);
 
   useEffect(() => {
-    if (tried.current || signingIn || !isUnauthenticated) return;
+    if (tried.current || signingIn) return;
+    if (!isUnauthenticated) {
+      trackClientEvent(AnalyticsEvent.AuthAutoSigninSkipped, {
+        screen: "v2",
+        reason: "already_authenticated",
+      });
+      return;
+    }
 
     let onboarded = false;
     try {
@@ -29,10 +37,22 @@ export function V2AuthBootstrap() {
     } catch {
       onboarded = false;
     }
-    if (!onboarded) return; // first-timers sign in via the onboarding SIGN UP step
+    if (!onboarded) {
+      trackClientEvent(AnalyticsEvent.AuthAutoSigninSkipped, {
+        screen: "v2",
+        reason: "not_onboarded",
+      });
+      return;
+    }
 
     tried.current = true;
-    void signIn();
+    trackClientEvent(AnalyticsEvent.AuthAutoSigninStarted, { screen: "v2" });
+    void signIn().then((ok) => {
+      trackClientEvent(
+        ok ? AnalyticsEvent.AuthAutoSigninCompleted : AnalyticsEvent.AuthAutoSigninFailed,
+        { screen: "v2", reason: ok ? null : "error" },
+      );
+    });
   }, [isUnauthenticated, signingIn, signIn]);
 
   return null;
