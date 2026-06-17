@@ -5,6 +5,7 @@ import { usdtLabel, USDT_PER_TICKET, useProto, type Winning } from "../state";
 import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, TabBar, TicketIcon, TopHeader } from "../shared";
 import { BADGES, badgeProgress, deriveBadgeStats, isBadgeEarned, type Badge, type BadgeStats } from "../data/badges";
 import { LegalSheet, type LegalTab } from "../legal";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TICKET_INFO = `Tickets are the in-app currency — each is worth ${USDT_PER_TICKET} USDT. Spend them on tournament entries, power-ups and cosmetics. Prizes you win in tournaments are paid in USDT and can be claimed from your Prize Wallet below.`;
 
@@ -77,6 +78,18 @@ export const ProfileScreen = () => {
   const earnedBadges = BADGES.filter((b) => isBadgeEarned(b, badgeStats)).length;
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.ProfileViewed, {
+      screen: "profile",
+      tickets_balance: tickets,
+      level,
+      streak_days: streak,
+      pending_prizes: pendingWinnings.length,
+      claimable_tickets: claimableTickets,
+      badges_earned: earnedBadges,
+      badges_total: BADGES.length,
+    });
+  }, [tickets, level, streak, pendingWinnings.length, claimableTickets, earnedBadges]);
 
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
@@ -86,10 +99,25 @@ export const ProfileScreen = () => {
   }, [toast]);
 
   const onClaim = (w: Winning) => {
+    trackClientEvent(AnalyticsEvent.PrizeClaimStarted, {
+      screen: "profile",
+      prize_id_kind: "winning",
+      rank: w.rank,
+      reward_amount: w.tickets,
+      amount_usdt: Number((w.tickets * USDT_PER_TICKET).toFixed(2)),
+    });
     proto.claimWinning(w.id);
     setToast(`Claimed ${usdtLabel(w.tickets)}`);
   };
   const onConvert = (w: Winning) => {
+    trackClientEvent(AnalyticsEvent.PrizeConvertStarted, {
+      screen: "profile",
+      prize_id_kind: "winning",
+      rank: w.rank,
+      reward_amount: w.tickets,
+      tickets_before: tickets,
+      tickets_after: tickets + w.tickets,
+    });
     proto.convertWinning(w.id);
     setToast(`Added ${w.tickets} 🎟 to your balance`);
   };
@@ -99,6 +127,7 @@ export const ProfileScreen = () => {
   // used because the intro is gated outside React state, so this is the simplest
   // way to make both replay cleanly.
   const replayTutorial = () => {
+    trackClientEvent(AnalyticsEvent.TutorialReplayClicked, { screen: "profile" });
     try {
       Object.keys(localStorage)
         .filter((k) => k.startsWith("waffles.v2.coach.") || k === "waffles.v2.onboarded")
@@ -139,7 +168,13 @@ export const ProfileScreen = () => {
             return (
               <div
                 key={s.l}
-                onClick={isStreak ? () => proto.update({ dailyOpen: true }) : undefined}
+                onClick={isStreak ? () => {
+                  trackClientEvent(AnalyticsEvent.ProfileDailyRewardClicked, {
+                    screen: "profile",
+                    streak_days: streak,
+                  });
+                  proto.update({ dailyOpen: true });
+                } : undefined}
                 role={isStreak ? "button" : undefined}
                 tabIndex={isStreak ? 0 : undefined}
                 aria-label={isStreak ? `${streak} day streak — open daily reward` : undefined}
@@ -148,6 +183,10 @@ export const ProfileScreen = () => {
                     ? (e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
+                          trackClientEvent(AnalyticsEvent.ProfileDailyRewardClicked, {
+                            screen: "profile",
+                            streak_days: streak,
+                          });
                           proto.update({ dailyOpen: true });
                         }
                       }
@@ -170,7 +209,20 @@ export const ProfileScreen = () => {
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 10, justifyItems: "center" }}>
             {BADGES.map((b) => (
-              <BadgeCoin key={b.id} badge={b} stats={badgeStats} onClick={() => setSelectedBadge(b)} />
+              <BadgeCoin
+                key={b.id}
+                badge={b}
+                stats={badgeStats}
+                onClick={() => {
+                  trackClientEvent(AnalyticsEvent.BadgeDetailOpened, {
+                    screen: "profile",
+                    badge_id: b.id,
+                    badge_earned: isBadgeEarned(b, badgeStats),
+                    badge_progress: Math.round(badgeProgress(b, badgeStats) * 100),
+                  });
+                  setSelectedBadge(b);
+                }}
+              />
             ))}
           </div>
         </div>
@@ -284,7 +336,13 @@ export const ProfileScreen = () => {
               {i > 0 && <span aria-hidden="true" style={{ color: "var(--ink-faint)", fontSize: 11 }}>·</span>}
               <button
                 type="button"
-                onClick={() => setLegalTab(id)}
+                onClick={() => {
+                  trackClientEvent(AnalyticsEvent.ProfileLegalOpened, {
+                    screen: "profile",
+                    legal_tab: id,
+                  });
+                  setLegalTab(id);
+                }}
                 style={{ background: "none", border: "none", padding: "2px 0", cursor: "pointer", fontSize: 12, fontWeight: 800, color: "var(--ink-faint)" }}
               >
                 {label}

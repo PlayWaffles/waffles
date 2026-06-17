@@ -5,6 +5,7 @@ import { useProto } from "../state";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, TabBar, ToastButton } from "../shared";
 import { v2LoadLeaderboard } from "@/actions/v2";
 import type { RoundBoard } from "@/lib/v2/rounds";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Pre-generated medal art replaces the synthesized SVG medal.
 const BigMedal = ({ size = 78 }: { color?: string; size?: number }) => (
@@ -81,6 +82,16 @@ export const LeaderboardScreen = () => {
   const you: Player = board?.you
     ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true }
     : { rank: 40, name: proto.username || "you", pts: 0, color: "#3dd17a", you: true };
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
+      screen: "leaderboard",
+      leaderboard_tab: tab,
+      field_size: board?.fieldSize ?? leaders.length,
+      rank: you.rank,
+      score_after: you.pts,
+      has_live_board: Boolean(board),
+    });
+  }, [tab, board, leaders.length, you.rank, you.pts]);
 
   return (
     <Phone statusDark>
@@ -120,7 +131,18 @@ export const LeaderboardScreen = () => {
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--ink)", zIndex: 2 }}>
         <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
         <div style={{ flex: 1 }} />
-        <button type="button" aria-label="About leagues" onClick={() => proto.goto("leagues")} style={{ background: "rgba(253, 251, 246, 0.08)", border: "1.5px solid rgba(253, 251, 246, 0.25)", borderRadius: 99, width: 30, height: 30, padding: 0, cursor: "pointer", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}><InfoIcon size={16} /></button>
+        <button
+          type="button"
+          aria-label="About leagues"
+          onClick={() => {
+            trackClientEvent(AnalyticsEvent.AboutLeaguesClicked, {
+              screen: "leaderboard",
+              leaderboard_tab: tab,
+            });
+            proto.goto("leagues");
+          }}
+          style={{ background: "rgba(253, 251, 246, 0.08)", border: "1.5px solid rgba(253, 251, 246, 0.25)", borderRadius: 99, width: 30, height: 30, padding: 0, cursor: "pointer", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        ><InfoIcon size={16} /></button>
       </div>
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
@@ -139,7 +161,20 @@ export const LeaderboardScreen = () => {
             { id: "league" as const, label: "Your League" },
             { id: "friends" as const, label: "Friends" },
           ].map((t) => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}>
+            <button
+              key={t.id}
+              onClick={() => {
+                if (tab !== t.id) {
+                  trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, {
+                    screen: "leaderboard",
+                    previous_tab: tab,
+                    leaderboard_tab: t.id,
+                  });
+                }
+                setTab(t.id);
+              }}
+              style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
+            >
               {t.label}
             </button>
           ))}
@@ -184,6 +219,10 @@ export const LeaderboardScreen = () => {
             <ToastButton
               ariaLabel="Invite friends"
               toast="Friend invites are coming soon!"
+              onClick={() => trackClientEvent(AnalyticsEvent.InviteFriendsClicked, {
+                screen: "leaderboard",
+                leaderboard_tab: tab,
+              })}
               className="pressable"
               style={{
                 marginTop: 22,
