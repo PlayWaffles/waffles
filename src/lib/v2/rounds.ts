@@ -12,6 +12,8 @@ import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { TicketLedgerReason, WinningStatus } from "@prisma";
 import { adjustTickets } from "./playerState";
+import { getRoundScorableSet } from "./roundQuestions";
+import { scoreRound, type RoundAnswer } from "./scoring";
 
 export const TOURNAMENT_TICKET_COST = 1;
 export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000; // production: hourly
@@ -84,22 +86,49 @@ export async function enterRound(
   });
 }
 
-/** Post a provisional score for the player's entry in a round. */
-export async function submitRoundScore(userId: string, roundId: number, score: number): Promise<void> {
+/**
+ * Submit the player's answers for a round and record a SERVER-COMPUTED score.
+ *
+ * The client posts the per-question answers it gave (selection + response time),
+ * never a score. The server re-derives the round's authoritative question set,
+ * re-scores those answers against its own answer key with clamped timing, and
+ * caps the total at the round's theoretical max — so a tampered client can't
+ * post an arbitrary number. Only unsettled entries are touched (no rescoring
+ * after settlement), and the score never moves backward (idempotent resubmits /
+ * late-arriving duplicates can't grief a higher score).
+ */
+export async function submitRoundAnswers(
+  userId: string,
+  roundId: number,
+  answers: RoundAnswer[],
+): Promise<{ score: number; updated: boolean } | null> {
+  const issued = await getRoundScorableSet(roundId);
+  const score = scoreRound(issued, answers);
+
   const result = await prisma.roundEntry.updateMany({
-    where: { userId, roundId: BigInt(roundId), settled: false },
+    where: {
+      userId,
+      roundId: BigInt(roundId),
+      settled: false,
+      OR: [{ score: null }, { score: { lt: score } }],
+    },
     data: { score },
   });
+
   await trackServerEvent({
     name: "round_score_submitted_authoritative",
     userId,
     properties: {
       round_id: roundId,
       score_after: score,
+      answer_count: answers?.length ?? 0,
+      issued_count: issued.length,
       updated_count: result.count,
-      result: result.count > 0 ? "updated" : "missing_entry",
+      result: result.count > 0 ? "updated" : "missing_or_not_higher",
     },
   });
+
+  return { score, updated: result.count > 0 };
 }
 
 /**
