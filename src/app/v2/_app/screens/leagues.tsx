@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
-import { ASSETS, BackButton, Phone, PixelImg, TabBar } from "../shared";
+import { ASSETS, BackButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
 import { v2LoadLeague } from "@/actions/v2";
 import type { V2League } from "@/lib/v2/leagues";
 
@@ -119,7 +119,7 @@ const LeagueCard = ({ tier }: { tier: Tier }) => {
           >
             <RewardChest variant={r.r} idx={i} />
             {r.n != null && <Pill icon="✓" color="#3dd17a" value={r.n} />}
-            <Pill icon="🎟" color="var(--berry)" value={r.t} />
+            <Pill icon={<SyrupIcon size={14} />} color="var(--berry)" value={r.t} />
             <Pill icon="🪙" color="var(--maple-500)" value={r.c} />
           </div>
         ))}

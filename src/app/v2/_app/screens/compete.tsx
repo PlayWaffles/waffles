@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
-import { ASSETS, AssetWell, Phone, PixelImg, TabBar, TicketIcon, TopHeader } from "../shared";
+import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
 import { v2LoadLeague, v2LoadSeasonPass, v2ClaimSeasonReward, v2LoadMissions, v2LoadPartnerOffers } from "@/actions/v2";
 import type { V2League } from "@/lib/v2/leagues";
 import type { V2SeasonPass } from "@/lib/v2/seasonPass";
@@ -41,7 +41,7 @@ const RewardAsset = ({ reward }: { reward: Reward }) => {
     return <PixelImg src={ASSETS.xpGem} size={28} alt="" />;
   }
   if (reward.type === "ticket") {
-    return <TicketIcon size={24} />;
+    return <SyrupIcon size={24} />;
   }
   return <PixelImg src={ASSETS.vipStar} size={28} alt="" />;
 };
