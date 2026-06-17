@@ -89,6 +89,7 @@ model User {
   boosts            UserBoost[]
   earnedBadges      UserBadge[]
   dailyClaims       DailyRewardClaim[]
+  analyticsEvents   AnalyticsEvent[]
 }
 
 enum UserRole {
@@ -572,6 +573,21 @@ model AuditLog {
 
   @@index([adminId, createdAt])
   @@index([entityType, entityId])
+}
+
+model AnalyticsEvent {
+  id         String   @id @default(cuid())
+  name       String   @db.VarChar(100)
+  userId     String?
+  source     String   @default("server") @db.VarChar(20)
+  properties Json?
+  createdAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([name, createdAt])
+  @@index([userId, createdAt])
+  @@index([createdAt])
 }
 
 // ==========================================
