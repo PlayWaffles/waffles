@@ -56,6 +56,7 @@ export type QuestionTemplateMinAggregateOutputType = {
   mediaUrl: string | null
   soundUrl: string | null
   theme: $Enums.GameTheme | null
+  category: string | null
   difficulty: $Enums.Difficulty | null
   usageCount: number | null
   createdAt: Date | null
@@ -74,6 +75,7 @@ export type QuestionTemplateMaxAggregateOutputType = {
   mediaUrl: string | null
   soundUrl: string | null
   theme: $Enums.GameTheme | null
+  category: string | null
   difficulty: $Enums.Difficulty | null
   usageCount: number | null
   createdAt: Date | null
@@ -97,6 +99,7 @@ export type QuestionTemplateCountAggregateOutputType = {
   mediaUrl: number
   soundUrl: number
   theme: number
+  category: number
   difficulty: number
   usageCount: number
   createdAt: number
@@ -135,6 +138,7 @@ export type QuestionTemplateMinAggregateInputType = {
   mediaUrl?: true
   soundUrl?: true
   theme?: true
+  category?: true
   difficulty?: true
   usageCount?: true
   createdAt?: true
@@ -153,6 +157,7 @@ export type QuestionTemplateMaxAggregateInputType = {
   mediaUrl?: true
   soundUrl?: true
   theme?: true
+  category?: true
   difficulty?: true
   usageCount?: true
   createdAt?: true
@@ -176,6 +181,7 @@ export type QuestionTemplateCountAggregateInputType = {
   mediaUrl?: true
   soundUrl?: true
   theme?: true
+  category?: true
   difficulty?: true
   usageCount?: true
   createdAt?: true
@@ -286,6 +292,7 @@ export type QuestionTemplateGroupByOutputType = {
   mediaUrl: string | null
   soundUrl: string | null
   theme: $Enums.GameTheme
+  category: string | null
   difficulty: $Enums.Difficulty
   usageCount: number
   createdAt: Date
@@ -332,6 +339,7 @@ export type QuestionTemplateWhereInput = {
   mediaUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   soundUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   theme?: Prisma.EnumGameThemeFilter<"QuestionTemplate"> | $Enums.GameTheme
+  category?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   difficulty?: Prisma.EnumDifficultyFilter<"QuestionTemplate"> | $Enums.Difficulty
   usageCount?: Prisma.IntFilter<"QuestionTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
@@ -355,6 +363,7 @@ export type QuestionTemplateOrderByWithRelationInput = {
   mediaUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   soundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -381,6 +390,7 @@ export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
   mediaUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   soundUrl?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   theme?: Prisma.EnumGameThemeFilter<"QuestionTemplate"> | $Enums.GameTheme
+  category?: Prisma.StringNullableFilter<"QuestionTemplate"> | string | null
   difficulty?: Prisma.EnumDifficultyFilter<"QuestionTemplate"> | $Enums.Difficulty
   usageCount?: Prisma.IntFilter<"QuestionTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
@@ -404,6 +414,7 @@ export type QuestionTemplateOrderByWithAggregationInput = {
   mediaUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   soundUrl?: Prisma.SortOrderInput | Prisma.SortOrder
   theme?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -435,6 +446,7 @@ export type QuestionTemplateScalarWhereWithAggregatesInput = {
   mediaUrl?: Prisma.StringNullableWithAggregatesFilter<"QuestionTemplate"> | string | null
   soundUrl?: Prisma.StringNullableWithAggregatesFilter<"QuestionTemplate"> | string | null
   theme?: Prisma.EnumGameThemeWithAggregatesFilter<"QuestionTemplate"> | $Enums.GameTheme
+  category?: Prisma.StringNullableWithAggregatesFilter<"QuestionTemplate"> | string | null
   difficulty?: Prisma.EnumDifficultyWithAggregatesFilter<"QuestionTemplate"> | $Enums.Difficulty
   usageCount?: Prisma.IntWithAggregatesFilter<"QuestionTemplate"> | number
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"QuestionTemplate"> | Date | string
@@ -458,6 +470,7 @@ export type QuestionTemplateCreateInput = {
   mediaUrl?: string | null
   soundUrl?: string | null
   theme?: $Enums.GameTheme
+  category?: string | null
   difficulty?: $Enums.Difficulty
   usageCount?: number
   createdAt?: Date | string
@@ -481,6 +494,7 @@ export type QuestionTemplateUncheckedCreateInput = {
   mediaUrl?: string | null
   soundUrl?: string | null
   theme?: $Enums.GameTheme
+  category?: string | null
   difficulty?: $Enums.Difficulty
   usageCount?: number
   createdAt?: Date | string
@@ -504,6 +518,7 @@ export type QuestionTemplateUpdateInput = {
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -527,6 +542,7 @@ export type QuestionTemplateUncheckedUpdateInput = {
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -550,6 +566,7 @@ export type QuestionTemplateCreateManyInput = {
   mediaUrl?: string | null
   soundUrl?: string | null
   theme?: $Enums.GameTheme
+  category?: string | null
   difficulty?: $Enums.Difficulty
   usageCount?: number
   createdAt?: Date | string
@@ -573,6 +590,7 @@ export type QuestionTemplateUpdateManyMutationInput = {
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -596,6 +614,7 @@ export type QuestionTemplateUncheckedUpdateManyInput = {
   mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -627,6 +646,7 @@ export type QuestionTemplateCountOrderByAggregateInput = {
   mediaUrl?: Prisma.SortOrder
   soundUrl?: Prisma.SortOrder
   theme?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -654,6 +674,7 @@ export type QuestionTemplateMaxOrderByAggregateInput = {
   mediaUrl?: Prisma.SortOrder
   soundUrl?: Prisma.SortOrder
   theme?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -672,6 +693,7 @@ export type QuestionTemplateMinOrderByAggregateInput = {
   mediaUrl?: Prisma.SortOrder
   soundUrl?: Prisma.SortOrder
   theme?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   difficulty?: Prisma.SortOrder
   usageCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
@@ -759,6 +781,7 @@ export type QuestionTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
+  category?: boolean
   difficulty?: boolean
   usageCount?: boolean
   createdAt?: boolean
@@ -782,6 +805,7 @@ export type QuestionTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
+  category?: boolean
   difficulty?: boolean
   usageCount?: boolean
   createdAt?: boolean
@@ -805,6 +829,7 @@ export type QuestionTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
+  category?: boolean
   difficulty?: boolean
   usageCount?: boolean
   createdAt?: boolean
@@ -828,13 +853,14 @@ export type QuestionTemplateSelectScalar = {
   mediaUrl?: boolean
   soundUrl?: boolean
   theme?: boolean
+  category?: boolean
   difficulty?: boolean
   usageCount?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
+export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "category" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
 
 export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "QuestionTemplate"
@@ -856,6 +882,7 @@ export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     mediaUrl: string | null
     soundUrl: string | null
     theme: $Enums.GameTheme
+    category: string | null
     difficulty: $Enums.Difficulty
     usageCount: number
     createdAt: Date
@@ -1299,6 +1326,7 @@ export interface QuestionTemplateFieldRefs {
   readonly mediaUrl: Prisma.FieldRef<"QuestionTemplate", 'String'>
   readonly soundUrl: Prisma.FieldRef<"QuestionTemplate", 'String'>
   readonly theme: Prisma.FieldRef<"QuestionTemplate", 'GameTheme'>
+  readonly category: Prisma.FieldRef<"QuestionTemplate", 'String'>
   readonly difficulty: Prisma.FieldRef<"QuestionTemplate", 'Difficulty'>
   readonly usageCount: Prisma.FieldRef<"QuestionTemplate", 'Int'>
   readonly createdAt: Prisma.FieldRef<"QuestionTemplate", 'DateTime'>
