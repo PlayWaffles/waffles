@@ -215,6 +215,24 @@ export const FlameIcon = ({ size = 16 }: { size?: number }) => (
   />
 );
 
+export const SyrupIcon = ({ size = 18 }: { size?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden="true" style={{ display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}>
+    <path
+      d="M12 2.5C8.2 6.9 5 10.9 5 15.1C5 19.1 8.1 22 12 22C15.9 22 19 19.1 19 15.1C19 10.9 15.8 6.9 12 2.5Z"
+      fill="#1e1e1e"
+    />
+    <path
+      d="M12 5.8C9.2 9.2 7.2 12.2 7.2 15.1C7.2 17.9 9.3 19.9 12 19.9C14.7 19.9 16.8 17.9 16.8 15.1C16.8 12.2 14.8 9.2 12 5.8Z"
+      fill="#FFC931"
+    />
+    <path d="M9.3 15.3C9.3 17.1 10.5 18.2 12 18.2C13.5 18.2 14.7 17.1 14.7 15.3C14.7 13.8 13.6 11.8 12 9.6C10.4 11.8 9.3 13.8 9.3 15.3Z" fill="#D98213" />
+    <path d="M9.4 13.5C9.9 11.9 10.9 10.4 11.8 9.2C13.4 11.5 14.5 13.6 14.5 15.1C14.5 15.9 14.2 16.6 13.8 17.1C13.1 14.7 11.5 13.6 9.4 13.5Z" fill="#FFB020" />
+    <path d="M10 8.8C10.8 7.7 11.6 6.7 12 6.2C12.5 6.8 13.5 8 14.4 9.3C13.3 8.7 11.6 8.5 10 8.8Z" fill="#FFE58A" />
+    <path d="M8.5 14C8.1 15.7 8.7 17.7 10.6 18.7" fill="none" stroke="#FFF4B8" strokeWidth="1.4" strokeLinecap="round" />
+    <path d="M15.4 17.7C16.2 16.5 16.2 14.8 15.8 13.4" fill="none" stroke="#A95509" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+);
+
 // Confetti — one-shot celebration burst rendered via 36 absolutely positioned
 // pieces with randomised offsets, colours, and timings via inline CSS vars.
 // CSS-only animation; no library dependency. Auto-disables under
