@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useProto, type ScreenName } from "./state";
 import { type ThemeId } from "./theme";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // ===== Model + data ===========================================================
 // Announcements are surfaced two ways for the MVP: a dismissable Home banner
@@ -108,18 +109,54 @@ const timeAgo = (ts: number) => {
 
 export const AnnouncementBanner = () => {
   const proto = useProto();
+  const viewedRef = useRef<string | null>(null);
   const top = activeAnnouncements().find((a) => !proto.annDismissed.includes(a.id));
+  useEffect(() => {
+    if (!top || viewedRef.current === top.id) return;
+    viewedRef.current = top.id;
+    trackClientEvent(AnalyticsEvent.AnnouncementBannerViewed, {
+      announcement_id: top.id,
+      announcement_type: top.tone,
+      cta_target: top.cta?.theme ?? top.cta?.screen ?? "none",
+      source_screen: proto.screen,
+    });
+  }, [proto.screen, top]);
   if (!top) return null;
   const c = TONE[top.tone];
 
   const onOpen = () => {
+    trackClientEvent(AnalyticsEvent.AnnouncementBannerOpened, {
+      announcement_id: top.id,
+      announcement_type: top.tone,
+      cta_target: top.cta?.theme ?? top.cta?.screen ?? "none",
+      source_screen: proto.screen,
+    });
     proto.markAnnouncementsRead([top.id]);
+    trackClientEvent(AnalyticsEvent.AnnouncementMarkedRead, {
+      announcement_id: top.id,
+      announcement_type: top.tone,
+      source_screen: proto.screen,
+    });
     // A season CTA opens that season's full-page welcome.
     if (top.cta?.theme) {
+      trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
+        announcement_id: top.id,
+        announcement_type: top.tone,
+        cta_target: top.cta.theme,
+        source_screen: proto.screen,
+      });
       proto.update({ wcTakeoverOpen: true });
       return;
     }
-    if (top.cta?.screen) proto.goto(top.cta.screen);
+    if (top.cta?.screen) {
+      trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
+        announcement_id: top.id,
+        announcement_type: top.tone,
+        cta_target: top.cta.screen,
+        source_screen: proto.screen,
+      });
+      proto.goto(top.cta.screen);
+    }
   };
 
   return (
@@ -139,7 +176,14 @@ export const AnnouncementBanner = () => {
       </button>
       <button
         type="button"
-        onClick={() => proto.dismissAnnouncement(top.id)}
+        onClick={() => {
+          trackClientEvent(AnalyticsEvent.AnnouncementBannerDismissed, {
+            announcement_id: top.id,
+            announcement_type: top.tone,
+            source_screen: proto.screen,
+          });
+          proto.dismissAnnouncement(top.id);
+        }}
         aria-label="Dismiss announcement"
         style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 99, border: "none", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.6)", fontSize: 15, lineHeight: 1, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
       >
@@ -158,8 +202,21 @@ export const AnnouncementBell = () => {
   const unread = active.filter((a) => !proto.annRead.includes(a.id)).length;
 
   const openInbox = () => {
+    trackClientEvent(AnalyticsEvent.AnnouncementInboxOpened, {
+      source_screen: proto.screen,
+      unread_count: unread,
+      announcement_count: active.length,
+    });
     setOpen(true);
     proto.markAnnouncementsRead(active.map((a) => a.id));
+    active.forEach((a) => {
+      if (proto.annRead.includes(a.id)) return;
+      trackClientEvent(AnalyticsEvent.AnnouncementMarkedRead, {
+        announcement_id: a.id,
+        announcement_type: a.tone,
+        source_screen: proto.screen,
+      });
+    });
   };
 
   return (
@@ -177,16 +234,23 @@ export const AnnouncementBell = () => {
           <span aria-hidden="true" style={{ position: "absolute", top: 6, right: 7, minWidth: 15, height: 15, padding: "0 3px", borderRadius: 99, background: "var(--live-red)", border: "2px solid var(--surface-deep)", color: "#fff", fontSize: 9, fontWeight: 900, lineHeight: "11px", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)" }}>{unread}</span>
         )}
       </button>
-      {open && <AnnouncementInbox onClose={() => setOpen(false)} />}
+      {open && <AnnouncementInbox sourceScreen={proto.screen} onClose={() => setOpen(false)} />}
     </>
   );
 };
 
-const AnnouncementInbox = ({ onClose }: { onClose: () => void }) => {
+const AnnouncementInbox = ({ sourceScreen, onClose }: { sourceScreen: ScreenName; onClose: () => void }) => {
   const proto = useProto();
   const active = activeAnnouncements();
+  const closeInbox = () => {
+    trackClientEvent(AnalyticsEvent.AnnouncementInboxClosed, {
+      source_screen: sourceScreen,
+      announcement_count: active.length,
+    });
+    onClose();
+  };
   return (
-    <div role="presentation" onClick={onClose} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+    <div role="presentation" onClick={closeInbox} style={{ position: "fixed", inset: 0, zIndex: 100, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
       <div
         role="dialog"
         aria-modal="true"
@@ -197,7 +261,7 @@ const AnnouncementInbox = ({ onClose }: { onClose: () => void }) => {
         <div style={{ width: 36, height: 4, borderRadius: 99, background: "rgba(253,251,246,0.2)", margin: "0 auto 14px" }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: 18, color: "var(--ink)" }}>Announcements</div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ fontSize: 13, fontWeight: 800, color: "var(--ink-faint)", background: "none", border: "none", cursor: "pointer", padding: 4 }}>Close</button>
+          <button type="button" onClick={closeInbox} aria-label="Close" style={{ fontSize: 13, fontWeight: 800, color: "var(--ink-faint)", background: "none", border: "none", cursor: "pointer", padding: 4 }}>Close</button>
         </div>
 
         {active.length === 0 ? (
@@ -219,9 +283,15 @@ const AnnouncementInbox = ({ onClose }: { onClose: () => void }) => {
                       <button
                         type="button"
                         onClick={() => {
-                          if (a.cta!.theme) { proto.update({ wcTakeoverOpen: true }); onClose(); return; }
+                          trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
+                            announcement_id: a.id,
+                            announcement_type: a.tone,
+                            cta_target: a.cta!.theme ?? a.cta!.screen ?? "none",
+                            source_screen: sourceScreen,
+                          });
+                          if (a.cta!.theme) { proto.update({ wcTakeoverOpen: true }); closeInbox(); return; }
                           if (a.cta!.screen) proto.goto(a.cta!.screen);
-                          onClose();
+                          closeInbox();
                         }}
                         style={{ marginTop: 10, background: "transparent", border: `1.5px solid ${c.bd}`, color: c.fg, borderRadius: 9, padding: "6px 12px", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer" }}
                       >
