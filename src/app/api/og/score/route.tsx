@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 import { OG_WIDTH, OG_HEIGHT, COLORS, safeImageUrl } from "../utils";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { trackServerEvent } from "@/lib/server-analytics";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,14 @@ export async function GET(request: Request) {
     const gameNumber = parseInt(searchParams.get("gameNumber") || "1", 10);
     const rankParam = searchParams.get("rank");
     const rank = rankParam ? parseInt(rankParam, 10) : null;
+    await trackServerEvent({
+        name: "og_share_image_requested",
+        properties: {
+            share_type: "score",
+            has_required_params: Boolean(searchParams.get("score") && searchParams.get("username")),
+            rank_present: rank != null,
+        },
+    });
 
     // Load assets
     const publicDir = join(process.cwd(), "public");

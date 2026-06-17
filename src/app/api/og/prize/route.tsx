@@ -3,6 +3,7 @@ import { ImageResponse } from "next/og";
 import { OG_WIDTH, OG_HEIGHT, safeImageUrl } from "../utils";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
+import { trackServerEvent } from "@/lib/server-analytics";
 
 export const runtime = "nodejs";
 
@@ -22,6 +23,13 @@ export async function GET(request: Request) {
     // Parse params
     const prizeAmount = parseInt(searchParams.get("prizeAmount") || "0", 10);
     const pfpUrlParam = searchParams.get("pfpUrl");
+    await trackServerEvent({
+        name: "og_share_image_requested",
+        properties: {
+            share_type: "prize",
+            has_required_params: prizeAmount > 0,
+        },
+    });
 
     // Load assets from filesystem
     const publicDir = join(process.cwd(), "public");
