@@ -590,9 +590,9 @@ const initialState = (tweaks: Tweaks): State => ({
   prevScreen: null,
   direction: 1,
   tickets: tweaks.startingTickets,
-  levelTrack: "standard",
-  // Both tracks start fresh at level 1 (Forest + World Cup); real progress
-  // overlays from the server once loadV2State resolves.
+  levelTrack: "world-cup",
+  // Both tracks start fresh at level 1; real progress overlays from the server
+  // once loadV2State resolves.
   levelByTrack: { standard: 1, "world-cup": 1 },
   lives: LIVES_MAX,
   nextLifeAt: null,

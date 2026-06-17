@@ -8,7 +8,7 @@ import { ASSETS, Phone, PixelImg, SyrupIcon, TabBar, TopHeader, useNow } from ".
 // The two parallel solo campaigns the levels-page tab switches between. Each has
 // its own progression (state.levelByTrack); the active accent skins the tab.
 const TRACKS: { id: LevelTrack; label: string; accent: string }[] = [
-  { id: "standard", label: "FOREST", accent: "var(--maple-500)" },
+  { id: "standard", label: "GENERAL", accent: "var(--maple-500)" },
   { id: "world-cup", label: "WORLD CUP", accent: "#2bbf5b" },
 ];
 
