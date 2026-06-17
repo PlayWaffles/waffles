@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, TabBar, ToastButton } from "../shared";
-import { v2LoadLeaderboard } from "@/actions/v2";
-import type { RoundBoard } from "@/lib/v2/rounds";
+import { v2LoadTournamentLeaderboard } from "@/actions/v2";
+import type { TournamentBoard } from "@/lib/v2/tournamentGames";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Pre-generated medal art replaces the synthesized SVG medal.
@@ -47,12 +47,12 @@ export const LeaderboardScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"league" | "friends">("league");
 
-  // Real round standings (latest round with entrants). Falls back to the sample
-  // board below in the preview / unauthenticated context or before any round runs.
-  const [board, setBoard] = useState<RoundBoard | null>(null);
+  // Real tournament standings. Falls back to the sample board below in the
+  // preview / unauthenticated context or before any tournament runs.
+  const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadLeaderboard()
+    v2LoadTournamentLeaderboard()
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })

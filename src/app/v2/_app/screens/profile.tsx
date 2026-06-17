@@ -1,13 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { usdtLabel, USDT_PER_TICKET, useProto, type Winning } from "../state";
-import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, TabBar, TicketIcon, TopHeader } from "../shared";
+import { syrupLabel, usdtLabel, USDT_PER_TICKET, useProto, type Winning } from "../state";
+import { v2LoadTournamentClaims } from "@/actions/v2";
+import { txStepLabel } from "../useTournamentWallet";
+import type { TournamentClaimItem } from "@/lib/v2/tournamentGames";
+import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
 import { BADGES, badgeProgress, deriveBadgeStats, isBadgeEarned, type Badge, type BadgeStats } from "../data/badges";
 import { LegalSheet, type LegalTab } from "../legal";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
-const TICKET_INFO = `Tickets are the in-app currency — each is worth ${USDT_PER_TICKET} USDT. Spend them on tournament entries, power-ups and cosmetics. Prizes you win in tournaments are paid in USDT and can be claimed from your Prize Wallet below.`;
+const TICKET_INFO = "Syrup is the in-app currency. Earn it through daily rewards, levels, and missions, then spend it on lives, power-ups, and cosmetics. Tournament prizes are paid in USDT and can be claimed from your Prize Wallet below.";
 
 const timeAgo = (ts: number) => {
   const h = Math.round((Date.now() - ts) / 3_600_000);
@@ -119,7 +122,29 @@ export const ProfileScreen = () => {
       tickets_after: tickets + w.tickets,
     });
     proto.convertWinning(w.id);
-    setToast(`Added ${w.tickets} 🎟 to your balance`);
+    setToast(`Added ${syrupLabel(w.tickets)} to your balance`);
+  };
+
+  // On-chain tournament prizes — claimed via the wallet (claimPrize) using the
+  // merkle proof, then confirmed server-side. Separate from the off-chain
+  // Winning list above (which has no on-chain claim).
+  const [onchainClaims, setOnchainClaims] = useState<TournamentClaimItem[]>([]);
+  const [claimingGameId, setClaimingGameId] = useState<string | null>(null);
+  useEffect(() => {
+    let active = true;
+    v2LoadTournamentClaims().then((c) => { if (active) setOnchainClaims(c); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+  const onClaimOnchain = async (item: TournamentClaimItem) => {
+    setClaimingGameId(item.gameId);
+    const res = await proto.claimTournamentPrize(item.gameId);
+    setClaimingGameId(null);
+    if (res.ok) {
+      setOnchainClaims((list) => list.filter((c) => c.gameId !== item.gameId));
+      setToast(`Claimed ${item.amount.toFixed(2)} USDT`);
+    } else {
+      setToast(res.error ?? "Claim failed");
+    }
   };
 
   // Replay the whole onboarding experience: clear every "seen" flag (the
@@ -230,18 +255,18 @@ export const ProfileScreen = () => {
         <div data-coach="profile-tickets" style={{ background: "#0F0F10", border: "1px solid rgba(255,201,49,.2)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(255,201,49,.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <AssetWell size={58} accent="var(--maple-500)" radius={14}>
-              <TicketIcon size={30} />
+              <SyrupIcon size={30} />
             </AssetWell>
             <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#fff", lineHeight: 1 }}>{tickets} ticket{tickets === 1 ? "" : "s"}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Spend on entries, power-ups & cosmetics</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#fff", lineHeight: 1 }}>{syrupLabel(tickets)}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Spend on lives, power-ups & cosmetics</div>
             </div>
-            <InfoButton title="Ticket value" text={TICKET_INFO} size={26} />
+            <InfoButton title="Syrup" text={TICKET_INFO} size={26} />
           </div>
         </div>
 
         {/* Prize Wallet — tournament winnings (USDT-backed) the player resolves
-            per prize: claim the USDT value or convert into spendable tickets. */}
+            per prize: claim the USDT value or convert into spendable Syrup. */}
         <div style={{ background: "#0F0F10", border: "1px solid rgba(0,207,242,.22)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(0,207,242,.05)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: pendingWinnings.length ? 12 : 0 }}>
             <div>
@@ -254,11 +279,36 @@ export const ProfileScreen = () => {
             </div>
           </div>
 
-          {pendingWinnings.length === 0 ? (
+          {/* On-chain tournament prizes — claimed from the pool via merkle proof. */}
+          {onchainClaims.map((c) => (
+            <div key={c.gameId} style={{ background: "#1a1a1c", border: "1px solid rgba(0,207,242,.18)", borderRadius: 12, padding: "10px 12px", marginTop: 12, marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 11, background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <PixelImg src={ASSETS.trophy} size={28} alt="" />
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#fff", lineHeight: 1 }}>#{c.rank} · WAFFLES #{c.gameNumber}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3 }}>{timeAgo(c.wonAt)} · on-chain</div>
+                </div>
+                <div style={{ textAlign: "right" }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#00CFF2", lineHeight: 1 }}>{c.amount.toFixed(2)} USDT</div>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => claimingGameId ? undefined : void onClaimOnchain(c)}
+                style={{ width: "100%", background: "#00CFF2", border: "1.5px solid var(--frame)", color: "var(--frame)", borderRadius: 10, padding: "9px 0", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer", boxShadow: "0 3px 0 var(--frame)" }}
+              >
+                {claimingGameId === c.gameId ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Claiming…") : `Claim ${c.amount.toFixed(2)} USDT`}
+              </button>
+            </div>
+          ))}
+
+          {pendingWinnings.length === 0 && onchainClaims.length === 0 ? (
             <div style={{ marginTop: 12, textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.4)", padding: "10px 0", lineHeight: 1.4 }}>
               No prizes to claim yet.<br />Finish Top 100 in a tournament to win USDT.
             </div>
-          ) : (
+          ) : pendingWinnings.length === 0 ? null : (
             pendingWinnings.map((w) => (
               <div key={w.id} style={{ background: "#1a1a1c", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
@@ -271,7 +321,7 @@ export const ProfileScreen = () => {
                   </div>
                   <div style={{ textAlign: "right" }}>
                     <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#00CFF2", lineHeight: 1 }}>{usdtLabel(w.tickets)}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)", marginTop: 3, display: "inline-flex", alignItems: "center", gap: 3 }}>{w.tickets} <TicketIcon size={11} /></div>
+                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)", marginTop: 3, display: "inline-flex", alignItems: "center", gap: 3 }}>{w.tickets} <SyrupIcon size={11} /></div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8 }}>
@@ -280,7 +330,7 @@ export const ProfileScreen = () => {
                     onClick={() => onConvert(w)}
                     style={{ flex: 1, background: "transparent", border: "1.5px solid rgba(255,201,49,.4)", color: "var(--maple-500)", borderRadius: 10, padding: "9px 0", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5 }}
                   >
-                    Use {w.tickets} <TicketIcon size={13} />
+                    Use {w.tickets} <SyrupIcon size={13} />
                   </button>
                   <button
                     type="button"

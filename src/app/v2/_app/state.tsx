@@ -33,7 +33,7 @@ import {
   v2SetUsername,
   v2SubmitRoundAnswers,
 } from "@/actions/v2";
-import { useTournamentWallet } from "./useTournamentWallet";
+import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { assertChainPlatform } from "@/lib/chain/platform";
 import {
   AnalyticsEvent,
@@ -118,10 +118,19 @@ export const USDT_PER_TICKET = 0.1;
 export function ticketsToUsdt(tickets: number): number {
   return tickets * USDT_PER_TICKET;
 }
-// Display label for a ticket amount's cash value, e.g. "2.50 USDT". Single
-// formatter so the unit is spelled out consistently wherever we show value.
+// Display label for a real cash value, e.g. "2.50 USDT". Used for on-chain
+// winnings (the Prize Wallet) — NOT for the off-chain soft currency below.
 export function usdtLabel(tickets: number): string {
   return `${ticketsToUsdt(tickets).toFixed(2)} USDT`;
+}
+
+// "Syrup" is the off-chain soft currency (earned by playing; spent on lives,
+// power-ups for solo levels, and cosmetics). It is NOT money and has no cash
+// value — show the plain count, paired with <SyrupIcon>. (Internally still
+// `ticketBalance` / TicketLedgerReason; this is the display name only.)
+export const SYRUP_NAME = "Syrup";
+export function syrupLabel(amount: number): string {
+  return `${amount} ${SYRUP_NAME}`;
 }
 
 // First-timer ticket offer: a player's very first ticket is half price
@@ -582,6 +591,9 @@ type State = {
   // the finish-submit to the server-authoritative on-chain scorer. Null for the
   // off-chain ticket path.
   tournamentGameId: string | null;
+  // Live progress of the current on-chain entry/claim (approve → pay → confirm →
+  // verify), so the UI can narrate the multi-step wallet flow. Null when idle.
+  tournamentStep: TournamentTxStep | null;
   // True when the current tournament round earns the daily 2× XP bonus.
   tournamentBonus: boolean;
   // Whether the daily-reward sheet is open (driven globally so any screen,
@@ -632,6 +644,7 @@ const initialState = (tweaks: Tweaks): State => ({
   roundAnswers: [],
   pendingLevelQuestions: null,
   tournamentGameId: null,
+  tournamentStep: null,
   tournamentBonus: false,
   dailyOpen: false,
   wcTakeoverOpen: false,
@@ -1488,6 +1501,9 @@ export function ProtoProvider({
 
   // Activate a shop power-up in the live quiz (consumes one from inventory).
   const usePowerUp = (kind: PowerUpName) => {
+    // Power-ups are a solo-level perk only — the on-chain tournament stays
+    // pure-skill (no ticket-bought advantage in the real-money round).
+    if (state.mode !== "level") return;
     track(AnalyticsEvent.PowerupUseStarted, {
       powerup_id: kind,
       question_index: state.qIdx + 1,
@@ -1601,9 +1617,12 @@ export function ProtoProvider({
         assertChainPlatform(t.game.platform),
         t.game.onchainId as `0x${string}`,
         t.game.entryFee,
+        (step) => update({ tournamentStep: step }),
       );
+      update({ tournamentStep: "verifying" });
       const res = await v2EnterTournament(t.game.id, txHash);
       if (!res || !res.ok) {
+        update({ tournamentStep: null });
         return { ok: false, error: res && !res.ok ? res.error : "entry_failed" };
       }
       const mapped: Question[] = t.questions.map((q) => ({ ...q }));
@@ -1619,10 +1638,12 @@ export function ProtoProvider({
         timer: mapped[0]?.time ?? tweaks.questionTime,
         countdownSec: tweaks.lobbyCountdown,
         entry: null,
+        tournamentStep: null,
       });
       goto("lobby");
       return { ok: true };
     } catch (e) {
+      update({ tournamentStep: null });
       return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
     }
   };
@@ -1638,13 +1659,17 @@ export function ProtoProvider({
         claim.onchainId,
         BigInt(claim.amount),
         claim.proof,
+        (step) => update({ tournamentStep: step }),
       );
+      update({ tournamentStep: "verifying" });
       const res = await v2ConfirmTournamentClaim(gameId, txHash);
+      update({ tournamentStep: null });
       if (!res || !res.ok) {
         return { ok: false, error: res && !res.ok ? res.error : "claim_failed" };
       }
       return { ok: true };
     } catch (e) {
+      update({ tournamentStep: null });
       return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
     }
   };

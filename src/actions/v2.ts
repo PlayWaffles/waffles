@@ -32,9 +32,14 @@ import {
   enterTournamentOnChain,
   getTournamentClaim,
   getTournamentClientQuestions,
+  latestTournamentStandings,
+  loadTournamentClaims,
   submitTournamentAnswers,
+  tournamentStandings,
   type EnterResult,
+  type TournamentBoard,
   type TournamentClaim,
+  type TournamentClaimItem,
   type TournamentGame,
 } from "@/lib/v2/tournamentGames";
 import type { RoundAnswer } from "@/lib/v2/scoring";
@@ -168,6 +173,37 @@ export async function v2GetTournamentClaim(gameId: string): Promise<TournamentCl
   const user = await getCurrentUser();
   if (!user) return null;
   return getTournamentClaim(user.id, gameId);
+}
+
+/** The player's claimable on-chain tournament prizes (for the profile list). */
+export async function v2LoadTournamentClaims(): Promise<TournamentClaimItem[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  return loadTournamentClaims(user.id);
+}
+
+/** Standings (from the DB) for a specific tournament game — results screen +
+ *  the in-quiz presence strip. */
+export async function v2LoadTournamentBoard(gameId: string): Promise<TournamentBoard> {
+  const user = await getCurrentUser();
+  return tournamentStandings(gameId, { userId: user?.id, limit: 10 });
+}
+
+/** Standings for the platform's latest tournament game — leaderboard screen. */
+export async function v2LoadTournamentLeaderboard(): Promise<TournamentBoard | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return latestTournamentStandings(user.platform, { userId: user.id, limit: 50 });
+}
+
+/** Standings for the player's CURRENT live tournament game — home card +
+ *  in-quiz presence strip (entrant count). */
+export async function v2LoadCurrentTournamentBoard(): Promise<TournamentBoard | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const game = await currentTournamentGame(user.platform);
+  if (!game) return null;
+  return tournamentStandings(game.id, { userId: user.id, limit: 10 });
 }
 
 /** Confirm an on-chain prize claim after the client sends `claimPrize`. Verifies
