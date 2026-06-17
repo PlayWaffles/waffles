@@ -503,7 +503,7 @@ export type Tweaks = {
 export const DEFAULT_TWEAKS: Tweaks = {
   questionTime: 10,
   questionsPerRound: 6,
-  levelQuestions: 3,
+  levelQuestions: 4,
   lobbyCountdown: 10,
   startingTickets: 0,
   homeSlot: "both",

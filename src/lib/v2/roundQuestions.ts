@@ -192,7 +192,7 @@ export async function getRoundClientQuestions(
 export type LevelTrack = "standard" | "world-cup";
 
 /** Questions per solo level. */
-export const QUESTIONS_PER_LEVEL = 5;
+export const QUESTIONS_PER_LEVEL = 4;
 
 /**
  * Difficulty ramp for a level — mirrors the client `levelDifficulties`: early
