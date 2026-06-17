@@ -2,9 +2,12 @@ import "./globals.css";
 import { fontBody, fontDisplay, fontInput } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { env } from "@/lib/env";
 import { DeferredVercelMetrics } from "@/components/providers/DeferredVercelMetrics";
-import { AnalyticsTracker } from "@/components/providers/AnalyticsTracker";
+
+const UMAMI_HOST = "https://analytics.cyberverse.cloud";
+const UMAMI_WEBSITE_ID = "c93b9fef-6a59-4006-adb3-48d2bb001e8d";
 
 export const metadata: Metadata = {
   title: "Waffles",
@@ -66,9 +69,15 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
-        <AnalyticsTracker />
         {children}
         <DeferredVercelMetrics />
+        <Script
+          defer
+          src={`${UMAMI_HOST}/script.js`}
+          data-website-id={UMAMI_WEBSITE_ID}
+          data-domains="playwaffles.fun,www.playwaffles.fun"
+          strategy="afterInteractive"
+        />
       </body>
     </html>
   );

@@ -40,30 +40,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const farcasterProfileSyncRef = useRef<string | null>(null);
   const appOpenedRef = useRef(false);
 
-  // Identify user in PostHog once user data is available
-  useEffect(() => {
-    if (!user?.id) {
-      console.info("[posthog]", "client_reset");
-      import("posthog-js").then(({ default: posthog }) => posthog.reset());
-      return;
-    }
-    console.info("[posthog]", "client_identify", {
-      distinctId: user.id,
-      platform: user.platform,
-      username: user.username ?? null,
-      fid: user.fid ?? null,
-      wallet: user.wallet ?? null,
-    });
-    import("posthog-js").then(({ default: posthog }) => {
-      posthog.identify(user.id, {
-        platform: user.platform,
-        username: user.username ?? undefined,
-        fid: user.fid ?? undefined,
-        wallet: user.wallet ?? undefined,
-      });
-    });
-  }, [user?.id, user?.platform, user?.username, user?.fid, user?.wallet]);
-
   useEffect(() => {
     let mounted = true;
 
