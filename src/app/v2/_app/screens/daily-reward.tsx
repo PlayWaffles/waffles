@@ -5,6 +5,7 @@ import { useProto } from "../state";
 import { ASSETS, FlameIcon, PixelImg, Sheet, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 import { v2BuyStreakFreeze, v2ClaimDaily } from "@/actions/v2";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Daily reward + streak. The single biggest retention lever for a no-push app
 // is loss-aversion around a streak (returning users with a 7+ day streak are
@@ -117,24 +118,65 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
   useEffect(() => {
     writeDaily(resolved.state);
     proto.update({ streak: resolved.state.streak });
+    trackClientEvent(AnalyticsEvent.DailyRewardViewed, {
+      screen: "daily_reward",
+      streak_days: resolved.state.streak,
+      claimable: resolved.claimable,
+      freezes,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleClaim = async () => {
-    if (claimed) return;
+    if (claimed) {
+      trackClientEvent(AnalyticsEvent.DailyRewardAlreadyClaimed, {
+        screen: "daily_reward",
+        streak_days: displayStreak,
+      });
+      return;
+    }
+    trackClientEvent(AnalyticsEvent.DailyRewardClaimStarted, {
+      screen: "daily_reward",
+      streak_days: baseStreak,
+      freezes,
+    });
     playSound("purchase");
     // Server is authoritative: it rolls + credits, so we display ITS roll (a
     // separate local roll would mismatch the credited reward). Falls back to a
     // local roll only in the preview / unauthenticated context.
-    const server = await v2ClaimDaily();
+    let server: Awaited<ReturnType<typeof v2ClaimDaily>>;
+    try {
+      server = await v2ClaimDaily();
+    } catch (error) {
+      trackClientEvent(AnalyticsEvent.DailyRewardClaimFailed, {
+        screen: "daily_reward",
+        reason: error instanceof Error ? error.message : "claim_failed",
+      });
+      return;
+    }
     if (server) {
       if (server.claimed) {
         proto.update({ tickets: server.tickets, xp: server.xp, streak: server.streak });
         writeDaily({ lastClaim: todayKey(), streak: server.streak, freezes });
         setReward(server.roll);
+        trackClientEvent(AnalyticsEvent.DailyRewardClaimSucceeded, {
+          screen: "daily_reward",
+          reward_type: server.roll.type,
+          reward_amount: server.roll.amount,
+          rarity: server.roll.rarity,
+          streak_days: server.streak,
+          used_freeze: server.usedFreeze,
+          tickets_after: server.tickets,
+          xp_after: server.xp,
+        });
       } else {
         // already claimed today server-side — sync local + reflect claimed.
         writeDaily({ lastClaim: todayKey(), streak: baseStreak, freezes });
+        trackClientEvent(AnalyticsEvent.DailyRewardAlreadyClaimed, {
+          screen: "daily_reward",
+          reason: server.reason,
+          streak_days: baseStreak,
+        });
       }
       setClaimed(true);
       return;
@@ -148,16 +190,49 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
     proto.update({ streak: next.streak });
     setReward(r);
     setClaimed(true);
+    trackClientEvent(AnalyticsEvent.DailyRewardClaimSucceeded, {
+      screen: "daily_reward",
+      reward_type: r.type,
+      reward_amount: r.amount,
+      rarity: r.rarity,
+      streak_days: next.streak,
+      preview_mode: true,
+    });
   };
 
   const buyFreeze = () => {
     if (proto.tickets < STREAK_FREEZE_COST) {
+      trackClientEvent(AnalyticsEvent.StreakFreezePurchaseBlocked, {
+        screen: "daily_reward",
+        reason: "insufficient_tickets",
+        tickets_balance: proto.tickets,
+        price_tickets: STREAK_FREEZE_COST,
+      });
       onClose();
       proto.goto("shop");
       return;
     }
+    trackClientEvent(AnalyticsEvent.StreakFreezePurchaseStarted, {
+      screen: "daily_reward",
+      tickets_before: proto.tickets,
+      price_tickets: STREAK_FREEZE_COST,
+    });
     proto.update((s) => ({ tickets: s.tickets - STREAK_FREEZE_COST }));
-    void v2BuyStreakFreeze(); // persist the spend + freeze server-side
+    void v2BuyStreakFreeze()
+      .then((result) => {
+        trackClientEvent(AnalyticsEvent.StreakFreezePurchaseSucceeded, {
+          screen: "daily_reward",
+          tickets_after: result?.tickets ?? proto.tickets - STREAK_FREEZE_COST,
+          freezes_after: result?.freezes ?? freezes + 1,
+          price_tickets: STREAK_FREEZE_COST,
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.DailyRewardClaimFailed, {
+          screen: "daily_reward",
+          reason: error instanceof Error ? error.message : "streak_freeze_failed",
+        });
+      }); // persist the spend + freeze server-side
     const updated = freezes + 1;
     setFreezes(updated);
     writeDaily({ lastClaim: claimed ? todayKey() : readDaily().lastClaim, streak: claimed ? baseStreak + 1 : baseStreak, freezes: updated });
