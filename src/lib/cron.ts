@@ -41,7 +41,31 @@ async function roundupGames() {
       }
     }
 
-    console.log(`[Cron] Roundup done: ${ranked} ranked, ${published} published`);
+    // Retry publish for games that were ranked but never published on-chain
+    // (e.g. a prior publish threw — settler out of gas, RPC blip). Without this,
+    // a winner's prize is stuck un-claimable forever. Self-heals once fixable.
+    const stuck = await prisma.game.findMany({
+      where: {
+        endsAt: { lt: new Date() },
+        rankedAt: { not: null },
+        onChainAt: null,
+        onchainId: { not: null },
+        entries: { some: { prize: { gt: 0 } } },
+      },
+      select: { id: true },
+    });
+    let republished = 0;
+    for (const game of stuck) {
+      try {
+        await publishResults(game.id);
+        republished++;
+        console.log(`[Cron] Re-published stuck game ${game.id}`);
+      } catch (e) {
+        console.error(`[Cron] Re-publish failed for ${game.id}:`, e);
+      }
+    }
+
+    console.log(`[Cron] Roundup done: ${ranked} ranked, ${published + republished} published`);
 
     const scheduled = await ensureNextAutoScheduledGames();
     const created = scheduled.filter((result) => result.created).length;
