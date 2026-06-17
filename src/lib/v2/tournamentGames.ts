@@ -1,0 +1,423 @@
+/**
+ * v2 tournament rounds, ON-CHAIN — a tournament round IS a v1 `Game`.
+ *
+ * Instead of the off-chain `RoundEntry` ledger, the hourly tournament reuses the
+ * existing v1 money lifecycle end-to-end:
+ *   - schedule + create on-chain  → `createAutoScheduledGame` → `createGameOnChain`
+ *   - entry (real USDC deposit)   → `verifyTicketPurchase` → `GameEntry`
+ *   - play + score                → server-authoritative scoring (this file)
+ *   - settle (merkle on-chain)    → `rankGame` + `publishResults` (lifecycle.ts)
+ *   - claim (pull from pool)      → the v1 claim route + `verifyClaim`
+ *
+ * The pool is funded by the players' on-chain entries (exactly like v1) — no
+ * treasury funding, no new contract. This file only adds the thin bridge:
+ * exposing the current game, recording verified entries, and scoring answers
+ * against the game's own authoritative questions.
+ */
+import { parseUnits } from "viem";
+import { prisma } from "@/lib/db";
+import { Prisma, QuestionKind, TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import { verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
+import { createAutoScheduledGame } from "@/lib/game/auto-create";
+import {
+  scoreAnswer,
+  scoreRound,
+  type RoundAnswer,
+  type ScorableKind,
+  type ScorableQuestion,
+} from "./scoring";
+
+const KIND_MAP: Record<QuestionKind, ScorableKind> = {
+  [QuestionKind.SINGLE]: "single",
+  [QuestionKind.MULTI]: "multi",
+  [QuestionKind.ORDER]: "order",
+  [QuestionKind.SPATIAL]: "spatial",
+};
+
+const GAME_QUESTION_SELECT = {
+  id: true,
+  orderInRound: true,
+  roundIndex: true,
+  content: true,
+  options: true,
+  correctIndex: true,
+  kind: true,
+  correctSet: true,
+  pick: true,
+  correctOrder: true,
+  flags: true,
+  minefield: true,
+  kicker: true,
+  clues: true,
+  durationSec: true,
+} as const;
+
+type GameQuestionRow = Prisma.QuestionGetPayload<{ select: typeof GAME_QUESTION_SELECT }>;
+
+const toScorable = (q: GameQuestionRow): ScorableQuestion => ({
+  id: q.id,
+  kind: KIND_MAP[q.kind],
+  correct: q.correctIndex,
+  correctSet: q.correctSet,
+  pick: q.pick,
+  correctOrder: q.correctOrder,
+  minefield: q.minefield,
+  durationSec: q.durationSec,
+});
+
+async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
+  return prisma.question.findMany({
+    where: { gameId },
+    orderBy: [{ roundIndex: "asc" }, { orderInRound: "asc" }],
+    select: GAME_QUESTION_SELECT,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Hourly scheduling — the v1 auto-scheduler is Mon/Wed/Fri day-long games, NOT
+// hourly, so tournaments get their own hourly cadence (still reusing v1's game
+// creation: questions assigned + created on-chain).
+// ---------------------------------------------------------------------------
+
+export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000; // hourly
+const TICKETS_LEAD_MS = 5 * 60 * 1000; // sales open 5m before the hour
+const DEFAULT_ENTRY_FEE_USDC = 1;
+
+/**
+ * Ensure the platform's current hour has a live tournament `Game`, creating one
+ * (on-chain, with questions) if not. Idempotent — a no-op when a game already
+ * covers `now`. Intended to be driven by an hourly cron.
+ */
+export async function ensureHourlyTournamentGame(
+  platform: UserPlatform,
+): Promise<{ created: boolean; gameId: string }> {
+  const now = Date.now();
+
+  const live = await prisma.game.findFirst({
+    where: { platform, startsAt: { lte: new Date(now) }, endsAt: { gt: new Date(now) } },
+    orderBy: { startsAt: "desc" },
+    select: { id: true },
+  });
+  if (live) return { created: false, gameId: live.id };
+
+  // Align to the current hour boundary so every entrant shares one window.
+  const startsAt = new Date(Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS);
+  const endsAt = new Date(startsAt.getTime() + TOURNAMENT_ROUND_MS);
+
+  // Inherit sane play params + entry fee from the platform's most recent game.
+  const recent = await prisma.game.findFirst({
+    where: { platform },
+    orderBy: { startsAt: "desc" },
+    select: { roundBreakSec: true, maxPlayers: true, tierPrices: true },
+  });
+
+  const created = await createAutoScheduledGame({
+    platform,
+    startsAt,
+    endsAt,
+    ticketsOpenAt: new Date(startsAt.getTime() - TICKETS_LEAD_MS),
+    ticketPrice: recent?.tierPrices[0] ?? DEFAULT_ENTRY_FEE_USDC,
+    roundBreakSec: recent?.roundBreakSec ?? 0,
+    maxPlayers: recent?.maxPlayers ?? 0,
+  });
+  return { created: true, gameId: created.gameId };
+}
+
+// ---------------------------------------------------------------------------
+// Current tournament round (a live/upcoming on-chain Game)
+// ---------------------------------------------------------------------------
+
+export type TournamentGame = {
+  id: string;
+  onchainId: string | null;
+  gameNumber: number;
+  platform: UserPlatform;
+  startsAt: Date;
+  endsAt: Date;
+  ticketsOpenAt: Date | null;
+  entryFee: number;
+  prizePool: number;
+  playerCount: number;
+};
+
+/** The platform's current tournament round — the soonest game that hasn't ended.
+ *  Scheduling/creation is handled by the existing v1 auto-scheduler; here we
+ *  only read it. */
+export async function currentTournamentGame(
+  platform: UserPlatform,
+): Promise<TournamentGame | null> {
+  const game = await prisma.game.findFirst({
+    where: { platform, endsAt: { gt: new Date() }, onchainId: { not: null } },
+    orderBy: { startsAt: "asc" },
+    select: {
+      id: true,
+      onchainId: true,
+      gameNumber: true,
+      platform: true,
+      startsAt: true,
+      endsAt: true,
+      ticketsOpenAt: true,
+      tierPrices: true,
+      prizePool: true,
+      playerCount: true,
+    },
+  });
+  if (!game) return null;
+  return {
+    id: game.id,
+    onchainId: game.onchainId,
+    gameNumber: game.gameNumber,
+    platform: game.platform,
+    startsAt: game.startsAt,
+    endsAt: game.endsAt,
+    ticketsOpenAt: game.ticketsOpenAt,
+    entryFee: game.tierPrices[0] ?? 0,
+    prizePool: game.prizePool,
+    playerCount: game.playerCount,
+  };
+}
+
+/** The round's questions in client shape (answer keys included for instant
+ *  feedback), drawn from the game's own assigned questions. */
+export async function getTournamentClientQuestions(gameId: string) {
+  const rows = await gameQuestions(gameId);
+  return rows.map((q) => ({
+    id: q.id,
+    cat: q.kicker ?? "Trivia",
+    q: q.content,
+    answers: q.options,
+    correct: q.correctIndex,
+    kind: KIND_MAP[q.kind],
+    correctSet: q.correctSet.length ? q.correctSet : undefined,
+    pick: q.pick ?? undefined,
+    correctOrder: q.correctOrder.length ? q.correctOrder : undefined,
+    flags: q.flags.length ? q.flags : undefined,
+    kicker: q.kicker ?? undefined,
+    clues: q.clues.length ? q.clues : undefined,
+    time: q.durationSec,
+    minefield: q.minefield || undefined,
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// Entry — verify the on-chain deposit, record a GameEntry (reuses v1 verify)
+// ---------------------------------------------------------------------------
+
+export type EnterResult =
+  | { ok: true; entryId: string; alreadyEntered: boolean }
+  | { ok: false; error: string; retryable?: boolean };
+
+/**
+ * Record a tournament entry after verifying the player's on-chain `buyTicket`.
+ * The deposit funds the on-chain prize pool (v1 model). Idempotent: one entry
+ * per (game, user); the unique `txHash` also blocks replaying a payment.
+ */
+export async function enterTournamentOnChain(input: {
+  userId: string;
+  gameId: string;
+  txHash: string;
+  wallet: string;
+}): Promise<EnterResult> {
+  const { userId, gameId, txHash, wallet } = input;
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { id: true, onchainId: true, platform: true, network: true, tierPrices: true, endsAt: true },
+  });
+  if (!game?.onchainId) return { ok: false, error: "game_not_onchain" };
+  if (new Date() >= game.endsAt) return { ok: false, error: "game_ended" };
+
+  const existing = await prisma.gameEntry.findUnique({
+    where: { gameId_userId: { gameId, userId } },
+    select: { id: true },
+  });
+  if (existing) return { ok: true, entryId: existing.id, alreadyEntered: true };
+
+  const entryFee = game.tierPrices[0] ?? 0;
+  const verification = await verifyTicketPurchase({
+    platform: game.platform,
+    network: game.network,
+    txHash: txHash as `0x${string}`,
+    expectedGameId: game.onchainId as `0x${string}`,
+    expectedBuyer: wallet as `0x${string}`,
+    minimumAmount: parseUnits(entryFee.toString(), PAYMENT_TOKEN_DECIMALS),
+  });
+  if (!verification.verified) {
+    return { ok: false, error: verification.error ?? "verification_failed", retryable: verification.retryable };
+  }
+
+  try {
+    const entry = await prisma.$transaction(async (tx) => {
+      const created = await tx.gameEntry.create({
+        data: {
+          gameId,
+          userId,
+          txHash,
+          payerWallet: wallet,
+          paidAmount: entryFee,
+          paidAt: new Date(),
+          purchaseSource: TicketPurchaseSource.PAID,
+        },
+        select: { id: true },
+      });
+      // Denormalized pool + headcount, mirroring v1's on-entry bookkeeping.
+      await tx.game.update({
+        where: { id: gameId },
+        data: { prizePool: { increment: entryFee }, playerCount: { increment: 1 } },
+      });
+      return created;
+    });
+    return { ok: true, entryId: entry.id, alreadyEntered: false };
+  } catch (error) {
+    // Unique violation on (gameId,userId) or txHash → treat as already recorded.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existingNow = await prisma.gameEntry.findUnique({
+        where: { gameId_userId: { gameId, userId } },
+        select: { id: true },
+      });
+      if (existingNow) return { ok: true, entryId: existingNow.id, alreadyEntered: true };
+    }
+    throw error;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Scoring — server-authoritative, against the game's own questions
+// ---------------------------------------------------------------------------
+
+/**
+ * Score a tournament round from submitted answers and record the SERVER-computed
+ * score on the player's `GameEntry`. The client never posts a score; the server
+ * re-scores against the game's authoritative questions (same anti-cheat caps as
+ * `scoreRound`). Only touches the entry while the game is live, never lowers it.
+ */
+export async function submitTournamentAnswers(
+  userId: string,
+  gameId: string,
+  answers: RoundAnswer[],
+): Promise<{ score: number; updated: boolean } | null> {
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { id: true, endsAt: true },
+  });
+  if (!game) return null;
+  if (new Date() >= game.endsAt) return { score: 0, updated: false };
+
+  const issued = (await gameQuestions(gameId)).map(toScorable);
+  const score = scoreRound(issued, answers);
+
+  // Per-question breakdown in the GameEntry.answers JSON shape v1 uses.
+  const byId = new Map(issued.map((q) => [q.id, q]));
+  const answersJson: Record<string, { selected: number | null; correct: boolean; points: number; ms: number }> = {};
+  for (const a of answers ?? []) {
+    const q = byId.get(a.id);
+    if (!q) continue;
+    const points = scoreAnswer(q, a);
+    answersJson[a.id] = {
+      selected: a.selection.length ? a.selection[0] : null,
+      correct: points > 0,
+      points,
+      ms: a.responseMs,
+    };
+  }
+
+  const result = await prisma.gameEntry.updateMany({
+    where: {
+      gameId,
+      userId,
+      OR: [{ score: { lt: score } }, { answered: { lt: Object.keys(answersJson).length } }],
+    },
+    data: { score, answered: Object.keys(answersJson).length, answers: answersJson },
+  });
+
+  return { score, updated: result.count > 0 };
+}
+
+// ---------------------------------------------------------------------------
+// Claim data — the merkle proof/amount the client needs to call claimPrize
+// ---------------------------------------------------------------------------
+
+export type TournamentClaim = {
+  gameId: string;
+  platform: UserPlatform;
+  onchainId: `0x${string}`;
+  /** Prize amount in token units (6-decimals), as a string for BigInt parsing. */
+  amount: string;
+  proof: `0x${string}`[];
+};
+
+/**
+ * The player's claimable prize for a settled tournament game — the on-chain id +
+ * merkle amount/proof written by `publishResults`. Null if not a winner, not yet
+ * published, or already claimed. The on-chain `claimPrize` is then sent by the
+ * client (`useTournamentWallet.claim`) and confirmed via the v1 claim route.
+ */
+export async function getTournamentClaim(
+  userId: string,
+  gameId: string,
+): Promise<TournamentClaim | null> {
+  const entry = await prisma.gameEntry.findUnique({
+    where: { gameId_userId: { gameId, userId } },
+    select: {
+      claimedAt: true,
+      merkleAmount: true,
+      merkleProof: true,
+      game: { select: { onchainId: true, onChainAt: true, platform: true } },
+    },
+  });
+  if (!entry || entry.claimedAt) return null;
+  if (!entry.game.onChainAt || !entry.game.onchainId) return null;
+  if (!entry.merkleAmount || !entry.merkleProof) return null;
+
+  const proof = Array.isArray(entry.merkleProof) ? (entry.merkleProof as string[]) : [];
+  if (proof.length === 0) return null;
+
+  return {
+    gameId,
+    platform: entry.game.platform,
+    onchainId: entry.game.onchainId as `0x${string}`,
+    amount: entry.merkleAmount,
+    proof: proof as `0x${string}`[],
+  };
+}
+
+/**
+ * Confirm an on-chain prize claim: verify the player's `claimPrize` tx (reusing
+ * v1's `verifyClaim`) and mark the entry claimed. Idempotent.
+ */
+export async function confirmTournamentClaim(input: {
+  userId: string;
+  gameId: string;
+  txHash: string;
+  wallet: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const { userId, gameId, txHash, wallet } = input;
+  const entry = await prisma.gameEntry.findUnique({
+    where: { gameId_userId: { gameId, userId } },
+    select: {
+      id: true,
+      claimedAt: true,
+      game: { select: { onchainId: true, platform: true, network: true } },
+    },
+  });
+  if (!entry) return { ok: false, error: "no_entry" };
+  if (entry.claimedAt) return { ok: true };
+  if (!entry.game.onchainId) return { ok: false, error: "game_not_onchain" };
+
+  const verification = await verifyClaim({
+    txHash: txHash as `0x${string}`,
+    platform: entry.game.platform,
+    network: entry.game.network,
+    expectedGameId: entry.game.onchainId as `0x${string}`,
+    expectedClaimer: wallet as `0x${string}`,
+  });
+  if (!verification.verified) {
+    return { ok: false, error: verification.error ?? "claim_verification_failed" };
+  }
+
+  await prisma.gameEntry.update({
+    where: { id: entry.id },
+    data: { claimedAt: new Date() },
+  });
+  return { ok: true };
+}
