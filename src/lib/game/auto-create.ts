@@ -6,7 +6,6 @@ import { recalculateGameRounds } from "@/lib/game/rounds";
 import { generateGameTitle } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
 import { isTestnetNetwork } from "@/lib/chain/network";
-import { initGameRoom } from "@/lib/partykit";
 import { sendBatch } from "@/lib/notifications";
 import { preGame, buildPayload } from "@/lib/notifications/templates";
 import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
@@ -156,7 +155,6 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
     }
     gameId = game.id;
 
-    await initGameRoom(game.id, game.startsAt, game.endsAt);
     await assignAutoQuestionsToGame(game.id, templates, !game.isTestnet);
     const txHash = await createGameOnChain(
       input.platform,

@@ -12,7 +12,7 @@ export const maxDuration = 60;
  * Register on an hourly schedule alongside the game lifecycle settlement cron.
  */
 export async function POST(request: NextRequest) {
-  if (request.headers.get("Authorization") !== `Bearer ${env.partykitSecret}`) {
+  if (request.headers.get("Authorization") !== `Bearer ${env.authSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

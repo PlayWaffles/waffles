@@ -3,7 +3,6 @@ import { formatUnits, parseUnits } from "viem";
 
 import { prisma } from "@/lib/db";
 import { PAYMENT_TOKEN_DECIMALS, verifyTicketPurchase } from "@/lib/chain";
-import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser, sendBatch } from "@/lib/notifications";
 import { transactional, preGame, buildPayload } from "@/lib/notifications/templates";
 import { formatGameTime } from "@/lib/utils";
@@ -323,7 +322,6 @@ export async function finalizeTicketPurchase(
         }
       | null = null;
     let entryWasCreated = false;
-    let updatedPrizePool = game.prizePool;
     let updatedPlayerCount = game.playerCount;
 
     const transactionResult = await prisma.$transaction(async (tx) => {
@@ -374,7 +372,6 @@ export async function finalizeTicketPurchase(
     });
 
     entry = transactionResult.entry;
-    updatedPrizePool = transactionResult.prizePool;
     updatedPlayerCount = transactionResult.playerCount;
     entryWasCreated = transactionResult.wasCreated;
 
@@ -406,18 +403,6 @@ export async function finalizeTicketPurchase(
       console.error("[game-actions]", "notification_error", {
         gameId,
         userId: purchaseUser.id,
-        error: err instanceof Error ? err.message : String(err),
-      }),
-    );
-
-    void notifyTicketPurchased(gameId, {
-      username: purchaseUser.username || "Player",
-      pfpUrl: purchaseUser.pfpUrl || null,
-      prizePool: updatedPrizePool,
-      playerCount: updatedPlayerCount,
-    }).catch((err) =>
-      console.error("[game-actions]", "partykit_notify_error", {
-        gameId,
         error: err instanceof Error ? err.message : String(err),
       }),
     );

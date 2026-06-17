@@ -20,8 +20,6 @@ const StreakModal = dynamic(
  * 2. SplashProvider (must be OUTSIDE AppInitializer so splash shows during init)
  * 3. AppInitializer (handles onboarding — returns null while loading)
  * 4. SoundProvider (Audio)
- *
- * Note: RealtimeProvider is at the game layout level, not root.
  */
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

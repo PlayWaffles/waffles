@@ -8,8 +8,8 @@ import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
 import { ensureHourlyTournamentGame } from "@/lib/v2/tournamentGames";
 
 /**
- * Roundup ended games that weren't processed by PartyKit alarm.
- * Finds games where endsAt < now AND rankedAt is null, then ranks + publishes.
+ * Roundup ended games that haven't been settled yet. Finds games where
+ * endsAt < now AND rankedAt is null, then ranks + publishes on-chain.
  */
 async function roundupGames() {
   try {

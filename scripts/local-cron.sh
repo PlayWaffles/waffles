@@ -9,8 +9,8 @@ BASE="http://localhost:${PORT}/api/cron"
 # are driven by an external scheduler with the same auth header.
 ENDPOINTS=("ensure-tournament-rounds" "roundup-games")
 
-# Load PARTYKIT_SECRET from .env
-export $(grep PARTYKIT_SECRET .env | xargs)
+# Load AUTH_SECRET from .env (authorizes the internal cron endpoints)
+export $(grep '^AUTH_SECRET=' .env | xargs)
 
 echo "🔄 Starting local cron (every ${INTERVAL}s) on :${PORT}"
 echo "   Endpoints: ${ENDPOINTS[*]}"
@@ -21,7 +21,7 @@ while true; do
   for ep in "${ENDPOINTS[@]}"; do
     echo "[$(date '+%H:%M:%S')] Calling ${ep}..."
     curl -s -X POST "${BASE}/${ep}" \
-      -H "Authorization: Bearer $PARTYKIT_SECRET" \
+      -H "Authorization: Bearer $AUTH_SECRET" \
       -H "Content-Type: application/json" | jq -r '.'
   done
   echo ""

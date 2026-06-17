@@ -248,9 +248,6 @@ export async function createGameAction(
       }
       gameId = game.id;
 
-      const { initGameRoom } = await import("@/lib/partykit");
-      await initGameRoom(game.id, game.startsAt, game.endsAt);
-
       if (selectedTemplates) {
         await assignAutoQuestionsToGame(game.id, selectedTemplates, !game.isTestnet);
       }
@@ -464,11 +461,7 @@ export async function updateGameAction(
       },
     });
 
-    // 3. SYNC TO PARTYKIT (throws on failure)
-    const { updateGame } = await import("@/lib/partykit");
-    await updateGame(game.id, game.startsAt, game.endsAt);
-
-    // 4. LOG AND REVALIDATE
+    // 3. LOG AND REVALIDATE
     await logAdminAction({
       adminId: authResult.session.userId,
       action: AdminAction.UPDATE_GAME,
@@ -537,20 +530,7 @@ export async function deleteGameAction(gameId: string): Promise<void> {
       entriesDeleted: game._count.entries,
     });
 
-    // 3. CLEANUP PARTYKIT ROOM (best-effort, don't fail if it fails)
-    try {
-      const { cleanupGameRoom } = await import("@/lib/partykit");
-      await cleanupGameRoom(gameId);
-      console.log("[admin-games] partykit_cleanup_success", { gameId });
-    } catch (err) {
-      console.warn("[admin-games] partykit_cleanup_failed", {
-        gameId,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      // Continue - PartyKit cleanup is best-effort
-    }
-
-    // 4. CLOSE ON-CHAIN SALES (irreversible - do last, best-effort)
+    // 3. CLOSE ON-CHAIN SALES (irreversible - do last, best-effort)
     if (game.onchainId) {
       try {
         const { getOnChainGame, closeSalesOnChain } =

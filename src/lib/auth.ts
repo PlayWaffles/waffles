@@ -43,9 +43,9 @@ function isPreviousUtcDate(previous: Date, current: Date) {
 }
 
 function getAuthSecret() {
-  const secret = env.authSecret || env.partykitSecret;
+  const secret = env.authSecret;
   if (!secret) {
-    throw new Error("AUTH_SECRET or PARTYKIT_SECRET must be configured");
+    throw new Error("AUTH_SECRET must be configured");
   }
   return new TextEncoder().encode(secret);
 }
