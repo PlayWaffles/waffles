@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { uploadFile, generateFileKey, isBucketConfigured } from "@/lib/storage";
+import { trackServerEvent } from "@/lib/server-analytics";
 
 // Allowed content types
 const ALLOWED_CONTENT_TYPES = [
@@ -32,15 +33,24 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
  * Upload a file to Cloudinary
  */
 export async function POST(request: Request): Promise<NextResponse> {
+  const startedAt = Date.now();
   try {
     // 1. Authenticate
     const session = await getAdminSession();
     if (!session) {
+      await trackServerEvent({
+        name: "api_upload_failed",
+        properties: { reason: "unauthorized" },
+      });
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // 2. Check bucket config
     if (!isBucketConfigured()) {
+      await trackServerEvent({
+        name: "api_upload_failed",
+        properties: { reason: "storage_not_configured" },
+      });
       return NextResponse.json(
         {
           error:
@@ -51,6 +61,12 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const contentType = request.headers.get("content-type") || "";
+    await trackServerEvent({
+      name: "api_upload_started",
+      properties: {
+        upload_type: contentType.includes("multipart/form-data") ? "multipart" : "unsupported",
+      },
+    });
 
     // Direct upload (multipart/form-data)
     if (contentType.includes("multipart/form-data")) {
@@ -59,6 +75,10 @@ export async function POST(request: Request): Promise<NextResponse> {
       const folder = (formData.get("folder") as string) || "media";
 
       if (!file) {
+        await trackServerEvent({
+          name: "api_upload_failed",
+          properties: { upload_type: "multipart", reason: "missing_file" },
+        });
         return NextResponse.json(
           { error: "No file provided" },
           { status: 400 }
@@ -66,6 +86,15 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
 
       if (file.size > MAX_FILE_SIZE) {
+        await trackServerEvent({
+          name: "api_upload_failed",
+          properties: {
+            upload_type: "multipart",
+            content_type: file.type,
+            size_bytes: file.size,
+            reason: "file_too_large",
+          },
+        });
         return NextResponse.json(
           {
             error: `File too large. Maximum size is ${
@@ -77,6 +106,15 @@ export async function POST(request: Request): Promise<NextResponse> {
       }
 
       if (!ALLOWED_CONTENT_TYPES.includes(file.type)) {
+        await trackServerEvent({
+          name: "api_upload_failed",
+          properties: {
+            upload_type: "multipart",
+            content_type: file.type,
+            size_bytes: file.size,
+            reason: "content_type_not_allowed",
+          },
+        });
         return NextResponse.json(
           { error: `File type '${file.type}' not allowed` },
           { status: 400 }
@@ -96,6 +134,16 @@ export async function POST(request: Request): Promise<NextResponse> {
         `[Upload] File uploaded: ${result.url} by ${session.username}`
       );
 
+      await trackServerEvent({
+        name: "api_upload_succeeded",
+        properties: {
+          upload_type: "multipart",
+          content_type: file.type,
+          size_bytes: file.size,
+          duration_ms: Date.now() - startedAt,
+        },
+      });
+
       return NextResponse.json({
         url: result.url,
         key: result.key,
@@ -104,6 +152,13 @@ export async function POST(request: Request): Promise<NextResponse> {
       });
     }
 
+    await trackServerEvent({
+      name: "api_upload_failed",
+      properties: {
+        upload_type: "unsupported",
+        reason: "invalid_content_type",
+      },
+    });
     return NextResponse.json(
       {
         error:
@@ -113,6 +168,13 @@ export async function POST(request: Request): Promise<NextResponse> {
     );
   } catch (error) {
     console.error("[Upload] Error:", error);
+    await trackServerEvent({
+      name: "api_upload_failed",
+      properties: {
+        duration_ms: Date.now() - startedAt,
+        reason: error instanceof Error ? error.name : "unknown",
+      },
+    });
     return NextResponse.json(
       { error: (error as Error).message || "Upload failed" },
       { status: 500 }

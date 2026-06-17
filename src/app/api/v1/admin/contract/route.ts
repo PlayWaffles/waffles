@@ -10,6 +10,7 @@ import {
 } from "@/lib/chain";
 import { getPublicClient } from "@/lib/chain/client";
 import { assertChainPlatform } from "@/lib/chain/platform";
+import { trackServerEvent } from "@/lib/server-analytics";
 
 /**
  * Admin Contract Management API
@@ -51,8 +52,13 @@ interface ContractState {
  * Fetch current contract state
  */
 export async function GET(request: NextRequest) {
+  const startedAt = Date.now();
   // Auth check
   if (!(await isAuthorized())) {
+    await trackServerEvent({
+      name: "admin_contract_unauthorized",
+      properties: { endpoint: "contract" },
+    });
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -64,6 +70,13 @@ export async function GET(request: NextRequest) {
     const chain = getPlatformChain(platform);
     const contractAddress = getWaffleContractAddress(platform);
     const publicClient = getPublicClient(platform);
+    await trackServerEvent({
+      name: "admin_contract_requested",
+      properties: {
+        platform,
+        chain_id: chain.id,
+      },
+    });
 
     // Fetch contract state in parallel
     const [
@@ -129,9 +142,29 @@ export async function GET(request: NextRequest) {
       treasuryWallet: getTreasuryWalletForPlatform(platform),
     };
 
+    await trackServerEvent({
+      name: "admin_contract_succeeded",
+      properties: {
+        platform,
+        chain_id: chain.id,
+        active_game_count: Number(activeGameCount),
+        is_paused: isPaused,
+        settlement_wallet_configured: isConfigured,
+        admin_wallet_configured: isAdminWalletConfigured,
+        duration_ms: Date.now() - startedAt,
+      },
+    });
+
     return NextResponse.json(state);
   } catch (error) {
     console.error("[Contract API] Error:", error);
+    await trackServerEvent({
+      name: "admin_contract_failed",
+      properties: {
+        duration_ms: Date.now() - startedAt,
+        reason: error instanceof Error ? error.name : "unknown",
+      },
+    });
     return NextResponse.json(
       {
         error:
