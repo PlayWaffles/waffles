@@ -1,11 +1,11 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { isDailyBonusAvailable, roundCloseAt, roundIdFor, tournamentRank, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
+import { isDailyBonusAvailable, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import { v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/v2";
 import type { TournamentBoard } from "@/lib/v2/tournamentGames";
-import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
+import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 
@@ -249,13 +249,6 @@ export const HomeScreen = () => {
   const streak = proto.streak;
   const homeSlot = proto.tweaks.homeSlot;
 
-  // Hourly round state: are we already entered in the *current* round (one entry
-  // per round), and is there an unread settlement result to surface?
-  const nowMs = useNow();
-  const entered = !!proto.entry && proto.entry.roundId === roundIdFor(nowMs) && !proto.entry.settled;
-  const enteredRank = entered && proto.entry?.score != null ? tournamentRank(proto.entry.score, proto.totalQuestions) : null;
-  const enteredCloseMs = entered && proto.entry ? Math.max(0, roundCloseAt(proto.entry.roundId) - nowMs) : 0;
-  const enteredCloseIn = `${String(Math.floor(enteredCloseMs / 60000)).padStart(2, "0")}:${String(Math.floor((enteredCloseMs % 60000) / 1000)).padStart(2, "0")}`;
   const unreadResult = proto.resultNotifs.find((r) => !r.read) ?? null;
 
   // Tournament entry gate. The card and the sticky CTA both route through
@@ -308,7 +301,9 @@ export const HomeScreen = () => {
     return () => {
       active = false;
     };
-  }, []);
+  }, [proto.tournamentGameId]);
+  const entered = board?.you != null;
+  const enteredRank = board?.you?.rank ?? null;
   const fieldSize = board && board.fieldSize > 0 ? board.fieldSize : TOURNAMENT_FIELD_SIZE;
 
   const lastPct = lastRank ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
@@ -368,7 +363,7 @@ export const HomeScreen = () => {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--leaf)", fontVariantNumeric: "tabular-nums" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M4 12a8 8 0 1 1 2.3 5.6M4 12V7m0 5h5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {entered
-                ? `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}Locks in ${enteredCloseIn} — tap to view`
+                ? `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}tap to view`
                 : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : "Your first tournament — Top 100 win tickets"}
             </div>
             {bonusAvailable && (

@@ -335,8 +335,7 @@ export async function submitTournamentAnswers(
 
 // ---------------------------------------------------------------------------
 // Standings — leaderboard/results read from the DB (GameEntry), NOT the chain.
-// Mirrors the off-chain `RoundBoard` shape so screens swap source with minimal
-// churn. The chain only holds the merkle root for payout; ranks/scores are DB.
+// The chain only holds the merkle root for payout; ranks/scores are DB.
 // ---------------------------------------------------------------------------
 
 export type TournamentStanding = {

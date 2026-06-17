@@ -7,7 +7,7 @@ PORT=${2:-3000}
 BASE="http://localhost:${PORT}/api/cron"
 # Endpoints to tick each interval (all POST, Bearer-authed). In production these
 # are driven by an external scheduler with the same auth header.
-ENDPOINTS=("roundup-games" "settle-rounds")
+ENDPOINTS=("ensure-tournament-rounds" "roundup-games")
 
 # Load PARTYKIT_SECRET from .env
 export $(grep PARTYKIT_SECRET .env | xargs)
