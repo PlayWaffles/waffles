@@ -321,11 +321,23 @@ Verified `tsc`/`eslint` 0. Additive — the off-chain `RoundEntry` path still ex
   when `tournamentGameId` is set. New server pieces: `getTournamentClaim` +
   `confirmTournamentClaim` (reuses `verifyClaim`). `tsc`/`eslint` 0.
 
+**Screen hookup — DONE (2026-06-17).**
+- Wallet hook reuses v1's robustness: **chain-switching** (`useSwitchChain`, mirrors
+  `useCorrectChain`) + v1-style **error mapping** (user-rejected, insufficient,
+  MiniPay low-balance message). The old v1 entry/claim UI (`useTicketPurchase`,
+  `PurchaseView`) was deleted in `90b0812` and coupled to the removed
+  `RealtimeProvider`, so the *orchestration* was reused, not the dead components.
+- **Entry:** Home `JoinConfirmSheet` + level-result → `enterTournamentOnChain()`
+  with pending/error states; the sheet now frames it as a wallet-paid entry (not a
+  ticket). `openJoin` always opens confirm (wallet reports balance).
+- **Claim:** new `v2LoadTournamentClaims` + `loadTournamentClaims`; the profile
+  Prize Wallet lists claimable on-chain prizes with a Claim button →
+  `claimTournamentPrize(gameId)` (claiming/error states).
+- `tsc`/`eslint` 0. Wallet flow still **unverified in this sandbox** (no chain).
+
 **Remaining:**
-- **Screen hookup (small)** — point the Home/Compete "enter tournament" button at
-  `enterTournamentOnChain()` (with a "confirm in wallet" state) and the results
-  screen at `claimTournamentPrize(gameId)`. Held off to avoid editing the designed
-  screens without a nod + a runtime check of the wallet-popup-before-lobby flow.
+- **Orphaned ticket UI** — the shortfall sheet / first-ticket-offer / ticket copy
+  are now bypassed; clean them up as part of the parked off-chain-ticket reconcile.
 - **Hourly cadence — DONE.** Confirmed the v1 auto-scheduler is NOT hourly
   (Mon/Wed/Fri 14:00 UTC, 24h games). Added `ensureHourlyTournamentGame(platform)`
   (reuses `createAutoScheduledGame` → on-chain create + question assign, hourly
