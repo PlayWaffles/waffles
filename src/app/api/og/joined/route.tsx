@@ -4,6 +4,7 @@ import { NextRequest } from "next/server";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { OG_WIDTH, OG_HEIGHT, COLORS, safeImageUrl } from "../utils";
+import { trackServerEvent } from "@/lib/server-analytics";
 
 export const runtime = "nodejs";
 
@@ -17,9 +18,26 @@ export async function GET(request: NextRequest) {
         const theme = searchParams.get("theme") || "General";
         const pfpUrlParam = searchParams.get("pfpUrl");
         const themeImageUrl = searchParams.get("themeImageUrl");
+        await trackServerEvent({
+            name: "og_share_image_requested",
+            properties: {
+                share_type: "joined",
+                theme,
+                has_required_params: Boolean(themeImageUrl),
+            },
+        });
 
         // Require themeImageUrl
         if (!themeImageUrl) {
+            await trackServerEvent({
+                name: "og_share_image_failed",
+                properties: {
+                    share_type: "joined",
+                    theme,
+                    has_required_params: false,
+                    reason: "missing_theme_image_url",
+                },
+            });
             return new Response("Missing required parameter: themeImageUrl", { status: 400 });
         }
 
@@ -286,6 +304,14 @@ export async function GET(request: NextRequest) {
         );
     } catch (error) {
         console.error("OG image generation error:", error);
+        await trackServerEvent({
+            name: "og_share_image_failed",
+            properties: {
+                share_type: "joined",
+                has_required_params: null,
+                reason: error instanceof Error ? error.message : "generation_failed",
+            },
+        });
         return new Response("Failed to generate image", { status: 500 });
     }
 }
