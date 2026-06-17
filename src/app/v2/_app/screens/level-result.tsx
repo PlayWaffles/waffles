@@ -2,21 +2,17 @@
 
 import { useEffect, useState } from "react";
 import {
-  FIRST_TICKET_DISCOUNT,
   isDailyBonusAvailable,
-  isFirstTicketOfferAvailable,
   levelTicketMilestoneInfo,
   LIVES_MAX,
   LIVES_REFILL_COST,
-  markFirstTicketOfferUsed,
   TOURNAMENT_FIELD_SIZE,
-  TOURNAMENT_TICKET_COST,
   TOURNAMENT_TOP_PRIZE,
   tournamentRank,
-  usdtLabel,
+  syrupLabel,
   useProto,
 } from "../state";
-import { ASSETS, Confetti, Phone, PixelImg, Sheet, TicketIcon, useNow } from "../shared";
+import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
 import { playSound } from "../sound";
 
 // One-time tournament upsell, shown the first time a player clears a level —
@@ -45,22 +41,12 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
   const rank = tournamentRank(score, total);
   const pct = Math.max(1, Math.min(99, Math.round((rank / TOURNAMENT_FIELD_SIZE) * 100)));
   const bonus = isDailyBonusAvailable();
-  const offer = isFirstTicketOfferAvailable();
-  const fullPrice = usdtLabel(TOURNAMENT_TICKET_COST);
-  const discountPrice = usdtLabel(TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT));
 
   const enter = () => {
     onClose();
-    if (offer) {
-      // First-timer: "buy" the half-price entry ticket (prototype — no real
-      // charge), then drop straight into the tournament that spends it.
-      markFirstTicketOfferUsed();
-      proto.update((s) => ({ tickets: s.tickets + TOURNAMENT_TICKET_COST }));
-      proto.startTournament();
-      return;
-    }
-    if (proto.tickets >= TOURNAMENT_TICKET_COST) proto.startTournament();
-    else proto.goto("shop");
+    // On-chain entry: the deposit is paid via the wallet; the provider starts
+    // the round on success (or stays put if the player cancels / it fails).
+    void proto.enterTournamentOnChain();
   };
 
   return (
@@ -85,25 +71,6 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
           </span>
         </div>
 
-        {/* First-timer discounted-ticket offer. You need 1 ticket to enter; the
-            first one is half price. */}
-        {offer && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <TicketIcon size={28} />
-              <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>First-timer offer</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first ticket, half price</div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{fullPrice}</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--leaf)" }}>{discountPrice}</div>
-            </div>
-          </div>
-        )}
-
         {bonus && (
           <div style={{ textAlign: "center", marginBottom: 12 }}>
             <span className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(0,207,242,.35)" }}>⚡ Your first tournament today earns 2× XP</span>
@@ -111,11 +78,8 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
         )}
 
         <button type="button" className="cta maple" onClick={enter} style={{ width: "100%", marginBottom: 6 }}>
-          {offer ? `BUY TICKET & PLAY · ${discountPrice}` : "ENTER LIVE TOURNAMENT"}
+          ENTER LIVE TOURNAMENT
         </button>
-        {offer && (
-          <div style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--ink-faint)", marginBottom: 4 }}>Prototype — no real charge</div>
-        )}
         <button type="button" onClick={close} style={{ width: "100%", background: "transparent", border: "none", color: "var(--ink-faint)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 12, cursor: "pointer", padding: 6 }}>
           Keep practicing
         </button>
@@ -201,23 +165,23 @@ export const LevelWinScreen = () => {
         </div>
       </div>
 
-      {/* Free-ticket milestone — a widening curve (rarer the higher you climb).
-          Celebrates the just-earned ticket on a milestone level, otherwise shows
+      {/* Free Syrup milestone — a widening curve (rarer the higher you climb).
+          Celebrates the just-earned Syrup on a milestone level, otherwise shows
           progress to the next one. */}
       {(() => {
         const info = levelTicketMilestoneInfo(justCompleted);
         return (
           <div style={{ position: "absolute", top: 430, left: 18, right: 18, background: info.earned ? "rgba(0,207,242,.16)" : "rgba(0,207,242,.1)", border: `1px solid rgba(0,207,242,${info.earned ? ".4" : ".25"})`, borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) 1.15s both" }}>
-            <TicketIcon size={26} color="#fff" />
+            <SyrupIcon size={26} />
             {info.earned ? (
               <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", lineHeight: 1 }}>+1 free ticket earned!</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", lineHeight: 1 }}>+1 Syrup earned!</div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Next one at Level {info.nextLevel}</div>
               </div>
             ) : (
               <>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", lineHeight: 1 }}>Free ticket at Level {info.nextLevel}</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", lineHeight: 1 }}>Free Syrup at Level {info.nextLevel}</div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{info.toGo} level{info.toGo === 1 ? "" : "s"} to go</div>
                 </div>
                 <div style={{ height: 6, width: 60, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
@@ -296,8 +260,8 @@ export const LevelFailScreen = () => {
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
           {outOfLives ? (
-            <button className="cta maple" onClick={() => proto.refillLives()} disabled={!canRefill} style={!canRefill ? { opacity: 0.55, cursor: "default" } : undefined} aria-label={`Refill lives for ${LIVES_REFILL_COST} ticket`}>
-              REFILL <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><TicketIcon size={14} />{LIVES_REFILL_COST}</span>
+            <button className="cta maple" onClick={() => proto.refillLives()} disabled={!canRefill} style={!canRefill ? { opacity: 0.55, cursor: "default" } : undefined} aria-label={`Refill lives for ${syrupLabel(LIVES_REFILL_COST)}`}>
+              REFILL <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><SyrupIcon size={14} />{LIVES_REFILL_COST}</span>
             </button>
           ) : (
             <button className="cta" onClick={() => proto.retryLevel()}>RETRY</button>

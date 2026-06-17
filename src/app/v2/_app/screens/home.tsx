@@ -1,10 +1,11 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { FIRST_TICKET_DISCOUNT, isDailyBonusAvailable, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, roundCloseAt, roundIdFor, tournamentRank, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
-import { v2LoadRoundBoard, v2LoadMissions } from "@/actions/v2";
-import type { RoundBoard } from "@/lib/v2/rounds";
-import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
+import { isDailyBonusAvailable, roundCloseAt, roundIdFor, tournamentRank, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
+import { txStepLabel } from "../useTournamentWallet";
+import { v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/v2";
+import type { TournamentBoard } from "@/lib/v2/tournamentGames";
+import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 
@@ -65,7 +66,7 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 // sheet (with both the free earn-by-playing route and a buy route) when they
 // can't. Both share the shop's sheet visual language.
 
-const JoinConfirmSheet = ({ tickets, onClose, onConfirm }: { tickets: number; onClose: () => void; onConfirm: () => void }) => (
+const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null }) => (
     <Sheet onClose={onClose} ariaLabel="Enter the Top of the Hour tournament">
       {(close) => (
       <>
@@ -78,87 +79,29 @@ const JoinConfirmSheet = ({ tickets, onClose, onConfirm }: { tickets: number; on
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--ink)" }}>Enter tournament?</div>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>Top of the Hour · Mixed · 6 Q</div>
         <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-          Finish Top 100 to win up to <TicketIcon size={14} />{TOURNAMENT_TOP_PRIZE}
+          Finish Top 100 to win a share of the prize pool
         </div>
       </div>
 
-      <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase" }}>Entry · you have {tickets}</span>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--maple-500)", display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <TicketIcon size={18} />
-          {TOURNAMENT_TICKET_COST} ticket{TOURNAMENT_TICKET_COST === 1 ? "" : "s"}
-        </span>
+      <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: error ? 8 : 14 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase" }}>Paid entry</span>
+        <span style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--maple-500)" }}>Pay in your wallet</span>
       </div>
+
+      {error && (
+        <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 12 }}>{error}</div>
+      )}
 
       <div style={{ display: "flex", gap: 10 }}>
         <Button variant="ghost" flex={1} onClick={close}>CANCEL</Button>
-        <Button flex={1.4} onClick={onConfirm} ariaLabel={`Join for ${TOURNAMENT_TICKET_COST} ticket`}>
-          JOIN — <TicketIcon size={14} />{TOURNAMENT_TICKET_COST}
+        <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Confirm tournament entry in your wallet">
+          {pending ? (stepLabel ?? "Working…") : "JOIN"}
         </Button>
       </div>
       </>
       )}
     </Sheet>
 );
-
-const OutOfTicketsSheet = ({ offer, onClose, onEarn, onBuy, onFirstTicket }: { offer: boolean; onClose: () => void; onEarn: () => void; onBuy: () => void; onFirstTicket: () => void }) => {
-  const fullPrice = usdtLabel(TOURNAMENT_TICKET_COST);
-  const discountPrice = usdtLabel(TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT));
-  return (
-      <Sheet onClose={onClose} ariaLabel={offer ? "Get your first ticket" : "Out of tickets"}>
-        <div style={{ textAlign: "center", marginBottom: 14 }}>
-          <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-            <div style={{ width: 56, height: 56, borderRadius: 14, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.35)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <TicketIcon size={28} />
-            </div>
-          </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--ink)" }}>{offer ? "Get your first ticket" : "Out of tickets"}</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>
-            {offer ? "Half price for first-timers — jump into a live round" : `You need ${TOURNAMENT_TICKET_COST} to enter a tournament`}
-          </div>
-        </div>
-
-        {offer ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "14px", marginBottom: 14 }}>
-            <div style={{ position: "relative", flexShrink: 0 }}>
-              <TicketIcon size={26} />
-              <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>First-timer offer</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>1 ticket = 1 entry</div>
-            </div>
-            <div style={{ textAlign: "right", flexShrink: 0 }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{fullPrice}</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--leaf)" }}>{discountPrice}</div>
-            </div>
-          </div>
-        ) : (
-          <div style={{ background: "var(--surface-2)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flexShrink: 0, width: 56, height: 56, borderRadius: 12, background: "rgba(255,201,49,0.18)", border: "1px solid rgba(255,201,49,0.4)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-              <TicketIcon size={22} />
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--ink)" }}>5</span>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>Quick top up</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>5 tickets · $0.99</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-soft)", marginTop: 2 }}>Or win Top 100 in a round</div>
-            </div>
-          </div>
-        )}
-
-        <div style={{ display: "flex", gap: 10 }}>
-          <Button variant="ghost" flex={1} onClick={onEarn}>EARN BY PLAYING</Button>
-          <Button flex={1.4} onClick={offer ? onFirstTicket : onBuy}>
-            {offer ? `BUY & PLAY · ${discountPrice}` : "BUY"}
-          </Button>
-        </div>
-        {offer && (
-          <div style={{ textAlign: "center", fontSize: 10, fontWeight: 700, color: "var(--ink-faint)", marginTop: 8 }}>Prototype — no real charge</div>
-        )}
-      </Sheet>
-  );
-};
 
 // Decorative icon bucket for a mission, derived from its title (the Missions
 // screen uses richer art; the Home card uses a 3-glyph set).
@@ -171,7 +114,7 @@ const homeMissionIcon = (title: string): string => {
 
 const STATIC_HOME_MISSIONS = [
   { label: "Earn 50 XP", cur: 32, tgt: 50, reward: "+10 XP", icon: "xp" },
-  { label: "Win a round", cur: 0, tgt: 1, reward: "+1 🎟", icon: "win" },
+  { label: "Win a round", cur: 0, tgt: 1, reward: "syrup", icon: "win" },
   { label: "Play 2 games", cur: 1, tgt: 2, reward: "+25 XP", icon: "play" },
 ];
 
@@ -239,7 +182,9 @@ const HomeMissions = () => {
                   <div style={{ width: `${pct}%`, height: "100%", background: done ? "linear-gradient(90deg,#00CFF2,#5DDDF0)" : "linear-gradient(90deg, #FFC931, #F5BB1B)", transition: "width .4s" }} />
                 </div>
               </div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: done ? "#00CFF2" : "rgba(255,255,255,.55)", letterSpacing: 0.4, minWidth: 40, textAlign: "right" }}>{m.reward}</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: done ? "#00CFF2" : "rgba(255,255,255,.55)", letterSpacing: 0.4, minWidth: 40, textAlign: "right" }}>
+                {m.reward === "syrup" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>+1 <SyrupIcon size={12} /></span> : m.reward}
+              </div>
             </div>
           );
         })}
@@ -313,30 +258,33 @@ export const HomeScreen = () => {
   const enteredCloseIn = `${String(Math.floor(enteredCloseMs / 60000)).padStart(2, "0")}:${String(Math.floor((enteredCloseMs % 60000) / 1000)).padStart(2, "0")}`;
   const unreadResult = proto.resultNotifs.find((r) => !r.read) ?? null;
 
-  // Tournament entry gate: confirm when affordable, otherwise prompt to earn
-  // or buy. The card and the sticky CTA both route through `openJoin`. If already
-  // entered this round, tapping the card views the standing instead.
-  const [gate, setGate] = useState<"confirm" | "shortfall" | null>(null);
+  // Tournament entry gate. The card and the sticky CTA both route through
+  // `openJoin`. If already entered this round, tapping the card views the
+  // standing instead.
+  const [gate, setGate] = useState<"confirm" | null>(null);
+  // On-chain entry: the deposit is paid via the wallet (USDC), so there's no
+  // ticket gate — the wallet reports an insufficient balance on confirm.
+  const [entering, setEntering] = useState(false);
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const confirmEntry = async () => {
+    setEntryError(null);
+    setEntering(true);
+    const res = await proto.enterTournamentOnChain();
+    setEntering(false);
+    if (res.ok) setGate(null);
+    else setEntryError(res.error ?? "Entry failed");
+  };
   const openJoin = () => {
     // Already entered this round and it hasn't settled — view your standing
-    // instead of re-charging a ticket (one paid entry per round).
+    // instead of paying again (one paid entry per round).
     if (entered) {
       proto.goto("results");
       return;
     }
-    setGate(tickets >= TOURNAMENT_TICKET_COST ? "confirm" : "shortfall");
+    setEntryError(null);
+    setGate("confirm");
   };
   const onCardTap = () => (entered ? proto.goto("results") : openJoin());
-
-  // First-timer half-price ticket offer (client-read, hydration-safe).
-  const firstTicketOffer = useSyncExternalStore(() => () => {}, isFirstTicketOfferAvailable, () => false);
-  const buyFirstTicketAndPlay = () => {
-    setGate(null);
-    markFirstTicketOfferUsed();
-    // "Buy" the half-price entry ticket (prototype — no real charge), then enter.
-    proto.update((s) => ({ tickets: s.tickets + TOURNAMENT_TICKET_COST }));
-    proto.startTournament();
-  };
 
   // First-tournament-of-the-day 2× XP bonus. Read via useSyncExternalStore so
   // the client value is picked up post-hydration without a setState-in-effect;
@@ -347,12 +295,12 @@ export const HomeScreen = () => {
   // finish; first-timers get the "Top 100 win tickets" pitch instead.
   const lastRank = proto.lastTournamentRank;
 
-  // Real entrant count for the current round (falls back to the simulated field
-  // in preview / before any real entrants this round).
-  const [board, setBoard] = useState<RoundBoard | null>(null);
+  // Real entrant count for the current tournament (falls back to the simulated
+  // field in preview / before any real entrants).
+  const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadRoundBoard(roundIdFor(Date.now()))
+    v2LoadCurrentTournamentBoard()
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })
@@ -495,30 +443,13 @@ export const HomeScreen = () => {
 
       {gate === "confirm" && (
         <JoinConfirmSheet
-          tickets={tickets}
+          pending={entering}
+          stepLabel={proto.tournamentStep ? txStepLabel(proto.tournamentStep) : null}
+          error={entryError}
           onClose={() => setGate(null)}
-          onConfirm={() => {
-            setGate(null);
-            proto.startTournament();
-          }}
+          onConfirm={() => void confirmEntry()}
         />
       )}
-      {gate === "shortfall" && (
-        <OutOfTicketsSheet
-          offer={firstTicketOffer}
-          onClose={() => setGate(null)}
-          onEarn={() => {
-            setGate(null);
-            proto.goto("levels");
-          }}
-          onBuy={() => {
-            setGate(null);
-            proto.goto("shop");
-          }}
-          onFirstTicket={buyFirstTicketAndPlay}
-        />
-      )}
-
       {/* In-app result notification — surfaced on return after a round settles.
           Covers every outcome (won / near-miss / placed), not just wins. */}
       {unreadResult && (

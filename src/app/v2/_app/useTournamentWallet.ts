@@ -11,7 +11,7 @@
  * hook time, since the provider doesn't know it until the tournament loads.
  */
 import { useCallback } from "react";
-import { useAccount, usePublicClient, useWriteContract } from "wagmi";
+import { useAccount, useChainId, usePublicClient, useSwitchChain, useWriteContract } from "wagmi";
 import { parseUnits } from "viem";
 import { waffleGameAbi } from "@/lib/chain/abi";
 import { withBuilderCodeDataSuffix } from "@/lib/chain/builderCode";
@@ -24,11 +24,57 @@ import {
 import { defaultNetworkForPlatform } from "@/lib/chain/network";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import { ERC20_ABI } from "@/lib/constants";
+import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
+
+// Approve a buffer (not the exact fee) so the allowance covers several entries
+// before the player has to approve again — mirrors v1's MAX_TICKET_APPROVAL.
+const MAX_ENTRY_APPROVAL_USDC = "10";
+
+/**
+ * Progress steps for the on-chain entry/claim flow (mirrors v1's PurchaseStep).
+ * The hook reports up to `confirming`; the provider adds `verifying` for its
+ * server-side step. Lets the UI narrate the (sometimes two-popup) flow.
+ */
+export type TournamentTxStep =
+  | "switching"
+  | "approving"
+  | "approveConfirm"
+  | "paying"
+  | "confirming"
+  | "claiming"
+  | "verifying";
+
+/** Player-facing label for each step. */
+export function txStepLabel(step: TournamentTxStep | null): string {
+  switch (step) {
+    case "switching": return "Switching network…";
+    case "approving": return "Approve in your wallet…";
+    case "approveConfirm": return "Confirming approval…";
+    case "paying": return "Confirm entry in your wallet…";
+    case "confirming": return "Confirming on-chain…";
+    case "claiming": return "Confirm claim in your wallet…";
+    case "verifying": return "Finalizing…";
+    default: return "Working…";
+  }
+}
+
+/** Map raw wallet/chain errors to player-facing messages (mirrors v1's
+ *  useTicketPurchase handling). */
+function walletErrorMessage(error: unknown, platform: ChainPlatform): string {
+  const msg = error instanceof Error ? error.message : String(error);
+  if (/user rejected|denied|rejected the request/i.test(msg)) return "Cancelled.";
+  if (/insufficient/i.test(msg)) {
+    return platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Not enough balance to enter.";
+  }
+  return "Something went wrong. Please try again.";
+}
 
 export function useTournamentWallet() {
   const { address } = useAccount();
   const publicClient = usePublicClient();
   const { writeContractAsync } = useWriteContract();
+  const currentChainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
 
   /**
    * Approve (if needed) + `buyTicket`. Resolves with the entry tx hash once it's
@@ -39,8 +85,9 @@ export function useTournamentWallet() {
       platform: ChainPlatform,
       onchainId: `0x${string}`,
       entryFeeUsdc: number,
+      onStep?: (step: TournamentTxStep) => void,
     ): Promise<`0x${string}`> => {
-      if (!address) throw new Error("wallet_not_connected");
+      if (!address) throw new Error("Connect a wallet to enter.");
       if (!publicClient) throw new Error("no_public_client");
       const target = { platform, network: defaultNetworkForPlatform(platform) };
       const chainId = getPlatformChain(target).id;
@@ -48,39 +95,57 @@ export function useTournamentWallet() {
       const tokenAddress = getPaymentTokenAddress(target);
       const amount = parseUnits(entryFeeUsdc.toString(), PAYMENT_TOKEN_DECIMALS);
 
-      const allowance = (await publicClient.readContract({
-        address: tokenAddress,
-        abi: ERC20_ABI,
-        functionName: "allowance",
-        args: [address, contractAddress],
-      })) as bigint;
+      try {
+        // Make sure the wallet is on the game's chain before any tx (v1 reuse).
+        if (currentChainId !== chainId) {
+          onStep?.("switching");
+          await switchChainAsync({ chainId });
+        }
 
-      if (allowance < amount) {
-        const approveHash = await writeContractAsync(
+        const allowance = (await publicClient.readContract({
+          address: tokenAddress,
+          abi: ERC20_ABI,
+          functionName: "allowance",
+          args: [address, contractAddress],
+        })) as bigint;
+
+        // Approve only when the standing allowance can't cover this entry; then
+        // approve a buffer (≥ a few entries) so it's not a per-entry pop-up.
+        if (allowance < amount) {
+          onStep?.("approving");
+          const approvalAmount = parseUnits(MAX_ENTRY_APPROVAL_USDC, PAYMENT_TOKEN_DECIMALS);
+          const approveAmount = approvalAmount > amount ? approvalAmount : amount;
+          const approveHash = await writeContractAsync(
+            withBuilderCodeDataSuffix({
+              chainId,
+              address: tokenAddress,
+              abi: ERC20_ABI,
+              functionName: "approve",
+              args: [contractAddress, approveAmount],
+            }),
+          );
+          onStep?.("approveConfirm");
+          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        }
+
+        onStep?.("paying");
+        const buyHash = await writeContractAsync(
           withBuilderCodeDataSuffix({
             chainId,
-            address: tokenAddress,
-            abi: ERC20_ABI,
-            functionName: "approve",
-            args: [contractAddress, amount],
+            address: contractAddress,
+            abi: waffleGameAbi,
+            functionName: "buyTicket",
+            args: [onchainId, amount],
           }),
         );
-        await publicClient.waitForTransactionReceipt({ hash: approveHash });
+        onStep?.("confirming");
+        await publicClient.waitForTransactionReceipt({ hash: buyHash });
+        return buyHash;
+      } catch (error) {
+        throw new Error(walletErrorMessage(error, platform));
       }
-
-      const buyHash = await writeContractAsync(
-        withBuilderCodeDataSuffix({
-          chainId,
-          address: contractAddress,
-          abi: waffleGameAbi,
-          functionName: "buyTicket",
-          args: [onchainId, amount],
-        }),
-      );
-      await publicClient.waitForTransactionReceipt({ hash: buyHash });
-      return buyHash;
     },
-    [address, publicClient, writeContractAsync],
+    [address, publicClient, writeContractAsync, currentChainId, switchChainAsync],
   );
 
   /**
@@ -93,24 +158,35 @@ export function useTournamentWallet() {
       onchainId: `0x${string}`,
       amount: bigint,
       proof: `0x${string}`[],
+      onStep?: (step: TournamentTxStep) => void,
     ): Promise<`0x${string}`> => {
       if (!publicClient) throw new Error("no_public_client");
       const target = { platform, network: defaultNetworkForPlatform(platform) };
       const chainId = getPlatformChain(target).id;
       const contractAddress = getWaffleContractAddress(target);
-      const hash = await writeContractAsync(
-        withBuilderCodeDataSuffix({
-          chainId,
-          address: contractAddress,
-          abi: waffleGameAbi,
-          functionName: "claimPrize",
-          args: [onchainId, amount, proof],
-        }),
-      );
-      await publicClient.waitForTransactionReceipt({ hash });
-      return hash;
+      try {
+        if (currentChainId !== chainId) {
+          onStep?.("switching");
+          await switchChainAsync({ chainId });
+        }
+        onStep?.("claiming");
+        const hash = await writeContractAsync(
+          withBuilderCodeDataSuffix({
+            chainId,
+            address: contractAddress,
+            abi: waffleGameAbi,
+            functionName: "claimPrize",
+            args: [onchainId, amount, proof],
+          }),
+        );
+        onStep?.("confirming");
+        await publicClient.waitForTransactionReceipt({ hash });
+        return hash;
+      } catch (error) {
+        throw new Error(walletErrorMessage(error, platform));
+      }
     },
-    [publicClient, writeContractAsync],
+    [publicClient, writeContractAsync, currentChainId, switchChainAsync],
   );
 
   return { address, enter, claim };

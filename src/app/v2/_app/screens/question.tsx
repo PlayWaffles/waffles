@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { roundIdFor, useProto } from "../state";
+import { useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
 import { Illustration } from "../world-cup/components/parts";
-import { v2LoadPowerUps, v2LoadRoundBoard } from "@/actions/v2";
+import { v2LoadCurrentTournamentBoard, v2LoadPowerUps } from "@/actions/v2";
 import type { PowerUpName } from "../state";
 
 // Power-ups available to activate during a question (icon + label per kind).
@@ -28,15 +28,13 @@ const avatarFor = (name: string) =>
   LIVE_AVATARS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % LIVE_AVATARS.length];
 
 function LiveAnswerers() {
-  const proto = useProto();
   const [people, setPeople] = useState<{ id: number; av: string }[]>([]);
   const [count, setCount] = useState(0);
 
-  // Real DB participants only — actual entrants of this round.
+  // Real DB participants only — actual entrants of the current live tournament.
   useEffect(() => {
     let active = true;
-    const roundId = proto.entry?.roundId ?? roundIdFor(Date.now());
-    v2LoadRoundBoard(roundId)
+    v2LoadCurrentTournamentBoard()
       .then((b) => {
         if (!active || !b) return;
         setPeople(b.standings.slice(0, 5).map((s, i) => ({ id: i + 1, av: avatarFor(s.name) })));
@@ -46,7 +44,7 @@ function LiveAnswerers() {
     return () => {
       active = false;
     };
-  }, [proto.entry?.roundId]);
+  }, []);
 
   // Compact top pill — sits above the timer where the answer-result banner (which
   // owns the bottom) can never cover it, so it stays live before AND after you
@@ -257,7 +255,7 @@ export const QuestionScreen = () => {
           )}
         </div>
 
-      {answered == null && POWERUP_DEFS.some((pu) => (powerUps[pu.kind] ?? 0) > 0) && (
+      {isLevel && answered == null && POWERUP_DEFS.some((pu) => (powerUps[pu.kind] ?? 0) > 0) && (
         <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 10, flexShrink: 0 }}>
           {POWERUP_DEFS.map((pu) => {
             const n = powerUps[pu.kind] ?? 0;

@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, roundCloseAt, useProto } from "../state";
-import { v2LoadRoundBoard } from "@/actions/v2";
-import type { RoundBoard } from "@/lib/v2/rounds";
+import { v2LoadTournamentBoard } from "@/actions/v2";
+import type { TournamentBoard } from "@/lib/v2/tournamentGames";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon, useNow } from "../shared";
 import { playSound } from "../sound";
 
@@ -83,18 +83,18 @@ export const ResultsScreen = () => {
   const settled = entry?.settled ?? false;
   const provisional = !settled;
   const total = proto.totalQuestions;
-  const score = entry?.score ?? proto.score;
+  const score = proto.score;
   const liveRank = tournamentRank(score, total);
   const simRank = settled ? entry?.finalRank ?? liveRank : liveRank;
 
-  // Real round read-back: real entrant count + your real rank among them
+  // Real tournament read-back: real entrant count + your real rank among them
   // (live position by score, or final rank once settled). Falls back to the
   // simulated field in the preview / before any real entrants.
-  const [board, setBoard] = useState<RoundBoard | null>(null);
+  const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
-    if (!entry) return;
+    if (!proto.tournamentGameId) return;
     let active = true;
-    v2LoadRoundBoard(entry.roundId)
+    v2LoadTournamentBoard(proto.tournamentGameId)
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })
@@ -102,7 +102,7 @@ export const ResultsScreen = () => {
     return () => {
       active = false;
     };
-  }, [entry?.roundId]);
+  }, [proto.tournamentGameId]);
   const fieldSize = board?.fieldSize ?? FIELD_SIZE;
   const rank = board?.you?.rank ?? simRank;
 
@@ -112,7 +112,7 @@ export const ResultsScreen = () => {
   const pct = Math.max(1, Math.round((rank / fieldSize) * 100));
   // Prize: settled = the locked reward; provisional = "if it holds" (not yet
   // awarded — it only pays at settlement).
-  const won = settled ? entry?.reward ?? 0 : tournamentReward(rank);
+  const won = board?.you ? board.you.prize : settled ? entry?.reward ?? 0 : tournamentReward(rank);
   const wonTicket = won > 0;
 
   // Countdown to round close, live while provisional.

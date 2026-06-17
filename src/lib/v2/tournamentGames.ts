@@ -334,6 +334,81 @@ export async function submitTournamentAnswers(
 }
 
 // ---------------------------------------------------------------------------
+// Standings — leaderboard/results read from the DB (GameEntry), NOT the chain.
+// Mirrors the off-chain `RoundBoard` shape so screens swap source with minimal
+// churn. The chain only holds the merkle root for payout; ranks/scores are DB.
+// ---------------------------------------------------------------------------
+
+export type TournamentStanding = {
+  rank: number;
+  userId: string;
+  name: string;
+  score: number;
+  /** Prize won in payment-token units (set at settlement); 0 if none. */
+  prize: number;
+  you: boolean;
+};
+
+export type TournamentBoard = {
+  gameId: string | null;
+  fieldSize: number;
+  standings: TournamentStanding[];
+  you: TournamentStanding | null;
+  settled: boolean;
+};
+
+const EMPTY_BOARD: TournamentBoard = { gameId: null, fieldSize: 0, standings: [], you: null, settled: false };
+
+/** Standings for a tournament game from the DB — ranked by score (final `rank`
+ *  once settled), with the field size and the caller's own row. */
+export async function tournamentStandings(
+  gameId: string | null,
+  opts: { userId?: string; limit?: number } = {},
+): Promise<TournamentBoard> {
+  if (!gameId) return EMPTY_BOARD;
+  const [game, entries] = await Promise.all([
+    prisma.game.findUnique({ where: { id: gameId }, select: { rankedAt: true } }),
+    prisma.gameEntry.findMany({
+      where: { gameId, paidAt: { not: null } },
+      orderBy: [{ score: "desc" }, { createdAt: "asc" }],
+      select: { userId: true, score: true, rank: true, prize: true, user: { select: { username: true } } },
+    }),
+  ]);
+  if (!game) return EMPTY_BOARD;
+
+  const ranked: TournamentStanding[] = entries.map((e, i) => ({
+    rank: e.rank ?? i + 1,
+    userId: e.userId,
+    name: e.user.username ?? "Player",
+    score: e.score,
+    prize: e.prize ?? 0,
+    you: !!opts.userId && opts.userId === e.userId,
+  }));
+  const limit = opts.limit ?? 20;
+  return {
+    gameId,
+    fieldSize: ranked.length,
+    standings: ranked.slice(0, limit),
+    you: opts.userId ? ranked.find((r) => r.you) ?? null : null,
+    settled: game.rankedAt != null,
+  };
+}
+
+/** The platform's latest tournament game (live or most-recently ended) — for the
+ *  standalone leaderboard screen. */
+export async function latestTournamentStandings(
+  platform: UserPlatform,
+  opts: { userId?: string; limit?: number } = {},
+): Promise<TournamentBoard> {
+  const game = await prisma.game.findFirst({
+    where: { platform, onchainId: { not: null } },
+    orderBy: { startsAt: "desc" },
+    select: { id: true },
+  });
+  return tournamentStandings(game?.id ?? null, opts);
+}
+
+// ---------------------------------------------------------------------------
 // Claim data — the merkle proof/amount the client needs to call claimPrize
 // ---------------------------------------------------------------------------
 
@@ -379,6 +454,42 @@ export async function getTournamentClaim(
     amount: entry.merkleAmount,
     proof: proof as `0x${string}`[],
   };
+}
+
+export type TournamentClaimItem = {
+  gameId: string;
+  gameNumber: number;
+  rank: number;
+  /** Prize in whole payment-token units (6-decimals → human), for display. */
+  amount: number;
+  wonAt: number;
+};
+
+/** The player's claimable on-chain prizes (settled + published + unclaimed),
+ *  for the profile Prize Wallet list. */
+export async function loadTournamentClaims(userId: string): Promise<TournamentClaimItem[]> {
+  const entries = await prisma.gameEntry.findMany({
+    where: {
+      userId,
+      claimedAt: null,
+      prize: { gt: 0 },
+      merkleAmount: { not: null },
+      game: { onChainAt: { not: null }, onchainId: { not: null } },
+    },
+    select: {
+      rank: true,
+      merkleAmount: true,
+      game: { select: { id: true, gameNumber: true, endsAt: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return entries.map((e) => ({
+    gameId: e.game.id,
+    gameNumber: e.game.gameNumber,
+    rank: e.rank ?? 0,
+    amount: Number(e.merkleAmount) / 10 ** PAYMENT_TOKEN_DECIMALS,
+    wonAt: e.game.endsAt.getTime(),
+  }));
 }
 
 /**
