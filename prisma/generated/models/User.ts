@@ -460,6 +460,9 @@ export type UserWhereInput = {
   boosts?: Prisma.UserBoostListRelationFilter
   earnedBadges?: Prisma.UserBadgeListRelationFilter
   dailyClaims?: Prisma.DailyRewardClaimListRelationFilter
+  partnerClaims?: Prisma.PartnerOfferClaimListRelationFilter
+  seasonPassClaims?: Prisma.SeasonPassClaimListRelationFilter
+  analyticsEvents?: Prisma.AnalyticsEventListRelationFilter
 }
 
 export type UserOrderByWithRelationInput = {
@@ -516,6 +519,9 @@ export type UserOrderByWithRelationInput = {
   boosts?: Prisma.UserBoostOrderByRelationAggregateInput
   earnedBadges?: Prisma.UserBadgeOrderByRelationAggregateInput
   dailyClaims?: Prisma.DailyRewardClaimOrderByRelationAggregateInput
+  partnerClaims?: Prisma.PartnerOfferClaimOrderByRelationAggregateInput
+  seasonPassClaims?: Prisma.SeasonPassClaimOrderByRelationAggregateInput
+  analyticsEvents?: Prisma.AnalyticsEventOrderByRelationAggregateInput
 }
 
 export type UserWhereUniqueInput = Prisma.AtLeast<{
@@ -575,6 +581,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   boosts?: Prisma.UserBoostListRelationFilter
   earnedBadges?: Prisma.UserBadgeListRelationFilter
   dailyClaims?: Prisma.DailyRewardClaimListRelationFilter
+  partnerClaims?: Prisma.PartnerOfferClaimListRelationFilter
+  seasonPassClaims?: Prisma.SeasonPassClaimListRelationFilter
+  analyticsEvents?: Prisma.AnalyticsEventListRelationFilter
 }, "id" | "fid" | "wallet" | "inviteCode">
 
 export type UserOrderByWithAggregationInput = {
@@ -702,6 +711,9 @@ export type UserCreateInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateInput = {
@@ -757,6 +769,9 @@ export type UserUncheckedCreateInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserUpdateInput = {
@@ -812,6 +827,9 @@ export type UserUpdateInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateInput = {
@@ -867,6 +885,9 @@ export type UserUncheckedUpdateInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyInput = {
@@ -1316,6 +1337,22 @@ export type UserUpdateOneRequiredWithoutAuditLogsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAuditLogsInput, Prisma.UserUpdateWithoutAuditLogsInput>, Prisma.UserUncheckedUpdateWithoutAuditLogsInput>
 }
 
+export type UserCreateNestedOneWithoutAnalyticsEventsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAnalyticsEventsInput, Prisma.UserUncheckedCreateWithoutAnalyticsEventsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAnalyticsEventsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneWithoutAnalyticsEventsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutAnalyticsEventsInput, Prisma.UserUncheckedCreateWithoutAnalyticsEventsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutAnalyticsEventsInput
+  upsert?: Prisma.UserUpsertWithoutAnalyticsEventsInput
+  disconnect?: Prisma.UserWhereInput | boolean
+  delete?: Prisma.UserWhereInput | boolean
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutAnalyticsEventsInput, Prisma.UserUpdateWithoutAnalyticsEventsInput>, Prisma.UserUncheckedUpdateWithoutAnalyticsEventsInput>
+}
+
 export type UserCreateNestedOneWithoutRedeemedCodesInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutRedeemedCodesInput, Prisma.UserUncheckedCreateWithoutRedeemedCodesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutRedeemedCodesInput
@@ -1500,6 +1537,34 @@ export type UserUpdateOneRequiredWithoutEarnedBadgesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutEarnedBadgesInput, Prisma.UserUpdateWithoutEarnedBadgesInput>, Prisma.UserUncheckedUpdateWithoutEarnedBadgesInput>
 }
 
+export type UserCreateNestedOneWithoutPartnerClaimsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPartnerClaimsInput, Prisma.UserUncheckedCreateWithoutPartnerClaimsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPartnerClaimsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutPartnerClaimsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutPartnerClaimsInput, Prisma.UserUncheckedCreateWithoutPartnerClaimsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutPartnerClaimsInput
+  upsert?: Prisma.UserUpsertWithoutPartnerClaimsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutPartnerClaimsInput, Prisma.UserUpdateWithoutPartnerClaimsInput>, Prisma.UserUncheckedUpdateWithoutPartnerClaimsInput>
+}
+
+export type UserCreateNestedOneWithoutSeasonPassClaimsInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSeasonPassClaimsInput, Prisma.UserUncheckedCreateWithoutSeasonPassClaimsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSeasonPassClaimsInput
+  connect?: Prisma.UserWhereUniqueInput
+}
+
+export type UserUpdateOneRequiredWithoutSeasonPassClaimsNestedInput = {
+  create?: Prisma.XOR<Prisma.UserCreateWithoutSeasonPassClaimsInput, Prisma.UserUncheckedCreateWithoutSeasonPassClaimsInput>
+  connectOrCreate?: Prisma.UserCreateOrConnectWithoutSeasonPassClaimsInput
+  upsert?: Prisma.UserUpsertWithoutSeasonPassClaimsInput
+  connect?: Prisma.UserWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutSeasonPassClaimsInput, Prisma.UserUpdateWithoutSeasonPassClaimsInput>, Prisma.UserUncheckedUpdateWithoutSeasonPassClaimsInput>
+}
+
 export type UserCreateNestedOneWithoutDailyClaimsInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutDailyClaimsInput, Prisma.UserUncheckedCreateWithoutDailyClaimsInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutDailyClaimsInput
@@ -1566,6 +1631,9 @@ export type UserCreateWithoutReferralsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReferralsInput = {
@@ -1620,6 +1688,9 @@ export type UserUncheckedCreateWithoutReferralsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReferralsInput = {
@@ -1679,6 +1750,9 @@ export type UserCreateWithoutReferredByInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutReferredByInput = {
@@ -1733,6 +1807,9 @@ export type UserUncheckedCreateWithoutReferredByInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutReferredByInput = {
@@ -1808,6 +1885,9 @@ export type UserUpdateWithoutReferralsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReferralsInput = {
@@ -1862,6 +1942,9 @@ export type UserUncheckedUpdateWithoutReferralsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUpsertWithWhereUniqueWithoutReferredByInput = {
@@ -1967,6 +2050,9 @@ export type UserCreateWithoutWalletsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWalletsInput = {
@@ -2021,6 +2107,9 @@ export type UserUncheckedCreateWithoutWalletsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWalletsInput = {
@@ -2091,6 +2180,9 @@ export type UserUpdateWithoutWalletsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWalletsInput = {
@@ -2145,6 +2237,9 @@ export type UserUncheckedUpdateWithoutWalletsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRewardsInput = {
@@ -2199,6 +2294,9 @@ export type UserCreateWithoutRewardsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRewardsInput = {
@@ -2253,6 +2351,9 @@ export type UserUncheckedCreateWithoutRewardsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRewardsInput = {
@@ -2323,6 +2424,9 @@ export type UserUpdateWithoutRewardsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRewardsInput = {
@@ -2377,6 +2481,9 @@ export type UserUncheckedUpdateWithoutRewardsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCompletedQuestsInput = {
@@ -2431,6 +2538,9 @@ export type UserCreateWithoutCompletedQuestsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCompletedQuestsInput = {
@@ -2485,6 +2595,9 @@ export type UserUncheckedCreateWithoutCompletedQuestsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCompletedQuestsInput = {
@@ -2555,6 +2668,9 @@ export type UserUpdateWithoutCompletedQuestsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
@@ -2609,6 +2725,9 @@ export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutEntriesInput = {
@@ -2663,6 +2782,9 @@ export type UserCreateWithoutEntriesInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEntriesInput = {
@@ -2717,6 +2839,9 @@ export type UserUncheckedCreateWithoutEntriesInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEntriesInput = {
@@ -2787,6 +2912,9 @@ export type UserUpdateWithoutEntriesInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEntriesInput = {
@@ -2841,6 +2969,9 @@ export type UserUncheckedUpdateWithoutEntriesInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutChatsInput = {
@@ -2895,6 +3026,9 @@ export type UserCreateWithoutChatsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutChatsInput = {
@@ -2949,6 +3083,9 @@ export type UserUncheckedCreateWithoutChatsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutChatsInput = {
@@ -3019,6 +3156,9 @@ export type UserUpdateWithoutChatsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutChatsInput = {
@@ -3073,6 +3213,9 @@ export type UserUncheckedUpdateWithoutChatsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPendingPurchasesInput = {
@@ -3127,6 +3270,9 @@ export type UserCreateWithoutPendingPurchasesInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPendingPurchasesInput = {
@@ -3181,6 +3327,9 @@ export type UserUncheckedCreateWithoutPendingPurchasesInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPendingPurchasesInput = {
@@ -3251,6 +3400,9 @@ export type UserUpdateWithoutPendingPurchasesInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPendingPurchasesInput = {
@@ -3305,6 +3457,9 @@ export type UserUncheckedUpdateWithoutPendingPurchasesInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutNotifsInput = {
@@ -3359,6 +3514,9 @@ export type UserCreateWithoutNotifsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutNotifsInput = {
@@ -3413,6 +3571,9 @@ export type UserUncheckedCreateWithoutNotifsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutNotifsInput = {
@@ -3483,6 +3644,9 @@ export type UserUpdateWithoutNotifsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutNotifsInput = {
@@ -3537,6 +3701,9 @@ export type UserUncheckedUpdateWithoutNotifsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAuditLogsInput = {
@@ -3591,6 +3758,9 @@ export type UserCreateWithoutAuditLogsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAuditLogsInput = {
@@ -3645,6 +3815,9 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAuditLogsInput = {
@@ -3715,6 +3888,9 @@ export type UserUpdateWithoutAuditLogsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAuditLogsInput = {
@@ -3769,6 +3945,253 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutAnalyticsEventsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  onboardingCompletedAt?: Date | string | null
+  xp?: number
+  ticketBalance?: number
+  lives?: number
+  nextLifeAt?: Date | string | null
+  streakFreezes?: number
+  avatarId?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
+  ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
+  levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
+  roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
+  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
+  announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
+  questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
+  leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
+  purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
+  powerUps?: Prisma.PowerUpInventoryCreateNestedManyWithoutUserInput
+  cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
+  boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
+  earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
+  dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutAnalyticsEventsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  referredById?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  onboardingCompletedAt?: Date | string | null
+  xp?: number
+  ticketBalance?: number
+  lives?: number
+  nextLifeAt?: Date | string | null
+  streakFreezes?: number
+  avatarId?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
+  ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
+  levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
+  roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
+  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
+  announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
+  questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
+  leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
+  purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
+  powerUps?: Prisma.PowerUpInventoryUncheckedCreateNestedManyWithoutUserInput
+  cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
+  boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
+  earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
+  dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutAnalyticsEventsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutAnalyticsEventsInput, Prisma.UserUncheckedCreateWithoutAnalyticsEventsInput>
+}
+
+export type UserUpsertWithoutAnalyticsEventsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutAnalyticsEventsInput, Prisma.UserUncheckedUpdateWithoutAnalyticsEventsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutAnalyticsEventsInput, Prisma.UserUncheckedCreateWithoutAnalyticsEventsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutAnalyticsEventsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutAnalyticsEventsInput, Prisma.UserUncheckedUpdateWithoutAnalyticsEventsInput>
+}
+
+export type UserUpdateWithoutAnalyticsEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  xp?: Prisma.IntFieldUpdateOperationsInput | number
+  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
+  lives?: Prisma.IntFieldUpdateOperationsInput | number
+  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
+  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
+  ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
+  levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
+  roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
+  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
+  announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
+  questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
+  leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
+  purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
+  powerUps?: Prisma.PowerUpInventoryUpdateManyWithoutUserNestedInput
+  cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
+  boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
+  earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
+  dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutAnalyticsEventsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  xp?: Prisma.IntFieldUpdateOperationsInput | number
+  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
+  lives?: Prisma.IntFieldUpdateOperationsInput | number
+  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
+  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
+  ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
+  levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
+  roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
+  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
+  announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
+  questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
+  leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
+  purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
+  powerUps?: Prisma.PowerUpInventoryUncheckedUpdateManyWithoutUserNestedInput
+  cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
+  boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
+  earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
+  dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRedeemedCodesInput = {
@@ -3823,6 +4246,9 @@ export type UserCreateWithoutRedeemedCodesInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRedeemedCodesInput = {
@@ -3877,6 +4303,9 @@ export type UserUncheckedCreateWithoutRedeemedCodesInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRedeemedCodesInput = {
@@ -3947,6 +4376,9 @@ export type UserUpdateWithoutRedeemedCodesInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
@@ -4001,6 +4433,9 @@ export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutTicketLedgerInput = {
@@ -4055,6 +4490,9 @@ export type UserCreateWithoutTicketLedgerInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutTicketLedgerInput = {
@@ -4109,6 +4547,9 @@ export type UserUncheckedCreateWithoutTicketLedgerInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutTicketLedgerInput = {
@@ -4179,6 +4620,9 @@ export type UserUpdateWithoutTicketLedgerInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutTicketLedgerInput = {
@@ -4233,6 +4677,9 @@ export type UserUncheckedUpdateWithoutTicketLedgerInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLevelProgressInput = {
@@ -4287,6 +4734,9 @@ export type UserCreateWithoutLevelProgressInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLevelProgressInput = {
@@ -4341,6 +4791,9 @@ export type UserUncheckedCreateWithoutLevelProgressInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLevelProgressInput = {
@@ -4411,6 +4864,9 @@ export type UserUpdateWithoutLevelProgressInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLevelProgressInput = {
@@ -4465,6 +4921,9 @@ export type UserUncheckedUpdateWithoutLevelProgressInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutRoundEntriesInput = {
@@ -4519,6 +4978,9 @@ export type UserCreateWithoutRoundEntriesInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutRoundEntriesInput = {
@@ -4573,6 +5035,9 @@ export type UserUncheckedCreateWithoutRoundEntriesInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutRoundEntriesInput = {
@@ -4643,6 +5108,9 @@ export type UserUpdateWithoutRoundEntriesInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutRoundEntriesInput = {
@@ -4697,6 +5165,9 @@ export type UserUncheckedUpdateWithoutRoundEntriesInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutWinningsInput = {
@@ -4751,6 +5222,9 @@ export type UserCreateWithoutWinningsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutWinningsInput = {
@@ -4805,6 +5279,9 @@ export type UserUncheckedCreateWithoutWinningsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutWinningsInput = {
@@ -4875,6 +5352,9 @@ export type UserUpdateWithoutWinningsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutWinningsInput = {
@@ -4929,6 +5409,9 @@ export type UserUncheckedUpdateWithoutWinningsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutAnnouncementStateInput = {
@@ -4983,6 +5466,9 @@ export type UserCreateWithoutAnnouncementStateInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutAnnouncementStateInput = {
@@ -5037,6 +5523,9 @@ export type UserUncheckedCreateWithoutAnnouncementStateInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutAnnouncementStateInput = {
@@ -5107,6 +5596,9 @@ export type UserUpdateWithoutAnnouncementStateInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutAnnouncementStateInput = {
@@ -5161,6 +5653,9 @@ export type UserUncheckedUpdateWithoutAnnouncementStateInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutQuestProgressInput = {
@@ -5215,6 +5710,9 @@ export type UserCreateWithoutQuestProgressInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutQuestProgressInput = {
@@ -5269,6 +5767,9 @@ export type UserUncheckedCreateWithoutQuestProgressInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutQuestProgressInput = {
@@ -5339,6 +5840,9 @@ export type UserUpdateWithoutQuestProgressInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutQuestProgressInput = {
@@ -5393,6 +5897,9 @@ export type UserUncheckedUpdateWithoutQuestProgressInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutLeagueMembersInput = {
@@ -5447,6 +5954,9 @@ export type UserCreateWithoutLeagueMembersInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutLeagueMembersInput = {
@@ -5501,6 +6011,9 @@ export type UserUncheckedCreateWithoutLeagueMembersInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutLeagueMembersInput = {
@@ -5571,6 +6084,9 @@ export type UserUpdateWithoutLeagueMembersInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutLeagueMembersInput = {
@@ -5625,6 +6141,9 @@ export type UserUncheckedUpdateWithoutLeagueMembersInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPurchasesInput = {
@@ -5679,6 +6198,9 @@ export type UserCreateWithoutPurchasesInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPurchasesInput = {
@@ -5733,6 +6255,9 @@ export type UserUncheckedCreateWithoutPurchasesInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPurchasesInput = {
@@ -5803,6 +6328,9 @@ export type UserUpdateWithoutPurchasesInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPurchasesInput = {
@@ -5857,6 +6385,9 @@ export type UserUncheckedUpdateWithoutPurchasesInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutPowerUpsInput = {
@@ -5911,6 +6442,9 @@ export type UserCreateWithoutPowerUpsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutPowerUpsInput = {
@@ -5965,6 +6499,9 @@ export type UserUncheckedCreateWithoutPowerUpsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutPowerUpsInput = {
@@ -6035,6 +6572,9 @@ export type UserUpdateWithoutPowerUpsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutPowerUpsInput = {
@@ -6089,6 +6629,9 @@ export type UserUncheckedUpdateWithoutPowerUpsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutCosmeticsInput = {
@@ -6143,6 +6686,9 @@ export type UserCreateWithoutCosmeticsInput = {
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutCosmeticsInput = {
@@ -6197,6 +6743,9 @@ export type UserUncheckedCreateWithoutCosmeticsInput = {
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutCosmeticsInput = {
@@ -6267,6 +6816,9 @@ export type UserUpdateWithoutCosmeticsInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutCosmeticsInput = {
@@ -6321,6 +6873,9 @@ export type UserUncheckedUpdateWithoutCosmeticsInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutBoostsInput = {
@@ -6375,6 +6930,9 @@ export type UserCreateWithoutBoostsInput = {
   cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutBoostsInput = {
@@ -6429,6 +6987,9 @@ export type UserUncheckedCreateWithoutBoostsInput = {
   cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutBoostsInput = {
@@ -6499,6 +7060,9 @@ export type UserUpdateWithoutBoostsInput = {
   cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutBoostsInput = {
@@ -6553,6 +7117,9 @@ export type UserUncheckedUpdateWithoutBoostsInput = {
   cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutEarnedBadgesInput = {
@@ -6607,6 +7174,9 @@ export type UserCreateWithoutEarnedBadgesInput = {
   cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutEarnedBadgesInput = {
@@ -6661,6 +7231,9 @@ export type UserUncheckedCreateWithoutEarnedBadgesInput = {
   cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutEarnedBadgesInput = {
@@ -6731,6 +7304,9 @@ export type UserUpdateWithoutEarnedBadgesInput = {
   cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutEarnedBadgesInput = {
@@ -6785,6 +7361,497 @@ export type UserUncheckedUpdateWithoutEarnedBadgesInput = {
   cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutPartnerClaimsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  onboardingCompletedAt?: Date | string | null
+  xp?: number
+  ticketBalance?: number
+  lives?: number
+  nextLifeAt?: Date | string | null
+  streakFreezes?: number
+  avatarId?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
+  ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
+  levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
+  roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
+  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
+  announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
+  questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
+  leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
+  purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
+  powerUps?: Prisma.PowerUpInventoryCreateNestedManyWithoutUserInput
+  cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
+  boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
+  earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
+  dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutPartnerClaimsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  referredById?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  onboardingCompletedAt?: Date | string | null
+  xp?: number
+  ticketBalance?: number
+  lives?: number
+  nextLifeAt?: Date | string | null
+  streakFreezes?: number
+  avatarId?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
+  ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
+  levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
+  roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
+  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
+  announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
+  questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
+  leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
+  purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
+  powerUps?: Prisma.PowerUpInventoryUncheckedCreateNestedManyWithoutUserInput
+  cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
+  boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
+  earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
+  dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutPartnerClaimsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutPartnerClaimsInput, Prisma.UserUncheckedCreateWithoutPartnerClaimsInput>
+}
+
+export type UserUpsertWithoutPartnerClaimsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutPartnerClaimsInput, Prisma.UserUncheckedUpdateWithoutPartnerClaimsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutPartnerClaimsInput, Prisma.UserUncheckedCreateWithoutPartnerClaimsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutPartnerClaimsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutPartnerClaimsInput, Prisma.UserUncheckedUpdateWithoutPartnerClaimsInput>
+}
+
+export type UserUpdateWithoutPartnerClaimsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  xp?: Prisma.IntFieldUpdateOperationsInput | number
+  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
+  lives?: Prisma.IntFieldUpdateOperationsInput | number
+  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
+  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
+  ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
+  levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
+  roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
+  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
+  announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
+  questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
+  leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
+  purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
+  powerUps?: Prisma.PowerUpInventoryUpdateManyWithoutUserNestedInput
+  cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
+  boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
+  earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
+  dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutPartnerClaimsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  xp?: Prisma.IntFieldUpdateOperationsInput | number
+  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
+  lives?: Prisma.IntFieldUpdateOperationsInput | number
+  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
+  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
+  ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
+  levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
+  roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
+  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
+  announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
+  questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
+  leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
+  purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
+  powerUps?: Prisma.PowerUpInventoryUncheckedUpdateManyWithoutUserNestedInput
+  cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
+  boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
+  earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
+  dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
+}
+
+export type UserCreateWithoutSeasonPassClaimsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  onboardingCompletedAt?: Date | string | null
+  xp?: number
+  ticketBalance?: number
+  lives?: number
+  nextLifeAt?: Date | string | null
+  streakFreezes?: number
+  avatarId?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
+  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
+  ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
+  levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
+  roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
+  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
+  announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
+  questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
+  leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
+  purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
+  powerUps?: Prisma.PowerUpInventoryCreateNestedManyWithoutUserInput
+  cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
+  boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
+  earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
+  dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
+}
+
+export type UserUncheckedCreateWithoutSeasonPassClaimsInput = {
+  id?: string
+  platform: $Enums.UserPlatform
+  fid?: number | null
+  username?: string | null
+  pfpUrl?: string | null
+  wallet?: string | null
+  role?: $Enums.UserRole
+  password?: string | null
+  referredById?: string | null
+  inviteCode: string
+  inviteQuota?: number
+  hasGameAccess?: boolean
+  accessGrantedAt?: Date | string | null
+  accessGrantedBy?: string | null
+  onboardingCompletedAt?: Date | string | null
+  xp?: number
+  ticketBalance?: number
+  lives?: number
+  nextLifeAt?: Date | string | null
+  streakFreezes?: number
+  avatarId?: string | null
+  currentStreak?: number
+  bestStreak?: number
+  lastLoginAt?: Date | string | null
+  isBanned?: boolean
+  bannedAt?: Date | string | null
+  bannedBy?: string | null
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
+  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
+  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
+  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
+  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
+  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
+  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
+  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
+  ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
+  levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
+  roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
+  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
+  announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
+  questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
+  leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
+  purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
+  powerUps?: Prisma.PowerUpInventoryUncheckedCreateNestedManyWithoutUserInput
+  cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
+  boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
+  earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
+  dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
+}
+
+export type UserCreateOrConnectWithoutSeasonPassClaimsInput = {
+  where: Prisma.UserWhereUniqueInput
+  create: Prisma.XOR<Prisma.UserCreateWithoutSeasonPassClaimsInput, Prisma.UserUncheckedCreateWithoutSeasonPassClaimsInput>
+}
+
+export type UserUpsertWithoutSeasonPassClaimsInput = {
+  update: Prisma.XOR<Prisma.UserUpdateWithoutSeasonPassClaimsInput, Prisma.UserUncheckedUpdateWithoutSeasonPassClaimsInput>
+  create: Prisma.XOR<Prisma.UserCreateWithoutSeasonPassClaimsInput, Prisma.UserUncheckedCreateWithoutSeasonPassClaimsInput>
+  where?: Prisma.UserWhereInput
+}
+
+export type UserUpdateToOneWithWhereWithoutSeasonPassClaimsInput = {
+  where?: Prisma.UserWhereInput
+  data: Prisma.XOR<Prisma.UserUpdateWithoutSeasonPassClaimsInput, Prisma.UserUncheckedUpdateWithoutSeasonPassClaimsInput>
+}
+
+export type UserUpdateWithoutSeasonPassClaimsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  xp?: Prisma.IntFieldUpdateOperationsInput | number
+  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
+  lives?: Prisma.IntFieldUpdateOperationsInput | number
+  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
+  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
+  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
+  ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
+  levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
+  roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
+  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
+  announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
+  questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
+  leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
+  purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
+  powerUps?: Prisma.PowerUpInventoryUpdateManyWithoutUserNestedInput
+  cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
+  boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
+  earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
+  dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
+}
+
+export type UserUncheckedUpdateWithoutSeasonPassClaimsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
+  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
+  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
+  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
+  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  xp?: Prisma.IntFieldUpdateOperationsInput | number
+  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
+  lives?: Prisma.IntFieldUpdateOperationsInput | number
+  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
+  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
+  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
+  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
+  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
+  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
+  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
+  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
+  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
+  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
+  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
+  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
+  ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
+  levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
+  roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
+  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
+  announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
+  questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
+  leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
+  purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
+  powerUps?: Prisma.PowerUpInventoryUncheckedUpdateManyWithoutUserNestedInput
+  cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
+  boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
+  earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
+  dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateWithoutDailyClaimsInput = {
@@ -6839,6 +7906,9 @@ export type UserCreateWithoutDailyClaimsInput = {
   cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
   boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
 }
 
 export type UserUncheckedCreateWithoutDailyClaimsInput = {
@@ -6893,6 +7963,9 @@ export type UserUncheckedCreateWithoutDailyClaimsInput = {
   cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
   boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
   earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
 }
 
 export type UserCreateOrConnectWithoutDailyClaimsInput = {
@@ -6963,6 +8036,9 @@ export type UserUpdateWithoutDailyClaimsInput = {
   cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutDailyClaimsInput = {
@@ -7017,6 +8093,9 @@ export type UserUncheckedUpdateWithoutDailyClaimsInput = {
   cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserCreateManyReferredByInput = {
@@ -7102,6 +8181,9 @@ export type UserUpdateWithoutReferredByInput = {
   boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateWithoutReferredByInput = {
@@ -7156,6 +8238,9 @@ export type UserUncheckedUpdateWithoutReferredByInput = {
   boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
   earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
   dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
+  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
+  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
+  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
 }
 
 export type UserUncheckedUpdateManyWithoutReferredByInput = {
@@ -7218,6 +8303,9 @@ export type UserCountOutputType = {
   boosts: number
   earnedBadges: number
   dailyClaims: number
+  partnerClaims: number
+  seasonPassClaims: number
+  analyticsEvents: number
 }
 
 export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -7244,6 +8332,9 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   boosts?: boolean | UserCountOutputTypeCountBoostsArgs
   earnedBadges?: boolean | UserCountOutputTypeCountEarnedBadgesArgs
   dailyClaims?: boolean | UserCountOutputTypeCountDailyClaimsArgs
+  partnerClaims?: boolean | UserCountOutputTypeCountPartnerClaimsArgs
+  seasonPassClaims?: boolean | UserCountOutputTypeCountSeasonPassClaimsArgs
+  analyticsEvents?: boolean | UserCountOutputTypeCountAnalyticsEventsArgs
 }
 
 /**
@@ -7417,6 +8508,27 @@ export type UserCountOutputTypeCountDailyClaimsArgs<ExtArgs extends runtime.Type
   where?: Prisma.DailyRewardClaimWhereInput
 }
 
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountPartnerClaimsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PartnerOfferClaimWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountSeasonPassClaimsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.SeasonPassClaimWhereInput
+}
+
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountAnalyticsEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnalyticsEventWhereInput
+}
+
 
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -7472,6 +8584,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   boosts?: boolean | Prisma.User$boostsArgs<ExtArgs>
   earnedBadges?: boolean | Prisma.User$earnedBadgesArgs<ExtArgs>
   dailyClaims?: boolean | Prisma.User$dailyClaimsArgs<ExtArgs>
+  partnerClaims?: boolean | Prisma.User$partnerClaimsArgs<ExtArgs>
+  seasonPassClaims?: boolean | Prisma.User$seasonPassClaimsArgs<ExtArgs>
+  analyticsEvents?: boolean | Prisma.User$analyticsEventsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["user"]>
 
@@ -7599,6 +8714,9 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   boosts?: boolean | Prisma.User$boostsArgs<ExtArgs>
   earnedBadges?: boolean | Prisma.User$earnedBadgesArgs<ExtArgs>
   dailyClaims?: boolean | Prisma.User$dailyClaimsArgs<ExtArgs>
+  partnerClaims?: boolean | Prisma.User$partnerClaimsArgs<ExtArgs>
+  seasonPassClaims?: boolean | Prisma.User$seasonPassClaimsArgs<ExtArgs>
+  analyticsEvents?: boolean | Prisma.User$analyticsEventsArgs<ExtArgs>
   _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type UserIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -7635,6 +8753,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     boosts: Prisma.$UserBoostPayload<ExtArgs>[]
     earnedBadges: Prisma.$UserBadgePayload<ExtArgs>[]
     dailyClaims: Prisma.$DailyRewardClaimPayload<ExtArgs>[]
+    partnerClaims: Prisma.$PartnerOfferClaimPayload<ExtArgs>[]
+    seasonPassClaims: Prisma.$SeasonPassClaimPayload<ExtArgs>[]
+    analyticsEvents: Prisma.$AnalyticsEventPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -8084,6 +9205,9 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   boosts<T extends Prisma.User$boostsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$boostsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserBoostPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   earnedBadges<T extends Prisma.User$earnedBadgesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$earnedBadgesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserBadgePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   dailyClaims<T extends Prisma.User$dailyClaimsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$dailyClaimsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$DailyRewardClaimPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  partnerClaims<T extends Prisma.User$partnerClaimsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$partnerClaimsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PartnerOfferClaimPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  seasonPassClaims<T extends Prisma.User$seasonPassClaimsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$seasonPassClaimsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$SeasonPassClaimPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  analyticsEvents<T extends Prisma.User$analyticsEventsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$analyticsEventsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnalyticsEventPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -9106,6 +10230,78 @@ export type User$dailyClaimsArgs<ExtArgs extends runtime.Types.Extensions.Intern
   take?: number
   skip?: number
   distinct?: Prisma.DailyRewardClaimScalarFieldEnum | Prisma.DailyRewardClaimScalarFieldEnum[]
+}
+
+/**
+ * User.partnerClaims
+ */
+export type User$partnerClaimsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PartnerOfferClaim
+   */
+  select?: Prisma.PartnerOfferClaimSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PartnerOfferClaim
+   */
+  omit?: Prisma.PartnerOfferClaimOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PartnerOfferClaimInclude<ExtArgs> | null
+  where?: Prisma.PartnerOfferClaimWhereInput
+  orderBy?: Prisma.PartnerOfferClaimOrderByWithRelationInput | Prisma.PartnerOfferClaimOrderByWithRelationInput[]
+  cursor?: Prisma.PartnerOfferClaimWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PartnerOfferClaimScalarFieldEnum | Prisma.PartnerOfferClaimScalarFieldEnum[]
+}
+
+/**
+ * User.seasonPassClaims
+ */
+export type User$seasonPassClaimsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SeasonPassClaim
+   */
+  select?: Prisma.SeasonPassClaimSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the SeasonPassClaim
+   */
+  omit?: Prisma.SeasonPassClaimOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SeasonPassClaimInclude<ExtArgs> | null
+  where?: Prisma.SeasonPassClaimWhereInput
+  orderBy?: Prisma.SeasonPassClaimOrderByWithRelationInput | Prisma.SeasonPassClaimOrderByWithRelationInput[]
+  cursor?: Prisma.SeasonPassClaimWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.SeasonPassClaimScalarFieldEnum | Prisma.SeasonPassClaimScalarFieldEnum[]
+}
+
+/**
+ * User.analyticsEvents
+ */
+export type User$analyticsEventsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnalyticsEvent
+   */
+  select?: Prisma.AnalyticsEventSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AnalyticsEvent
+   */
+  omit?: Prisma.AnalyticsEventOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnalyticsEventInclude<ExtArgs> | null
+  where?: Prisma.AnalyticsEventWhereInput
+  orderBy?: Prisma.AnalyticsEventOrderByWithRelationInput | Prisma.AnalyticsEventOrderByWithRelationInput[]
+  cursor?: Prisma.AnalyticsEventWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnalyticsEventScalarFieldEnum | Prisma.AnalyticsEventScalarFieldEnum[]
 }
 
 /**

@@ -89,6 +89,8 @@ model User {
   boosts            UserBoost[]
   earnedBadges      UserBadge[]
   dailyClaims       DailyRewardClaim[]
+  partnerClaims     PartnerOfferClaim[]
+  seasonPassClaims  SeasonPassClaim[]
   analyticsEvents   AnalyticsEvent[]
 }
 
@@ -358,7 +360,13 @@ model QuestionTemplate {
   soundUrl     String?  @db.VarChar(255)
 
   // -- CATEGORIZATION --
+  // `theme` is the coarse 6-value bucket (FOOTBALL vs general etc.) used by
+  // themed games; `category` is the finer authoring category from the question
+  // bank ("History", "Science", "Music", …) preserved verbatim so granularity
+  // isn't lost. Stored as text (not an enum) to avoid migrations when the bank
+  // adds categories.
   theme      GameTheme  @default(GENERAL)
+  category   String?    @db.VarChar(40)
   difficulty Difficulty @default(MEDIUM)
 
   // -- TRACKING (denormalized for fast display) --
@@ -370,6 +378,7 @@ model QuestionTemplate {
 
   // -- INDEXES --
   @@index([theme, difficulty])
+  @@index([category])
   @@index([createdAt(sort: Desc)])
   @@index([usageCount(sort: Desc)])
 }
@@ -635,6 +644,8 @@ enum TicketLedgerReason {
   LIVES_REFILL
   WINNING_CONVERT
   FIRST_TICKET_OFFER
+  PARTNER_OFFER
+  SEASON_PASS
   ADMIN_ADJUST
 }
 
@@ -895,6 +906,52 @@ model UserBadge {
   earnedAt DateTime @default(now())
 
   @@unique([userId, badgeId])
+}
+
+// -- Sponsored partner offers (Missions → Partners tab). Definitions are catalog
+//    rows; per-user, one-time completion credits the offer's ticket reward. --
+model PartnerOffer {
+  id         String              @id @default(cuid())
+  slug       String              @unique @db.VarChar(60)
+  brand      String              @db.VarChar(60)
+  brandColor String              @db.VarChar(9)
+  glyph      String              @db.VarChar(8)
+  title      String              @db.VarChar(140)
+  cta        String              @db.VarChar(40)
+  tickets    Int                 @db.SmallInt
+  estTime    String              @db.VarChar(20)
+  verified   Boolean             @default(true)
+  hot        Boolean             @default(false)
+  isActive   Boolean             @default(true)
+  sortOrder  Int                 @default(0) @db.SmallInt
+  claims     PartnerOfferClaim[]
+}
+
+model PartnerOfferClaim {
+  id        String       @id @default(cuid())
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  offer     PartnerOffer @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  offerId   String
+  tickets   Int          @default(0) @db.SmallInt
+  createdAt DateTime     @default(now())
+
+  @@unique([userId, offerId])
+}
+
+// -- Season Pass: per-user, per-season record of claimed reward cells. Tier
+//    definitions + reward amounts live in code (src/lib/v2/seasonPass.ts);
+//    pass level/progress derive from XP. One row per claimed (tier, premium). --
+model SeasonPassClaim {
+  id        String   @id @default(cuid())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  season    String   @db.VarChar(20)
+  tier      Int      @db.SmallInt
+  premium   Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, season, tier, premium])
 }
 
 // -- Daily reward: one claim per calendar day; stores the weighted-random roll. --

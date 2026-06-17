@@ -88,6 +88,11 @@ export type NotificationLog = Prisma.NotificationLogModel
  */
 export type AuditLog = Prisma.AuditLogModel
 /**
+ * Model AnalyticsEvent
+ * 
+ */
+export type AnalyticsEvent = Prisma.AnalyticsEventModel
+/**
  * Model InviteCode
  * 
  */
@@ -167,6 +172,21 @@ export type UserBoost = Prisma.UserBoostModel
  * 
  */
 export type UserBadge = Prisma.UserBadgeModel
+/**
+ * Model PartnerOffer
+ * 
+ */
+export type PartnerOffer = Prisma.PartnerOfferModel
+/**
+ * Model PartnerOfferClaim
+ * 
+ */
+export type PartnerOfferClaim = Prisma.PartnerOfferClaimModel
+/**
+ * Model SeasonPassClaim
+ * 
+ */
+export type SeasonPassClaim = Prisma.SeasonPassClaimModel
 /**
  * Model DailyRewardClaim
  * 

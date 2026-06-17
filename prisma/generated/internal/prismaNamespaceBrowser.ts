@@ -65,6 +65,7 @@ export const ModelName = {
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
   AuditLog: 'AuditLog',
+  AnalyticsEvent: 'AnalyticsEvent',
   InviteCode: 'InviteCode',
   TicketLedger: 'TicketLedger',
   LevelProgress: 'LevelProgress',
@@ -81,6 +82,9 @@ export const ModelName = {
   UserCosmetic: 'UserCosmetic',
   UserBoost: 'UserBoost',
   UserBadge: 'UserBadge',
+  PartnerOffer: 'PartnerOffer',
+  PartnerOfferClaim: 'PartnerOfferClaim',
+  SeasonPassClaim: 'SeasonPassClaim',
   DailyRewardClaim: 'DailyRewardClaim'
 } as const
 
@@ -248,6 +252,7 @@ export const QuestionTemplateScalarFieldEnum = {
   mediaUrl: 'mediaUrl',
   soundUrl: 'soundUrl',
   theme: 'theme',
+  category: 'category',
   difficulty: 'difficulty',
   usageCount: 'usageCount',
   createdAt: 'createdAt',
@@ -387,6 +392,18 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const AnalyticsEventScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  userId: 'userId',
+  source: 'source',
+  properties: 'properties',
+  createdAt: 'createdAt'
+} as const
+
+export type AnalyticsEventScalarFieldEnum = (typeof AnalyticsEventScalarFieldEnum)[keyof typeof AnalyticsEventScalarFieldEnum]
 
 
 export const InviteCodeScalarFieldEnum = {
@@ -599,6 +616,48 @@ export const UserBadgeScalarFieldEnum = {
 } as const
 
 export type UserBadgeScalarFieldEnum = (typeof UserBadgeScalarFieldEnum)[keyof typeof UserBadgeScalarFieldEnum]
+
+
+export const PartnerOfferScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  brand: 'brand',
+  brandColor: 'brandColor',
+  glyph: 'glyph',
+  title: 'title',
+  cta: 'cta',
+  tickets: 'tickets',
+  estTime: 'estTime',
+  verified: 'verified',
+  hot: 'hot',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder'
+} as const
+
+export type PartnerOfferScalarFieldEnum = (typeof PartnerOfferScalarFieldEnum)[keyof typeof PartnerOfferScalarFieldEnum]
+
+
+export const PartnerOfferClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  offerId: 'offerId',
+  tickets: 'tickets',
+  createdAt: 'createdAt'
+} as const
+
+export type PartnerOfferClaimScalarFieldEnum = (typeof PartnerOfferClaimScalarFieldEnum)[keyof typeof PartnerOfferClaimScalarFieldEnum]
+
+
+export const SeasonPassClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  season: 'season',
+  tier: 'tier',
+  premium: 'premium',
+  createdAt: 'createdAt'
+} as const
+
+export type SeasonPassClaimScalarFieldEnum = (typeof SeasonPassClaimScalarFieldEnum)[keyof typeof SeasonPassClaimScalarFieldEnum]
 
 
 export const DailyRewardClaimScalarFieldEnum = {

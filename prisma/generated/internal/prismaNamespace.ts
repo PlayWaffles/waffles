@@ -398,6 +398,7 @@ export const ModelName = {
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
   AuditLog: 'AuditLog',
+  AnalyticsEvent: 'AnalyticsEvent',
   InviteCode: 'InviteCode',
   TicketLedger: 'TicketLedger',
   LevelProgress: 'LevelProgress',
@@ -414,6 +415,9 @@ export const ModelName = {
   UserCosmetic: 'UserCosmetic',
   UserBoost: 'UserBoost',
   UserBadge: 'UserBadge',
+  PartnerOffer: 'PartnerOffer',
+  PartnerOfferClaim: 'PartnerOfferClaim',
+  SeasonPassClaim: 'SeasonPassClaim',
   DailyRewardClaim: 'DailyRewardClaim'
 } as const
 
@@ -430,7 +434,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "chat" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "winning" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "chat" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "winning" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1467,6 +1471,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.AuditLogCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.AuditLogCountAggregateOutputType> | number
+        }
+      }
+    }
+    AnalyticsEvent: {
+      payload: Prisma.$AnalyticsEventPayload<ExtArgs>
+      fields: Prisma.AnalyticsEventFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AnalyticsEventFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AnalyticsEventFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>
+        }
+        findFirst: {
+          args: Prisma.AnalyticsEventFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AnalyticsEventFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>
+        }
+        findMany: {
+          args: Prisma.AnalyticsEventFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>[]
+        }
+        create: {
+          args: Prisma.AnalyticsEventCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>
+        }
+        createMany: {
+          args: Prisma.AnalyticsEventCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AnalyticsEventCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>[]
+        }
+        delete: {
+          args: Prisma.AnalyticsEventDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>
+        }
+        update: {
+          args: Prisma.AnalyticsEventUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>
+        }
+        deleteMany: {
+          args: Prisma.AnalyticsEventDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AnalyticsEventUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AnalyticsEventUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>[]
+        }
+        upsert: {
+          args: Prisma.AnalyticsEventUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnalyticsEventPayload>
+        }
+        aggregate: {
+          args: Prisma.AnalyticsEventAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAnalyticsEvent>
+        }
+        groupBy: {
+          args: Prisma.AnalyticsEventGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnalyticsEventGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AnalyticsEventCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnalyticsEventCountAggregateOutputType> | number
         }
       }
     }
@@ -2654,6 +2732,228 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PartnerOffer: {
+      payload: Prisma.$PartnerOfferPayload<ExtArgs>
+      fields: Prisma.PartnerOfferFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PartnerOfferFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PartnerOfferFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>
+        }
+        findFirst: {
+          args: Prisma.PartnerOfferFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PartnerOfferFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>
+        }
+        findMany: {
+          args: Prisma.PartnerOfferFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>[]
+        }
+        create: {
+          args: Prisma.PartnerOfferCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>
+        }
+        createMany: {
+          args: Prisma.PartnerOfferCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PartnerOfferCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>[]
+        }
+        delete: {
+          args: Prisma.PartnerOfferDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>
+        }
+        update: {
+          args: Prisma.PartnerOfferUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>
+        }
+        deleteMany: {
+          args: Prisma.PartnerOfferDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PartnerOfferUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PartnerOfferUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>[]
+        }
+        upsert: {
+          args: Prisma.PartnerOfferUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferPayload>
+        }
+        aggregate: {
+          args: Prisma.PartnerOfferAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePartnerOffer>
+        }
+        groupBy: {
+          args: Prisma.PartnerOfferGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PartnerOfferGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PartnerOfferCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PartnerOfferCountAggregateOutputType> | number
+        }
+      }
+    }
+    PartnerOfferClaim: {
+      payload: Prisma.$PartnerOfferClaimPayload<ExtArgs>
+      fields: Prisma.PartnerOfferClaimFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PartnerOfferClaimFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PartnerOfferClaimFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>
+        }
+        findFirst: {
+          args: Prisma.PartnerOfferClaimFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PartnerOfferClaimFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>
+        }
+        findMany: {
+          args: Prisma.PartnerOfferClaimFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>[]
+        }
+        create: {
+          args: Prisma.PartnerOfferClaimCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>
+        }
+        createMany: {
+          args: Prisma.PartnerOfferClaimCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PartnerOfferClaimCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>[]
+        }
+        delete: {
+          args: Prisma.PartnerOfferClaimDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>
+        }
+        update: {
+          args: Prisma.PartnerOfferClaimUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>
+        }
+        deleteMany: {
+          args: Prisma.PartnerOfferClaimDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PartnerOfferClaimUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PartnerOfferClaimUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>[]
+        }
+        upsert: {
+          args: Prisma.PartnerOfferClaimUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PartnerOfferClaimPayload>
+        }
+        aggregate: {
+          args: Prisma.PartnerOfferClaimAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePartnerOfferClaim>
+        }
+        groupBy: {
+          args: Prisma.PartnerOfferClaimGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PartnerOfferClaimGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PartnerOfferClaimCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PartnerOfferClaimCountAggregateOutputType> | number
+        }
+      }
+    }
+    SeasonPassClaim: {
+      payload: Prisma.$SeasonPassClaimPayload<ExtArgs>
+      fields: Prisma.SeasonPassClaimFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.SeasonPassClaimFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.SeasonPassClaimFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>
+        }
+        findFirst: {
+          args: Prisma.SeasonPassClaimFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.SeasonPassClaimFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>
+        }
+        findMany: {
+          args: Prisma.SeasonPassClaimFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>[]
+        }
+        create: {
+          args: Prisma.SeasonPassClaimCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>
+        }
+        createMany: {
+          args: Prisma.SeasonPassClaimCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.SeasonPassClaimCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>[]
+        }
+        delete: {
+          args: Prisma.SeasonPassClaimDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>
+        }
+        update: {
+          args: Prisma.SeasonPassClaimUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>
+        }
+        deleteMany: {
+          args: Prisma.SeasonPassClaimDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.SeasonPassClaimUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.SeasonPassClaimUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>[]
+        }
+        upsert: {
+          args: Prisma.SeasonPassClaimUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$SeasonPassClaimPayload>
+        }
+        aggregate: {
+          args: Prisma.SeasonPassClaimAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateSeasonPassClaim>
+        }
+        groupBy: {
+          args: Prisma.SeasonPassClaimGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SeasonPassClaimGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.SeasonPassClaimCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.SeasonPassClaimCountAggregateOutputType> | number
+        }
+      }
+    }
     DailyRewardClaim: {
       payload: Prisma.$DailyRewardClaimPayload<ExtArgs>
       fields: Prisma.DailyRewardClaimFieldRefs
@@ -2915,6 +3215,7 @@ export const QuestionTemplateScalarFieldEnum = {
   mediaUrl: 'mediaUrl',
   soundUrl: 'soundUrl',
   theme: 'theme',
+  category: 'category',
   difficulty: 'difficulty',
   usageCount: 'usageCount',
   createdAt: 'createdAt',
@@ -3054,6 +3355,18 @@ export const AuditLogScalarFieldEnum = {
 } as const
 
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
+
+
+export const AnalyticsEventScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  userId: 'userId',
+  source: 'source',
+  properties: 'properties',
+  createdAt: 'createdAt'
+} as const
+
+export type AnalyticsEventScalarFieldEnum = (typeof AnalyticsEventScalarFieldEnum)[keyof typeof AnalyticsEventScalarFieldEnum]
 
 
 export const InviteCodeScalarFieldEnum = {
@@ -3266,6 +3579,48 @@ export const UserBadgeScalarFieldEnum = {
 } as const
 
 export type UserBadgeScalarFieldEnum = (typeof UserBadgeScalarFieldEnum)[keyof typeof UserBadgeScalarFieldEnum]
+
+
+export const PartnerOfferScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  brand: 'brand',
+  brandColor: 'brandColor',
+  glyph: 'glyph',
+  title: 'title',
+  cta: 'cta',
+  tickets: 'tickets',
+  estTime: 'estTime',
+  verified: 'verified',
+  hot: 'hot',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder'
+} as const
+
+export type PartnerOfferScalarFieldEnum = (typeof PartnerOfferScalarFieldEnum)[keyof typeof PartnerOfferScalarFieldEnum]
+
+
+export const PartnerOfferClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  offerId: 'offerId',
+  tickets: 'tickets',
+  createdAt: 'createdAt'
+} as const
+
+export type PartnerOfferClaimScalarFieldEnum = (typeof PartnerOfferClaimScalarFieldEnum)[keyof typeof PartnerOfferClaimScalarFieldEnum]
+
+
+export const SeasonPassClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  season: 'season',
+  tier: 'tier',
+  premium: 'premium',
+  createdAt: 'createdAt'
+} as const
+
+export type SeasonPassClaimScalarFieldEnum = (typeof SeasonPassClaimScalarFieldEnum)[keyof typeof SeasonPassClaimScalarFieldEnum]
 
 
 export const DailyRewardClaimScalarFieldEnum = {
@@ -3814,6 +4169,7 @@ export type GlobalOmitConfig = {
   notificationToken?: Prisma.NotificationTokenOmit
   notificationLog?: Prisma.NotificationLogOmit
   auditLog?: Prisma.AuditLogOmit
+  analyticsEvent?: Prisma.AnalyticsEventOmit
   inviteCode?: Prisma.InviteCodeOmit
   ticketLedger?: Prisma.TicketLedgerOmit
   levelProgress?: Prisma.LevelProgressOmit
@@ -3830,6 +4186,9 @@ export type GlobalOmitConfig = {
   userCosmetic?: Prisma.UserCosmeticOmit
   userBoost?: Prisma.UserBoostOmit
   userBadge?: Prisma.UserBadgeOmit
+  partnerOffer?: Prisma.PartnerOfferOmit
+  partnerOfferClaim?: Prisma.PartnerOfferClaimOmit
+  seasonPassClaim?: Prisma.SeasonPassClaimOmit
   dailyRewardClaim?: Prisma.DailyRewardClaimOmit
 }
 
