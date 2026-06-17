@@ -3,7 +3,7 @@ import { prisma } from "@/lib/db";
 import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
 import { defaultNetworkForPlatform } from "@/lib/chain";
 import { recalculateGameRounds } from "@/lib/game/rounds";
-import { formatGameLabel } from "@/lib/game/labels";
+import { generateGameTitle } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
 import { isTestnetNetwork } from "@/lib/chain/network";
 import { initGameRoom } from "@/lib/partykit";
@@ -11,8 +11,11 @@ import { sendBatch } from "@/lib/notifications";
 import { preGame, buildPayload } from "@/lib/notifications/templates";
 import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
 
-const DEFAULT_GAME_THEME = GameTheme.MOVIES;
-const DEFAULT_GAME_COVER_URL = "/images/movies-cover.webp";
+// World Cup season — auto games are football-themed (questions + title +
+// cover). Switch back to GameTheme.GENERAL (+ a general cover) after the
+// World Cup ends.
+const DEFAULT_GAME_THEME = GameTheme.FOOTBALL;
+const DEFAULT_GAME_COVER_URL = "/images/themes/football-moments.webp";
 const AUTO_QUESTION_COUNT = 9;
 const GAME_NUMBER_RETRY_LIMIT = 3;
 
@@ -121,7 +124,7 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
       try {
         game = await prisma.game.create({
           data: {
-            title: formatGameLabel(gameNumber),
+            title: generateGameTitle({ gameNumber, theme: DEFAULT_GAME_THEME }),
             gameNumber,
             platform: input.platform,
             network,
