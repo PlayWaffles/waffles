@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from "react";
 import type { ScreenName } from "./state";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Contextual coach marks — the "show me this part the first time I see it"
 // onboarding games use. Each screen has a short tour (1–3 steps); a tour fires
@@ -157,6 +158,11 @@ export function CoachmarkProvider({ children }: { children: ReactNode }) {
 
   const startTour = useCallback((id: string, steps: CoachStep[]) => {
     if (!steps.length || wasSeen(id)) return;
+    trackClientEvent(AnalyticsEvent.CoachmarkTourStarted, {
+      tour_id: id,
+      screen: id,
+      step_count: steps.length,
+    });
     setTour((prev) => (prev && prev.id === id ? prev : { id, steps, index: 0 }));
   }, []);
 
@@ -172,6 +178,9 @@ export function CoachmarkProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore */
     }
+    trackClientEvent(AnalyticsEvent.CoachmarkReset, {
+      tour_id: "all",
+    });
     setTour(null);
   }, []);
 
@@ -179,16 +188,39 @@ export function CoachmarkProvider({ children }: { children: ReactNode }) {
     setTour((t) => {
       if (!t) return null;
       if (t.index + 1 >= t.steps.length) {
+        trackClientEvent(AnalyticsEvent.CoachmarkCompleted, {
+          tour_id: t.id,
+          screen: t.id,
+          step_index: t.index,
+          step_count: t.steps.length,
+          target: t.steps[t.index]?.target ?? null,
+        });
         markSeen(t.id);
         return null;
       }
+      trackClientEvent(AnalyticsEvent.CoachmarkNextClicked, {
+        tour_id: t.id,
+        screen: t.id,
+        step_index: t.index,
+        step_count: t.steps.length,
+        target: t.steps[t.index]?.target ?? null,
+      });
       return { ...t, index: t.index + 1 };
     });
   }, []);
 
   const finish = useCallback(() => {
     setTour((t) => {
-      if (t) markSeen(t.id);
+      if (t) {
+        trackClientEvent(AnalyticsEvent.CoachmarkSkipped, {
+          tour_id: t.id,
+          screen: t.id,
+          step_index: t.index,
+          step_count: t.steps.length,
+          target: t.steps[t.index]?.target ?? null,
+        });
+        markSeen(t.id);
+      }
       return null;
     });
   }, []);
@@ -251,6 +283,16 @@ function CoachOverlay({
 }) {
   const step = tour.steps[tour.index];
   const isLast = tour.index === tour.steps.length - 1;
+
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.CoachmarkStepViewed, {
+      tour_id: tour.id,
+      screen: tour.id,
+      step_index: tour.index,
+      step_count: tour.steps.length,
+      target: step.target ?? null,
+    });
+  }, [step.target, tour.id, tour.index, tour.steps.length]);
 
   const readRect = useCallback((target?: string): DOMRect | null => {
     if (!target || typeof document === "undefined") return null;

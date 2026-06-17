@@ -1,10 +1,11 @@
 "use client";
 
-import { useState, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, Phone, PixelImg } from "../shared";
 import { LegalSheet, type LegalTab } from "../legal";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // First-launch onboarding. New players were dropped on Home with no idea what
 // the core loop is (live tournaments vs. the solo level path vs. tickets). This
@@ -145,15 +146,55 @@ export const OnboardingScreen = ({
   const [username, setUsernameInput] = useState("");
   const [connecting, setConnecting] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
+  const startedRef = useRef(false);
+  const trackedUsernameRef = useRef(false);
   const STEPS = SLIDES.length + 2; // intro slides + sign-up + username
   const signupStep = step === SLIDES.length;
   const usernameStep = step === SLIDES.length + 1;
   const slide = SLIDES[step]; // undefined on the sign-up & username steps
   const canContinue = usernameStep ? username.trim().length >= 2 : !connecting;
+  const stepId = usernameStep ? "username" : signupStep ? "signup" : slide.key;
+
+  useEffect(() => {
+    if (!startedRef.current) {
+      startedRef.current = true;
+      trackClientEvent(AnalyticsEvent.OnboardingStarted, {
+        step_index: step,
+        step_id: stepId,
+        total_steps: STEPS,
+      });
+    }
+    trackClientEvent(AnalyticsEvent.OnboardingSlideViewed, {
+      step_index: step,
+      step_id: stepId,
+      total_steps: STEPS,
+    });
+  }, [STEPS, step, stepId]);
+
+  useEffect(() => {
+    if (!usernameStep || trackedUsernameRef.current || username.trim().length < 2) return;
+    trackedUsernameRef.current = true;
+    trackClientEvent(AnalyticsEvent.OnboardingUsernameEntered, {
+      step_index: step,
+      step_id: stepId,
+      username_length: username.trim().length,
+    });
+  }, [step, stepId, username, usernameStep]);
 
   const next = () => {
+    trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, {
+      step_index: step,
+      step_id: stepId,
+      total_steps: STEPS,
+      cta: usernameStep ? "play_first_level" : signupStep ? "sign_up" : "next",
+    });
     if (usernameStep) {
       proto.setUsername(username.trim());
+      trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
+        step_index: step,
+        step_id: stepId,
+        username_length: username.trim().length,
+      });
       onPlay();
       proto.startLevel();
       return;
@@ -164,6 +205,10 @@ export const OnboardingScreen = ({
       // stuck: success establishes a real session (real data), failure proceeds on
       // local/mock state.
       setConnecting(true);
+      trackClientEvent(AnalyticsEvent.OnboardingSignupClicked, {
+        step_index: step,
+        step_id: stepId,
+      });
       void signIn().finally(() => {
         setConnecting(false);
         setStep((s) => s + 1);
@@ -171,6 +216,28 @@ export const OnboardingScreen = ({
       return;
     }
     setStep((s) => s + 1);
+  };
+
+  const skip = (source: "top" | "footer") => {
+    trackClientEvent(
+      usernameStep ? AnalyticsEvent.OnboardingExploreClicked : AnalyticsEvent.OnboardingSkipped,
+      {
+        step_index: step,
+        step_id: stepId,
+        total_steps: STEPS,
+        cta: source,
+      },
+    );
+    onSkip();
+  };
+
+  const openLegal = (tab: LegalTab) => {
+    trackClientEvent(AnalyticsEvent.OnboardingLegalOpened, {
+      step_index: step,
+      step_id: stepId,
+      legal_tab: tab,
+    });
+    setLegalTab(tab);
   };
 
   return (
@@ -186,7 +253,7 @@ export const OnboardingScreen = ({
         <button
           type="button"
           className="pressable"
-          onClick={onSkip}
+          onClick={() => skip("top")}
           style={{ position: "absolute", top: "max(16px, env(safe-area-inset-top))", right: 18, zIndex: 10, fontSize: 13, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.5, padding: 6 }}
         >
           Skip
@@ -268,7 +335,15 @@ export const OnboardingScreen = ({
               type="button"
               aria-label={`Go to step ${i + 1}`}
               className="pressable"
-              onClick={() => setStep(i)}
+              onClick={() => {
+                trackClientEvent(AnalyticsEvent.OnboardingSlideDotClicked, {
+                  step_index: step,
+                  step_id: stepId,
+                  target_step_index: i,
+                  total_steps: STEPS,
+                });
+                setStep(i);
+              }}
               style={{
                 width: i === step ? 26 : 8,
                 height: 8,
@@ -292,7 +367,7 @@ export const OnboardingScreen = ({
         <button
           type="button"
           className="pressable"
-          onClick={onSkip}
+          onClick={() => skip("footer")}
           style={{ fontSize: 13, fontWeight: 800, color: usernameStep ? "var(--ink-mute)" : "transparent", textAlign: "center", letterSpacing: 0.3, height: 18, pointerEvents: usernameStep ? "auto" : "none" }}
         >
           {usernameStep ? "Explore on my own" : ""}
@@ -302,11 +377,11 @@ export const OnboardingScreen = ({
             stays visible on every slide. */}
         <div style={{ fontSize: 9.5, lineHeight: 1.45, fontWeight: 600, color: "var(--ink-faint)", textAlign: "center", margin: "0 auto", whiteSpace: "nowrap" }}>
           By continuing you agree to our{" "}
-          <button type="button" onClick={() => setLegalTab("terms")} style={legalLinkStyle}>
+          <button type="button" onClick={() => openLegal("terms")} style={legalLinkStyle}>
             Terms of Service
           </button>{" "}
           &amp;{" "}
-          <button type="button" onClick={() => setLegalTab("privacy")} style={legalLinkStyle}>
+          <button type="button" onClick={() => openLegal("privacy")} style={legalLinkStyle}>
             Privacy Policy
           </button>
           .

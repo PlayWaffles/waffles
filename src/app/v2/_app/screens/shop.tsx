@@ -5,6 +5,7 @@ import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOffe
 import { ASSETS, AssetWell, Button, Card, Confetti, InfoButton, Phone, PixelImg, Sheet, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
 import { v2BuyBundle, v2Purchase } from "@/actions/v2";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TICKET_INFO = `Tickets are the in-app currency — each is worth ${USDT_PER_TICKET} USDT. Spend them on tournament entries today, with power-ups and cosmetics coming soon. Prizes you win in tournaments are paid in USDT and can be claimed from your Prize Wallet.`;
 
@@ -83,13 +84,40 @@ export const ShopScreen = () => {
   const [boostBanner, setBoostBanner] = useState<string | null>(null);
   const [equippedToast, setEquippedToast] = useState<string | null>(null);
   const [ticketCountUp, setTicketCountUp] = useState<{ from: number; to: number; key: number } | null>(null);
+  const firstTicketViewedRef = useRef(false);
 
   // First-timer half-price ticket offer (client-read, hydration-safe). Hidden
   // locally the moment it's bought, since localStorage changes don't re-notify.
   const firstTicketOffer = useSyncExternalStore(() => () => {}, isFirstTicketOfferAvailable, () => false);
   const [offerHidden, setOfferHidden] = useState(false);
   const showFirstTicketOffer = firstTicketOffer && !offerHidden;
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.ShopViewed, {
+      screen: "shop",
+      tickets_balance: tickets,
+      first_ticket_offer_available: showFirstTicketOffer,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    if (!showFirstTicketOffer || firstTicketViewedRef.current) return;
+    firstTicketViewedRef.current = true;
+    trackClientEvent(AnalyticsEvent.FirstTicketOfferViewed, {
+      screen: "shop",
+      tickets_balance: tickets,
+      price_usdt: TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT) * USDT_PER_TICKET,
+      ticket_delta: TOURNAMENT_TICKET_COST,
+    });
+  }, [showFirstTicketOffer, tickets]);
+
   const buyFirstTicket = () => {
+    trackClientEvent(AnalyticsEvent.FirstTicketOfferBuyClicked, {
+      screen: "shop",
+      tickets_before: tickets,
+      price_usdt: TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT) * USDT_PER_TICKET,
+      ticket_delta: TOURNAMENT_TICKET_COST,
+    });
     markFirstTicketOfferUsed();
     setOfferHidden(true);
     playSound("purchase");
@@ -113,7 +141,26 @@ export const ShopScreen = () => {
     const t = setTimeout(() => {
       // Final commit (undo window elapsed without a refund): persist the spend +
       // grant server-side. Deferring to here means no server refund is needed.
-      if (slug) void v2Purchase(slug);
+      if (slug) {
+        void v2Purchase(slug)
+          .then((result) => {
+            trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
+              screen: "shop",
+              sku: slug,
+              item_kind: "powerup",
+              reason: result?.ok ? null : result?.reason ?? "purchase_failed",
+              tickets_after: result?.ok ? result.tickets : null,
+            });
+          })
+          .catch((error) => {
+            trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+              screen: "shop",
+              sku: slug,
+              item_kind: "powerup",
+              reason: error instanceof Error ? error.message : "purchase_failed",
+            });
+          });
+      }
       setSnackbar(null);
     }, 4000);
     return () => clearTimeout(t);
@@ -142,9 +189,24 @@ export const ShopScreen = () => {
 
   const tryBuyPowerUp = (p: PowerUp) => {
     if (tickets < p.price) {
+      trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+        screen: "shop",
+        sku: `pu-${p.id}`,
+        item_kind: "powerup",
+        reason: "insufficient_tickets",
+        price_tickets: p.price,
+        tickets_before: tickets,
+      });
       setFlow({ type: "shortfall", intent: { kind: "powerup", id: p.id } });
       return;
     }
+    trackClientEvent(AnalyticsEvent.ShopPurchaseIntent, {
+      screen: "shop",
+      sku: `pu-${p.id}`,
+      item_kind: "powerup",
+      price_tickets: p.price,
+      tickets_before: tickets,
+    });
     // Commit immediately, queue the snackbar with an undo handler that refunds.
     playSound("purchase");
     proto.update({ tickets: tickets - p.price });
@@ -153,6 +215,13 @@ export const ShopScreen = () => {
       label: `${p.label} purchased`,
       slug: `pu-${p.id}`,
       onUndo: () => {
+        trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+          screen: "shop",
+          sku: `pu-${p.id}`,
+          item_kind: "powerup",
+          reason: "undo",
+          price_tickets: p.price,
+        });
         // Use a fresh state read via proto.update's functional patch.
         proto.update((s) => ({ tickets: s.tickets + p.price }));
         setSnackbar((sb) => (sb ? { ...sb, label: "Refunded", refundedAt: nextEventKey(), onUndo: () => {} } : sb));
@@ -167,24 +236,72 @@ export const ShopScreen = () => {
       return;
     }
     if (tickets < c.price) {
+      trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+        screen: "shop",
+        sku: c.id,
+        item_kind: "cosmetic",
+        reason: "insufficient_tickets",
+        price_tickets: c.price,
+        tickets_before: tickets,
+      });
       setFlow({ type: "shortfall", intent: { kind: "cosmetic", id: c.id } });
       return;
     }
+    trackClientEvent(AnalyticsEvent.ShopPurchaseIntent, {
+      screen: "shop",
+      sku: c.id,
+      item_kind: "cosmetic",
+      price_tickets: c.price,
+      tickets_before: tickets,
+    });
     setFlow({ type: "cosmetic", id: c.id });
   };
 
   const tryOpenFeatured = () => {
     if (tickets < FEATURED.price) {
+      trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+        screen: "shop",
+        sku: "boost-double-xp",
+        item_kind: "featured",
+        reason: "insufficient_tickets",
+        price_tickets: FEATURED.price,
+        tickets_before: tickets,
+      });
       setFlow({ type: "shortfall", intent: { kind: "featured" } });
       return;
     }
+    trackClientEvent(AnalyticsEvent.ShopPurchaseIntent, {
+      screen: "shop",
+      sku: "boost-double-xp",
+      item_kind: "featured",
+      price_tickets: FEATURED.price,
+      tickets_before: tickets,
+    });
     setFlow({ type: "featured" });
   };
 
   const confirmCosmetic = (c: Cosmetic) => {
     playSound("purchase");
     proto.update({ tickets: tickets - c.price });
-    void v2Purchase(c.id); // cosmetic slugs match the seeded catalog (frame-gold, …)
+    void v2Purchase(c.id)
+      .then((result) => {
+        trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
+          screen: "shop",
+          sku: c.id,
+          item_kind: "cosmetic",
+          reason: result?.ok ? null : result?.reason ?? "purchase_failed",
+          price_tickets: c.price,
+          tickets_after: result?.ok ? result.tickets : tickets - c.price,
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+          screen: "shop",
+          sku: c.id,
+          item_kind: "cosmetic",
+          reason: error instanceof Error ? error.message : "purchase_failed",
+        });
+      }); // cosmetic slugs match the seeded catalog (frame-gold, …)
     setEquippedToast(`${c.label} equipped`);
     setFlow(null);
   };
@@ -192,12 +309,40 @@ export const ShopScreen = () => {
   const confirmFeatured = () => {
     playSound("purchase");
     proto.update({ tickets: tickets - FEATURED.price });
-    void v2Purchase("boost-double-xp");
+    void v2Purchase("boost-double-xp")
+      .then((result) => {
+        trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
+          screen: "shop",
+          sku: "boost-double-xp",
+          item_kind: "featured",
+          reason: result?.ok ? null : result?.reason ?? "purchase_failed",
+          price_tickets: FEATURED.price,
+          tickets_after: result?.ok ? result.tickets : tickets - FEATURED.price,
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+          screen: "shop",
+          sku: "boost-double-xp",
+          item_kind: "featured",
+          reason: error instanceof Error ? error.message : "purchase_failed",
+        });
+      });
     setBoostBanner(`${FEATURED.title} active — ${FEATURED.benefits[0]}`);
     setFlow(null);
   };
 
   const beginBundleCheckout = (idx: number) => {
+    const b = BUNDLES[idx];
+    trackClientEvent(AnalyticsEvent.ShopPurchaseIntent, {
+      screen: "shop",
+      sku: `bundle-${b.count}`,
+      item_kind: "bundle",
+      bundle_id: `bundle-${b.count}`,
+      price_usdt: Number(b.price.replace(/^\$/, "")),
+      ticket_delta: b.count + b.bonus,
+      tickets_before: tickets,
+    });
     setFlow({ type: "bundle", bundleIdx: idx, phase: "confirm" });
   };
 
@@ -209,7 +354,27 @@ export const ShopScreen = () => {
       const total = b.count + b.bonus;
       playSound("purchase");
       proto.update({ tickets: before + total });
-      void v2BuyBundle(`bundle-${b.count}`); // persist top-up (payment rail TBD)
+      void v2BuyBundle(`bundle-${b.count}`)
+        .then((result) => {
+          trackClientEvent(result ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
+            screen: "shop",
+            sku: `bundle-${b.count}`,
+            item_kind: "bundle",
+            bundle_id: `bundle-${b.count}`,
+            reason: result ? null : "bundle_unavailable",
+            price_usdt: Number(b.price.replace(/^\$/, "")),
+            ticket_delta: total,
+            tickets_after: result?.tickets ?? before + total,
+          });
+        })
+        .catch((error) => {
+          trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
+            screen: "shop",
+            sku: `bundle-${b.count}`,
+            item_kind: "bundle",
+            reason: error instanceof Error ? error.message : "bundle_failed",
+          });
+        }); // persist top-up (payment rail TBD)
       setTicketCountUp({ from: before, to: before + total, key: nextEventKey() });
       setFlow(null);
     }, 750);
