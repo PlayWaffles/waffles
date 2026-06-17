@@ -200,4 +200,145 @@ Every v2 screen, its target celo route, the real data it consumes, and status.
 
 ---
 
-_Last updated: 2026-06-14 — Phase 0/1. Update statuses as rows are wired + verified._
+## Mock → DB wiring pass (2026-06-15)
+Removed the remaining static/mock data so screens read real DB state (mock now
+only seeds the logged-out preview before `loadV2State` resolves).
+
+- **initialState seed** cleaned: Forest level 23→1, xp 340→0, streak 12→0, seeded
+  winnings → [], startingTickets 3→0. (`state.tsx`)
+- **Results leaderboard** rows now come from `board.standings` (real top-3 + your
+  row + the entrant behind you); hardcoded `@quizking/@trivia.eth/...` kept only as
+  preview fallback. (`results.tsx`)
+- **Home missions card** reads `v2LoadMissions` (top 3). (`home.tsx`)
+- **Compete** wired to `v2LoadLeague` (ladder, current tier, points, season end)
+  + `v2LoadSeasonPass` (level/progress/claims) + mission/offer counts. Free-track
+  reward claims persist via `v2ClaimSeasonReward`. (`compete.tsx`)
+- **Missions → Partners** reads `v2LoadPartnerOffers`; CTA claims via
+  `v2ClaimPartnerOffer` (one-time, credits tickets, shows ✓ Claimed). (`missions.tsx`)
+- **Leagues** reward chests now DB-backed via `loadLeague().tiers`. (`leagues.tsx`)
+- **Shop** cosmetic name-plate preview uses the real username. (`shop.tsx`)
+
+New schema (migration `20260615061321_v2_partner_offers_season_pass`): `PartnerOffer`,
+`PartnerOfferClaim`, `SeasonPassClaim` + ledger reasons `PARTNER_OFFER`, `SEASON_PASS`.
+New services: `partnerOffers.ts`, `seasonPass.ts` (+ pure `seasonPassTiers.ts`),
+`leagues.ts` extended (reward ladder + `seasonEndsAt`). Seed: `seed-v2-partner-offers.ts`;
+league rewards re-seeded. Verified: `tsc` 0 errors, `verify-v2-services.ts` 39/39
+(12 new checks), `/play` compiles + boots clean.
+
+---
+
+---
+
+## Server-authoritative round scoring (2026-06-17)
+Closed a real-money hole: tournament scores were **client-trusted** —
+`submitRoundScore(roundId, score)` wrote whatever integer the client posted, and
+settlement paid USDT prizes by ranking on it. Tournament questions were also
+drawn entirely client-side, so the server had no answer key to check against.
+
+Now server-authoritative:
+- **`src/lib/v2/roundQuestions.ts`** — the server issues each round's question
+  set, deterministic by `roundId` (seeded mulberry32 shuffle over
+  `QuestionTemplate`), same for every entrant. `getRoundClientQuestions` (client
+  shape, keys included for instant feedback) + `getRoundScorableSet` (with the
+  answer key, server-only).
+- **`src/lib/v2/scoring.ts`** — pure re-scorer mirroring the client formula
+  exactly (`base = round(100 + remainingSec*20)`; single/spatial, minefield
+  ±, multi/order partial accuracy). Clamps response time to the window, ignores
+  answers whose id wasn't issued, dedups replays, floors at 0, **caps at the
+  round's theoretical max**.
+- **`submitRoundAnswers`** replaces `submitRoundScore` — client posts per-question
+  answers `[{id, selection, responseMs}]`, server recomputes + records the score
+  (only unsettled entries; never moves backward). Actions: `v2GetRoundQuestions`,
+  `v2SubmitRoundAnswers` (both replace `v2SubmitRoundScore`).
+- **Client** (`_app/state.tsx`) — tournament entry fetches the server set (swaps
+  in during the lobby countdown), accumulates `roundAnswers` as you play, submits
+  them at finish. Local `score` kept for instant XP/UI only.
+
+**All questions now server-sourced (2026-06-17, follow-up):** solo levels also
+draw from the DB, not the phone bank. `getLevelClientQuestions(track, level)` +
+action `v2GetLevelQuestions` select by the track's theme (`world-cup` → FOOTBALL,
+`standard` → everything else) and the level's difficulty ramp (mirrors the client
+`levelDifficulties`). The client prefetches the set on the level-intro screen
+(`enterLevel`) and `beginLevelQuiz` uses it. The local `QUESTION_BANK` /
+`pickLevelQuestions` / `pickTournamentQuestions` remain **fallback-only** (offline
+/ fetch failure) so the game never hard-breaks. Note: level *scoring* is still
+client-side (XP + milestone tickets via `v2AdvanceLevel`) — soft currency, not
+real money; server-validating it is a separate follow-up. Verified `tsc`/`eslint`
+0; level checks added to `verify-v2-services.ts` (run where the DB is reachable).
+
+Verified: `tsc` 0, `eslint` 0, pure-scorer unit suite 16/16 (incl. forged-id,
+replay, cap, spam, negative-floor). DB-dependent `verify-v2-services.ts` updated
+with the new round path (perfect-score == cap, forged < cap) but **not run here —
+remote DB unreachable from this sandbox**; run it where the DB is reachable.
+
+**Residual (accepted for this pass):** a hand-crafted client can still report
+*optimal* picks (the answer keys are sent for instant feedback). Closing that
+needs commit-reveal (withhold keys, per-question server validation) — a larger
+follow-up. Also: if the server question fetch fails at entry, the round plays on
+the local set (no ids) and scores 0 — transient-failure degradation to harden later.
+
+---
+
+---
+
+## On-chain tournament rounds — reuse v1's money lifecycle (2026-06-17)
+Decision (owner): a tournament round **is a v1 `Game`**. Entry is a real on-chain
+USDC deposit that funds the on-chain pool (exactly like v1) — no treasury
+funding, no new contract. Maximal reuse of the existing chain stack.
+
+**Built — server bridge** (`src/lib/v2/tournamentGames.ts` + actions in `v2.ts`):
+- `currentTournamentGame(platform)` / `v2GetTournament` — the platform's live
+  on-chain `Game` as the round, plus its own questions (client shape).
+- `enterTournamentOnChain` / `v2EnterTournament` — verifies the player's on-chain
+  `buyTicket` via **reused `verifyTicketPurchase`**, creates a `GameEntry`, funds
+  `prizePool`/`playerCount`. Idempotent (unique `txHash` + `(game,user)`).
+- `submitTournamentAnswers` / `v2SubmitTournamentAnswers` — server-authoritative
+  scoring against the **game's own `Question` rows** (reuses `scoreRound` + caps),
+  writes `GameEntry.score` + the v1 `answers` JSON.
+
+**Reused as-is, no new code:**
+- **Scheduling/creation** — `createAutoScheduledGame` → `createGameOnChain` (the
+  existing auto-scheduler creates the hourly on-chain games).
+- **Settlement** — `rankGame` + `publishResults` (merkle root on-chain via
+  `submitResults`). The `roundup-games` cron already sweeps any ended game, so v2
+  tournament games settle automatically.
+- **Claim** — the v1 claim route (`verifyClaim` + on-chain `claimPrize`), keyed by
+  `gameId`; works for these entries unchanged.
+
+Verified `tsc`/`eslint` 0. Additive — the off-chain `RoundEntry` path still exists
+(to be reconciled in the deferred off-chain-tickets discussion).
+
+**Client wallet wiring — DONE (2026-06-17).** The v2 app mounts only at `/play`
+(the `/v2` preview was deleted), which has wagmi, so no preview constraint.
+- `src/app/v2/_app/useTournamentWallet.ts` — promise-based `enter(platform,
+  onchainId, fee)` (approve + `buyTicket` + confirm) and `claim(platform,
+  onchainId, amount, proof)` (`claimPrize` + confirm), reusing `waffleGameAbi`,
+  the payment token, `withBuilderCodeDataSuffix`, `ERC20_ABI` verbatim.
+- Provider (`state.tsx`) actions: `enterTournamentOnChain()` (wallet deposit →
+  `v2EnterTournament` server-verify → start round on the server's questions) and
+  `claimTournamentPrize(gameId)` (`v2GetTournamentClaim` → wallet `claimPrize` →
+  `v2ConfirmTournamentClaim`). Finish-submit routes to `v2SubmitTournamentAnswers`
+  when `tournamentGameId` is set. New server pieces: `getTournamentClaim` +
+  `confirmTournamentClaim` (reuses `verifyClaim`). `tsc`/`eslint` 0.
+
+**Remaining:**
+- **Screen hookup (small)** — point the Home/Compete "enter tournament" button at
+  `enterTournamentOnChain()` (with a "confirm in wallet" state) and the results
+  screen at `claimTournamentPrize(gameId)`. Held off to avoid editing the designed
+  screens without a nod + a runtime check of the wallet-popup-before-lobby flow.
+- **Hourly cadence — DONE.** Confirmed the v1 auto-scheduler is NOT hourly
+  (Mon/Wed/Fri 14:00 UTC, 24h games). Added `ensureHourlyTournamentGame(platform)`
+  (reuses `createAutoScheduledGame` → on-chain create + question assign, hourly
+  window, idempotent) + cron `POST /api/cron/ensure-tournament-rounds` (Bearer-
+  gated). **Register it hourly** alongside `settle-rounds` (same secret).
+- **On-chain interactions unverifiable in this sandbox** (no chain access).
+- **Reconcile the off-chain `RoundEntry` path** — deferred to the off-chain-tickets
+  discussion.
+- **Season pass** — deferred by owner. The Season Pass block in `compete.tsx` now
+  renders under a `ComingSoonVeil` (dimmed + non-interactive "🔒 Coming soon",
+  design preserved, matching the Shop teaser). Service (`seasonPass.ts`) stays
+  as-is; remove the veil to re-enable.
+
+---
+
+_Last updated: 2026-06-17 — on-chain tournament rounds (v1 reuse). Update statuses as rows are wired + verified._
