@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -25,6 +26,13 @@ import {
   v2SetUsername,
   v2SubmitRoundScore,
 } from "@/actions/v2";
+import {
+  AnalyticsEvent,
+  type AnalyticsEventName,
+  hashAnalyticsValue,
+  trackClientEvent,
+  type AnalyticsProperties,
+} from "@/lib/analytics";
 
 export type ScreenName =
   | "home"
@@ -621,6 +629,20 @@ export type Proto = State & {
 
 const ProtoContext = createContext<Proto | null>(null);
 
+function questionAnalytics(
+  q: Question | undefined,
+  properties: AnalyticsProperties = {},
+): AnalyticsProperties {
+  return {
+    question_format: q?.kind ?? "single",
+    category: q?.cat,
+    question_id: hashAnalyticsValue(q?.q),
+    answer_count: q?.answers.length,
+    timer_start_sec: q?.time,
+    ...properties,
+  };
+}
+
 export function ProtoProvider({
   tweaks = DEFAULT_TWEAKS,
   children,
@@ -629,6 +651,32 @@ export function ProtoProvider({
   children: ReactNode;
 }) {
   const [state, setState] = useState<State>(() => initialState(tweaks));
+  const shellTrackedRef = useRef(false);
+  const questionStartRef = useRef<string | null>(null);
+  const screenViewedRef = useRef<string | null>(null);
+
+  const track = useCallback(
+    (event: AnalyticsEventName, properties: AnalyticsProperties = {}) => {
+      trackClientEvent(event, {
+        screen: state.screen,
+        source_screen: state.prevScreen,
+        is_authenticated: Boolean(state.username),
+        wallet_connected: null,
+        theme_id: resolveThemeId(),
+        season: THEMES[resolveThemeId()].id,
+        tickets_balance: state.tickets,
+        xp: state.xp,
+        level: state.levelByTrack[state.levelTrack],
+        level_track: state.levelTrack,
+        lives: state.lives,
+        streak_days: state.streak,
+        mode: state.mode,
+        round_id: state.entry?.roundId ?? null,
+        ...properties,
+      });
+    },
+    [state],
+  );
 
   const goto = useCallback((screen: ScreenName, opts: GotoOpts = {}) => {
     setState((s) => {
@@ -638,7 +686,10 @@ export function ProtoProvider({
       const direction: 1 | -1 = opts.back ? -1 : toIdx > fromIdx ? 1 : -1;
       return { ...s, prevScreen: s.screen, screen, direction };
     });
-  }, []);
+    if (opts.back) {
+      track(AnalyticsEvent.ScreenBackClicked, { target_screen: screen });
+    }
+  }, [track]);
 
   const update = useCallback<Proto["update"]>((patch) => {
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }));
@@ -647,6 +698,23 @@ export function ProtoProvider({
   // Hydrate announcement read/dismissed sets from localStorage after mount, so
   // SSR and first render stay matched (both start empty). Done in rAF (before
   // paint, not in the effect body) so there's no flash and no setState-in-effect.
+  useEffect(() => {
+    if (!shellTrackedRef.current) {
+      shellTrackedRef.current = true;
+      track(AnalyticsEvent.V2ShellLoaded, { entry_reason: "mount" });
+    }
+  }, [track]);
+
+  useEffect(() => {
+    const key = `${state.prevScreen ?? "none"}:${state.screen}`;
+    if (screenViewedRef.current === key) return;
+    screenViewedRef.current = key;
+    track(AnalyticsEvent.ScreenViewed, {
+      screen: state.screen,
+      previous_screen: state.prevScreen,
+    });
+  }, [state.prevScreen, state.screen, track]);
+
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       const annRead = readIdList(ANN_READ_KEY);
@@ -691,6 +759,25 @@ export function ProtoProvider({
     };
   }, [update]);
 
+  useEffect(() => {
+    if (state.screen !== "question" || state.qAnswered !== null) return;
+    const q = state.roundQuestions[state.qIdx];
+    const key = `${state.mode}:${state.entry?.roundId ?? state.levelTrack}:${state.qIdx}:${q?.q ?? ""}`;
+    if (questionStartRef.current === key) return;
+    questionStartRef.current = key;
+    track(
+      state.mode === "level"
+        ? AnalyticsEvent.LevelQuestionStarted
+        : AnalyticsEvent.TournamentQuestionStarted,
+      questionAnalytics(q, {
+        question_index: state.qIdx + 1,
+        question_count: state.roundQuestions.length,
+        level_number: state.levelByTrack[state.levelTrack],
+        timer_start_sec: q?.time ?? tweaks.questionTime,
+      }),
+    );
+  }, [state.entry?.roundId, state.levelByTrack, state.levelTrack, state.mode, state.qAnswered, state.qIdx, state.roundQuestions, state.screen, tweaks.questionTime, track]);
+
   // Lobby countdown
   useEffect(() => {
     if (state.screen !== "lobby") return;
@@ -710,12 +797,21 @@ export function ProtoProvider({
     if (state.screen !== "question") return;
     if (state.qAnswered !== null) return;
     if (state.timer <= 0) {
-      const t = setTimeout(() => update({ qAnswered: -1 }), 0);
+      const t = setTimeout(() => {
+        const q = state.roundQuestions[state.qIdx];
+        track(AnalyticsEvent.QuestionTimeout, questionAnalytics(q, {
+          question_index: state.qIdx + 1,
+          question_count: state.roundQuestions.length,
+          time_remaining_sec: 0,
+          score_after: state.score,
+        }));
+        update({ qAnswered: -1 });
+      }, 0);
       return () => clearTimeout(t);
     }
     const t = setTimeout(() => update({ timer: state.timer - 0.1 }), 100);
     return () => clearTimeout(t);
-  }, [state.screen, state.timer, state.qAnswered, update]);
+  }, [state.screen, state.timer, state.qAnswered, state.roundQuestions, state.qIdx, state.score, update, track]);
 
   // While not full, reconcile regenerated lives every second so the meter fills
   // and the "next life" countdown stays live. No interval when full.
@@ -750,12 +846,36 @@ export function ProtoProvider({
               : state.qAnswered === q.correct;
       const wrong = !right;
       const totalQs = state.roundQuestions.length;
+      const responseMs = Math.max(
+        0,
+        Math.round(((q.time ?? tweaks.questionTime) - Math.max(0, state.timer)) * 1000),
+      );
+      track(AnalyticsEvent.QuestionAnswerResult, questionAnalytics(q, {
+        question_index: state.qIdx + 1,
+        question_count: totalQs,
+        is_correct: right,
+        response_ms: responseMs,
+        time_remaining_sec: Math.max(0, Math.round(state.timer)),
+        score_after: state.score,
+      }));
 
       if (state.mode === "level") {
         // Shield absorbs one wrong answer instead of costing a heart.
         const shielded = wrong && state.shieldActive;
         const newHearts = wrong && !state.shieldActive ? state.hearts - 1 : state.hearts;
         if (newHearts <= 0) {
+          track(AnalyticsEvent.LifeLost, {
+            reason: "level_failed",
+            lives_before: state.lives,
+            lives_after: Math.max(0, state.lives - 1),
+          });
+          track(AnalyticsEvent.LevelFailed, {
+            level_track: state.levelTrack,
+            level_number: state.levelByTrack[state.levelTrack],
+            score: state.score,
+            question_count: totalQs,
+            lives_remaining: Math.max(0, state.lives - 1),
+          });
           // Failing a level costs a life; start the regen clock if we were full.
           const wasFull = state.lives >= LIVES_MAX;
           update({
@@ -773,6 +893,20 @@ export function ProtoProvider({
           // Curved free-ticket milestone — actually credited now (was previously
           // only promised in the UI). Advances only the active track.
           const milestoneTicket = isLevelTicketMilestone(newLevel) ? 1 : 0;
+          trackClientEvent(AnalyticsEvent.LevelCompleted, {
+            screen: state.screen,
+            mode: "level",
+            level_track: track,
+            level_number: state.levelByTrack[track],
+            score: state.score,
+            question_count: totalQs,
+            tickets_before: state.tickets,
+            tickets_after: state.tickets + milestoneTicket,
+            ticket_delta: milestoneTicket,
+            xp_before: state.xp,
+            xp_after: state.xp + state.score,
+            xp_delta: state.score,
+          });
           update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
           // Persist: advanceLevel credits the same milestone ticket + xp server-side.
           void v2AdvanceLevel(track, state.score);
@@ -788,6 +922,11 @@ export function ProtoProvider({
           shieldActive: shielded ? false : state.shieldActive,
           timer: state.roundQuestions[state.qIdx + 1]?.time ?? tweaks.questionTime,
         });
+        track(AnalyticsEvent.QuestionNextClicked, {
+          mode: "level",
+          question_index: state.qIdx + 1,
+          next_question_index: state.qIdx + 2,
+        });
         return;
       }
 
@@ -800,8 +939,20 @@ export function ProtoProvider({
         if (state.tournamentBonus) markDailyBonusUsed();
         // Post the provisional score to the server entry; settlement (rank/prize)
         // is server-authoritative at round close (see lib/v2/rounds.settleRound).
-        if (state.entry) void v2SubmitRoundScore(state.entry.roundId, state.score);
+        if (state.entry) {
+          track(AnalyticsEvent.TournamentScoreSubmitted, {
+            round_id: state.entry.roundId,
+            score_after: state.score,
+            question_count: totalQs,
+            xp_delta: state.score * xpMult,
+          });
+          void v2SubmitRoundScore(state.entry.roundId, state.score);
+        }
         // Daily mission accrual — questions answered this round.
+        track(AnalyticsEvent.MissionProgressRecorded, {
+          reason: "tournament_questions_answered",
+          question_count: totalQs,
+        });
         void v2RecordMissionProgress("daily-answer-5", totalQs);
         void v2RecordMissionProgress("daily-answer-3", totalQs);
         goto("results");
@@ -816,6 +967,11 @@ export function ProtoProvider({
           qSelection: null,
           eliminated: [],
           timer: state.roundQuestions[state.qIdx + 1]?.time ?? tweaks.questionTime,
+        });
+        track(AnalyticsEvent.QuestionNextClicked, {
+          mode: "tournament",
+          question_index: state.qIdx + 1,
+          next_question_index: state.qIdx + 2,
         });
       }
     }, 1400);
@@ -838,6 +994,15 @@ export function ProtoProvider({
       : correct
         ? base
         : 0;
+    track(AnalyticsEvent.QuestionAnswerSubmitted, questionAnalytics(q, {
+      mode: state.mode,
+      question_index: state.qIdx + 1,
+      question_count: state.roundQuestions.length,
+      selected_option_hash: hashAnalyticsValue(answerIdx),
+      time_remaining_sec: Math.max(0, Math.round(state.timer)),
+      score_delta: delta,
+      score_after: Math.max(0, state.score + delta),
+    }));
     update({
       qAnswered: answerIdx,
       score: Math.max(0, state.score + delta),
@@ -857,10 +1022,21 @@ export function ProtoProvider({
     const wrongPicked = indices.filter((i) => !cs.includes(i)).length;
     const accuracy = Math.max(0, Math.min(1, (correctPicked - wrongPicked) / pick));
     const base = Math.round(100 + state.timer * 20);
+    const delta = Math.round(base * accuracy);
+    track(AnalyticsEvent.QuestionAnswerSubmitted, questionAnalytics(q, {
+      mode: state.mode,
+      question_index: state.qIdx + 1,
+      question_count: state.roundQuestions.length,
+      selected_count: indices.length,
+      selected_option_hash: hashAnalyticsValue(indices.join(",")),
+      time_remaining_sec: Math.max(0, Math.round(state.timer)),
+      score_delta: delta,
+      score_after: state.score + delta,
+    }));
     update({
       qAnswered: -2,
       qSelection: indices,
-      score: state.score + Math.round(base * accuracy),
+      score: state.score + delta,
     });
   };
 
@@ -875,10 +1051,21 @@ export function ProtoProvider({
     const matches = order.filter((v, p) => v === co[p]).length;
     const accuracy = Math.max(0, Math.min(1, matches / n));
     const base = Math.round(100 + state.timer * 20);
+    const delta = Math.round(base * accuracy);
+    track(AnalyticsEvent.QuestionAnswerSubmitted, questionAnalytics(q, {
+      mode: state.mode,
+      question_index: state.qIdx + 1,
+      question_count: state.roundQuestions.length,
+      selected_count: order.length,
+      selected_option_hash: hashAnalyticsValue(order.join(",")),
+      time_remaining_sec: Math.max(0, Math.round(state.timer)),
+      score_delta: delta,
+      score_after: state.score + delta,
+    }));
     update({
       qAnswered: -3,
       qSelection: order,
-      score: state.score + Math.round(base * accuracy),
+      score: state.score + delta,
     });
   };
 
@@ -890,10 +1077,29 @@ export function ProtoProvider({
     // settled, re-tapping shows their standing instead of charging/replaying.
     const rid = roundIdFor(Date.now());
     if (state.entry && state.entry.roundId === rid && !state.entry.settled) {
+      track(AnalyticsEvent.TournamentEntryBlocked, {
+        round_id: rid,
+        reason: "already_entered",
+      });
       goto("results");
       return;
     }
+    if (state.tickets < TOURNAMENT_TICKET_COST) {
+      track(AnalyticsEvent.TournamentEntryBlocked, {
+        round_id: rid,
+        reason: "insufficient_tickets",
+        tickets_balance: state.tickets,
+        entry_cost: TOURNAMENT_TICKET_COST,
+      });
+      return;
+    }
     const bonus = isDailyBonusAvailable();
+    track(AnalyticsEvent.TournamentEntryStarted, {
+      round_id: rid,
+      entry_cost: TOURNAMENT_TICKET_COST,
+      tickets_before: state.tickets,
+      daily_bonus_available: bonus,
+    });
     update((s) => ({
       tickets: Math.max(0, s.tickets - TOURNAMENT_TICKET_COST),
       mode: "tournament",
@@ -910,7 +1116,30 @@ export function ProtoProvider({
     }));
     // Persist the entry server-side (charges a ticket; re-entry is a no-op
     // server-side too). Optimistic local charge above keeps the UI instant.
-    void v2EnterRound(rid, bonus);
+    void v2EnterRound(rid, bonus)
+      .then((result) => {
+        trackClientEvent(AnalyticsEvent.TournamentEntrySucceeded, {
+          screen: "lobby",
+          mode: "tournament",
+          round_id: rid,
+          entry_cost: TOURNAMENT_TICKET_COST,
+          tickets_after: result?.tickets ?? state.tickets - TOURNAMENT_TICKET_COST,
+          daily_bonus_available: bonus,
+          already_entered: result?.alreadyEntered ?? false,
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.TournamentEntryBlocked, {
+          screen: "home",
+          mode: "tournament",
+          round_id: rid,
+          reason: error instanceof Error ? error.message : "entry_failed",
+        });
+      });
+    track(AnalyticsEvent.TournamentLobbyEntered, {
+      round_id: rid,
+      countdown_sec: tweaks.lobbyCountdown,
+    });
     goto("lobby");
   };
 
@@ -933,6 +1162,16 @@ export function ProtoProvider({
         }
         const finalRank = tournamentRank(en.score, tweaks.questionsPerRound);
         const reward = tournamentReward(finalRank);
+        trackClientEvent(AnalyticsEvent.TournamentResultLocalSettled, {
+          screen: s.screen,
+          mode: "tournament",
+          round_id: en.roundId,
+          score: en.score,
+          rank: finalRank,
+          field_size: TOURNAMENT_FIELD_SIZE,
+          tickets_won: reward,
+          result_state: reward > 0 ? "won" : finalRank <= TOURNAMENT_TICKET_RANK * 2 ? "near_miss" : "lost",
+        });
         return {
           entry: { ...en, settled: true, finalRank, reward },
           lastTournamentRank: finalRank,
@@ -955,7 +1194,31 @@ export function ProtoProvider({
   // Claim a winning as USDT. Optimistic locally; the server marks it resolved
   // (the on-chain USDT transfer runs via the existing merkle-claim path).
   const claimWinning = (id: string) => {
-    void v2ResolveWinning(id, "claim");
+    const winning = state.winnings.find((w) => w.id === id);
+    track(AnalyticsEvent.PrizeResolutionStarted, {
+      reward_type: "usdt",
+      reward_amount: winning ? ticketsToUsdt(winning.tickets) : null,
+      winning_id_hash: hashAnalyticsValue(id),
+    });
+    void v2ResolveWinning(id, "claim")
+      .then(() => {
+        trackClientEvent(AnalyticsEvent.PrizeResolutionSucceeded, {
+          screen: "profile",
+          mode: "tournament",
+          reward_type: "usdt",
+          reward_amount: winning ? ticketsToUsdt(winning.tickets) : null,
+          winning_id_hash: hashAnalyticsValue(id),
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.PrizeResolutionFailed, {
+          screen: "profile",
+          mode: "tournament",
+          reward_type: "usdt",
+          reason: error instanceof Error ? error.message : "resolve_failed",
+          winning_id_hash: hashAnalyticsValue(id),
+        });
+      });
     update((s) => ({
       winnings: s.winnings.map((w) => (w.id === id && w.status === "pending" ? { ...w, status: "claimed" } : w)),
     }));
@@ -963,7 +1226,31 @@ export function ProtoProvider({
 
   // Convert a winning into spendable in-app tickets instead of claiming USDT.
   const convertWinning = (id: string) => {
-    void v2ResolveWinning(id, "convert");
+    const winning = state.winnings.find((w) => w.id === id);
+    track(AnalyticsEvent.PrizeResolutionStarted, {
+      reward_type: "tickets",
+      reward_amount: winning?.tickets ?? null,
+      winning_id_hash: hashAnalyticsValue(id),
+    });
+    void v2ResolveWinning(id, "convert")
+      .then(() => {
+        trackClientEvent(AnalyticsEvent.PrizeResolutionSucceeded, {
+          screen: "profile",
+          mode: "tournament",
+          reward_type: "tickets",
+          reward_amount: winning?.tickets ?? null,
+          winning_id_hash: hashAnalyticsValue(id),
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.PrizeResolutionFailed, {
+          screen: "profile",
+          mode: "tournament",
+          reward_type: "tickets",
+          reason: error instanceof Error ? error.message : "resolve_failed",
+          winning_id_hash: hashAnalyticsValue(id),
+        });
+      });
     update((s) => {
       const w = s.winnings.find((x) => x.id === id && x.status === "pending");
       if (!w) return {};
@@ -976,7 +1263,17 @@ export function ProtoProvider({
 
   // Hide a banner announcement; persisted so it stays hidden next session.
   const dismissAnnouncement = (id: string) => {
-    void v2DismissAnnouncement(id);
+    track(AnalyticsEvent.AnnouncementDismissStarted, {
+      ref_id_kind: "announcement",
+      announcement_id_hash: hashAnalyticsValue(id),
+    });
+    void v2DismissAnnouncement(id).then(() => {
+      trackClientEvent(AnalyticsEvent.AnnouncementDismissSucceeded, {
+        screen: state.screen,
+        ref_id_kind: "announcement",
+        announcement_id_hash: hashAnalyticsValue(id),
+      });
+    });
     update((s) => {
       if (s.annDismissed.includes(id)) return {};
       const next = [...s.annDismissed, id];
@@ -987,7 +1284,17 @@ export function ProtoProvider({
 
   // Mark announcements read (clears the inbox unread dot); persisted.
   const markAnnouncementsRead = (ids: string[]) => {
-    void v2SetAnnouncementsRead(ids);
+    track(AnalyticsEvent.AnnouncementMarkReadStarted, {
+      ref_id_kind: "announcement",
+      count: ids.length,
+    });
+    void v2SetAnnouncementsRead(ids).then(() => {
+      trackClientEvent(AnalyticsEvent.AnnouncementMarkReadSucceeded, {
+        screen: state.screen,
+        ref_id_kind: "announcement",
+        count: ids.length,
+      });
+    });
     update((s) => {
       const next = Array.from(new Set([...s.annRead, ...ids]));
       if (next.length === s.annRead.length) return {};
@@ -1002,10 +1309,21 @@ export function ProtoProvider({
   const enterLevel = () => {
     const r = regenLives(state.lives, state.nextLifeAt, Date.now());
     if (r.lives <= 0) {
+      track(AnalyticsEvent.LevelRetryClicked, {
+        level_track: state.levelTrack,
+        level_number: state.levelByTrack[state.levelTrack],
+        reason: "no_lives",
+      });
       update(r);
       goto("levels");
       return;
     }
+    track(AnalyticsEvent.LevelStarted, {
+      level_track: state.levelTrack,
+      level_number: state.levelByTrack[state.levelTrack],
+      lives: r.lives,
+      question_count: tweaks.levelQuestions,
+    });
     update({ ...r, mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime });
     goto("levelIntro");
   };
@@ -1013,7 +1331,27 @@ export function ProtoProvider({
   const retryLevel = enterLevel;
 
   const refillLives = () => {
-    void v2RefillLives();
+    if (state.lives >= LIVES_MAX || state.tickets < LIVES_REFILL_COST) {
+      track(AnalyticsEvent.LivesRefillBlocked, {
+        reason: state.lives >= LIVES_MAX ? "lives_full" : "insufficient_tickets",
+        tickets_balance: state.tickets,
+        lives: state.lives,
+      });
+      return;
+    }
+    track(AnalyticsEvent.LivesRefillStarted, {
+      tickets_before: state.tickets,
+      lives: state.lives,
+      ticket_delta: -LIVES_REFILL_COST,
+    });
+    void v2RefillLives().then((result) => {
+      trackClientEvent(AnalyticsEvent.LivesRefillSucceeded, {
+        screen: state.screen,
+        tickets_after: result?.tickets ?? state.tickets - LIVES_REFILL_COST,
+        lives: result?.lives ?? LIVES_MAX,
+        ticket_delta: -LIVES_REFILL_COST,
+      });
+    });
     update((s) => {
       if (s.lives >= LIVES_MAX || s.tickets < LIVES_REFILL_COST) return {};
       return { tickets: s.tickets - LIVES_REFILL_COST, lives: LIVES_MAX, nextLifeAt: null };
@@ -1038,7 +1376,28 @@ export function ProtoProvider({
 
   // Activate a shop power-up in the live quiz (consumes one from inventory).
   const usePowerUp = (kind: PowerUpName) => {
-    void v2ConsumePowerUp(kind);
+    track(AnalyticsEvent.PowerupUseStarted, {
+      powerup_id: kind,
+      question_index: state.qIdx + 1,
+      inventory_before: null,
+    });
+    void v2ConsumePowerUp(kind)
+      .then((result) => {
+        trackClientEvent(AnalyticsEvent.PowerupUseSucceeded, {
+          screen: state.screen,
+          mode: state.mode,
+          powerup_id: kind,
+          inventory_after: result?.remaining ?? null,
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.PowerupUseFailed, {
+          screen: state.screen,
+          mode: state.mode,
+          powerup_id: kind,
+          reason: error instanceof Error ? error.message : "consume_failed",
+        });
+      });
     if (kind === "EXTRA_TIME") {
       update((s) => ({ timer: s.timer + 5 }));
       return;
@@ -1084,13 +1443,36 @@ export function ProtoProvider({
     goto("home");
   };
 
-  const setLevelTrack = (track: LevelTrack) => update({ levelTrack: track });
+  const setLevelTrack = (nextTrack: LevelTrack) => {
+    track(AnalyticsEvent.LevelTrackChanged, {
+      previous_level_track: state.levelTrack,
+      level_track: nextTrack,
+      level_number: state.levelByTrack[nextTrack],
+    });
+    update({ levelTrack: nextTrack });
+  };
 
   // Persist + apply the player's chosen username.
   const setUsername = (name: string) => {
     const clean = name.trim();
+    track(AnalyticsEvent.UsernameSetStarted, {
+      username_length: clean.length,
+    });
     writeUsername(clean);
-    void v2SetUsername(clean);
+    void v2SetUsername(clean)
+      .then(() => {
+        trackClientEvent(AnalyticsEvent.UsernameSetSucceeded, {
+          screen: state.screen,
+          username_length: clean.length,
+        });
+      })
+      .catch((error) => {
+        trackClientEvent(AnalyticsEvent.UsernameSetFailed, {
+          screen: state.screen,
+          username_length: clean.length,
+          reason: error instanceof Error ? error.message : "username_failed",
+        });
+      });
     update({ username: clean });
   };
 

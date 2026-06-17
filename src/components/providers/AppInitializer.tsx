@@ -8,6 +8,7 @@ import {
 } from "react";
 import sdk from "@farcaster/miniapp-sdk";
 import { useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useConnect } from "wagmi";
 
 import { useUser } from "@/hooks/useUser";
@@ -23,11 +24,13 @@ import {
 import {
   AnalyticsEvent,
   captureFirstTouchAttribution,
+  hashAnalyticsId,
   trackClientEvent,
 } from "@/lib/analytics";
 
 export function AppInitializer({ children }: { children: ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { connectors } = useConnect();
   const { hideSplash } = useSplash();
   const { user, refetch } = useUser();
@@ -39,6 +42,11 @@ export function AppInitializer({ children }: { children: ReactNode }) {
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const farcasterProfileSyncRef = useRef<string | null>(null);
   const appOpenedRef = useRef(false);
+  const userRef = useRef(user);
+
+  useEffect(() => {
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
@@ -50,10 +58,15 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       setRuntime(nextRuntime);
       const attribution = captureFirstTouchAttribution();
       if (!appOpenedRef.current) {
+        const currentUser = userRef.current;
         appOpenedRef.current = true;
         trackClientEvent(AnalyticsEvent.AppOpened, {
           runtime: nextRuntime,
           path: window.location.pathname,
+          screen: window.location.pathname.startsWith("/v2") ? "v2" : "legacy",
+          is_authenticated: Boolean(currentUser),
+          wallet_connected: Boolean(currentUser?.wallet),
+          user_id_hash: hashAnalyticsId(currentUser?.id),
           ...attribution,
         });
       }
@@ -79,6 +92,18 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       mounted = false;
     };
   }, [hideSplash]);
+
+  useEffect(() => {
+    if (!runtime || !pathname) return;
+    trackClientEvent(AnalyticsEvent.PageViewed, {
+      runtime,
+      path: pathname,
+      screen: pathname.startsWith("/v2") ? "v2" : "legacy",
+      is_authenticated: Boolean(user),
+      wallet_connected: Boolean(user?.wallet),
+      user_id_hash: hashAnalyticsId(user?.id),
+    });
+  }, [pathname, runtime, user]);
 
   useEffect(() => {
     if (!runtime) return;
@@ -118,6 +143,13 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       runtime,
       context: runtime === "minipay" ? "minipay" : "browser",
       isMiniPayRuntime: runtime === "minipay",
+    });
+
+    trackClientEvent(AnalyticsEvent.MiniappContextDetected, {
+      runtime,
+      platform: runtime === "minipay" ? "minipay" : runtime,
+      wallet_connected: Boolean(injectedEthereum?.selectedAddress),
+      chain_id: injectedEthereum?.chainId ?? null,
     });
 
     console.log("[runtime-debug]", {
