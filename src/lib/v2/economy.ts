@@ -4,6 +4,7 @@
  * (daily-reward.tsx REWARD_POOL, shop.tsx catalog) but is the source of truth.
  */
 import { prisma } from "@/lib/db";
+import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import {
   BoostKind,
   CosmeticKind,
@@ -55,7 +56,19 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
       where: { userId_dayKey: { userId, dayKey: today } },
       select: { id: true },
     });
-    if (existing) return { claimed: false, reason: "already-claimed" } as const;
+    if (existing) {
+      await trackServerEvent({
+        name: "daily_reward_claim_authoritative",
+        userId,
+        tx,
+        properties: {
+          result: "already_claimed",
+          reward_type: null,
+          reward_amount: null,
+        },
+      });
+      return { claimed: false, reason: "already-claimed" } as const;
+    }
 
     const user = await tx.user.findUniqueOrThrow({
       where: { id: userId },
@@ -110,6 +123,21 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
       },
       select: { ticketBalance: true, xp: true },
     });
+    await trackServerEvent({
+      name: "daily_reward_claim_authoritative",
+      userId,
+      tx,
+      properties: {
+        result: "claimed",
+        reward_type: roll.type,
+        reward_amount: roll.amount,
+        rarity: roll.rarity,
+        streak_days: streak,
+        used_freeze: usedFreeze,
+        tickets_after: roll.type === "ticket" ? tickets : updated.ticketBalance,
+        xp_after: updated.xp,
+      },
+    });
 
     return {
       claimed: true,
@@ -159,9 +187,29 @@ export type PurchaseResult =
  *  until the payment rail is decided — they return "fiat-only". */
 export async function purchaseShopItem(userId: string, slug: string): Promise<PurchaseResult> {
   const item = await prisma.shopItem.findUnique({ where: { slug } });
-  if (!item || !item.isActive) return { ok: false, reason: "not-found" };
-  if (item.kind === ShopItemKind.BUNDLE) return { ok: false, reason: "fiat-only" };
-  if (item.priceTickets == null) return { ok: false, reason: "fiat-only" };
+  if (!item || !item.isActive) {
+    await trackServerEvent({
+      name: "shop_purchase_authoritative",
+      userId,
+      properties: {
+        result: "not_found",
+        sku: slug,
+      },
+    });
+    return { ok: false, reason: "not-found" };
+  }
+  if (item.kind === ShopItemKind.BUNDLE || item.priceTickets == null) {
+    await trackServerEvent({
+      name: "shop_purchase_authoritative",
+      userId,
+      properties: {
+        result: "fiat_only",
+        sku: item.slug,
+        item_kind: item.kind,
+      },
+    });
+    return { ok: false, reason: "fiat-only" };
+  }
 
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.findUniqueOrThrow({
@@ -169,6 +217,18 @@ export async function purchaseShopItem(userId: string, slug: string): Promise<Pu
       select: { ticketBalance: true },
     });
     if (user.ticketBalance < item.priceTickets!) {
+      await trackServerEvent({
+        name: "shop_purchase_authoritative",
+        userId,
+        tx,
+        properties: {
+          result: "insufficient_tickets",
+          sku: item.slug,
+          item_kind: item.kind,
+          price_tickets: item.priceTickets,
+          tickets_before: user.ticketBalance,
+        },
+      });
       return { ok: false, reason: "insufficient-tickets" } as const;
     }
     const tickets = await adjustTickets(userId, -item.priceTickets!, TicketLedgerReason.SHOP_PURCHASE, {
@@ -199,6 +259,20 @@ export async function purchaseShopItem(userId: string, slug: string): Promise<Pu
         },
       });
     }
+    await trackServerEvent({
+      name: "shop_purchase_authoritative",
+      userId,
+      tx,
+      properties: {
+        result: "purchased",
+        sku: item.slug,
+        item_kind: item.kind,
+        price_tickets: item.priceTickets,
+        tickets_before: user.ticketBalance,
+        tickets_after: tickets,
+        purchase_id_hash: hashServerAnalyticsId(item.id),
+      },
+    });
     return { ok: true, tickets } as const;
   });
 }
@@ -228,11 +302,35 @@ export async function consumePowerUp(
       where: { userId_kind: { userId, kind } },
       select: { count: true },
     });
-    if (!inv || inv.count <= 0) return { ok: false, remaining: inv?.count ?? 0 };
+    if (!inv || inv.count <= 0) {
+      await trackServerEvent({
+        name: "powerup_consume_authoritative",
+        userId,
+        tx,
+        properties: {
+          result: "empty",
+          powerup_id: kind,
+          inventory_before: inv?.count ?? 0,
+          inventory_after: inv?.count ?? 0,
+        },
+      });
+      return { ok: false, remaining: inv?.count ?? 0 };
+    }
     const updated = await tx.powerUpInventory.update({
       where: { userId_kind: { userId, kind } },
       data: { count: { decrement: 1 } },
       select: { count: true },
+    });
+    await trackServerEvent({
+      name: "powerup_consume_authoritative",
+      userId,
+      tx,
+      properties: {
+        result: "consumed",
+        powerup_id: kind,
+        inventory_before: inv.count,
+        inventory_after: updated.count,
+      },
     });
     return { ok: true, remaining: updated.count };
   });
@@ -244,7 +342,19 @@ export const STREAK_FREEZE_COST = 2;
 export async function buyStreakFreeze(userId: string): Promise<{ tickets: number; freezes: number } | null> {
   return prisma.$transaction(async (tx) => {
     const u = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { ticketBalance: true } });
-    if (u.ticketBalance < STREAK_FREEZE_COST) return null;
+    if (u.ticketBalance < STREAK_FREEZE_COST) {
+      await trackServerEvent({
+        name: "streak_freeze_purchase_authoritative",
+        userId,
+        tx,
+        properties: {
+          result: "insufficient_tickets",
+          tickets_before: u.ticketBalance,
+          price_tickets: STREAK_FREEZE_COST,
+        },
+      });
+      return null;
+    }
     const tickets = await adjustTickets(userId, -STREAK_FREEZE_COST, TicketLedgerReason.SHOP_PURCHASE, {
       note: "streak-freeze",
       tx,
@@ -253,6 +363,18 @@ export async function buyStreakFreeze(userId: string): Promise<{ tickets: number
       where: { id: userId },
       data: { streakFreezes: { increment: 1 } },
       select: { streakFreezes: true },
+    });
+    await trackServerEvent({
+      name: "streak_freeze_purchase_authoritative",
+      userId,
+      tx,
+      properties: {
+        result: "purchased",
+        tickets_before: u.ticketBalance,
+        tickets_after: tickets,
+        freezes_after: updated.streakFreezes,
+        price_tickets: STREAK_FREEZE_COST,
+      },
     });
     return { tickets, freezes: updated.streakFreezes };
   });
@@ -278,6 +400,20 @@ export async function buyBundle(
     const tickets = await adjustTickets(userId, total, TicketLedgerReason.BUNDLE_TOPUP, { refId: slug, tx });
     await tx.purchase.create({
       data: { userId, itemId: item.id, spentTickets: 0, spentFiat: item.priceFiat ?? null, txHash: txHash ?? null },
+    });
+    await trackServerEvent({
+      name: "bundle_topup_authoritative",
+      userId,
+      tx,
+      properties: {
+        result: "credited",
+        sku: slug,
+        bundle_id: slug,
+        ticket_delta: total,
+        tickets_after: tickets,
+        price_usdt: item.priceFiat ? Number(item.priceFiat) : null,
+        tx_present: Boolean(txHash),
+      },
     });
     return { tickets };
   });

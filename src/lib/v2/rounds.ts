@@ -9,6 +9,7 @@
  * mint their own winnings).
  */
 import { prisma } from "@/lib/db";
+import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { TicketLedgerReason, WinningStatus } from "@prisma";
 import { adjustTickets } from "./playerState";
 
@@ -44,7 +45,19 @@ export async function enterRound(
       where: { userId_roundId: { userId, roundId: BigInt(roundId) } },
       select: { id: true },
     });
-    if (existing) return { entryId: existing.id, tickets: null, alreadyEntered: true };
+    if (existing) {
+      await trackServerEvent({
+        name: "round_entry_authoritative",
+        userId,
+        tx,
+        properties: {
+          round_id: roundId,
+          already_entered: true,
+          result: "existing",
+        },
+      });
+      return { entryId: existing.id, tickets: null, alreadyEntered: true };
+    }
 
     const tickets = await adjustTickets(userId, -TOURNAMENT_TICKET_COST, TicketLedgerReason.TOURNAMENT_ENTRY, {
       refId: String(roundId),
@@ -54,15 +67,38 @@ export async function enterRound(
       data: { userId, roundId: BigInt(roundId), bonus },
       select: { id: true },
     });
+    await trackServerEvent({
+      name: "round_entry_authoritative",
+      userId,
+      tx,
+      properties: {
+        round_id: roundId,
+        entry_cost: TOURNAMENT_TICKET_COST,
+        tickets_after: tickets,
+        daily_bonus_available: bonus,
+        already_entered: false,
+        result: "created",
+      },
+    });
     return { entryId: entry.id, tickets, alreadyEntered: false };
   });
 }
 
 /** Post a provisional score for the player's entry in a round. */
 export async function submitRoundScore(userId: string, roundId: number, score: number): Promise<void> {
-  await prisma.roundEntry.updateMany({
+  const result = await prisma.roundEntry.updateMany({
     where: { userId, roundId: BigInt(roundId), settled: false },
     data: { score },
+  });
+  await trackServerEvent({
+    name: "round_score_submitted_authoritative",
+    userId,
+    properties: {
+      round_id: roundId,
+      score_after: score,
+      updated_count: result.count,
+      result: result.count > 0 ? "updated" : "missing_entry",
+    },
   });
 }
 
@@ -99,7 +135,7 @@ export async function settleRound(roundId: number): Promise<{ settled: number; p
         data: { settled: true, finalRank, reward, settledAt: now },
       });
       if (reward > 0) {
-        await tx.winning.create({
+        const winning = await tx.winning.create({
           data: {
             userId: e.userId,
             roundId: BigInt(roundId),
@@ -107,11 +143,44 @@ export async function settleRound(roundId: number): Promise<{ settled: number; p
             tickets: reward,
             status: WinningStatus.PENDING,
           },
+          select: { id: true },
+        });
+        await trackServerEvent({
+          name: "prize_created_authoritative",
+          userId: e.userId,
+          tx,
+          properties: {
+            round_id: roundId,
+            rank: finalRank,
+            reward_type: "tickets",
+            reward_amount: reward,
+            winning_id_hash: hashServerAnalyticsId(winning.id),
+          },
         });
       }
+      await trackServerEvent({
+        name: "round_settlement_authoritative",
+        userId: e.userId,
+        tx,
+        properties: {
+          round_id: roundId,
+          score_after: e.score,
+          rank: finalRank,
+          tickets_won: reward,
+          result_state: reward > 0 ? "won" : "lost",
+        },
+      });
     });
     if (reward > 0) prizes++;
   }
+  await trackServerEvent({
+    name: "round_settlement_completed",
+    properties: {
+      round_id: roundId,
+      settled_count: entries.length,
+      prizes,
+    },
+  });
   return { settled: entries.length, prizes };
 }
 

@@ -9,6 +9,7 @@
  * stays client-side; only durable state + authoritative actions live here.
  */
 import { prisma } from "@/lib/db";
+import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { LevelTrack, TicketLedgerReason, WinningStatus, type Prisma } from "@prisma";
 
 // ── Shape returned to the client (mirrors Proto persistent fields) ──────────
@@ -182,6 +183,19 @@ export async function adjustTickets(
     await db.ticketLedger.create({
       data: { userId, delta, balanceAfter, reason, refId: opts.refId, note: opts.note },
     });
+    await trackServerEvent({
+      name: "ticket_ledger_recorded",
+      userId,
+      tx: db,
+      properties: {
+        ticket_delta: delta,
+        tickets_after: balanceAfter,
+        ticket_reason: reason,
+        ref_id_kind: opts.refId ? "hashed" : null,
+        ref_id_hash: hashServerAnalyticsId(opts.refId),
+        note: opts.note ?? null,
+      },
+    });
     return balanceAfter;
   };
   return opts.tx ? run(opts.tx) : prisma.$transaction(run);
@@ -208,6 +222,17 @@ export async function advanceLevel(
         tx,
       });
     }
+    await trackServerEvent({
+      name: "level_advanced",
+      userId,
+      tx,
+      properties: {
+        level_track: track,
+        level_number: updated.level,
+        xp_delta: xpGain,
+        ticket_delta: ticketAwarded ? 1 : 0,
+      },
+    });
     return { level: updated.level, ticketAwarded };
   });
 }
@@ -227,6 +252,16 @@ export async function loseLife(userId: string): Promise<{ lives: number; nextLif
       where: { id: userId },
       data: { lives, nextLifeAt: nextLifeAt == null ? null : new Date(nextLifeAt) },
     });
+    await trackServerEvent({
+      name: "life_lost_authoritative",
+      userId,
+      tx,
+      properties: {
+        lives_before: reg.lives,
+        lives_after: lives,
+        next_life_at_present: nextLifeAt != null,
+      },
+    });
     return { lives, nextLifeAt };
   });
 }
@@ -241,6 +276,18 @@ export async function refillLives(userId: string): Promise<{ lives: number; tick
     if (u.lives >= LIVES_MAX || u.ticketBalance < LIVES_REFILL_COST) return null;
     const tickets = await adjustTickets(userId, -LIVES_REFILL_COST, TicketLedgerReason.LIVES_REFILL, { tx });
     await tx.user.update({ where: { id: userId }, data: { lives: LIVES_MAX, nextLifeAt: null } });
+    await trackServerEvent({
+      name: "lives_refill_authoritative",
+      userId,
+      tx,
+      properties: {
+        lives_before: u.lives,
+        lives_after: LIVES_MAX,
+        tickets_before: u.ticketBalance,
+        tickets_after: tickets,
+        ticket_delta: -LIVES_REFILL_COST,
+      },
+    });
     return { lives: LIVES_MAX, tickets };
   });
 }
@@ -268,6 +315,18 @@ export async function resolveWinning(
         where: { id: w.id },
         data: { status: WinningStatus.CONVERTED, resolvedAt: new Date() },
       });
+      await trackServerEvent({
+        name: "prize_resolution_authoritative",
+        userId,
+        tx,
+        properties: {
+          reward_type: "tickets",
+          reward_amount: w.tickets,
+          tickets_after: tickets,
+          winning_id_hash: hashServerAnalyticsId(w.id),
+          result: "converted",
+        },
+      });
       return { tickets };
     }
     // claim: record the USDT payout (ticket value via the 0.1 peg, in 6-decimal
@@ -277,6 +336,18 @@ export async function resolveWinning(
     await tx.winning.update({
       where: { id: w.id },
       data: { status: WinningStatus.CLAIMED, resolvedAt: new Date(), merkleAmount: String(usdtUnits) },
+    });
+    await trackServerEvent({
+      name: "prize_resolution_authoritative",
+      userId,
+      tx,
+      properties: {
+        reward_type: "usdt",
+        reward_amount: w.tickets * 0.1,
+        winning_id_hash: hashServerAnalyticsId(w.id),
+        tx_present: false,
+        result: "claimed",
+      },
     });
     return { tickets: null };
   });
