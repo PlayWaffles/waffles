@@ -32,6 +32,7 @@ const data = QUESTION_BANK.map((q) => ({
   correctIndex: q.correctIndex,
   durationSec: 10,
   theme: themeFor(q),
+  category: q.category, // preserve the bank's fine-grained category verbatim
   difficulty: DIFF[q.difficulty],
   kind: QuestionKind.SINGLE,
 }));
