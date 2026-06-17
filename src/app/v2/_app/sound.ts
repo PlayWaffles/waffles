@@ -82,6 +82,16 @@ class SoundManager {
     this._initialized = true;
   }
 
+  /** Warm the SFX cache so the FIRST play of each sound is instant — otherwise
+   *  the browser has to fetch the .wav on first use, which shows up as a delay
+   *  between the trigger and the sound. Safe to call repeatedly; no-op on SSR. */
+  preload() {
+    if (typeof window === "undefined") return;
+    for (const name of Object.keys(SOUNDS) as SoundName[]) {
+      getAudio(name)?.load();
+    }
+  }
+
   // SFX always play; mute only silences the looping background track.
   play(name: SoundName) {
     this.init();
@@ -143,3 +153,6 @@ class SoundManager {
 export const soundManager = new SoundManager();
 
 export const playSound = (name: SoundName) => soundManager.play(name);
+
+/** Warm the SFX cache (call once on app mount) so first plays are instant. */
+export const preloadSounds = () => soundManager.preload();

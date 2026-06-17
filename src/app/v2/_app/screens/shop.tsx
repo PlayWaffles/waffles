@@ -390,25 +390,14 @@ export const ShopScreen = () => {
       <TopHeader tickets={tickets} title="SHOP" />
 
       <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "4px 14px 14px", overflow: "auto" }}>
-        {/* Balance header — Syrup count on the left with help text on the right. */}
-        <Card accent="var(--maple-500)" radius={14} pad="12px 14px" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12, boxShadow: "0 0 24px rgba(255,201,49,.06)" }}>
-          <AssetWell size={52} accent="var(--maple-500)" radius={13}>
-            <SyrupIcon size={28} />
-          </AssetWell>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "#fff", lineHeight: 1 }}>{tickets}</span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.45)", letterSpacing: 0.8, textTransform: "uppercase" }}>Syrup</span>
-            </div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 3 }}>Your balance</div>
-          </div>
-          <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 3 }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "var(--leaf)", lineHeight: 1 }}>{syrupLabel(tickets)}</span>
-              <InfoButton title="Syrup" text={TICKET_INFO} size={18} />
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.35)", letterSpacing: 0.8, textTransform: "uppercase" }}>balance</div>
-          </div>
+        {/* Balance — one compact row (the count, a label, and the help button). */}
+        <Card accent="var(--maple-500)" radius={14} pad="10px 14px" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+          <SyrupIcon size={24} />
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#fff", lineHeight: 1 }}>{tickets}</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.45)", letterSpacing: 0.8, textTransform: "uppercase" }}>Syrup</span>
+          <div style={{ flex: 1 }} />
+          <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>Your balance</span>
+          <InfoButton title="Syrup" text={TICKET_INFO} size={18} />
         </Card>
 
         {/* Featured offer card */}

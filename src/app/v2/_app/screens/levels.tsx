@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
-import { LIVES_MAX, LIVES_REFILL_COST, syrupLabel, useProto, type LevelTrack } from "../state";
+import { LIVES_MAX, LIVES_REFILL_COST, levelTicketMilestoneInfo, syrupLabel, useProto, type LevelTrack } from "../state";
 import { ASSETS, Phone, PixelImg, SyrupIcon, TabBar, TopHeader, useNow } from "../shared";
 
 // The two parallel solo campaigns the levels-page tab switches between. Each has
@@ -754,6 +754,8 @@ const LevelPathInner = () => {
   const tickets = proto.tickets;
   const startLevel = proto.startLevel;
   const currentLevel = proto.level;
+  // Next free-Syrup milestone relative to the player's CURRENT level.
+  const milestone = levelTicketMilestoneInfo(currentLevel);
   // One-shot unlock animation flag for the newly-unlocked tile; cleared after it
   // plays so revisiting the path doesn't replay it.
   const { levelJustUnlocked, update } = proto;
@@ -987,14 +989,14 @@ const LevelPathInner = () => {
           <SyrupIcon size={28} />
           <div style={{ flex: 1 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--frame)", lineHeight: 1 }}>
-              Level 21 · Free Syrup
+              Level {milestone.nextLevel} · Free Syrup
             </div>
             <div style={{ fontSize: 11, color: "var(--frame)", fontWeight: 700, opacity: 0.75 }}>
-              3 levels away
+              {milestone.toGo === 1 ? "1 level away" : `${milestone.toGo} levels away`}
             </div>
           </div>
           <div style={{ height: 6, width: 80, borderRadius: 99, background: "rgba(30,30,30,.25)", overflow: "hidden" }}>
-            <div style={{ width: "70%", height: "100%", background: "var(--frame)", borderRadius: 99 }} />
+            <div style={{ width: `${milestone.pct}%`, height: "100%", background: "var(--frame)", borderRadius: 99 }} />
           </div>
         </div>
       </div>

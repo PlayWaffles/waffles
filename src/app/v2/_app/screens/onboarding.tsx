@@ -133,6 +133,23 @@ const legalLinkStyle: CSSProperties = {
   cursor: "pointer",
 };
 
+// Pregenerated username suggestions — fun, on-brand, charset-safe (a-z0-9._,
+// matches the input filter, ≤ 20 chars). Players can tap one to use it.
+const NAME_ADJ = ["Swift", "Golden", "Clever", "Lucky", "Mighty", "Sneaky", "Brave", "Quick", "Sharp", "Wild", "Royal", "Turbo", "Witty", "Bold", "Crispy"];
+const NAME_NOUN = ["Fox", "Waffle", "Owl", "Panda", "Whiz", "Champ", "Sage", "Ace", "Falcon", "Maple", "Brain", "Tiger", "Wizard", "Otter", "Bishop"];
+function generateUsername(): string {
+  const adj = NAME_ADJ[Math.floor(Math.random() * NAME_ADJ.length)];
+  const noun = NAME_NOUN[Math.floor(Math.random() * NAME_NOUN.length)];
+  const num = Math.floor(Math.random() * 90) + 10; // 10–99
+  return `${adj}${noun}${num}`.slice(0, 20);
+}
+function generateUsernames(n: number): string[] {
+  const out = new Set<string>();
+  let guard = 0;
+  while (out.size < n && guard++ < 50) out.add(generateUsername());
+  return [...out];
+}
+
 export const OnboardingScreen = ({
   onPlay,
   onSkip,
@@ -144,6 +161,12 @@ export const OnboardingScreen = ({
   const { signIn } = useWalletSignIn();
   const [step, setStep] = useState(0);
   const [username, setUsernameInput] = useState("");
+  // Pregenerated username suggestions (client-only so SSR/first render match).
+  const [nameSuggestions, setNameSuggestions] = useState<string[]>([]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setNameSuggestions(generateUsernames(3));
+  }, []);
   const [connecting, setConnecting] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
   const startedRef = useRef(false);
@@ -307,6 +330,16 @@ export const OnboardingScreen = ({
                 style={{ width: "100%", boxSizing: "border-box", padding: "14px 16px 14px 36px", borderRadius: 14, border: "2px solid rgba(255,255,255,.14)", background: "rgba(255,255,255,.05)", color: "var(--ink)", fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 0.3, outline: "none" }}
               />
             </div>
+            {/* Pregenerated suggestions — tap one to fill the field, or shuffle. */}
+            {nameSuggestions.length > 0 && (
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 14, justifyContent: "center", alignItems: "center", maxWidth: 320 }}>
+                <span style={{ width: "100%", textAlign: "center", fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", marginBottom: 2 }}>Tap to use a suggestion</span>
+                {nameSuggestions.map((s) => (
+                  <button key={s} type="button" onClick={() => setUsernameInput(s)} style={{ background: "rgba(255,255,255,.05)", border: "1.5px solid rgba(255,255,255,.14)", borderRadius: 99, padding: "7px 12px", color: "var(--ink)", fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer" }}>@{s}</button>
+                ))}
+                <button type="button" aria-label="Shuffle suggestions" onClick={() => setNameSuggestions(generateUsernames(3))} style={{ background: "transparent", border: "1.5px solid rgba(255,255,255,.14)", borderRadius: 99, width: 34, height: 34, color: "var(--ink-soft)", fontSize: 15, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>🎲</button>
+              </div>
+            )}
           </>
         ) : (
           <>
