@@ -6,7 +6,6 @@ import { env } from "@/lib/env";
 import { verifyClaim } from "@/lib/chain";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { resolvePlatformGameVisibility } from "@/lib/platform/server";
-import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 const SERVICE = "claim-api";
 
@@ -39,21 +38,8 @@ export const POST = withAuth<Params>(
     try {
       const { gameId } = params;
       const visibility = await resolvePlatformGameVisibility(auth.platform, request);
-      await trackServerEvent({
-        name: "legacy_game_claim_started",
-        userId: auth.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: auth.platform,
-        },
-      });
 
       if (!gameId) {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: { reason: "invalid_id" },
-        });
         return NextResponse.json<ApiError>(
           { error: "Invalid Game ID", code: "INVALID_ID" },
           { status: 400 },
@@ -65,15 +51,6 @@ export const POST = withAuth<Params>(
       try {
         body = await request.json();
       } catch {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            reason: "invalid_input",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Invalid request body", code: "INVALID_INPUT" },
           { status: 400 },
@@ -83,17 +60,6 @@ export const POST = withAuth<Params>(
       const { txHash, wallet } = body;
 
       if (!txHash || !wallet) {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            tx_present: Boolean(txHash),
-            wallet_connected: Boolean(wallet),
-            reason: "invalid_input",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "txHash and wallet are required", code: "INVALID_INPUT" },
           { status: 400 },
@@ -113,17 +79,6 @@ export const POST = withAuth<Params>(
       });
 
       if (!game || !isGameVisibleToPlatform(game, auth.platform, visibility) || !game.onchainId) {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            tx_present: true,
-            wallet_connected: true,
-            reason: "not_found",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Game not found or not on-chain", code: "NOT_FOUND" },
           { status: 404 },
@@ -151,15 +106,6 @@ export const POST = withAuth<Params>(
       });
 
       if (!entry) {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            reason: "entry_not_found",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Game entry not found", code: "NOT_FOUND" },
           { status: 404 },
@@ -174,17 +120,6 @@ export const POST = withAuth<Params>(
           gameId,
           userId: entry.user.id,
         });
-        await trackServerEvent({
-          name: "legacy_game_claim_succeeded",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            idempotent: true,
-            prize_amount: entry.prize,
-            rank: entry.rank,
-          },
-        });
         return NextResponse.json<ClaimResponse>({
           success: true,
           message: "Prize already claimed",
@@ -194,15 +129,6 @@ export const POST = withAuth<Params>(
 
       // Check if paid
       if (!entry.paidAt) {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            reason: "not_paid",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Entry not paid", code: "NOT_PAID" },
           { status: 400 },
@@ -215,17 +141,6 @@ export const POST = withAuth<Params>(
         entry.prize > 0;
 
       if (!isEligible) {
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            prize_amount: entry.prize,
-            rank: entry.rank,
-            reason: "not_eligible",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Not eligible for a prize", code: "NOT_ELIGIBLE" },
           { status: 400 },
@@ -250,19 +165,6 @@ export const POST = withAuth<Params>(
           txHash,
           wallet,
           error: verification.error,
-        });
-        await trackServerEvent({
-          name: "legacy_game_claim_failed",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            tx_present: true,
-            wallet_connected: true,
-            prize_amount: entry.prize,
-            rank: entry.rank,
-            reason: "verification_failed",
-          },
         });
         return NextResponse.json<ApiError>(
           {
@@ -307,20 +209,6 @@ export const POST = withAuth<Params>(
         prize: entry.prize,
       });
 
-      await trackServerEvent({
-        name: "legacy_game_claim_succeeded",
-        userId: auth.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: auth.platform,
-          tx_present: true,
-          wallet_connected: true,
-          idempotent: false,
-          prize_amount: entry.prize,
-          rank: entry.rank,
-        },
-      });
-
       return NextResponse.json<ClaimResponse>({
         success: true,
         message: "Prize claimed successfully!",
@@ -329,15 +217,6 @@ export const POST = withAuth<Params>(
     } catch (error) {
       console.error("["+SERVICE+"]", "claim_error", {
         error: (error instanceof Error ? error.message : String(error)),
-      });
-      await trackServerEvent({
-        name: "legacy_game_claim_failed",
-        userId: auth.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(params.gameId),
-          platform: auth.platform,
-          reason: error instanceof Error ? error.name : "unknown",
-        },
       });
       return NextResponse.json<ApiError>(
         { error: "Internal server error", code: "INTERNAL_ERROR" },

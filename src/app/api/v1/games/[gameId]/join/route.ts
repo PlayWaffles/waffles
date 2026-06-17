@@ -5,7 +5,6 @@ import { getGamePhase } from "@/lib/types";
 import { hasPlayableTicket } from "@/lib/tickets";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { resolvePlatformGameVisibility } from "@/lib/platform/server";
-import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 type Params = { gameId: string };
 
@@ -21,21 +20,8 @@ export const POST = withAuth<Params>(
     try {
       const gameId = params.gameId;
       const visibility = await resolvePlatformGameVisibility(auth.platform, request);
-      await trackServerEvent({
-        name: "legacy_game_join_attempted",
-        userId: auth.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: auth.platform,
-        },
-      });
 
       if (!gameId) {
-        await trackServerEvent({
-          name: "legacy_game_join_rejected",
-          userId: auth.userId,
-          properties: { reason: "invalid_param" },
-        });
         return NextResponse.json<ApiError>(
           { error: "Invalid game ID", code: "INVALID_PARAM" },
           { status: 400 }
@@ -55,15 +41,6 @@ export const POST = withAuth<Params>(
       });
 
       if (!game || !isGameVisibleToPlatform(game, auth.platform, visibility)) {
-        await trackServerEvent({
-          name: "legacy_game_join_rejected",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            reason: "not_found",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Game not found", code: "NOT_FOUND" },
           { status: 404 }
@@ -72,16 +49,6 @@ export const POST = withAuth<Params>(
 
       const phase = getGamePhase(game);
       if (phase === "ENDED") {
-        await trackServerEvent({
-          name: "legacy_game_join_rejected",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            phase,
-            reason: "game_ended",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Game has ended", code: "GAME_ENDED" },
           { status: 400 }
@@ -99,16 +66,6 @@ export const POST = withAuth<Params>(
       });
 
       if (!entry) {
-        await trackServerEvent({
-          name: "legacy_game_join_rejected",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            phase,
-            reason: "entry_required",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Game entry required to join", code: "ENTRY_REQUIRED" },
           { status: 403 }
@@ -116,46 +73,15 @@ export const POST = withAuth<Params>(
       }
 
       if (!hasPlayableTicket(entry)) {
-        await trackServerEvent({
-          name: "legacy_game_join_rejected",
-          userId: auth.userId,
-          properties: {
-            game_id_hash: hashServerAnalyticsId(gameId),
-            platform: auth.platform,
-            phase,
-            purchase_source: entry.purchaseSource,
-            reason: "ticket_required",
-          },
-        });
         return NextResponse.json<ApiError>(
           { error: "Ticket required to join", code: "TICKET_REQUIRED" },
           { status: 403 }
         );
       }
 
-      await trackServerEvent({
-        name: "legacy_game_join_succeeded",
-        userId: auth.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(gameId),
-          platform: auth.platform,
-          phase,
-          purchase_source: entry.purchaseSource,
-        },
-      });
-
       return NextResponse.json({ success: true, gameId: gameId });
     } catch (error) {
       console.error("POST /api/v1/games/[gameId]/join Error:", error);
-      await trackServerEvent({
-        name: "legacy_game_join_rejected",
-        userId: auth.userId,
-        properties: {
-          game_id_hash: hashServerAnalyticsId(params.gameId),
-          platform: auth.platform,
-          reason: error instanceof Error ? error.name : "unknown",
-        },
-      });
       return NextResponse.json<ApiError>(
         { error: "Internal server error", code: "INTERNAL_ERROR" },
         { status: 500 }
