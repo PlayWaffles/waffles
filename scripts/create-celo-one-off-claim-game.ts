@@ -18,7 +18,6 @@ const {
   generateOnchainGameId,
   getPublicClient,
 } = await import("@/lib/chain");
-const { initGameRoom } = await import("@/lib/partykit");
 const { recalculateGameRounds } = await import("@/lib/game/rounds");
 const { processPendingPurchases } = await import("@/lib/game/pending-purchases");
 const { publishResults } = await import("@/lib/game/lifecycle");
@@ -184,7 +183,6 @@ async function createOneOffGame() {
   });
 
   await recalculateGameRounds(game.id);
-  await initGameRoom(game.id, startsAt, endsAt);
 
   const createTxHash = await createGameOnChain(
     PLATFORM,

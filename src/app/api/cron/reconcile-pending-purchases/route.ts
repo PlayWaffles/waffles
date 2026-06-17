@@ -9,7 +9,7 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
-  if (request.headers.get("Authorization") !== `Bearer ${env.partykitSecret}`) {
+  if (request.headers.get("Authorization") !== `Bearer ${env.authSecret}`) {
     await trackServerEvent({
       name: "cron_purchase_reconcile_unauthorized",
       properties: { cron: "reconcile-pending-purchases" },

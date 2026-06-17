@@ -19,20 +19,13 @@ pnpm prisma generate  # Regenerate Prisma client (also runs on postinstall)
 pnpm prisma studio    # Database GUI
 ```
 
-PartyKit (real-time server) is proxied through Next.js rewrites in dev (`/parties/*` → `localhost:1999`). For production, set `NEXT_PUBLIC_PARTYKIT_HOST`.
-
 ## Architecture
 
 ### Dual-platform auth (`src/lib/auth.ts`)
 `getAuthFromRequest()` checks for a Bearer token (Farcaster) first, then falls back to a `waffles_session` cookie (MiniPay wallet). The `withAuth` / `withOptionalAuth` higher-order functions wrap API route handlers. Platform is also resolved at runtime via cookie/header (`src/lib/platform/`).
 
-### Real-time layer (PartyKit)
-- `party/main.ts` — `GameServer` class handling WebSocket connections, HTTP API, and alarm-based game lifecycle (countdown phases → start → end)
-- `shared/protocol.ts` — Single source of truth for all WebSocket message types, shared between server and client
-- Handlers split into `party/handlers/` (http, websocket, alarms)
-
 ### Game lifecycle
-Game phase is derived from time, not a stored status enum — see `getGamePhase()` in `src/lib/types.ts`. A game is `SCHEDULED` → `LIVE` → `ENDED` based on `startsAt`/`endsAt` timestamps.
+Game phase is derived from time, not a stored status enum — see `getGamePhase()` in `src/lib/types.ts`. A game is `SCHEDULED` → `LIVE` → `ENDED` based on `startsAt`/`endsAt` timestamps. v2 tournaments are async (no live real-time server): settlement is driven by the in-process cron (`src/lib/cron.ts`) which ranks ended games and publishes merkle results on-chain.
 
 ### Data layer
 - Prisma v7 with `@prisma/adapter-pg` (PostgreSQL). Config in `prisma.config.ts`, schema in `prisma/schema.prisma`
@@ -49,7 +42,7 @@ Game phase is derived from time, not a stored status enum — see `getGamePhase(
 - `src/app/(app)/(game)/` — Player-facing pages (game lobby, live play, results, leaderboard, profile)
 - `src/app/admin/` — Admin dashboard (game management, invite codes, question bank)
 - `src/app/api/v1/` — REST API routes
-- `src/app/api/v1/internal/` — Server-to-server routes (e.g. PartyKit → Next.js notifications)
+- `src/app/api/v1/internal/` — Server-to-server routes (authorized via `AUTH_SECRET` bearer)
 
 ### Key patterns
 - Server Actions in `src/actions/` for mutations from client components

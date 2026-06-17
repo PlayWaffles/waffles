@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { GameTheme, UserPlatform } from "@prisma";
 import { generateOnchainGameId, createGameOnChain } from "@/lib/chain";
-import { initGameRoom } from "@/lib/partykit";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
 
@@ -96,7 +95,6 @@ async function main() {
     });
 
     await recalculateGameRounds(game.id);
-    await initGameRoom(game.id, startsAt, endsAt);
     const txHash = await createGameOnChain(platform, network, onchainId, ticketPrice);
 
     console.log(

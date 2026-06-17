@@ -2,8 +2,7 @@
  * Cron: Roundup Games
  * POST /api/cron/roundup-games
  *
- * Fallback for games that weren't rounded up by PartyKit alarm.
- * Auto-ranks and publishes ended games. Called every 5 min.
+ * Auto-ranks and publishes ended games that haven't settled yet. Called every 5 min.
  */
 
 import { NextRequest, NextResponse } from "next/server";
@@ -20,7 +19,7 @@ export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
-  if (request.headers.get("Authorization") !== `Bearer ${env.partykitSecret}`) {
+  if (request.headers.get("Authorization") !== `Bearer ${env.authSecret}`) {
     await trackServerEvent({
       name: "legacy_cron_roundup_unauthorized",
       properties: { cron: "roundup-games" },

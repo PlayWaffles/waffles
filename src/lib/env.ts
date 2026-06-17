@@ -31,21 +31,16 @@ const envSchema = z.object({
   DATABASE_URL: isServer
     ? z.string().min(1, "DATABASE_URL is required")
     : z.string().optional(),
-  AUTH_SECRET: z.string().optional(),
+  // Signs wallet session cookies and authorizes internal/cron endpoints.
+  AUTH_SECRET: isServer
+    ? z.string().min(1, "AUTH_SECRET is required")
+    : z.string().optional(),
 
   // Chain role keys (server-only, optional - only needed for admin operations)
   DEFAULT_ADMIN_PRIVATE_KEY: z.string().optional(),
   SUPER_ADMIN_PRIVATE_KEY: z.string().optional(),
   OPERATOR_PRIVATE_KEY: z.string().optional(),
   SETTLER_PRIVATE_KEY: z.string().optional(),
-
-  // PartyKit
-  PARTYKIT_SECRET: isServer
-    ? z.string().min(1, "PARTYKIT_SECRET is required")
-    : z.string().optional(),
-  NEXT_PUBLIC_PARTYKIT_HOST: z
-    .string()
-    .min(1, "NEXT_PUBLIC_PARTYKIT_HOST is required"),
 
   // Cloudinary (media storage with public URLs)
   CLOUDINARY_CLOUD_NAME: isServer
@@ -118,8 +113,6 @@ const getEnv = () => {
     SUPER_ADMIN_PRIVATE_KEY: process.env.SUPER_ADMIN_PRIVATE_KEY,
     OPERATOR_PRIVATE_KEY: process.env.OPERATOR_PRIVATE_KEY,
     SETTLER_PRIVATE_KEY: process.env.SETTLER_PRIVATE_KEY,
-    PARTYKIT_SECRET: process.env.PARTYKIT_SECRET,
-    NEXT_PUBLIC_PARTYKIT_HOST: process.env.NEXT_PUBLIC_PARTYKIT_HOST,
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
@@ -198,8 +191,6 @@ const getEnv = () => {
         defaultAdminPrivateKey: undefined,
         operatorPrivateKey: undefined,
         settlerPrivateKey: undefined,
-        partykitSecret: "",
-        partykitHost: "",
         cloudinaryCloudName: "",
         cloudinaryApiKey: "",
         cloudinaryApiSecret: "",
@@ -273,9 +264,6 @@ const getEnv = () => {
       data.DEFAULT_ADMIN_PRIVATE_KEY || data.SUPER_ADMIN_PRIVATE_KEY,
     operatorPrivateKey: data.OPERATOR_PRIVATE_KEY,
     settlerPrivateKey: data.SETTLER_PRIVATE_KEY,
-    // PartyKit
-    partykitSecret: data.PARTYKIT_SECRET,
-    partykitHost: data.NEXT_PUBLIC_PARTYKIT_HOST,
     // Cloudinary (media storage with public URLs)
     cloudinaryCloudName: data.CLOUDINARY_CLOUD_NAME,
     cloudinaryApiKey: data.CLOUDINARY_API_KEY,
