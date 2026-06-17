@@ -8,9 +8,12 @@ import { BadgeUnlockWatcher } from "./badge-unlock";
 import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
 import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-takeover";
+import { MigrationTakeover } from "./screens/migration-takeover";
+import { v2GetMigrationNotice, v2DismissMigrationNotice } from "@/actions/v2";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
+import { preloadSounds } from "./sound";
 import { V2AuthBootstrap } from "./auto-signin";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -97,6 +100,19 @@ const Stage = () => {
   // World Cup season welcome — the big "moment", shown once after onboarding.
   // The World Cup is the default season for everyone (not opt-in), so this is a
   // celebratory intro, not a gate; the bell entry reopens it anytime. Takes
+  // Warm the SFX cache once so the first play of each sound is instant (no fetch
+  // latency between a trigger and the sound).
+  useEffect(() => {
+    preloadSounds();
+  }, []);
+
+  // One-time "welcome to v2" modal for migrated users — server-gated (migrated +
+  // not yet dismissed). Takes precedence over the WC takeover + daily reward, and
+  // gates them until the check resolves so they don't flash first.
+  const [showMigration, setShowMigration] = useState(false);
+  const [migrationResolved, setMigrationResolved] = useState(false);
+  const migrationChecked = useRef(false);
+
   // precedence over the daily reward so the two never stack.
   const [showWcTakeover, setShowWcTakeover] = useState(false);
   useEffect(() => {
@@ -104,7 +120,7 @@ const Stage = () => {
     // first-timer this means it waits until they finish that level and return to
     // Home (their first Home visit); a returning user opens to Home and sees it
     // right away. No "first run" flag needed — the Home gate does the waiting.
-    if (!showOnboarding && proto.screen === "home" && !hasSeenWorldCupTakeover()) {
+    if (!showOnboarding && proto.screen === "home" && migrationResolved && !showMigration && !hasSeenWorldCupTakeover()) {
       // rAF so the flip isn't a synchronous setState in the effect body.
       const id = requestAnimationFrame(() => {
         trackClientEvent(AnalyticsEvent.WorldCupTakeoverAutoOpened, {
@@ -116,7 +132,20 @@ const Stage = () => {
       });
       return () => cancelAnimationFrame(id);
     }
+  }, [showOnboarding, proto.screen, migrationResolved, showMigration]);
+
+  useEffect(() => {
+    if (showOnboarding || proto.screen !== "home" || migrationChecked.current) return;
+    migrationChecked.current = true;
+    v2GetMigrationNotice()
+      .then((r) => setShowMigration(r.show))
+      .catch(() => {})
+      .finally(() => setMigrationResolved(true));
   }, [showOnboarding, proto.screen]);
+  const dismissMigration = () => {
+    setShowMigration(false);
+    void v2DismissMigrationNotice();
+  };
 
   const dailyAutoShown = useRef(false);
   const { screen, update } = proto;
@@ -173,7 +202,9 @@ const Stage = () => {
       ) : (
         <>
           <Current />
-          {showWcTakeover || proto.wcTakeoverOpen ? (
+          {showMigration ? (
+            <MigrationTakeover onClose={dismissMigration} />
+          ) : showWcTakeover || proto.wcTakeoverOpen ? (
             <WorldCupTakeover
               onClose={() => {
                 setShowWcTakeover(false);

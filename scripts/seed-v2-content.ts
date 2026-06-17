@@ -24,6 +24,14 @@ for (const a of ANNOUNCEMENTS) {
   });
 }
 
+// v2-migration welcome modal. The rich content lives in the MigrationTakeover
+// component; this row backs the per-user dismiss state (AnnouncementState FK).
+await prisma.announcement.upsert({
+  where: { id: "v2-migration-welcome" },
+  create: { id: "v2-migration-welcome", slug: "v2-migration-welcome", title: "Waffles got a glow-up", body: "Fresh look, Levels, XP, Syrup, hourly games, daily missions & streaks.", kind: "migration", sortOrder: 0, isActive: true },
+  update: { kind: "migration", isActive: true },
+});
+
 // ── Multi-format question parity (mirrors FORMAT_REGISTRY in state.tsx) ──
 const MULTI = [
   { content: "Pick the 3 nations that have WON the World Cup", options: ["Brazil", "Germany", "Argentina", "Netherlands", "Mexico", "Croatia"], kind: QuestionKind.MULTI, correctSet: [0, 1, 2], pick: 3 },
