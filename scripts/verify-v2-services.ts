@@ -12,6 +12,10 @@ const rounds = await import("@/lib/v2/rounds");
 const econ = await import("@/lib/v2/economy");
 const missions = await import("@/lib/v2/missions");
 const leagues = await import("@/lib/v2/leagues");
+const partners = await import("@/lib/v2/partnerOffers");
+const seasonPass = await import("@/lib/v2/seasonPass");
+const roundQ = await import("@/lib/v2/roundQuestions");
+const scoring = await import("@/lib/v2/scoring");
 
 const tag = `v2verify-${Date.now()}`;
 const user = await prisma.user.create({
@@ -63,7 +67,43 @@ try {
   check("enterRound charges + creates entry", !enter.alreadyEntered && enter.tickets !== null, `tickets=${enter.tickets}`);
   const reenter = await rounds.enterRound(uid, rid, false);
   check("re-enter no double charge", reenter.alreadyEntered === true);
-  await rounds.submitRoundScore(uid, rid, 1500);
+
+  // Server-authoritative scoring: the issued set is the same for every entrant,
+  // and the score is recomputed from submitted answers (never client-posted).
+  const issued = await roundQ.getRoundScorableSet(rid);
+  check("round issues an authoritative question set", issued.length > 0, `issued=${issued.length}`);
+  const perfectMax = issued.reduce((s, q) => s + scoring.maxScoreForQuestion(q), 0);
+
+  // Answer every question correctly, instantly (responseMs 0) → theoretical max.
+  const perfectAnswers = issued.map((q) => ({
+    id: q.id,
+    responseMs: 0,
+    selection:
+      q.kind === "multi" ? q.correctSet
+      : q.kind === "order" ? q.correctOrder
+      : [q.correct],
+  }));
+  const submit = await rounds.submitRoundAnswers(uid, rid, perfectAnswers);
+  check("submitRoundAnswers records server-computed perfect score", submit?.score === perfectMax, `score=${submit?.score} max=${perfectMax}`);
+
+  // Anti-cheat: an inflated/forged submission can't beat the honest max.
+  const forged = scoring.scoreRound(issued, [
+    { id: "does-not-exist", selection: [0], responseMs: 0 }, // unknown id → ignored
+    ...perfectAnswers,
+    ...perfectAnswers, // replayed duplicates → counted once
+  ]);
+  check("scoreRound caps at max + ignores forged/replayed answers", forged === perfectMax, `forged=${forged} max=${perfectMax}`);
+
+  // Wrong/timeout answers score 0 (and never go negative on non-minefield).
+  const zeroed = scoring.scoreRound(issued, issued.map((q) => ({ id: q.id, selection: [], responseMs: 0 })));
+  check("scoreRound floors empty answers at >= 0", zeroed >= 0, `zeroed=${zeroed}`);
+
+  // Solo level questions also come from the DB now (no local bank).
+  const lvlStd = await roundQ.getLevelClientQuestions("standard", 1);
+  check("level questions served from DB (standard)", lvlStd.length > 0 && lvlStd.every((q) => q.id && q.answers.length > 0), `n=${lvlStd.length}`);
+  const lvlWc = await roundQ.getLevelClientQuestions("world-cup", 1);
+  check("level questions served from DB (world-cup)", lvlWc.length > 0, `n=${lvlWc.length}`);
+
   const settle = await rounds.settleRound(rid);
   check("settleRound (rank 1 → prize)", settle.settled === 1 && settle.prizes === 1, `settled=${settle.settled} prizes=${settle.prizes}`);
   const winnings = await prisma.winning.count({ where: { userId: uid } });
@@ -129,6 +169,36 @@ try {
   check("consume power-up decrements", c1.ok === true && c1.remaining === 0, `ok=${c1.ok} left=${c1.remaining}`);
   const c2 = await econ.consumePowerUp(uid, "FIFTY_FIFTY");
   check("consume when empty fails", c2.ok === false);
+
+  // 17. league ladder: DB-backed tiers + reward chests + season end
+  check("league ladder returns 11 tiers", lg.tiers.length === 11, `n=${lg.tiers.length}`);
+  const appr1 = lg.tiers.find((t) => t.key === "apprentice1");
+  check("league tier carries reward chests", !!appr1 && appr1.rewards.length === 3, `rewards=${appr1?.rewards.length}`);
+  check("league season ends in the future", lg.seasonEndsAt > Date.now());
+
+  // 18. partner offers: load + one-time claim credits tickets
+  const offers0 = await partners.loadPartnerOffers(uid);
+  check("partner offers load (>=6)", offers0.length >= 6, `n=${offers0.length}`);
+  const beforeOffer = (await prisma.user.findUniqueOrThrow({ where: { id: uid }, select: { ticketBalance: true } })).ticketBalance;
+  const pc1 = await partners.claimPartnerOffer(uid, "duolingo-lesson");
+  check("partner claim credits tickets", pc1.ok === true && pc1.tickets === beforeOffer + 3, `ok=${pc1.ok} bal=${pc1.tickets}`);
+  const pc2 = await partners.claimPartnerOffer(uid, "duolingo-lesson");
+  check("partner re-claim rejected", pc2.ok === false && pc2.reason === "already");
+  const offers1 = await partners.loadPartnerOffers(uid);
+  check("partner offer marked claimed", offers1.find((o) => o.slug === "duolingo-lesson")?.claimed === true);
+
+  // 19. season pass: load + free-reward claim (tier 1 free = +50 XP)
+  const sp0 = await seasonPass.loadSeasonPass(uid);
+  check("season pass level >= 1", sp0.level >= 1, `lvl=${sp0.level}`);
+  const xpBefore = (await prisma.user.findUniqueOrThrow({ where: { id: uid }, select: { xp: true } })).xp;
+  const sc1 = await seasonPass.claimSeasonReward(uid, 1, false);
+  check("season free claim ok (xp credited)", sc1.ok === true && sc1.xp === xpBefore + 50, `ok=${sc1.ok} xp=${sc1.xp}`);
+  const sc2 = await seasonPass.claimSeasonReward(uid, 1, false);
+  check("season re-claim rejected", sc2.ok === false && sc2.reason === "already");
+  const sc3 = await seasonPass.claimSeasonReward(uid, 1, true);
+  check("season premium claim rejected (VIP)", sc3.ok === false && sc3.reason === "premium");
+  const sp1 = await seasonPass.loadSeasonPass(uid);
+  check("season claim persists", sp1.claimed.some((c) => c.tier === 1 && !c.premium));
 } finally {
   // Cascade-deletes ledger, progress, entries, winnings, daily claims, etc.
   await prisma.user.delete({ where: { id: uid } });

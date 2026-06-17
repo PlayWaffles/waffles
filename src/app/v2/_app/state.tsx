@@ -17,6 +17,13 @@ import {
   v2AdvanceLevel,
   v2DismissAnnouncement,
   v2EnterRound,
+  v2GetRoundQuestions,
+  v2GetLevelQuestions,
+  v2GetTournament,
+  v2EnterTournament,
+  v2SubmitTournamentAnswers,
+  v2GetTournamentClaim,
+  v2ConfirmTournamentClaim,
   v2LoseLife,
   v2ConsumePowerUp,
   v2RecordMissionProgress,
@@ -24,8 +31,10 @@ import {
   v2ResolveWinning,
   v2SetAnnouncementsRead,
   v2SetUsername,
-  v2SubmitRoundScore,
+  v2SubmitRoundAnswers,
 } from "@/actions/v2";
+import { useTournamentWallet } from "./useTournamentWallet";
+import { assertChainPlatform } from "@/lib/chain/platform";
 import {
   AnalyticsEvent,
   type AnalyticsEventName,
@@ -232,6 +241,11 @@ export type ResultNotif = {
 };
 
 export type Question = {
+  // Server-issued question id (tournament rounds only). Present when the set
+  // came from `v2GetRoundQuestions`; absent for locally-drawn level questions.
+  // The answers a player gives are submitted keyed by this id so the server can
+  // re-score them authoritatively.
+  id?: string;
   cat: string;
   q: string;
   answers: string[];
@@ -256,6 +270,16 @@ export type Question = {
   media?: VMedia;
   time?: number;
   minefield?: boolean;
+};
+
+// One submitted tournament answer, sent to the server for authoritative
+// re-scoring. `selection` is normalized to an index array: single/spatial =
+// [chosenIndex] (empty = timeout), multi = chosen picks, order = chosen
+// sequence. Mirrors `RoundAnswer` in src/lib/v2/scoring.ts.
+export type RoundAnswer = {
+  id: string;
+  selection: number[];
+  responseMs: number;
 };
 
 // Format Lab core formats (1–12) graduated into live play. Each VQuestion
@@ -489,7 +513,7 @@ export const DEFAULT_TWEAKS: Tweaks = {
   questionsPerRound: 6,
   levelQuestions: 3,
   lobbyCountdown: 10,
-  startingTickets: 3,
+  startingTickets: 0,
   homeSlot: "both",
 };
 
@@ -544,6 +568,20 @@ type State = {
   // The selected questions for the current game (tournament round or level).
   // Repopulated each time a game starts so play never repeats the same set.
   roundQuestions: Question[];
+  // Per-question answers given in the current tournament round, accumulated as
+  // the player answers and submitted at finish so the server can re-score them
+  // authoritatively (the client never posts its own score). Keyed by the
+  // server-issued question id; empty for level play.
+  roundAnswers: RoundAnswer[];
+  // Server-fetched questions for the level being entered, prefetched during the
+  // level-intro screen so `beginLevelQuiz` can start instantly. Null until the
+  // fetch resolves (falls back to the local bank if it never does).
+  pendingLevelQuestions: Question[] | null;
+  // The on-chain tournament `Game` id when the current round was entered via the
+  // on-chain path (real USDC deposit). Set by `enterTournamentOnChain`; routes
+  // the finish-submit to the server-authoritative on-chain scorer. Null for the
+  // off-chain ticket path.
+  tournamentGameId: string | null;
   // True when the current tournament round earns the daily 2× XP bonus.
   tournamentBonus: boolean;
   // Whether the daily-reward sheet is open (driven globally so any screen,
@@ -561,21 +599,19 @@ const initialState = (tweaks: Tweaks): State => ({
   direction: 1,
   tickets: tweaks.startingTickets,
   levelTrack: "standard",
-  // World Cup is a fresh campaign (starts at 1); Standard keeps the seeded 23.
-  levelByTrack: { standard: 23, "world-cup": 1 },
+  // Both tracks start fresh at level 1 (Forest + World Cup); real progress
+  // overlays from the server once loadV2State resolves.
+  levelByTrack: { standard: 1, "world-cup": 1 },
   lives: LIVES_MAX,
   nextLifeAt: null,
-  xp: 340,
-  streak: 12,
+  // Clean new-player seed: real values overlay from the server once
+  // loadV2State resolves (logged-out / pre-load shows a fresh account).
+  xp: 0,
+  streak: 0,
   lastTournamentRank: null,
   entry: null,
   resultNotifs: [],
-  // Seed a couple of unclaimed prizes so the Prize Wallet has something to show
-  // without first having to play a tournament to completion.
-  winnings: [
-    { id: "seed-1", rank: 7, tickets: 10, wonAt: Date.now() - 3 * 3600_000, status: "pending" },
-    { id: "seed-2", rank: 84, tickets: 3, wonAt: Date.now() - 26 * 3600_000, status: "pending" },
-  ],
+  winnings: [],
   // Start empty so SSR and the first client render match; hydrated from
   // localStorage in a post-mount effect (see ProtoProvider).
   annRead: [],
@@ -593,6 +629,9 @@ const initialState = (tweaks: Tweaks): State => ({
   countdownSec: tweaks.lobbyCountdown,
   timer: tweaks.questionTime,
   roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
+  roundAnswers: [],
+  pendingLevelQuestions: null,
+  tournamentGameId: null,
   tournamentBonus: false,
   dailyOpen: false,
   wcTakeoverOpen: false,
@@ -613,6 +652,10 @@ export type Proto = State & {
   answerMulti: (indices: number[]) => void;
   answerOrder: (order: number[]) => void;
   startTournament: () => void;
+  // On-chain tournament: deposit via wallet (buyTicket) + start the round; claim
+  // a settled prize via the merkle proof. Resolve with ok/error for the UI.
+  enterTournamentOnChain: () => Promise<{ ok: boolean; error?: string }>;
+  claimTournamentPrize: (gameId: string) => Promise<{ ok: boolean; error?: string }>;
   markResultRead: (id: string) => void;
   claimWinning: (id: string) => void;
   convertWinning: (id: string) => void;
@@ -654,6 +697,8 @@ export function ProtoProvider({
   const shellTrackedRef = useRef(false);
   const questionStartRef = useRef<string | null>(null);
   const screenViewedRef = useRef<string | null>(null);
+  // On-chain wallet (buyTicket entry + claimPrize) — reuses v1's contract layer.
+  const tournamentWallet = useTournamentWallet();
 
   const track = useCallback(
     (event: AnalyticsEventName, properties: AnalyticsProperties = {}) => {
@@ -859,6 +904,22 @@ export function ProtoProvider({
         score_after: state.score,
       }));
 
+      // Record the answer for server-side re-scoring (tournament only). The
+      // selection is normalized to an index array the server scorer understands;
+      // timeout (-1) submits an empty selection (counts as wrong).
+      const selection: number[] =
+        state.qAnswered === -1
+          ? []
+          : q.kind === "multi" || q.kind === "order"
+            ? (state.qSelection ?? [])
+            : state.qAnswered != null && state.qAnswered >= 0
+              ? [state.qAnswered]
+              : [];
+      const nextAnswers: RoundAnswer[] =
+        state.mode === "tournament" && q.id
+          ? [...state.roundAnswers, { id: q.id, selection, responseMs }]
+          : state.roundAnswers;
+
       if (state.mode === "level") {
         // Shield absorbs one wrong answer instead of costing a heart.
         const shielded = wrong && state.shieldActive;
@@ -937,16 +998,23 @@ export function ProtoProvider({
         // is credited now along with the 2× bonus consumption.
         const xpMult = state.tournamentBonus ? 2 : 1;
         if (state.tournamentBonus) markDailyBonusUsed();
-        // Post the provisional score to the server entry; settlement (rank/prize)
-        // is server-authoritative at round close (see lib/v2/rounds.settleRound).
-        if (state.entry) {
+        // Submit the round's ANSWERS — the server re-scores them against its own
+        // key and records the authoritative score. The client never posts a
+        // score. Settlement (rank/prize) is server-authoritative at round close
+        // (see lib/v2/rounds.settleRound). Local `score` stays for instant
+        // XP/UI only.
+        if (state.tournamentGameId) {
+          // On-chain tournament: score is recorded server-side against the
+          // game's own questions (settlement + prize are fully server/chain).
+          void v2SubmitTournamentAnswers(state.tournamentGameId, nextAnswers);
+        } else if (state.entry) {
           track(AnalyticsEvent.TournamentScoreSubmitted, {
             round_id: state.entry.roundId,
             score_after: state.score,
             question_count: totalQs,
             xp_delta: state.score * xpMult,
           });
-          void v2SubmitRoundScore(state.entry.roundId, state.score);
+          void v2SubmitRoundAnswers(state.entry.roundId, nextAnswers);
         }
         // Daily mission accrual — questions answered this round.
         track(AnalyticsEvent.MissionProgressRecorded, {
@@ -959,9 +1027,11 @@ export function ProtoProvider({
         update((s) => ({
           xp: s.xp + s.score * xpMult,
           entry: s.entry ? { ...s.entry, score: s.score } : s.entry,
+          roundAnswers: nextAnswers,
         }));
       } else {
         update({
+          roundAnswers: nextAnswers,
           qIdx: state.qIdx + 1,
           qAnswered: null,
           qSelection: null,
@@ -1109,11 +1179,31 @@ export function ProtoProvider({
       qAnswered: null,
       hearts: 3,
       timer: tweaks.questionTime,
+      // Optimistic local set keeps the lobby instant; replaced below by the
+      // server's authoritative set (same questions for every entrant) before
+      // play starts, so the answers we submit can be re-scored server-side.
       roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
+      roundAnswers: [],
       // First tournament of the day earns 2× XP.
       tournamentBonus: bonus,
       entry: { roundId: rid, score: null, bonus, settled: false, finalRank: null, reward: null },
+      tournamentGameId: null,
     }));
+    // Swap in the server-issued question set for this round (deterministic by
+    // roundId). Lands during the lobby countdown, before Q1. If it fails or
+    // returns nothing, the optimistic local set plays on (degraded: those
+    // answers won't match the server's set at scoring, but the round still runs).
+    void v2GetRoundQuestions(rid)
+      .then((qs) => {
+        if (!qs || qs.length === 0) return;
+        const mapped: Question[] = qs.map((q) => ({ ...q }));
+        update((s) =>
+          s.entry?.roundId === rid && s.mode === "tournament" && s.qIdx === 0
+            ? { roundQuestions: mapped, timer: mapped[0]?.time ?? tweaks.questionTime }
+            : {},
+        );
+      })
+      .catch(() => {});
     // Persist the entry server-side (charges a ticket; re-entry is a no-op
     // server-side too). Optimistic local charge above keeps the UI instant.
     void v2EnterRound(rid, bonus)
@@ -1324,8 +1414,24 @@ export function ProtoProvider({
       lives: r.lives,
       question_count: tweaks.levelQuestions,
     });
-    update({ ...r, mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime });
+    update({ ...r, mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, pendingLevelQuestions: null });
     goto("levelIntro");
+    // Prefetch the level's questions from the server during the intro screen so
+    // play starts instantly. Falls back to the local bank in beginLevelQuiz if
+    // this hasn't resolved (or returned nothing).
+    const lvTrack = state.levelTrack;
+    const lvLevel = state.levelByTrack[lvTrack];
+    void v2GetLevelQuestions(lvTrack, lvLevel)
+      .then((qs) => {
+        if (!qs || qs.length === 0) return;
+        const mapped: Question[] = qs.map((q) => ({ ...q }));
+        update((s) =>
+          s.levelTrack === lvTrack && s.levelByTrack[lvTrack] === lvLevel
+            ? { pendingLevelQuestions: mapped }
+            : {},
+        );
+      })
+      .catch(() => {});
   };
   const startLevel = enterLevel;
   const retryLevel = enterLevel;
@@ -1360,7 +1466,12 @@ export function ProtoProvider({
 
   const beginLevelQuiz = () => {
     update((s) => {
-      const rq = pickLevelQuestions(s.levelByTrack[s.levelTrack], tweaks.levelQuestions, TRACK_PACK[s.levelTrack]);
+      // Prefer the server-issued set (prefetched on the intro); fall back to the
+      // local bank only if the fetch didn't land (offline / error).
+      const rq =
+        s.pendingLevelQuestions && s.pendingLevelQuestions.length > 0
+          ? s.pendingLevelQuestions
+          : pickLevelQuestions(s.levelByTrack[s.levelTrack], tweaks.levelQuestions, TRACK_PACK[s.levelTrack]);
       return {
         qIdx: 0,
         score: 0,
@@ -1369,6 +1480,7 @@ export function ProtoProvider({
         shieldActive: false,
         timer: rq[0]?.time ?? tweaks.questionTime,
         roundQuestions: rq,
+        pendingLevelQuestions: null,
       };
     });
     goto("question");
@@ -1439,6 +1551,7 @@ export function ProtoProvider({
       countdownSec: tweaks.lobbyCountdown,
       roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
       tournamentBonus: false,
+      tournamentGameId: null,
     });
     goto("home");
   };
@@ -1476,6 +1589,66 @@ export function ProtoProvider({
     update({ username: clean });
   };
 
+  // ── On-chain tournament (a round IS a v1 Game: real USDC entry → pool → claim) ──
+  // Enter the current on-chain tournament: deposit via wallet `buyTicket`, then
+  // record the verified entry server-side and start the round on the server's
+  // authoritative questions. Reuses v1's contract layer end-to-end.
+  const enterTournamentOnChain = async (): Promise<{ ok: boolean; error?: string }> => {
+    const t = await v2GetTournament();
+    if (!t || !t.game.onchainId) return { ok: false, error: "no_tournament" };
+    try {
+      const txHash = await tournamentWallet.enter(
+        assertChainPlatform(t.game.platform),
+        t.game.onchainId as `0x${string}`,
+        t.game.entryFee,
+      );
+      const res = await v2EnterTournament(t.game.id, txHash);
+      if (!res || !res.ok) {
+        return { ok: false, error: res && !res.ok ? res.error : "entry_failed" };
+      }
+      const mapped: Question[] = t.questions.map((q) => ({ ...q }));
+      update({
+        mode: "tournament",
+        tournamentGameId: t.game.id,
+        roundQuestions: mapped,
+        roundAnswers: [],
+        qIdx: 0,
+        score: 0,
+        qAnswered: null,
+        hearts: 3,
+        timer: mapped[0]?.time ?? tweaks.questionTime,
+        countdownSec: tweaks.lobbyCountdown,
+        entry: null,
+      });
+      goto("lobby");
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
+    }
+  };
+
+  // Claim a settled on-chain prize: send `claimPrize` with the merkle proof, then
+  // confirm server-side (reused `verifyClaim`).
+  const claimTournamentPrize = async (gameId: string): Promise<{ ok: boolean; error?: string }> => {
+    const claim = await v2GetTournamentClaim(gameId);
+    if (!claim) return { ok: false, error: "nothing_to_claim" };
+    try {
+      const txHash = await tournamentWallet.claim(
+        assertChainPlatform(claim.platform),
+        claim.onchainId,
+        BigInt(claim.amount),
+        claim.proof,
+      );
+      const res = await v2ConfirmTournamentClaim(gameId, txHash);
+      if (!res || !res.ok) {
+        return { ok: false, error: res && !res.ok ? res.error : "claim_failed" };
+      }
+      return { ok: true };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
+    }
+  };
+
   const value: Proto = {
     ...state,
     tweaks,
@@ -1501,6 +1674,8 @@ export function ProtoProvider({
     refillLives,
     playAgain,
     usePowerUp,
+    enterTournamentOnChain,
+    claimTournamentPrize,
   };
 
   return <ProtoContext.Provider value={value}>{children}</ProtoContext.Provider>;

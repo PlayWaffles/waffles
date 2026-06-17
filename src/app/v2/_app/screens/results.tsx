@@ -42,6 +42,15 @@ const CountUp = ({ from, to, delayMs = 300, durationMs = 1300 }: { from: number;
 
 type Row = { r: number; n: string; s: number; av: string; you?: boolean };
 
+// Deterministic avatar per real player name (stable across renders), so the
+// real leaderboard rows get varied art without storing an avatar per entrant.
+const LIVE_AVATARS = [
+  ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda,
+  ASSETS.avatarOwl, ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit,
+];
+const avatarFor = (name: string) =>
+  LIVE_AVATARS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % LIVE_AVATARS.length];
+
 const LeaderRow = ({ row, delay }: { row: Row; delay: number }) => {
   const medal = row.r === 1 ? "#FFC931" : row.r === 2 ? "#bfc7d0" : row.r === 3 ? "#cd7f32" : "rgba(255,255,255,.4)";
   return (
@@ -122,18 +131,38 @@ export const ResultsScreen = () => {
   const missGap = missedTier ? rank - missedTier.maxRank : 0;
   const showNearMiss = settled && !!missedTier && missGap > 0 && missGap <= 12;
 
-  const topThree: Row[] = [
-    { r: 1, n: "@quizking", s: 9840, av: ASSETS.avatarFox },
-    { r: 2, n: "@trivia.eth", s: 9540, av: ASSETS.avatarBear },
-    { r: 3, n: "@waffleboss", s: 9210, av: ASSETS.avatarFrog },
-  ];
-  const nearYou: Row[] = [
-    { r: rank, n: "@you", s: score, av: ASSETS.wally, you: true },
-    { r: rank + 1, n: "@brainpan", s: Math.max(0, score - 60), av: ASSETS.avatarPanda },
-  ];
+  // Real leaderboard rows from the round board. The podium is the real top 3;
+  // your row + the entrant just behind you come from the same standings. Falls
+  // back to a sample board only in the preview / before any real entrants.
+  const standings = board?.standings ?? null;
+  const youLabel = proto.username ? `@${proto.username}` : "@you";
+  const rowName = (s: { name: string; you: boolean }) => (s.you ? youLabel : `@${s.name}`);
+
+  const topThree: Row[] = standings
+    ? standings.slice(0, 3).map((s) => ({ r: s.rank, n: rowName(s), s: s.score, av: avatarFor(s.name), you: s.you }))
+    : [
+        { r: 1, n: "@quizking", s: 9840, av: ASSETS.avatarFox },
+        { r: 2, n: "@trivia.eth", s: 9540, av: ASSETS.avatarBear },
+        { r: 3, n: "@waffleboss", s: 9210, av: ASSETS.avatarFrog },
+      ];
+
+  const youInTop = topThree.some((r) => r.you);
+  const youIdx = standings ? standings.findIndex((s) => s.you) : -1;
+  const neighbor = youIdx >= 0 ? standings![youIdx + 1] : undefined;
+  const nearYou: Row[] = youInTop
+    ? []
+    : standings
+      ? [
+          { r: rank, n: youLabel, s: score, av: ASSETS.wally, you: true },
+          ...(neighbor ? [{ r: neighbor.rank, n: rowName(neighbor), s: neighbor.score, av: avatarFor(neighbor.name) }] : []),
+        ]
+      : [
+          { r: rank, n: youLabel, s: score, av: ASSETS.wally, you: true },
+          { r: rank + 1, n: "@brainpan", s: Math.max(0, score - 60), av: ASSETS.avatarPanda },
+        ];
   // Players sitting between the podium and the player's own row — surfaced as a
   // divider so the jump from #3 to #516 reads instead of looking like a glitch.
-  const playersBetween = rank - 4;
+  const playersBetween = youInTop ? 0 : rank - 4;
 
   return (
     <Phone statusDark>
@@ -261,14 +290,26 @@ export const ResultsScreen = () => {
       {provisional ? (
         // Round still live — you're already in, so the only action is to leave
         // and check back. No replay (one entry per round).
-        <BottomCTA label="DONE — CHECK BACK AT CLOSE" onClick={() => proto.goto("home")} />
+        <BottomCTA
+          label="DONE — CHECK BACK AT CLOSE"
+          onClick={() => proto.goto("home")}
+        />
       ) : (
         <div className="bottom-bar">
           <div className="cta-row">
-            <button className="cta icon-btn" aria-label="Back to home" onClick={() => proto.goto("home")}>
+            <button
+              className="cta icon-btn"
+              aria-label="Back to home"
+              onClick={() => proto.goto("home")}
+            >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2v-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /></svg>
             </button>
-            <button className="cta maple" onClick={() => proto.goto("home")}>PLAY NEXT HOUR</button>
+            <button
+              className="cta maple"
+              onClick={() => proto.goto("home")}
+            >
+              PLAY NEXT HOUR
+            </button>
           </div>
         </div>
       )}

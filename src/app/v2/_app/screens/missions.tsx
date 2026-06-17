@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, TabBar, TicketIcon, ToastButton } from "../shared";
-import { v2LoadMissions } from "@/actions/v2";
+import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, TabBar, TicketIcon } from "../shared";
+import { v2LoadMissions, v2LoadPartnerOffers, v2ClaimPartnerOffer } from "@/actions/v2";
 import type { V2Mission } from "@/lib/v2/missions";
+import type { V2PartnerOffer } from "@/lib/v2/partnerOffers";
 
 const ICON_ASSETS: Record<string, string> = {
   iconTarget: ASSETS.iconTarget,
@@ -43,14 +44,46 @@ export const MissionsScreen = () => {
     ? loaded.map((m) => ({ t: m.title, p: m.count, tot: m.total, xp: m.xp, icon: ICON_ASSETS[m.icon] ?? ASSETS.iconTarget }))
     : staticDaily;
 
-  const partnerMissions = [
-    { brand: "Duolingo", brandColor: "#58CC02", glyph: "🦉", t: "Try a free language lesson", cta: "Open app", tickets: 3, time: "~2 min", verified: true },
-    { brand: "Spotify", brandColor: "#1DB954", glyph: "♫", t: "Sign up for Spotify Free trial", cta: "Get offer", tickets: 5, time: "~5 min", verified: true },
-    { brand: "Doordash", brandColor: "#FF3008", glyph: "D", t: "Place your first order, $10 off", cta: "Claim", tickets: 10, time: "varies", verified: true, hot: true },
-    { brand: "Pulse", brandColor: "#FFC931", glyph: "?", t: "Answer a 5-min market survey", cta: "Start", tickets: 2, time: "~5 min", verified: true },
-    { brand: "Lyft", brandColor: "#FF00BF", glyph: "L", t: "First ride, up to $5 off", cta: "Claim", tickets: 8, time: "~2 min", verified: true },
-    { brand: "Calm", brandColor: "#3a8df1", glyph: "☾", t: "Try a free 7-day trial", cta: "Open app", tickets: 6, time: "~3 min", verified: true },
+  // Real sponsored partner offers (+ per-user claim state). Falls back to the
+  // static list in the preview / unauthenticated context.
+  const [offers, setOffers] = useState<V2PartnerOffer[] | null>(null);
+  const [claimedSlugs, setClaimedSlugs] = useState<Set<string>>(new Set());
+  useEffect(() => {
+    let active = true;
+    v2LoadPartnerOffers()
+      .then((o) => {
+        if (active && o && o.length) {
+          setOffers(o);
+          setClaimedSlugs(new Set(o.filter((x) => x.claimed).map((x) => x.slug)));
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const STATIC_PARTNERS: V2PartnerOffer[] = [
+    { slug: "duolingo-lesson", brand: "Duolingo", brandColor: "#58CC02", glyph: "🦉", title: "Try a free language lesson", cta: "Open app", tickets: 3, estTime: "~2 min", verified: true, hot: false, claimed: false },
+    { slug: "spotify-trial", brand: "Spotify", brandColor: "#1DB954", glyph: "♫", title: "Sign up for Spotify Free trial", cta: "Get offer", tickets: 5, estTime: "~5 min", verified: true, hot: false, claimed: false },
+    { slug: "doordash-first-order", brand: "Doordash", brandColor: "#FF3008", glyph: "D", title: "Place your first order, $10 off", cta: "Claim", tickets: 10, estTime: "varies", verified: true, hot: true, claimed: false },
+    { slug: "pulse-survey", brand: "Pulse", brandColor: "#FFC931", glyph: "?", title: "Answer a 5-min market survey", cta: "Start", tickets: 2, estTime: "~5 min", verified: true, hot: false, claimed: false },
+    { slug: "lyft-first-ride", brand: "Lyft", brandColor: "#FF00BF", glyph: "L", title: "First ride, up to $5 off", cta: "Claim", tickets: 8, estTime: "~2 min", verified: true, hot: false, claimed: false },
+    { slug: "calm-trial", brand: "Calm", brandColor: "#3a8df1", glyph: "☾", title: "Try a free 7-day trial", cta: "Open app", tickets: 6, estTime: "~3 min", verified: true, hot: false, claimed: false },
   ];
+  const partnerMissions = offers ?? STATIC_PARTNERS;
+
+  const claimPartner = async (slug: string, tickets: number) => {
+    if (claimedSlugs.has(slug)) return;
+    setClaimedSlugs((prev) => new Set(prev).add(slug));
+    proto.update((s) => ({ tickets: s.tickets + tickets }));
+    try {
+      const res = await v2ClaimPartnerOffer(slug);
+      if (res?.ok && res.tickets != null) proto.update(() => ({ tickets: res.tickets! }));
+    } catch {
+      /* no session — keep the optimistic local credit */
+    }
+  };
 
   const totalDailyXP = dailyMissions.reduce((s, m) => s + m.xp, 0);
   const totalPartnerTickets = partnerMissions.reduce((s, m) => s + m.tickets, 0);
@@ -131,8 +164,8 @@ export const MissionsScreen = () => {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {partnerMissions.map((m, i) => (
-                <div key={i} style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px", display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
+              {partnerMissions.map((m) => (
+                <div key={m.slug} style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "12px 12px", display: "flex", alignItems: "center", gap: 12, position: "relative" }}>
                   {m.hot && <div style={{ position: "absolute", top: -6, right: 10, background: "#FC1919", color: "#fff", fontFamily: "var(--font-display)", fontSize: 8, letterSpacing: 0.5, padding: "2px 6px", borderRadius: 4, boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>HOT</div>}
                   <div style={{ width: 42, height: 42, borderRadius: 10, background: m.brandColor, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 20, color: "#fff", flexShrink: 0, boxShadow: "inset 0 -2px 0 rgba(0,0,0,.2)" }}>{m.glyph}</div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -157,9 +190,9 @@ export const MissionsScreen = () => {
                         Sponsored
                       </span>
                     </div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.85)", lineHeight: 1.3, marginTop: 2 }}>{m.t}</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.85)", lineHeight: 1.3, marginTop: 2 }}>{m.title}</div>
                     <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
-                      <span>⏱ {m.time}</span>
+                      <span>⏱ {m.estTime}</span>
                       {m.verified && <span style={{ display: "inline-flex", alignItems: "center", gap: 2, color: "rgba(0,207,242,.7)" }}>✓ Verified</span>}
                     </div>
                   </div>
@@ -168,7 +201,11 @@ export const MissionsScreen = () => {
                       +{m.tickets}
                       <TicketIcon size={14} />
                     </span>
-                    <ToastButton toast={`${m.brand} offer — opening soon`} ariaLabel={`${m.cta} ${m.brand}`} style={{ background: "#fff", color: "#1e1e1e", border: "none", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{m.cta} →</ToastButton>
+                    {claimedSlugs.has(m.slug) ? (
+                      <span style={{ background: "rgba(0,207,242,.15)", color: "#00CFF2", border: "1px solid rgba(0,207,242,.35)", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>✓ Claimed</span>
+                    ) : (
+                      <button type="button" onClick={() => claimPartner(m.slug, m.tickets)} aria-label={`${m.cta} ${m.brand}`} style={{ background: "#fff", color: "#1e1e1e", border: "none", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{m.cta} →</button>
+                    )}
                   </div>
                 </div>
               ))}
