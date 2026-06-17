@@ -9,7 +9,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { rankGame, publishResults } from "@/lib/game/lifecycle";
 import { env } from "@/lib/env";
-import { captureServerEvent } from "@/lib/posthog-server";
 
 const SERVICE = "roundup-api";
 
@@ -121,18 +120,6 @@ export async function POST(
       published,
       prizePool: game.prizePool,
       winnersCount: rankResult.prizesDistributed,
-    });
-
-    await captureServerEvent({
-      distinctId: gameId,
-      event: "game_completed",
-      properties: {
-        game_id: gameId,
-        prize_pool: game.prizePool,
-        winners_count: rankResult.prizesDistributed,
-        entries_ranked: rankResult.entriesRanked,
-        published_onchain: published,
-      },
     });
 
     return NextResponse.json({

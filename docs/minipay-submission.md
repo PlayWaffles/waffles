@@ -15,7 +15,7 @@ These are the origins the app may use in production.
 - `https://playwaffles.fun` - Waffles app, API routes, static assets, OG images.
 - `https://forno.celo.org` - Celo mainnet RPC for MiniPay transactions.
 - `https://minipay.opera.com` - MiniPay deposit deeplink.
-- `https://eu.i.posthog.com` - product analytics.
+- `https://analytics.cyberverse.cloud` - product analytics.
 - `https://waffles-party.chukwukap.partykit.dev` - live game and chat realtime transport.
 - `https://res.cloudinary.com` - hosted media assets.
 - `https://api.cloudinary.com` - admin media uploads.

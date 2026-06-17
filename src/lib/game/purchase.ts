@@ -17,7 +17,6 @@ import {
 } from "@/lib/user-wallets";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
-import { captureServerEvent } from "@/lib/posthog-server";
 import { unlockReferralRewards } from "./shared";
 import { areTicketsClosedForGame } from "./ticket-window";
 
@@ -452,26 +451,6 @@ export async function finalizeTicketPurchase(
       paidAmount: entry.paidAmount,
       purchaseSource: entry.purchaseSource,
     });
-
-    await captureServerEvent({
-      distinctId: purchaseUser.id,
-      event: "ticket_purchase_completed",
-      properties: {
-        game_id: gameId,
-        entry_id: entry.id,
-        paid_amount: entry.paidAmount,
-        prize_pool_contribution: prizePoolContribution,
-        platform: purchaseUser.platform,
-        tx_hash: txHash,
-      },
-    }).catch((err) =>
-      console.error("[game-actions]", "posthog_capture_error", {
-        event: "ticket_purchase_completed",
-        gameId,
-        userId: purchaseUser.id,
-        error: err instanceof Error ? err.message : String(err),
-      }),
-    );
 
     return { success: true, entryId: entry.id };
   } catch (error) {

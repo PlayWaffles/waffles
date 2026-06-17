@@ -19,6 +19,7 @@ export const AnalyticsEvent = {
   TicketPurchaseSyncSucceeded: "ticket_purchase_sync_succeeded",
   TicketPurchaseSyncFailed: "ticket_purchase_sync_failed",
   TicketPurchaseFailed: "ticket_purchase_failed",
+  ReferralRedeemed: "referral_redeemed",
 } as const;
 
 export type AnalyticsEventName =
@@ -87,10 +88,36 @@ export function trackClientEvent(
 ) {
   if (typeof window === "undefined") return;
 
-  void import("posthog-js").then(({ default: posthog }) => {
-    posthog.capture(event, {
+  const umami = (
+    window as Window & {
+      umami?: {
+        track: (
+          event: string,
+          data?: Record<string, string | number | boolean | null>,
+        ) => void;
+      };
+    }
+  ).umami;
+
+  if (!umami) {
+    console.error("[umami]", "tracker_unavailable", { event });
+    return;
+  }
+
+  const data = Object.fromEntries(
+    Object.entries({
       ...getStoredAttribution(),
       ...properties,
-    });
-  });
+    }).filter((entry): entry is [string, string | number | boolean | null] => {
+      const value = entry[1];
+      return (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean" ||
+        value === null
+      );
+    }),
+  );
+
+  umami.track(event, data);
 }
