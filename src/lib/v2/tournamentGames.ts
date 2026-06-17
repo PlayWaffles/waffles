@@ -82,7 +82,25 @@ async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
 
 export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000; // hourly
 const TICKETS_LEAD_MS = 5 * 60 * 1000; // sales open 5m before the hour
-const DEFAULT_ENTRY_FEE_USDC = 1;
+
+// Entry pricing. The on-chain game min is the DISCOUNTED price (so first-timers
+// can pay it on any platform); the standard fee for everyone else is enforced
+// server-side via per-user verification — the contract only knows the floor.
+export const TOURNAMENT_FIRST_FEE_USDC = 0.05; // first-ever entry (one-time)
+export const TOURNAMENT_STANDARD_FEE_USDC = 0.1;
+const DEFAULT_ENTRY_FEE_USDC = TOURNAMENT_FIRST_FEE_USDC; // game floor = discounted price
+
+/**
+ * The entry fee for this user: their first-ever paid tournament entry is
+ * discounted; every entry after is standard. Derived from `GameEntry` (no flag
+ * to farm) — server-authoritative, used for both display and verification.
+ */
+export async function getUserEntryFee(userId: string): Promise<number> {
+  const priorEntries = await prisma.gameEntry.count({
+    where: { userId, paidAt: { not: null } },
+  });
+  return priorEntries === 0 ? TOURNAMENT_FIRST_FEE_USDC : TOURNAMENT_STANDARD_FEE_USDC;
+}
 
 /**
  * Ensure the platform's current hour has a live tournament `Game`, creating one
@@ -105,11 +123,11 @@ export async function ensureHourlyTournamentGame(
   const startsAt = new Date(Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS);
   const endsAt = new Date(startsAt.getTime() + TOURNAMENT_ROUND_MS);
 
-  // Inherit sane play params + entry fee from the platform's most recent game.
+  // Inherit sane play params from the platform's most recent game.
   const recent = await prisma.game.findFirst({
     where: { platform },
     orderBy: { startsAt: "desc" },
-    select: { roundBreakSec: true, maxPlayers: true, tierPrices: true },
+    select: { roundBreakSec: true, maxPlayers: true },
   });
 
   const created = await createAutoScheduledGame({
@@ -117,7 +135,9 @@ export async function ensureHourlyTournamentGame(
     startsAt,
     endsAt,
     ticketsOpenAt: new Date(startsAt.getTime() - TICKETS_LEAD_MS),
-    ticketPrice: recent?.tierPrices[0] ?? DEFAULT_ENTRY_FEE_USDC,
+    // On-chain min = the discounted floor so first-timers can pay it; the
+    // standard fee is enforced per-user server-side, not by the contract.
+    ticketPrice: DEFAULT_ENTRY_FEE_USDC,
     roundBreakSec: recent?.roundBreakSec ?? 0,
     maxPlayers: recent?.maxPlayers ?? 0,
   });
@@ -233,7 +253,9 @@ export async function enterTournamentOnChain(input: {
   });
   if (existing) return { ok: true, entryId: existing.id, alreadyEntered: true };
 
-  const entryFee = game.tierPrices[0] ?? 0;
+  // Verify against THIS user's fee (first entry is discounted), re-derived
+  // server-side — never trust a client-supplied amount.
+  const entryFee = await getUserEntryFee(userId);
   const verification = await verifyTicketPurchase({
     platform: game.platform,
     network: game.network,
