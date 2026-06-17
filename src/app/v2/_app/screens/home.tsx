@@ -2,7 +2,7 @@
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { FIRST_TICKET_DISCOUNT, isDailyBonusAvailable, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, roundCloseAt, roundIdFor, tournamentRank, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
-import { v2LoadRoundBoard } from "@/actions/v2";
+import { v2LoadRoundBoard, v2LoadMissions } from "@/actions/v2";
 import type { RoundBoard } from "@/lib/v2/rounds";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
@@ -160,13 +160,47 @@ const OutOfTicketsSheet = ({ offer, onClose, onEarn, onBuy, onFirstTicket }: { o
   );
 };
 
+// Decorative icon bucket for a mission, derived from its title (the Missions
+// screen uses richer art; the Home card uses a 3-glyph set).
+const homeMissionIcon = (title: string): string => {
+  const t = title.toLowerCase();
+  if (t.includes("win") || t.includes("tournament")) return "win";
+  if (t.includes("play") || t.includes("day")) return "play";
+  return "xp";
+};
+
+const STATIC_HOME_MISSIONS = [
+  { label: "Earn 50 XP", cur: 32, tgt: 50, reward: "+10 XP", icon: "xp" },
+  { label: "Win a round", cur: 0, tgt: 1, reward: "+1 🎟", icon: "win" },
+  { label: "Play 2 games", cur: 1, tgt: 2, reward: "+25 XP", icon: "play" },
+];
+
 const HomeMissions = () => {
   const proto = useProto();
-  const missions = [
-    { label: "Earn 50 XP", cur: 32, tgt: 50, reward: "+10 XP", icon: "xp" },
-    { label: "Win a round", cur: 0, tgt: 1, reward: "+1 🎟", icon: "win" },
-    { label: "Play 2 games", cur: 1, tgt: 2, reward: "+25 XP", icon: "play" },
-  ];
+  // Real daily-mission progress (top 3). Falls back to the static preview list
+  // before the server responds / in the unauthenticated context.
+  const [loaded, setLoaded] = useState<typeof STATIC_HOME_MISSIONS | null>(null);
+  useEffect(() => {
+    let active = true;
+    v2LoadMissions()
+      .then((m) => {
+        if (!active || !m || !m.length) return;
+        setLoaded(
+          m.slice(0, 3).map((x) => ({
+            label: x.title,
+            cur: x.count,
+            tgt: x.total,
+            reward: `+${x.xp} XP`,
+            icon: homeMissionIcon(x.title),
+          })),
+        );
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+  const missions = loaded ?? STATIC_HOME_MISSIONS;
   return (
     <button
       type="button"

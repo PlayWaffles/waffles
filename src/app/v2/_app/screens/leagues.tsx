@@ -4,6 +4,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, Phone, PixelImg, TabBar } from "../shared";
 import { v2LoadLeague } from "@/actions/v2";
+import type { V2League } from "@/lib/v2/leagues";
 
 const TIERS = [
   { key: "apprentice1", label: "APPRENTICE I", color: "#cd7f32" },
@@ -130,14 +131,15 @@ const LeagueCard = ({ tier }: { tier: Tier }) => {
 export const LeaguesScreen = () => {
   const proto = useProto();
 
-  // The player's real current-season tier (derived from XP). Defaults to the
-  // prototype's tier so the preview / unauthenticated context still highlights one.
-  const [currentKey, setCurrentKey] = useState<string>("apprentice1");
+  // Real current-season tier + DB-backed reward ladder. Defaults to the
+  // prototype's tier/rewards so the preview / unauthenticated context still
+  // renders before the server responds.
+  const [league, setLeague] = useState<V2League | null>(null);
   useEffect(() => {
     let active = true;
     v2LoadLeague()
       .then((l) => {
-        if (active && l) setCurrentKey(l.key);
+        if (active && l) setLeague(l);
       })
       .catch(() => {});
     return () => {
@@ -145,17 +147,24 @@ export const LeaguesScreen = () => {
     };
   }, []);
 
-  const baseTiers: Tier[] = [
-    { ...TIERS[1], rewards: [{ r: "rainbow", n: 4, t: 300, c: 7500 }, { r: "purple", n: 1, t: 100, c: 4500 }, { r: "brown", n: null, t: 40, c: 2000 }] },
-    { ...TIERS[0], rewards: [{ r: "rainbow", n: 2, t: 200, c: 5000 }, { r: "purple", n: 1, t: 50, c: 3000 }, { r: "brown", n: null, t: 20, c: 1000 }] },
-    { ...TIERS[2], rewards: [{ r: "rainbow", n: 5, t: 350, c: 8500 }, { r: "purple", n: 2, t: 150, c: 5500 }, { r: "brown", n: null, t: 60, c: 2500 }] },
-    { ...TIERS[5], rewards: [{ r: "rainbow", n: 8, t: 500, c: 12500 }, { r: "purple", n: 3, t: 200, c: 7500 }, { r: "brown", n: null, t: 80, c: 4000 }] },
-    { ...TIERS[6], rewards: [{ r: "rainbow", n: 10, t: 600, c: 15000 }, { r: "purple", n: 3, t: 250, c: 9000 }, { r: "brown", n: null, t: 100, c: 5000 }] },
-    { ...TIERS[8], rewards: [{ r: "rainbow", n: 18, t: 1000, c: 25000 }, { r: "purple", n: 5, t: 450, c: 15000 }, { r: "brown", n: null, t: 180, c: 9000 }] },
-    { ...TIERS[10], rewards: [{ r: "rainbow", n: 25, t: 1500, c: 40000 }, { r: "purple", n: 8, t: 600, c: 25000 }, { r: "brown", n: null, t: 250, c: 15000 }] },
-  ];
-  const displayed = baseTiers.map((tier) => ({ ...tier, current: tier.key === currentKey }));
-
+  const currentKey = league?.key ?? "apprentice1";
+  // Server reward ladder keyed by tier; fall back to inline preview values.
+  const rewardsByKey = new Map((league?.tiers ?? []).map((t) => [t.key, t.rewards as Tier["rewards"]]));
+  const FALLBACK_REWARDS: Record<string, Tier["rewards"]> = {
+    apprentice2: [{ r: "rainbow", n: 4, t: 300, c: 7500 }, { r: "purple", n: 1, t: 100, c: 4500 }, { r: "brown", n: null, t: 40, c: 2000 }],
+    apprentice1: [{ r: "rainbow", n: 2, t: 200, c: 5000 }, { r: "purple", n: 1, t: 50, c: 3000 }, { r: "brown", n: null, t: 20, c: 1000 }],
+    silver1: [{ r: "rainbow", n: 5, t: 350, c: 8500 }, { r: "purple", n: 2, t: 150, c: 5500 }, { r: "brown", n: null, t: 60, c: 2500 }],
+    advanced1: [{ r: "rainbow", n: 8, t: 500, c: 12500 }, { r: "purple", n: 3, t: 200, c: 7500 }, { r: "brown", n: null, t: 80, c: 4000 }],
+    advanced2: [{ r: "rainbow", n: 10, t: 600, c: 15000 }, { r: "purple", n: 3, t: 250, c: 9000 }, { r: "brown", n: null, t: 100, c: 5000 }],
+    master3: [{ r: "rainbow", n: 18, t: 1000, c: 25000 }, { r: "purple", n: 5, t: 450, c: 15000 }, { r: "brown", n: null, t: 180, c: 9000 }],
+    master1: [{ r: "rainbow", n: 25, t: 1500, c: 40000 }, { r: "purple", n: 8, t: 600, c: 25000 }, { r: "brown", n: null, t: 250, c: 15000 }],
+  };
+  // Canonical displayed subset + order of tiers.
+  const DISPLAY_KEYS = ["apprentice2", "apprentice1", "silver1", "advanced1", "advanced2", "master3", "master1"];
+  const displayed: Tier[] = DISPLAY_KEYS.map((key) => {
+    const base = TIERS.find((t) => t.key === key)!;
+    return { ...base, current: key === currentKey, rewards: rewardsByKey.get(key) ?? FALLBACK_REWARDS[key] ?? [] };
+  });
   return (
     <Phone statusDark>
       {/* Same dark surface + gold glow + confetti dots used by the

@@ -770,6 +770,8 @@ const CosmeticGlyph = ({ item, size }: { item: Cosmetic; size: number }) => {
 const WallyPreview = ({ item, applied }: { item: Cosmetic; applied: boolean }) => {
   // Composes Wally with the cosmetic. `applied=false` shows the bare avatar
   // for the "before" half of the toggle.
+  const proto = useProto();
+  const handle = `@${proto.username || "you"}`;
   const wallySize = 110;
   return (
     <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -820,7 +822,7 @@ const WallyPreview = ({ item, applied }: { item: Cosmetic; applied: boolean }) =
             zIndex: 3,
           }}
         >
-          @you
+          {handle}
         </div>
       )}
 
@@ -1270,4 +1272,3 @@ const TicketCountUp = ({ from, to, onDone }: { from: number; to: number; onDone:
     </div>
   );
 };
-
