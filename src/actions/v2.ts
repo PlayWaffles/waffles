@@ -31,12 +31,10 @@ import {
   enterTournamentOnChain,
   getTournamentClaim,
   getTournamentClientQuestions,
-  getUserEntryFee,
   latestTournamentStandings,
   loadTournamentClaims,
   submitTournamentAnswers,
   tournamentStandings,
-  TOURNAMENT_FIRST_FEE_USDC,
   TOURNAMENT_STANDARD_FEE_USDC,
   type EnterResult,
   type TournamentBoard,
@@ -132,8 +130,10 @@ export async function v2GetTournament(): Promise<
   {
     game: TournamentGame;
     questions: ClientRoundQuestion[];
-    /** This user's entry fee (first-ever entry is discounted), + the standard
-     *  price for showing the strike-through, and whether the discount applies. */
+    /** The flat price everyone pays (the game's on-chain floor), + the higher
+     *  `standardFee` for the struck-through "was" price, and `firstEntry` which
+     *  drives the discount visuals. The discount is display-only — the real
+     *  charge is always `entryFee` — but it always shows so entry reads as a deal. */
     entryFee: number;
     standardFee: number;
     firstEntry: boolean;
@@ -144,15 +144,15 @@ export async function v2GetTournament(): Promise<
   const game = await currentTournamentGame(user.platform);
   if (!game) return null;
   const questions = await getTournamentClientQuestions(game.id);
-  const entryFee = await getUserEntryFee(user.id);
-  const firstEntry = entryFee === TOURNAMENT_FIRST_FEE_USDC;
-  // Override the game's floor price with this user's actual fee for the client.
+  // Everyone pays the game's flat on-chain floor — the contract requires the
+  // exact price, so there's no per-user amount. The discount framing
+  // (standardFee struck through) is shown to all; nobody is charged standardFee.
   return {
-    game: { ...game, entryFee },
+    game,
     questions,
-    entryFee,
+    entryFee: game.entryFee,
     standardFee: TOURNAMENT_STANDARD_FEE_USDC,
-    firstEntry,
+    firstEntry: true,
   };
 }
 

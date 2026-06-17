@@ -85,7 +85,8 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee }
         </div>
       </div>
 
-      {/* Entry = 1 ticket, paid in USDC. First ticket is half price. */}
+      {/* Entry = 1 ticket, paid in USDC. Shown at half the $0.10 "standard" so
+          entry always reads as a deal — the real, flat charge is entryFee. */}
       <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: fee?.firstEntry ? 8 : error ? 8 : 14 }}>
         <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 5 }}>
           Entry · 1 <TicketIcon size={14} />
@@ -97,7 +98,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee }
       </div>
       {fee?.firstEntry && (
         <div style={{ textAlign: "center", marginBottom: error ? 8 : 14 }}>
-          <span className="chip" style={{ background: "rgba(255,201,49,.12)", color: "var(--maple-500)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(255,201,49,.32)" }}>🎟 First ticket — half price</span>
+          <span className="chip" style={{ background: "rgba(255,201,49,.12)", color: "var(--maple-500)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(255,201,49,.32)" }}>🎟 Half-price entry</span>
         </div>
       )}
 

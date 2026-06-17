@@ -43,7 +43,7 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
   const pct = Math.max(1, Math.min(99, Math.round((rank / TOURNAMENT_FIELD_SIZE) * 100)));
   const bonus = isDailyBonusAvailable();
 
-  // This user's entry fee (their first-ever entry is discounted to half price).
+  // Flat entry fee + the struck-through "standard" price for the discount framing.
   const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
   useEffect(() => {
     let active = true;
@@ -83,7 +83,8 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
           </span>
         </div>
 
-        {/* First-ever entry is half price (server-verified, one-time). */}
+        {/* Entry shown at half the $0.10 "standard" so it always reads as a
+            deal — display-only; the real, flat charge is fee.entryFee. */}
         {fee?.firstEntry && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
@@ -91,8 +92,8 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
               <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>First-timer offer</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first entry, half price</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>Half-price entry</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Tournament entry, half price</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>
