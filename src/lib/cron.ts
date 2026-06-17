@@ -1,9 +1,11 @@
 import cron from "node-cron";
+import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/lifecycle";
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
+import { ensureHourlyTournamentGame } from "@/lib/v2/tournamentGames";
 
 /**
  * Roundup ended games that weren't processed by PartyKit alarm.
@@ -73,6 +75,25 @@ async function ticketOpenNotificationsJob() {
 }
 
 /**
+ * Ensure each platform has a live hourly v2 tournament game (on-chain, with
+ * questions). Idempotent — a no-op when the current hour already has one.
+ * Mirrors POST /api/cron/ensure-tournament-rounds.
+ */
+async function ensureTournamentRoundsJob() {
+  const platforms = [UserPlatform.FARCASTER, UserPlatform.MINIPAY] as const;
+  for (const platform of platforms) {
+    try {
+      const { created, gameId } = await ensureHourlyTournamentGame(platform);
+      if (created) {
+        console.log(`[Cron] Created hourly tournament game ${gameId} (${platform})`);
+      }
+    } catch (e) {
+      console.error(`[Cron] ensure-tournament-rounds failed (${platform}):`, e);
+    }
+  }
+}
+
+/**
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
 export function startCronJobs() {
@@ -87,4 +108,10 @@ export function startCronJobs() {
   // Every minute: send ticket opening countdown notifications
   cron.schedule("* * * * *", ticketOpenNotificationsJob);
   console.log("[Cron] Scheduled: ticket-open-notifications (every min)");
+
+  // Top of every hour: ensure each platform has a live v2 tournament game.
+  // Idempotent, so also run once now to cover mid-hour restarts.
+  cron.schedule("0 * * * *", ensureTournamentRoundsJob);
+  console.log("[Cron] Scheduled: ensure-tournament-rounds (hourly)");
+  ensureTournamentRoundsJob();
 }
