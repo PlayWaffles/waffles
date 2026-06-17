@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, roundCloseAt, useProto } from "../state";
+import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
 import { v2LoadTournamentBoard } from "@/actions/v2";
 import type { TournamentBoard } from "@/lib/v2/tournamentGames";
-import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon, useNow } from "../shared";
+import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 
 const FIELD_SIZE = TOURNAMENT_FIELD_SIZE;
@@ -78,18 +78,12 @@ const LeaderRow = ({ row, delay }: { row: Row; delay: number }) => {
 
 export const ResultsScreen = () => {
   const proto = useProto();
-  const entry = proto.entry;
-  // PROVISIONAL until the round closes; then `settled` locks the final rank/prize.
-  const settled = entry?.settled ?? false;
-  const provisional = !settled;
   const total = proto.totalQuestions;
   const score = proto.score;
   const liveRank = tournamentRank(score, total);
-  const simRank = settled ? entry?.finalRank ?? liveRank : liveRank;
 
   // Real tournament read-back: real entrant count + your real rank among them
-  // (live position by score, or final rank once settled). Falls back to the
-  // simulated field in the preview / before any real entrants.
+  // (live position by score, or final rank once settled).
   const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
     if (!proto.tournamentGameId) return;
@@ -103,22 +97,19 @@ export const ResultsScreen = () => {
       active = false;
     };
   }, [proto.tournamentGameId]);
+  const settled = board?.settled ?? false;
+  const provisional = !settled;
   const fieldSize = board?.fieldSize ?? FIELD_SIZE;
-  const rank = board?.you?.rank ?? simRank;
+  const rank = board?.you?.rank ?? liveRank;
 
   // XP actually credited — doubled by the first-tournament-of-the-day bonus.
   const xpMult = proto.tournamentBonus ? 2 : 1;
   const xpEarned = score * xpMult;
   const pct = Math.max(1, Math.round((rank / fieldSize) * 100));
-  // Prize: settled = the locked reward; provisional = "if it holds" (not yet
-  // awarded — it only pays at settlement).
-  const won = board?.you ? board.you.prize : settled ? entry?.reward ?? 0 : tournamentReward(rank);
+  // Prize: settled = the locked on-chain reward; provisional = "if it holds"
+  // before rankGame/publishResults locks the GameEntry prize.
+  const won = board?.you ? board.you.prize : settled ? 0 : tournamentReward(rank);
   const wonTicket = won > 0;
-
-  // Countdown to round close, live while provisional.
-  const now = useNow(provisional);
-  const msToClose = entry ? Math.max(0, roundCloseAt(entry.roundId) - now) : 0;
-  const closeIn = `${String(Math.floor(msToClose / 60000)).padStart(2, "0")}:${String(Math.floor((msToClose % 60000) / 1000)).padStart(2, "0")}`;
 
   // Finish gives an instant positive hit (you're placed!); settlement plays the
   // win/lose cue for the locked result.
@@ -182,7 +173,7 @@ export const ResultsScreen = () => {
           <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>of {fieldSize.toLocaleString()} · Top {pct}%</div>
           {provisional && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "5px 12px", borderRadius: 999, background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", color: "#fff", fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
-              ⏱ Standings lock in {closeIn}
+              Standings update live
             </div>
           )}
           {showNearMiss && (

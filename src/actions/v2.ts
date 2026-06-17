@@ -24,7 +24,6 @@ import {
   type V2PlayerState,
   type V2Track,
 } from "@/lib/v2/playerState";
-import { enterRound, roundStandings, submitRoundAnswers, type RoundBoard } from "@/lib/v2/rounds";
 import { getRoundClientQuestions, getLevelClientQuestions, type ClientRoundQuestion, type LevelTrack } from "@/lib/v2/roundQuestions";
 import {
   confirmTournamentClaim,
@@ -101,15 +100,6 @@ export async function loadV2State(): Promise<V2PlayerState | null> {
   const user = await getCurrentUser();
   if (!user) return null;
   return loadPlayerState(user.id);
-}
-
-export async function v2EnterRound(
-  roundId: number,
-  bonus: boolean,
-): Promise<{ entryId: string; tickets: number | null; alreadyEntered: boolean } | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  return enterRound(user.id, roundId, bonus);
 }
 
 /** The round's authoritative question set (same for every entrant, seeded by
@@ -216,31 +206,6 @@ export async function v2ConfirmTournamentClaim(
   if (!user) return null;
   if (!user.wallet) return { ok: false, error: "no_wallet" };
   return confirmTournamentClaim({ userId: user.id, gameId, txHash, wallet: user.wallet });
-}
-
-/** Submit the round's answers; the server computes + records the score. The
- *  client never posts a score. Returns the server-computed score (or null when
- *  unauthenticated). */
-export async function v2SubmitRoundAnswers(
-  roundId: number,
-  answers: RoundAnswer[],
-): Promise<{ score: number; updated: boolean } | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  return submitRoundAnswers(user.id, roundId, answers);
-}
-
-/** Real leaderboard: standings of the latest round with entries (+ your row). */
-export async function v2LoadLeaderboard(): Promise<RoundBoard | null> {
-  const user = await getCurrentUser();
-  return roundStandings({ userId: user?.id, limit: 50 });
-}
-
-/** Real standings for a specific round — drives results/home read-back + the
- *  in-quiz "people answering" presence strip. */
-export async function v2LoadRoundBoard(roundId: number): Promise<RoundBoard | null> {
-  const user = await getCurrentUser();
-  return roundStandings({ roundId, userId: user?.id, limit: 10 });
 }
 
 export async function v2ClaimDaily(): Promise<DailyClaimResult | null> {

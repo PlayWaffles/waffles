@@ -8,7 +8,6 @@
 const { prisma } = await import("@/lib/db");
 const { UserPlatform, TicketLedgerReason } = await import("@prisma");
 const ps = await import("@/lib/v2/playerState");
-const rounds = await import("@/lib/v2/rounds");
 const econ = await import("@/lib/v2/economy");
 const missions = await import("@/lib/v2/missions");
 const leagues = await import("@/lib/v2/leagues");
@@ -61,15 +60,9 @@ try {
   const daily2 = await econ.claimDailyReward(uid);
   check("claimDaily idempotent (same day)", daily2.claimed === false);
 
-  // 6. round: enter, score, settle
-  const rid = rounds.roundIdFor(Date.now());
-  const enter = await rounds.enterRound(uid, rid, false);
-  check("enterRound charges + creates entry", !enter.alreadyEntered && enter.tickets !== null, `tickets=${enter.tickets}`);
-  const reenter = await rounds.enterRound(uid, rid, false);
-  check("re-enter no double charge", reenter.alreadyEntered === true);
-
-  // Server-authoritative scoring: the issued set is the same for every entrant,
-  // and the score is recomputed from submitted answers (never client-posted).
+  // Server-authoritative scoring: the issued question set is deterministic, and
+  // scores are recomputed from submitted answers (never client-posted).
+  const rid = Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000;
   const issued = await roundQ.getRoundScorableSet(rid);
   check("round issues an authoritative question set", issued.length > 0, `issued=${issued.length}`);
   const perfectMax = issued.reduce((s, q) => s + scoring.maxScoreForQuestion(q), 0);
@@ -83,9 +76,6 @@ try {
       : q.kind === "order" ? q.correctOrder
       : [q.correct],
   }));
-  const submit = await rounds.submitRoundAnswers(uid, rid, perfectAnswers);
-  check("submitRoundAnswers records server-computed perfect score", submit?.score === perfectMax, `score=${submit?.score} max=${perfectMax}`);
-
   // Anti-cheat: an inflated/forged submission can't beat the honest max.
   const forged = scoring.scoreRound(issued, [
     { id: "does-not-exist", selection: [0], responseMs: 0 }, // unknown id → ignored
@@ -104,15 +94,8 @@ try {
   const lvlWc = await roundQ.getLevelClientQuestions("world-cup", 1);
   check("level questions served from DB (world-cup)", lvlWc.length > 0, `n=${lvlWc.length}`);
 
-  const settle = await rounds.settleRound(rid);
-  check("settleRound (rank 1 → prize)", settle.settled === 1 && settle.prizes === 1, `settled=${settle.settled} prizes=${settle.prizes}`);
-  const winnings = await prisma.winning.count({ where: { userId: uid } });
-  check("winning written to prize wallet", winnings === 1);
-  const lb = await rounds.roundStandings({ roundId: rid, userId: uid });
-  check("roundStandings: real field size + your rank", lb.fieldSize === 1 && lb.you?.rank === 1, `field=${lb.fieldSize} rank=${lb.you?.rank}`);
-
   // 7. resolve winning (convert → tickets)
-  const w = await prisma.winning.findFirstOrThrow({ where: { userId: uid }, select: { id: true, tickets: true } });
+  const w = await prisma.winning.create({ data: { userId: uid, rank: 1, tickets: 10 }, select: { id: true, tickets: true } });
   const before = (await prisma.user.findUniqueOrThrow({ where: { id: uid }, select: { ticketBalance: true } })).ticketBalance;
   const res = await ps.resolveWinning(uid, w.id, "convert");
   check("convert winning → tickets", res.tickets === before + w.tickets, `before=${before} +${w.tickets} → ${res.tickets}`);

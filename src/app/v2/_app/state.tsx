@@ -16,8 +16,6 @@ import {
   loadV2State,
   v2AdvanceLevel,
   v2DismissAnnouncement,
-  v2EnterRound,
-  v2GetRoundQuestions,
   v2GetLevelQuestions,
   v2GetTournament,
   v2EnterTournament,
@@ -31,7 +29,6 @@ import {
   v2ResolveWinning,
   v2SetAnnouncementsRead,
   v2SetUsername,
-  v2SubmitRoundAnswers,
 } from "@/actions/v2";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { assertChainPlatform } from "@/lib/chain/platform";
@@ -100,9 +97,8 @@ export const TOURNAMENT_PRIZES: PrizeTier[] = [
   { maxRank: 10, tickets: 10, label: "Top 10" },
   { maxRank: 100, tickets: 3, label: "Top 100" },
 ];
-// Headline "win up to" figure, and the cutoff below which a finish wins nothing.
+// Headline "win up to" figure.
 export const TOURNAMENT_TOP_PRIZE = TOURNAMENT_PRIZES[0].tickets;
-export const TOURNAMENT_TICKET_RANK = TOURNAMENT_PRIZES[TOURNAMENT_PRIZES.length - 1].maxRank;
 
 // Tickets won for a given finishing rank. Single source of truth shared by the
 // finish reward (balance) and the results screen (display) so they never drift.
@@ -219,25 +215,12 @@ export function tournamentRank(score: number, totalQuestions: number): number {
   return Math.max(1, Math.round(TOURNAMENT_FIELD_SIZE * (1 - Math.min(1, score / (totalQuestions * 250)))) + 1);
 }
 
-// ─── Hourly rounds ──────────────────────────────────────────────────────────
-// A round is the window [roundId, roundId + ROUND_MS). Players join anytime
-// inside it; standings stay PROVISIONAL until the round closes, then scores lock
-// and prizes settle. Must match the server window in src/lib/v2/rounds.ts so
-// client-bucketed roundIds settle on schedule (was 2min in the prototype demo).
+// ─── Hourly display windows ─────────────────────────────────────────────────
+// Client helpers for bucketed top-of-hour display copy. On-chain tournament
+// settlement is driven by GameEntry/game lifecycle state, not this local clock.
 export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000;
 export const roundIdFor = (now: number): number => Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS;
 export const roundCloseAt = (roundId: number): number => roundId + TOURNAMENT_ROUND_MS;
-
-// The player's entry in a round. `score` is null until they finish their
-// questions; `settled` flips at close, locking in `finalRank` / `reward`.
-export type TournamentEntry = {
-  roundId: number;
-  score: number | null;
-  bonus: boolean;
-  settled: boolean;
-  finalRank: number | null;
-  reward: number | null;
-};
 
 // In-app result notification emitted for EVERY entrant at settlement (not only
 // winners). Drives the Home result banner + result modal.
@@ -545,9 +528,7 @@ type State = {
   // The player's most recent tournament finishing rank, or null if they've
   // never played one. Powers the "beat your last result" hook on the Home card.
   lastTournamentRank: number | null;
-  // Current/most-recent hourly tournament entry, and the unread-able in-app
-  // result notifications emitted when rounds settle.
-  entry: TournamentEntry | null;
+  // Unread-able in-app result notifications emitted when tournament games settle.
   resultNotifs: ResultNotif[];
   // Tournament prizes won, newest first. Each is resolved by the player from the
   // Prize Wallet (claim as USDT or convert to spendable tickets).
@@ -588,8 +569,7 @@ type State = {
   pendingLevelQuestions: Question[] | null;
   // The on-chain tournament `Game` id when the current round was entered via the
   // on-chain path (real USDC deposit). Set by `enterTournamentOnChain`; routes
-  // the finish-submit to the server-authoritative on-chain scorer. Null for the
-  // off-chain ticket path.
+  // the finish-submit to the server-authoritative on-chain scorer.
   tournamentGameId: string | null;
   // Live progress of the current on-chain entry/claim (approve → pay → confirm →
   // verify), so the UI can narrate the multi-step wallet flow. Null when idle.
@@ -621,7 +601,6 @@ const initialState = (tweaks: Tweaks): State => ({
   xp: 0,
   streak: 0,
   lastTournamentRank: null,
-  entry: null,
   resultNotifs: [],
   winnings: [],
   // Start empty so SSR and the first client render match; hydrated from
@@ -664,7 +643,6 @@ export type Proto = State & {
   answerQuestion: (answerIdx: number) => void;
   answerMulti: (indices: number[]) => void;
   answerOrder: (order: number[]) => void;
-  startTournament: () => void;
   // On-chain tournament: deposit via wallet (buyTicket) + start the round; claim
   // a settled prize via the merkle proof. Resolve with ok/error for the UI.
   enterTournamentOnChain: () => Promise<{ ok: boolean; error?: string }>;
@@ -729,7 +707,7 @@ export function ProtoProvider({
         lives: state.lives,
         streak_days: state.streak,
         mode: state.mode,
-        round_id: state.entry?.roundId ?? null,
+        game_id: state.tournamentGameId,
         ...properties,
       });
     },
@@ -820,7 +798,7 @@ export function ProtoProvider({
   useEffect(() => {
     if (state.screen !== "question" || state.qAnswered !== null) return;
     const q = state.roundQuestions[state.qIdx];
-    const key = `${state.mode}:${state.entry?.roundId ?? state.levelTrack}:${state.qIdx}:${q?.q ?? ""}`;
+    const key = `${state.mode}:${state.tournamentGameId ?? state.levelTrack}:${state.qIdx}:${q?.q ?? ""}`;
     if (questionStartRef.current === key) return;
     questionStartRef.current = key;
     track(
@@ -834,7 +812,7 @@ export function ProtoProvider({
         timer_start_sec: q?.time ?? tweaks.questionTime,
       }),
     );
-  }, [state.entry?.roundId, state.levelByTrack, state.levelTrack, state.mode, state.qAnswered, state.qIdx, state.roundQuestions, state.screen, tweaks.questionTime, track]);
+  }, [state.levelByTrack, state.levelTrack, state.mode, state.qAnswered, state.qIdx, state.roundQuestions, state.screen, state.tournamentGameId, tweaks.questionTime, track]);
 
   // Lobby countdown
   useEffect(() => {
@@ -1011,23 +989,10 @@ export function ProtoProvider({
         // is credited now along with the 2× bonus consumption.
         const xpMult = state.tournamentBonus ? 2 : 1;
         if (state.tournamentBonus) markDailyBonusUsed();
-        // Submit the round's ANSWERS — the server re-scores them against its own
-        // key and records the authoritative score. The client never posts a
-        // score. Settlement (rank/prize) is server-authoritative at round close
-        // (see lib/v2/rounds.settleRound). Local `score` stays for instant
-        // XP/UI only.
         if (state.tournamentGameId) {
           // On-chain tournament: score is recorded server-side against the
           // game's own questions (settlement + prize are fully server/chain).
           void v2SubmitTournamentAnswers(state.tournamentGameId, nextAnswers);
-        } else if (state.entry) {
-          track(AnalyticsEvent.TournamentScoreSubmitted, {
-            round_id: state.entry.roundId,
-            score_after: state.score,
-            question_count: totalQs,
-            xp_delta: state.score * xpMult,
-          });
-          void v2SubmitRoundAnswers(state.entry.roundId, nextAnswers);
         }
         // Daily mission accrual — questions answered this round.
         track(AnalyticsEvent.MissionProgressRecorded, {
@@ -1039,7 +1004,6 @@ export function ProtoProvider({
         goto("results");
         update((s) => ({
           xp: s.xp + s.score * xpMult,
-          entry: s.entry ? { ...s.entry, score: s.score } : s.entry,
           roundAnswers: nextAnswers,
         }));
       } else {
@@ -1151,144 +1115,6 @@ export function ProtoProvider({
       score: state.score + delta,
     });
   };
-
-  // Spends one ticket and drops into the lobby. Callers are responsible for
-  // gating on balance first (the Home join sheet does); we clamp at 0 so a
-  // stray call can never push the balance negative.
-  const startTournament = () => {
-    // One paid entry per round. If they already entered this round and it hasn't
-    // settled, re-tapping shows their standing instead of charging/replaying.
-    const rid = roundIdFor(Date.now());
-    if (state.entry && state.entry.roundId === rid && !state.entry.settled) {
-      track(AnalyticsEvent.TournamentEntryBlocked, {
-        round_id: rid,
-        reason: "already_entered",
-      });
-      goto("results");
-      return;
-    }
-    if (state.tickets < TOURNAMENT_TICKET_COST) {
-      track(AnalyticsEvent.TournamentEntryBlocked, {
-        round_id: rid,
-        reason: "insufficient_tickets",
-        tickets_balance: state.tickets,
-        entry_cost: TOURNAMENT_TICKET_COST,
-      });
-      return;
-    }
-    const bonus = isDailyBonusAvailable();
-    track(AnalyticsEvent.TournamentEntryStarted, {
-      round_id: rid,
-      entry_cost: TOURNAMENT_TICKET_COST,
-      tickets_before: state.tickets,
-      daily_bonus_available: bonus,
-    });
-    update((s) => ({
-      tickets: Math.max(0, s.tickets - TOURNAMENT_TICKET_COST),
-      mode: "tournament",
-      countdownSec: tweaks.lobbyCountdown,
-      qIdx: 0,
-      score: 0,
-      qAnswered: null,
-      hearts: 3,
-      timer: tweaks.questionTime,
-      // Optimistic local set keeps the lobby instant; replaced below by the
-      // server's authoritative set (same questions for every entrant) before
-      // play starts, so the answers we submit can be re-scored server-side.
-      roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
-      roundAnswers: [],
-      // First tournament of the day earns 2× XP.
-      tournamentBonus: bonus,
-      entry: { roundId: rid, score: null, bonus, settled: false, finalRank: null, reward: null },
-      tournamentGameId: null,
-    }));
-    // Swap in the server-issued question set for this round (deterministic by
-    // roundId). Lands during the lobby countdown, before Q1. If it fails or
-    // returns nothing, the optimistic local set plays on (degraded: those
-    // answers won't match the server's set at scoring, but the round still runs).
-    void v2GetRoundQuestions(rid)
-      .then((qs) => {
-        if (!qs || qs.length === 0) return;
-        const mapped: Question[] = qs.map((q) => ({ ...q }));
-        update((s) =>
-          s.entry?.roundId === rid && s.mode === "tournament" && s.qIdx === 0
-            ? { roundQuestions: mapped, timer: mapped[0]?.time ?? tweaks.questionTime }
-            : {},
-        );
-      })
-      .catch(() => {});
-    // Persist the entry server-side (charges a ticket; re-entry is a no-op
-    // server-side too). Optimistic local charge above keeps the UI instant.
-    void v2EnterRound(rid, bonus)
-      .then((result) => {
-        trackClientEvent(AnalyticsEvent.TournamentEntrySucceeded, {
-          screen: "lobby",
-          mode: "tournament",
-          round_id: rid,
-          entry_cost: TOURNAMENT_TICKET_COST,
-          tickets_after: result?.tickets ?? state.tickets - TOURNAMENT_TICKET_COST,
-          daily_bonus_available: bonus,
-          already_entered: result?.alreadyEntered ?? false,
-        });
-      })
-      .catch((error) => {
-        trackClientEvent(AnalyticsEvent.TournamentEntryBlocked, {
-          screen: "home",
-          mode: "tournament",
-          round_id: rid,
-          reason: error instanceof Error ? error.message : "entry_failed",
-        });
-      });
-    track(AnalyticsEvent.TournamentLobbyEntered, {
-      round_id: rid,
-      countdown_sec: tweaks.lobbyCountdown,
-    });
-    goto("lobby");
-  };
-
-  // Settle the active entry when its round closes: lock the final rank, pay any
-  // prize to the Prize Wallet, and emit an in-app result notification (for every
-  // outcome). Runs while an unsettled entry exists; also settles immediately if
-  // the player returns after close.
-  useEffect(() => {
-    const e = state.entry;
-    if (!e || e.settled) return;
-    const close = roundCloseAt(e.roundId);
-    const settle = () => {
-      if (Date.now() < close) return;
-      update((s) => {
-        const en = s.entry;
-        if (!en || en.settled) return {};
-        if (en.score == null) {
-          // Entered but never finished — forfeit, no result notification.
-          return { entry: { ...en, settled: true, finalRank: null, reward: 0 } };
-        }
-        const finalRank = tournamentRank(en.score, tweaks.questionsPerRound);
-        const reward = tournamentReward(finalRank);
-        trackClientEvent(AnalyticsEvent.TournamentResultLocalSettled, {
-          screen: s.screen,
-          mode: "tournament",
-          round_id: en.roundId,
-          score: en.score,
-          rank: finalRank,
-          field_size: TOURNAMENT_FIELD_SIZE,
-          tickets_won: reward,
-          result_state: reward > 0 ? "won" : finalRank <= TOURNAMENT_TICKET_RANK * 2 ? "near_miss" : "lost",
-        });
-        return {
-          entry: { ...en, settled: true, finalRank, reward },
-          lastTournamentRank: finalRank,
-          winnings: reward > 0
-            ? [{ id: `w-${en.roundId}`, rank: finalRank, tickets: reward, wonAt: Date.now(), status: "pending" as const }, ...s.winnings]
-            : s.winnings,
-          resultNotifs: [{ id: `r-${en.roundId}`, roundId: en.roundId, rank: finalRank, reward, read: false }, ...s.resultNotifs],
-        };
-      });
-    };
-    settle();
-    const id = setInterval(settle, 1000);
-    return () => clearInterval(id);
-  }, [state.entry, update, tweaks.questionsPerRound]);
 
   const markResultRead = (id: string) => {
     update((s) => ({ resultNotifs: s.resultNotifs.map((r) => (r.id === id ? { ...r, read: true } : r)) }));
@@ -1637,7 +1463,6 @@ export function ProtoProvider({
         hearts: 3,
         timer: mapped[0]?.time ?? tweaks.questionTime,
         countdownSec: tweaks.lobbyCountdown,
-        entry: null,
         tournamentStep: null,
       });
       goto("lobby");
@@ -1686,7 +1511,6 @@ export function ProtoProvider({
     answerQuestion,
     answerMulti,
     answerOrder,
-    startTournament,
     markResultRead,
     claimWinning,
     convertWinning,

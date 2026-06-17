@@ -9,7 +9,7 @@ export const maxDuration = 60;
 /**
  * Ensures each platform has a live hourly tournament `Game` (on-chain, with
  * questions). Idempotent — a no-op when the current hour already has one.
- * Register on an hourly schedule alongside `settle-rounds`.
+ * Register on an hourly schedule alongside the game lifecycle settlement cron.
  */
 export async function POST(request: NextRequest) {
   if (request.headers.get("Authorization") !== `Bearer ${env.partykitSecret}`) {
