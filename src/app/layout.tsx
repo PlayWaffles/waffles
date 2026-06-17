@@ -76,7 +76,7 @@ export default function RootLayout({
             defer
             src={`${UMAMI_HOST.replace(/\/$/, "")}/script.js`}
             data-website-id={UMAMI_WEBSITE_ID}
-            data-domains="playwaffles.fun,www.playwaffles.fun,miniapp.playwaffles.fun"
+            data-domains="playwaffles.fun,www.playwaffles.fun,miniapp.playwaffles.fun,waffles-staging.cyberverse.cloud"
             strategy="afterInteractive"
           />
         ) : null}
