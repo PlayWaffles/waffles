@@ -8,6 +8,7 @@ import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const XP_PER_LEVEL = 500;
 
@@ -312,10 +313,27 @@ export const HomeScreen = () => {
       proto.goto("results");
       return;
     }
+    trackClientEvent(AnalyticsEvent.TicketCtaClicked, {
+      screen: "home",
+      source: "join_cta",
+      entry_fee: fee?.entryFee ?? null,
+      first_entry: fee?.firstEntry ?? null,
+    });
     setEntryError(null);
     setGate("confirm");
   };
-  const onCardTap = () => (entered ? proto.goto("results") : openJoin());
+  const onCardTap = () => {
+    if (entered) {
+      trackClientEvent(AnalyticsEvent.ViewStandingClicked, {
+        screen: "home",
+        source: "tournament_card",
+        entered_rank: board?.you?.rank ?? null,
+      });
+      proto.goto("results");
+      return;
+    }
+    openJoin();
+  };
 
   // First-tournament-of-the-day 2× XP bonus. Read via useSyncExternalStore so
   // the client value is picked up post-hydration without a setState-in-effect;
@@ -345,6 +363,23 @@ export const HomeScreen = () => {
   const fieldSize = board && board.fieldSize > 0 ? board.fieldSize : TOURNAMENT_FIELD_SIZE;
 
   const lastPct = lastRank ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
+
+  // Game-card impression — the Top-of-the-Hour tournament is the home hero, so
+  // log that the player saw it (one per mount) with the entry state that drives
+  // whether the card reads as "join" vs "view standing".
+  const gameSeenRef = useRef(false);
+  useEffect(() => {
+    if (gameSeenRef.current) return;
+    gameSeenRef.current = true;
+    trackClientEvent(AnalyticsEvent.GameSeen, {
+      screen: "home",
+      entered,
+      entered_rank: enteredRank,
+      field_size: fieldSize,
+      bonus_available: bonusAvailable,
+      last_rank: lastRank ?? null,
+    });
+  }, [entered, enteredRank, fieldSize, bonusAvailable, lastRank]);
 
   return (
     <Phone statusDark>
@@ -443,7 +478,13 @@ export const HomeScreen = () => {
         <div style={{ display: "flex", gap: 10 }}>
           <button
             type="button"
-            onClick={() => proto.update({ dailyOpen: true })}
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.StreakButtonClicked, {
+                screen: "home",
+                streak_days: streak,
+              });
+              proto.update({ dailyOpen: true });
+            }}
             aria-label={`${streak} day streak — open daily reward`}
             style={{ flex: 1, textAlign: "left", background: "#0F0F10", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "12px 14px", cursor: "pointer" }}
           >

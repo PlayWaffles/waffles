@@ -7,6 +7,7 @@ import { loadLeague, loadSeasonPass, claimSeasonReward, loadMissions, loadPartne
 import type { League } from "@/lib/player/leagues";
 import type { SeasonPass } from "@/lib/player/seasonPass";
 import { SEASON_PASS_TIERS, type SeasonReward as PassReward } from "@/lib/player/seasonPassTiers";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?: string; size?: number; state?: "current" | "locked" | "passed" }) => {
   const dim = state === "locked" ? 0.35 : 1;
@@ -200,7 +201,10 @@ const ComingSoonVeil = ({ note, children }: { note: string; children: ReactNode 
     <div aria-hidden="true" inert style={{ opacity: 0.4, filter: "saturate(.55)", pointerEvents: "none", userSelect: "none" }}>
       {children}
     </div>
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6 }}>
+    <div
+      onClick={() => trackClientEvent(AnalyticsEvent.ComingSoonClicked, { screen: "compete", feature: "season_pass", note })}
+      style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
+    >
       <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(0,0,0,.6)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 99, padding: "7px 14px", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.5, color: "#fff" }}>
         <span aria-hidden="true">🔒</span> Coming soon
       </div>
@@ -344,7 +348,7 @@ export const CompeteScreen = () => {
               <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>⏱ Ends in {seasonEnd}</span>
             </div>
           </div>
-          <button onClick={() => proto.goto("leaderboard")} style={{ background: "#fff", color: "#1e1e1e", border: "none", padding: "9px 14px", borderRadius: 99, fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13, letterSpacing: 0.1, boxShadow: "0 3px 0 rgba(0,0,0,.3)", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>See ranking</button>
+          <button onClick={() => { trackClientEvent(AnalyticsEvent.SeeRankingClicked, { screen: "compete" }); proto.goto("leaderboard"); }} style={{ background: "#fff", color: "#1e1e1e", border: "none", padding: "9px 14px", borderRadius: 99, fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 13, letterSpacing: 0.1, boxShadow: "0 3px 0 rgba(0,0,0,.3)", cursor: "pointer", whiteSpace: "nowrap", flexShrink: 0 }}>See ranking</button>
         </div>
 
         <div style={{ margin: "0 16px", background: "rgba(168,63,184,.65)", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#fff" }}>

@@ -34,6 +34,7 @@ import {
   logClient,
 } from "@/actions/player";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
+import { useUser } from "@/hooks/useUser";
 import { assertChainPlatform } from "@/lib/chain/platform";
 import {
   AnalyticsEvent,
@@ -226,6 +227,17 @@ export type Winning = {
 // Derive a finishing rank out of the simulated field from the player's score.
 export function tournamentRank(score: number, totalQuestions: number): number {
   return Math.max(1, Math.round(TOURNAMENT_FIELD_SIZE * (1 - Math.min(1, score / (totalQuestions * 250)))) + 1);
+}
+
+// Bucket a wallet error into a coarse, PII-free reason for the purchase funnel.
+// The wallet hook surfaces friendly copy ("Cancelled." / low-balance), so match
+// on those plus the raw on-chain phrases as a fallback.
+export function classifyWalletError(message: string): string {
+  const m = message.toLowerCase();
+  if (/cancel|user rejected|denied|rejected the request/.test(m)) return "user_rejected";
+  if (/insufficient|not enough|balance|low.*celo|low.*usdc/.test(m)) return "insufficient_balance";
+  if (/chain|network/.test(m)) return "wrong_chain";
+  return "wallet_error";
 }
 
 // ─── Hourly display windows ─────────────────────────────────────────────────
@@ -699,9 +711,25 @@ export function ProtoProvider({
   children: ReactNode;
 }) {
   const [state, setState] = useState<State>(() => initialState(tweaks));
+  // Auth-readiness signal. Server actions authenticate ONLY via the session
+  // cookie, which AuthBootstrap establishes asynchronously (wallet signature →
+  // /auth/verify → refetch). `user.id` flips non-null once that session exists,
+  // so we key the real-data fetch below on it — otherwise a fetch fired during
+  // the sign-in race resolves null and the app stays stuck on mock/default state
+  // until a full reload (this is the systemic cause behind the "shop loads
+  // forever" symptom, which just made it visible by hard-gating its UI).
+  const { user } = useUser();
+  const authedUserId = user?.id ?? null;
   const shellTrackedRef = useRef(false);
   const questionStartRef = useRef<string | null>(null);
   const screenViewedRef = useRef<string | null>(null);
+  // Fires TournamentStarted exactly once per round (keyed by game id) when the
+  // lobby countdown hands off to the first question.
+  const tournamentStartedRef = useRef<string | null>(null);
+  // Tracks the screen the player is currently dwelling on + when they arrived,
+  // so we can emit a dwell-duration event when they leave it (any screen,
+  // profile included).
+  const screenDwellRef = useRef<{ screen: ScreenName; at: number } | null>(null);
   // On-chain wallet (buyTicket entry + claimPrize) — reuses v1's contract layer.
   const tournamentWallet = useTournamentWallet();
 
@@ -759,6 +787,17 @@ export function ProtoProvider({
     const key = `${state.prevScreen ?? "none"}:${state.screen}`;
     if (screenViewedRef.current === key) return;
     screenViewedRef.current = key;
+    // Emit dwell time for the screen we're leaving, then start the clock on the
+    // one we just landed on (drives "how long do they stay in profile" etc.).
+    const prev = screenDwellRef.current;
+    if (prev && prev.screen !== state.screen) {
+      track(AnalyticsEvent.ScreenDwellRecorded, {
+        screen: prev.screen,
+        next_screen: state.screen,
+        dwell_ms: Date.now() - prev.at,
+      });
+    }
+    screenDwellRef.current = { screen: state.screen, at: Date.now() };
     track(AnalyticsEvent.ScreenViewed, {
       screen: state.screen,
       previous_screen: state.prevScreen,
@@ -782,9 +821,12 @@ export function ProtoProvider({
   }, [update]);
 
   // Hydrate real player state from the server after mount, overlaying the mock
-  // seed. No-ops in the preview / unauthenticated context (loadState → null),
-  // so the screens still render and demo on local state.
+  // seed. Gated on a confirmed session (authedUserId): in the preview /
+  // unauthenticated context it simply never runs and screens demo on local
+  // state, and once sign-in lands it (re)fetches the real account instead of
+  // racing auth and silently keeping mock state.
   useEffect(() => {
+    if (!authedUserId) return;
     let active = true;
     loadState()
       .then((s) => {
@@ -807,7 +849,7 @@ export function ProtoProvider({
     return () => {
       active = false;
     };
-  }, [update]);
+  }, [authedUserId, update]);
 
   useEffect(() => {
     if (state.screen !== "question" || state.qAnswered !== null) return;
@@ -832,6 +874,17 @@ export function ProtoProvider({
   useEffect(() => {
     if (state.screen !== "lobby") return;
     if (state.countdownSec <= 0) {
+      if (state.mode === "tournament") {
+        const startKey = state.tournamentGameId ?? "local";
+        if (tournamentStartedRef.current !== startKey) {
+          tournamentStartedRef.current = startKey;
+          track(AnalyticsEvent.TournamentStarted, {
+            game_id: state.tournamentGameId,
+            question_count: state.roundQuestions.length,
+            on_chain: Boolean(state.tournamentGameId),
+          });
+        }
+      }
       const t = setTimeout(() => {
         update({ qIdx: 0, score: 0, qAnswered: null, qSelection: null, eliminated: [], shieldActive: false, timer: state.roundQuestions[0]?.time ?? tweaks.questionTime });
         goto("question");
@@ -840,7 +893,7 @@ export function ProtoProvider({
     }
     const t = setTimeout(() => update({ countdownSec: state.countdownSec - 1 }), 1000);
     return () => clearTimeout(t);
-  }, [state.screen, state.countdownSec, state.roundQuestions, tweaks.questionTime, goto, update]);
+  }, [state.screen, state.countdownSec, state.roundQuestions, state.mode, state.tournamentGameId, tweaks.questionTime, goto, update, track]);
 
   // Question timer
   useEffect(() => {
@@ -1003,11 +1056,28 @@ export function ProtoProvider({
         // is credited now along with the 2× bonus consumption.
         const xpMult = state.tournamentBonus ? 2 : 1;
         if (state.tournamentBonus) markDailyBonusUsed();
+        const provisionalRank = tournamentRank(state.score, totalQs);
         if (state.tournamentGameId) {
           // On-chain tournament: score is recorded server-side against the
           // game's own questions (settlement + prize are fully server/chain).
+          track(AnalyticsEvent.TournamentScoreSubmitted, {
+            game_id: state.tournamentGameId,
+            score: state.score,
+            question_count: totalQs,
+            answers_submitted: nextAnswers.length,
+            xp_multiplier: xpMult,
+          });
           void submitTournamentAnswers(state.tournamentGameId, nextAnswers);
         }
+        // Local provisional placement shown on the results screen (the locked
+        // rank/prize come later at settlement, server/chain-side).
+        track(AnalyticsEvent.TournamentResultLocalSettled, {
+          game_id: state.tournamentGameId,
+          score: state.score,
+          question_count: totalQs,
+          provisional_rank: provisionalRank,
+          on_chain: Boolean(state.tournamentGameId),
+        });
         // Daily mission accrual — questions answered this round.
         track(AnalyticsEvent.MissionProgressRecorded, {
           reason: "tournament_questions_answered",
@@ -1383,27 +1453,70 @@ export function ProtoProvider({
     const t = await getTournament();
     if (!t || !t.game.onchainId) {
       blog("[buy-ticket] no tournament / not on-chain", { hasTournament: !!t, onchainId: t?.game.onchainId });
+      track(AnalyticsEvent.TournamentEntryBlocked, { reason: "no_tournament" });
       return { ok: false, error: "no_tournament" };
     }
     blog("[buy-ticket] enter flow start", {
       gameId: t.game.id, gameNumber: t.game.gameNumber, platform: t.game.platform,
       onchainId: t.game.onchainId, entryFee: t.game.entryFee,
     });
+    // Shared context stamped on every step of the funnel so the on-chain entry
+    // (start → approve → pay → confirm → server sync) is one analyzable journey.
+    const entryContext = {
+      game_id: t.game.id,
+      game_number: t.game.gameNumber,
+      entry_fee: t.game.entryFee,
+      platform: t.game.platform,
+      onchain_id: t.game.onchainId,
+    };
+    track(AnalyticsEvent.TournamentEntryStarted, entryContext);
+    track(AnalyticsEvent.TicketPurchaseStarted, entryContext);
+    // The wallet hook reports flow steps via `onStep`; map the ones that mark a
+    // real on-chain milestone to funnel events. `sawApproving` distinguishes the
+    // approve→confirmed transition (only fires when an approval was actually
+    // needed — a standing allowance skips straight to paying).
+    let sawApproving = false;
+    const onStep = (step: TournamentTxStep) => {
+      update({ tournamentStep: step });
+      switch (step) {
+        case "switching":
+          track(AnalyticsEvent.WalletChainSwitchStarted, entryContext);
+          break;
+        case "approving":
+          sawApproving = true;
+          track(AnalyticsEvent.TicketApprovalSubmitted, entryContext);
+          break;
+        case "paying":
+          if (sawApproving) track(AnalyticsEvent.TicketApprovalConfirmed, entryContext);
+          break;
+        case "confirming":
+          track(AnalyticsEvent.TicketPurchaseTxSubmitted, entryContext);
+          break;
+      }
+    };
     try {
       const txHash = await tournamentWallet.enter(
         assertChainPlatform(t.game.platform),
         t.game.onchainId as `0x${string}`,
         t.game.entryFee,
-        (step) => update({ tournamentStep: step }),
+        onStep,
       );
+      track(AnalyticsEvent.TicketPurchaseTxConfirmed, entryContext);
       blog("[buy-ticket] on-chain done, verifying server-side", { txHash });
       update({ tournamentStep: "verifying" });
+      track(AnalyticsEvent.TicketPurchaseSyncStarted, entryContext);
       const res = await enterTournament(t.game.id, txHash);
       if (!res || !res.ok) {
         blog("[buy-ticket] server verify rejected", { res });
         update({ tournamentStep: null });
-        return { ok: false, error: res && !res.ok ? res.error : "entry_failed" };
+        const reason = res && !res.ok ? res.error : "entry_failed";
+        track(AnalyticsEvent.TicketPurchaseSyncFailed, { ...entryContext, reason });
+        track(AnalyticsEvent.TicketPurchaseFailed, { ...entryContext, stage: "server_sync", reason });
+        return { ok: false, error: reason };
       }
+      track(AnalyticsEvent.TicketPurchaseSyncSucceeded, entryContext);
+      track(AnalyticsEvent.TournamentEntrySucceeded, entryContext);
+      track(AnalyticsEvent.TournamentLobbyEntered, entryContext);
       blog("[buy-ticket] entry confirmed ✓ — entering lobby", { gameId: t.game.id });
       const mapped: Question[] = t.questions.map((q) => ({ ...q }));
       update({
@@ -1424,20 +1537,40 @@ export function ProtoProvider({
     } catch (e) {
       blog("[buy-ticket] enter flow threw", e);
       update({ tournamentStep: null });
-      return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
+      const message = e instanceof Error ? e.message : "wallet_error";
+      track(AnalyticsEvent.TicketPurchaseFailed, {
+        ...entryContext,
+        stage: "wallet",
+        reason: classifyWalletError(message),
+      });
+      return { ok: false, error: message };
     }
   };
 
   // Claim a settled on-chain prize: send `claimPrize` with the merkle proof, then
   // confirm server-side (reused `verifyClaim`).
   const claimTournamentPrize = async (gameId: string): Promise<{ ok: boolean; error?: string }> => {
+    track(AnalyticsEvent.PrizeClaimStarted, { game_id: gameId });
     const claim = await getTournamentClaim(gameId);
-    if (!claim) return { ok: false, error: "nothing_to_claim" };
+    if (!claim) {
+      track(AnalyticsEvent.PrizeResolutionFailed, { game_id: gameId, reason: "nothing_to_claim" });
+      return { ok: false, error: "nothing_to_claim" };
+    }
+    const claimContext = {
+      game_id: gameId,
+      platform: claim.platform,
+      onchain_id: claim.onchainId,
+      prize_amount: claim.amount,
+    };
     // Self-heal first: if the prize is already claimed on-chain (a prior confirm
     // desynced from a successful claim), settle it in the DB without sending a
     // tx that would just revert with "already claimed".
     const pre = await reconcileTournamentClaim(gameId);
-    if (pre?.reconciled) return { ok: true };
+    if (pre?.reconciled) {
+      track(AnalyticsEvent.PrizeResolutionSucceeded, { ...claimContext, via: "reconcile_pre" });
+      return { ok: true };
+    }
+    track(AnalyticsEvent.PrizeResolutionStarted, claimContext);
     try {
       const txHash = await tournamentWallet.claim(
         assertChainPlatform(claim.platform),
@@ -1450,16 +1583,28 @@ export function ProtoProvider({
       const res = await confirmTournamentClaim(gameId, txHash);
       update({ tournamentStep: null });
       if (!res || !res.ok) {
-        return { ok: false, error: res && !res.ok ? res.error : "claim_failed" };
+        const reason = res && !res.ok ? res.error : "claim_failed";
+        track(AnalyticsEvent.PrizeResolutionFailed, { ...claimContext, stage: "server_confirm", reason });
+        return { ok: false, error: reason };
       }
+      track(AnalyticsEvent.PrizeResolutionSucceeded, { ...claimContext, via: "claim" });
       return { ok: true };
     } catch (e) {
       update({ tournamentStep: null });
       // The wallet tx may have reverted because it was already claimed on-chain
       // — reconcile as a last resort so the prize isn't stuck "claimable".
       const recon = await reconcileTournamentClaim(gameId);
-      if (recon?.reconciled) return { ok: true };
-      return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
+      if (recon?.reconciled) {
+        track(AnalyticsEvent.PrizeResolutionSucceeded, { ...claimContext, via: "reconcile_post" });
+        return { ok: true };
+      }
+      const message = e instanceof Error ? e.message : "wallet_error";
+      track(AnalyticsEvent.PrizeResolutionFailed, {
+        ...claimContext,
+        stage: "wallet",
+        reason: classifyWalletError(message),
+      });
+      return { ok: false, error: message };
     }
   };
 

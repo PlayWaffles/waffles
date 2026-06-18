@@ -15,6 +15,7 @@ import {
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
 import { getTournament } from "@/actions/player";
 import { playSound } from "../sound";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // One-time tournament upsell, shown the first time a player clears a level —
 // the highest-intent moment to convert a warmed-up free player into the paid,
@@ -229,7 +230,19 @@ export const LevelWinScreen = () => {
           <button className="cta icon-btn" aria-label="Back to home" onClick={() => proto.goto("home")}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2v-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /></svg>
           </button>
-          <button className="cta maple" onClick={() => proto.goto("levels")}>NEXT LEVEL</button>
+          <button
+            className="cta maple"
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.NextLevelClicked, {
+                screen: "levelWin",
+                level_track: proto.levelTrack,
+                next_level: proto.level,
+              });
+              proto.goto("levels");
+            }}
+          >
+            NEXT LEVEL
+          </button>
         </div>
       </div>
 
