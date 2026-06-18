@@ -2,19 +2,21 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg, SyrupIcon } from "../shared";
+import { ASSETS, Phone, PixelImg } from "../shared";
 import { LegalSheet, type LegalTab } from "../legal";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // First-launch onboarding. New players were dropped on Home with no idea what
 // the core loop is (live tournaments vs. the solo level path vs. tickets). This
-// is a short, skippable intro — three orientation slides then a CTA that drops
-// them straight into their first level so the first thing they do is *play*.
+// is a short, mandatory intro — four orientation slides then a create-account
+// step (username + wallet) that drops them straight into their first level, so
+// the first thing they do is *play*. There is intentionally no skip: every step
+// forward is the only path forward, ending at the account gate.
 //
 // Dismissal is persisted by the caller (Stage) via localStorage, so it only
-// shows on the very first open. `onPlay` dismisses + starts a level; `onSkip`
-// dismisses to Home.
+// shows on the very first open. `onPlay` is the single exit — it dismisses +
+// starts a level.
 
 type Slide = {
   key: string;
@@ -58,23 +60,43 @@ const LevelVisual = () => (
   </div>
 );
 
-const RewardVisual = () => (
-  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "center", gap: 18 }}>
-    <SyrupIcon size={84} />
-    <PixelImg src={ASSETS.trophy} size={104} alt="" style={{ marginBottom: 4 }} />
-  </div>
-);
+// A miniature of the real global leaderboard — same visual language (top-3 gold
+// rank, avatar, trophy + points, and the maple-tinted "you" row pinned at the
+// bottom) so the slide previews exactly where players are headed.
+const LEADER_PREVIEW: { rank: number; name: string; pts: number; avatar: string; you?: boolean }[] = [
+  { rank: 1, name: "swiftfox42", pts: 6543, avatar: ASSETS.avatarFox },
+  { rank: 2, name: "maplewhiz", pts: 5150, avatar: ASSETS.avatarBear },
+  { rank: 3, name: "owlsage", pts: 5050, avatar: ASSETS.avatarOwl },
+  { rank: 12, name: "you", pts: 1320, avatar: ASSETS.wally, you: true },
+];
 
-// Sign-up step illustration — a wallet card (the account) with a coin, since
-// "sign up" here means connecting a wallet.
-const WalletVisual = () => (
-  <div style={{ position: "relative", width: 200, height: 150, display: "flex", alignItems: "center", justifyContent: "center" }}>
-    <div style={{ width: 168, height: 108, borderRadius: 18, background: "linear-gradient(135deg, #2a2a2e, #141418)", border: "2px solid rgba(255,255,255,.12)", boxShadow: "0 14px 30px rgba(0,0,0,.45)", transform: "rotate(-7deg)", position: "relative" }}>
-      <div aria-hidden style={{ position: "absolute", top: 18, left: 18, width: 34, height: 26, borderRadius: 6, background: "var(--maple-500)" }} />
-      <div aria-hidden style={{ position: "absolute", top: 22, right: 18, width: 10, height: 10, borderRadius: 99, background: "var(--leaf)" }} />
-      <div aria-hidden style={{ position: "absolute", bottom: 18, left: 18, right: 40, height: 9, borderRadius: 99, background: "rgba(255,255,255,.14)" }} />
-    </div>
-    <PixelImg src={ASSETS.coin} size={72} alt="" style={{ position: "absolute", right: 18, bottom: 10, animation: "waffles-v2-tile-bob 3s ease-in-out infinite" }} />
+const LeaderboardVisual = () => (
+  <div style={{ width: 264, background: "var(--surface-1)", borderRadius: 16, border: "1px solid rgba(253, 251, 246, 0.06)", overflow: "hidden", boxShadow: "0 14px 30px rgba(0,0,0,.4)" }}>
+    {LEADER_PREVIEW.map((p) => {
+      const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
+      return (
+        <div
+          key={p.rank}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "7px 12px",
+            ...(p.you
+              ? { background: "#191507", borderTop: "1.5px solid var(--maple-500)" }
+              : null),
+          }}
+        >
+          <div style={{ width: 20, fontFamily: "var(--font-display)", fontSize: 13, color: rankColor, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{p.rank}</div>
+          <PixelImg src={p.avatar} size={32} alt="" />
+          <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", textAlign: "left" }}>{p.name}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }}>
+            <PixelImg src={ASSETS.trophy} size={20} alt="" />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 13, color: p.you ? "var(--maple-500)" : "var(--ink)", fontVariantNumeric: "tabular-nums" }}>{p.pts.toLocaleString()}</span>
+          </div>
+        </div>
+      );
+    })}
   </div>
 );
 
@@ -111,12 +133,12 @@ const SLIDES: Slide[] = [
     visual: <LevelVisual />,
   },
   {
-    key: "rewards",
-    kicker: "WHAT YOU PLAY FOR",
+    key: "leaderboard",
+    kicker: "WHERE YOU STAND",
     kickerColor: "var(--maple-500)",
-    title: "Win real rewards",
-    body: "Finish near the top to earn Syrup, rise through the leagues, and unlock the shop.",
-    visual: <RewardVisual />,
+    title: "Race to the top",
+    body: "Every point you score moves you up the global board. Out-rank the field and take the #1 spot.",
+    visual: <LeaderboardVisual />,
   },
 ];
 
@@ -152,10 +174,8 @@ function generateUsernames(n: number): string[] {
 
 export const OnboardingScreen = ({
   onPlay,
-  onSkip,
 }: {
   onPlay: () => void;
-  onSkip: () => void;
 }) => {
   const proto = useProto();
   const { signIn } = useWalletSignIn();
@@ -171,12 +191,13 @@ export const OnboardingScreen = ({
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
   const startedRef = useRef(false);
   const trackedUsernameRef = useRef(false);
-  const STEPS = SLIDES.length + 2; // intro slides + sign-up + username
-  const signupStep = step === SLIDES.length;
-  const usernameStep = step === SLIDES.length + 1;
-  const slide = SLIDES[step]; // undefined on the sign-up & username steps
-  const canContinue = usernameStep ? username.trim().length >= 2 : !connecting;
-  const stepId = usernameStep ? "username" : signupStep ? "signup" : slide.key;
+  const STEPS = SLIDES.length + 1; // intro slides + the combined account step
+  // Last step = "create your account": pick a username AND connect the wallet in
+  // one go, instead of a standalone sign-up screen before it.
+  const accountStep = step === SLIDES.length;
+  const slide = SLIDES[step]; // undefined on the account step
+  const canContinue = accountStep ? username.trim().length >= 2 && !connecting : !connecting;
+  const stepId = accountStep ? "account" : slide.key;
 
   useEffect(() => {
     if (!startedRef.current) {
@@ -195,38 +216,31 @@ export const OnboardingScreen = ({
   }, [STEPS, step, stepId]);
 
   useEffect(() => {
-    if (!usernameStep || trackedUsernameRef.current || username.trim().length < 2) return;
+    if (!accountStep || trackedUsernameRef.current || username.trim().length < 2) return;
     trackedUsernameRef.current = true;
     trackClientEvent(AnalyticsEvent.OnboardingUsernameEntered, {
       step_index: step,
       step_id: stepId,
       username_length: username.trim().length,
     });
-  }, [step, stepId, username, usernameStep]);
+  }, [step, stepId, username, accountStep]);
 
   const next = () => {
     trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, {
       step_index: step,
       step_id: stepId,
       total_steps: STEPS,
-      cta: usernameStep ? "play_first_level" : signupStep ? "sign_up" : "next",
+      cta: accountStep ? "create_account_and_play" : "next",
     });
-    if (usernameStep) {
-      proto.setUsername(username.trim());
-      trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
-        step_index: step,
-        step_id: stepId,
-        username_length: username.trim().length,
-      });
-      onPlay();
-      proto.startLevel();
-      return;
-    }
-    if (signupStep) {
-      // "Sign up" = connect wallet + authenticate (real MiniPay/browser session).
-      // Advance regardless of the result so a wallet-less browser preview is never
-      // stuck: success establishes a real session (real data), failure proceeds on
-      // local/mock state.
+    if (accountStep) {
+      // The account step does both jobs in one tap: lock in the username, then
+      // connect + authenticate the wallet (real MiniPay/browser session), then
+      // drop straight into the first level. We complete regardless of the
+      // sign-in result so a wallet-less browser preview is never stuck — success
+      // establishes a real session, failure proceeds on local/mock state and the
+      // wallet can be connected later.
+      const name = username.trim();
+      proto.setUsername(name);
       setConnecting(true);
       trackClientEvent(AnalyticsEvent.OnboardingSignupClicked, {
         step_index: step,
@@ -234,8 +248,8 @@ export const OnboardingScreen = ({
       });
       void signIn()
         .then((ok) => {
-          // Sign-in failure doesn't block onboarding (we proceed on local state),
-          // but capture it so the wallet-signup drop-off is measurable.
+          // Sign-in failure doesn't block onboarding, but capture it so the
+          // wallet-signup drop-off stays measurable.
           if (!ok) {
             trackClientEvent(AnalyticsEvent.OnboardingFailed, {
               step_index: step,
@@ -246,24 +260,17 @@ export const OnboardingScreen = ({
         })
         .finally(() => {
           setConnecting(false);
-          setStep((s) => s + 1);
+          trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
+            step_index: step,
+            step_id: stepId,
+            username_length: name.length,
+          });
+          onPlay();
+          proto.startLevel();
         });
       return;
     }
     setStep((s) => s + 1);
-  };
-
-  const skip = (source: "top" | "footer") => {
-    trackClientEvent(
-      usernameStep ? AnalyticsEvent.OnboardingExploreClicked : AnalyticsEvent.OnboardingSkipped,
-      {
-        step_index: step,
-        step_id: stepId,
-        total_steps: STEPS,
-        cta: source,
-      },
-    );
-    onSkip();
   };
 
   const openLegal = (tab: LegalTab) => {
@@ -283,51 +290,24 @@ export const OnboardingScreen = ({
       {/* Tilted oversized wordmark watermark, matching Home. */}
       <div aria-hidden="true" style={{ position: "absolute", top: 30, left: -10, right: -10, fontFamily: "var(--font-display)", fontSize: 110, color: "var(--maple-500)", opacity: 0.04, letterSpacing: 4, transform: "rotate(-6deg)", textAlign: "center", pointerEvents: "none", whiteSpace: "nowrap" }}>WAFFLES</div>
 
-      {/* Skip — hidden on the sign-up step: connecting a wallet is required. */}
-      {!signupStep && (
-        <button
-          type="button"
-          className="pressable"
-          onClick={() => skip("top")}
-          style={{ position: "absolute", top: "max(16px, env(safe-area-inset-top))", right: 18, zIndex: 10, fontSize: 13, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.5, padding: 6 }}
-        >
-          Skip
-        </button>
-      )}
-
       {/* Content — re-keyed on step so each slide fades/slides in. */}
       <div
-        key={usernameStep ? "username" : signupStep ? "signup" : slide.key}
+        key={accountStep ? "account" : slide.key}
         style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 184, padding: "0 26px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", animation: "waffles-v2-onb-in .45s var(--ease-out-quart)" }}
       >
-        {signupStep ? (
-          <>
-            <div style={{ minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
-              <WalletVisual />
-            </div>
-            <div style={{ fontSize: 12, fontWeight: 800, color: "var(--leaf)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-              CREATE YOUR ACCOUNT
-            </div>
-            <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 38, lineHeight: 1.05, color: "var(--ink)", marginBottom: 14 }}>
-              Sign up to play
-            </div>
-            <div style={{ fontSize: 16, lineHeight: 1.5, fontWeight: 600, color: "var(--ink-mute)", maxWidth: 320 }}>
-              Connect your wallet to save your progress and cash out real USDT prizes. It&apos;s your account — and your payout.
-            </div>
-          </>
-        ) : usernameStep ? (
+        {accountStep ? (
           <>
             <div style={{ minHeight: 200, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 24 }}>
               <PixelImg src={ASSETS.wally} size={150} alt="" style={{ animation: "waffles-v2-wally-idle 4s ease-in-out infinite" }} />
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 2, textTransform: "uppercase", marginBottom: 6 }}>
-              ONE LAST THING
+              CREATE YOUR ACCOUNT
             </div>
             <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 38, lineHeight: 1.05, color: "var(--ink)", marginBottom: 14 }}>
               Pick a username
             </div>
             <div style={{ fontSize: 16, lineHeight: 1.5, fontWeight: 600, color: "var(--ink-mute)", maxWidth: 320, marginBottom: 22 }}>
-              This is how you&apos;ll show up on the leaderboard.
+              This is your name on the leaderboard. We&apos;ll connect your wallet so your progress and prizes stay yours.
             </div>
             <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
               <span aria-hidden="true" style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink-faint)" }}>@</span>
@@ -401,24 +381,15 @@ export const OnboardingScreen = ({
         </div>
         <div className="cta-row">
           <button
-            className={"cta" + (usernameStep || signupStep ? " maple" : "")}
+            className={"cta" + (accountStep ? " maple" : "")}
             onClick={next}
             disabled={!canContinue}
             style={!canContinue ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
           >
-            {usernameStep ? "PLAY MY FIRST LEVEL" : signupStep ? (connecting ? "CONNECTING…" : "SIGN UP") : "NEXT"}
+            {accountStep ? (connecting ? "CREATING ACCOUNT…" : "CREATE ACCOUNT & PLAY") : "NEXT"}
           </button>
         </div>
-        <button
-          type="button"
-          className="pressable"
-          onClick={() => skip("footer")}
-          style={{ fontSize: 13, fontWeight: 800, color: usernameStep ? "var(--ink-mute)" : "transparent", textAlign: "center", letterSpacing: 0.3, height: 18, pointerEvents: usernameStep ? "auto" : "none" }}
-        >
-          {usernameStep ? "Explore on my own" : ""}
-        </button>
-
-        {/* Terms consent — both the CTA and Skip proceed into the app, so this
+        {/* Terms consent — the CTA is the only way into the app, so this
             stays visible on every slide. */}
         <div style={{ fontSize: 9.5, lineHeight: 1.45, fontWeight: 600, color: "var(--ink-faint)", textAlign: "center", margin: "0 auto", whiteSpace: "nowrap" }}>
           By continuing you agree to our{" "}

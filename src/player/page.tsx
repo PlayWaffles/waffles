@@ -215,7 +215,7 @@ const Stage = () => {
   return (
     <div className="waffles-v2-frame">
       {showOnboarding ? (
-        <OnboardingScreen onPlay={dismissOnboarding} onSkip={dismissOnboarding} />
+        <OnboardingScreen onPlay={dismissOnboarding} />
       ) : (
         <>
           <Current />
