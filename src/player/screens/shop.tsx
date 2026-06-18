@@ -449,8 +449,7 @@ export const ShopScreen = () => {
         {/* Featured offer card */}
         {featured && (
         <>
-        <ComingSoonLabel>FEATURED</ComingSoonLabel>
-        <ComingSoonVeil note="Limited-time boosts like 2× XP arrive here soon.">
+        <ShopSectionLabel>FEATURED</ShopSectionLabel>
           <button
             type="button"
             onClick={tryOpenFeatured}
@@ -479,7 +478,6 @@ export const ShopScreen = () => {
               <SyrupIcon size={14} />{featured.price}
             </div>
           </button>
-        </ComingSoonVeil>
         </>
         )}
 
