@@ -27,33 +27,23 @@ const STREAK_FREEZE_COST = 2;
 
 type Roll = { type: "ticket" | "xp"; amount: number; rarity: "common" | "rare" | "jackpot" };
 
-// Variable reward pool (Hooked: variable rewards form habits faster than a
-// fixed schedule). A weighted roll on claim — the streak tilts the odds toward
-// the rarer prizes, so the loss-aversion of the streak still escalates value.
-const REWARD_POOL: { roll: Roll; weight: number }[] = [
-  { roll: { type: "xp", amount: 25, rarity: "common" }, weight: 26 },
-  { roll: { type: "ticket", amount: 1, rarity: "common" }, weight: 26 },
-  { roll: { type: "xp", amount: 50, rarity: "common" }, weight: 16 },
-  { roll: { type: "ticket", amount: 2, rarity: "rare" }, weight: 14 },
-  { roll: { type: "xp", amount: 100, rarity: "rare" }, weight: 8 },
-  { roll: { type: "ticket", amount: 5, rarity: "jackpot" }, weight: 3 },
-  { roll: { type: "ticket", amount: 10, rarity: "jackpot" }, weight: 1 },
+// Fixed 7-day reward calendar. The reward for a day is deterministic by its
+// position in the repeating 7-day cycle, so the calendar a player sees is
+// exactly what gets credited (the server mirrors this in economy.ts). Day 7 is
+// the jackpot — the loss-aversion payoff for not missing a day all week.
+const DAILY_SCHEDULE: Roll[] = [
+  { type: "ticket", amount: 5, rarity: "common" },   // Day 1
+  { type: "ticket", amount: 10, rarity: "common" },  // Day 2
+  { type: "xp", amount: 50, rarity: "common" },      // Day 3
+  { type: "ticket", amount: 15, rarity: "rare" },    // Day 4
+  { type: "xp", amount: 100, rarity: "rare" },       // Day 5
+  { type: "ticket", amount: 25, rarity: "rare" },    // Day 6
+  { type: "ticket", amount: 50, rarity: "jackpot" }, // Day 7
 ];
 
-// Longer streaks boost the rare/jackpot weights (caps out around day 30).
-function rollReward(streak: number): Roll {
-  const boost = 1 + Math.min(streak, 30) / 15; // 1× → 3×
-  const weighted = REWARD_POOL.map((e) => ({
-    roll: e.roll,
-    w: e.roll.rarity === "common" ? e.weight : e.weight * boost,
-  }));
-  const total = weighted.reduce((s, e) => s + e.w, 0);
-  let r = Math.random() * total;
-  for (const e of weighted) {
-    if ((r -= e.w) <= 0) return e.roll;
-  }
-  return weighted[0].roll;
-}
+/** The reward for the given (1-based) streak day — repeats every 7 days. */
+const rewardForStreak = (streak: number): Roll =>
+  DAILY_SCHEDULE[(Math.max(1, streak) - 1) % DAILY_SCHEDULE.length];
 
 type DailyState = { lastClaim: string | null; streak: number; freezes: number };
 
@@ -181,8 +171,8 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
       setClaimed(true);
       return;
     }
-    // Preview fallback (no auth): roll + credit locally.
-    const r = rollReward(baseStreak);
+    // Preview fallback (no auth): grant the next day's scheduled reward locally.
+    const r = rewardForStreak(baseStreak + 1);
     if (r.type === "ticket") proto.update((s) => ({ tickets: s.tickets + r.amount }));
     else proto.update((s) => ({ xp: s.xp + r.amount }));
     const next: DailyState = { lastClaim: todayKey(), streak: baseStreak + 1, freezes };
@@ -239,6 +229,9 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
   };
 
   const displayStreak = claimed ? baseStreak + 1 : baseStreak;
+  // 0-based position of TODAY's claim within the repeating 7-day cycle. Today's
+  // claim makes the streak baseStreak+1, i.e. cycle day ((baseStreak+1)-1) % 7.
+  const todayIdx = baseStreak % 7;
 
   return (
     <Sheet onClose={onClose} ariaLabel="Daily reward" zIndex={60}>
@@ -252,73 +245,88 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
           </span>
         </div>
         <div style={{ textAlign: "center", fontSize: 12, fontWeight: 600, color: "var(--ink-soft)", marginBottom: 16 }}>
-          {claimed ? "Come back tomorrow to keep it going" : "Open your mystery box — longer streaks, better odds"}
+          {claimed ? "Come back tomorrow to keep it going" : "Claim every day — Day 7 is the jackpot"}
         </div>
 
-        {/* Mystery box — variable reward, revealed on open */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 16 }}>
-          <div
-            style={{
-              position: "relative",
-              width: 132,
-              height: 132,
-              borderRadius: 22,
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 5,
-              padding: "0 8px",
-              textAlign: "center",
-              ...(reward
-                ? {
-                    background: "var(--surface-2)",
-                    border: `2px solid ${reward.rarity === "jackpot" ? "var(--maple-500)" : reward.rarity === "rare" ? "var(--leaf)" : "rgba(253,251,246,0.15)"}`,
-                    boxShadow:
-                      reward.rarity === "jackpot"
-                        ? "0 0 34px rgba(255,201,49,0.55)"
-                        : reward.rarity === "rare"
-                          ? "0 0 26px rgba(0,207,242,0.45)"
-                          : "none",
-                    animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) both",
-                  }
-                : {
-                    background: "linear-gradient(180deg, var(--maple-500), var(--maple-400))",
-                    border: "2px solid var(--frame)",
-                    boxShadow: "0 5px 0 var(--frame)",
-                  }),
-            }}
-          >
-            {reward ? (
-              <>
-                <RewardGlyph reward={reward} size={44} />
-                <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 20, color: "var(--ink)", lineHeight: 1 }}>
-                  +{reward.type === "xp" ? `${reward.amount} XP` : syrupLabel(reward.amount)}
+        {/* 7-day reward calendar — each day's reward is fixed; today is claimable,
+            past days in this cycle are claimed, future days are locked. */}
+        <div style={{ display: "flex", gap: 5, marginBottom: reward ? 10 : 16 }}>
+          {DAILY_SCHEDULE.map((r, i) => {
+            const isClaimed = i < todayIdx || (i === todayIdx && claimed);
+            const isToday = i === todayIdx && !claimed;
+            const isLocked = i > todayIdx;
+            const isJackpot = r.rarity === "jackpot";
+            return (
+              <div
+                key={i}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: 3,
+                  padding: "8px 1px 7px",
+                  borderRadius: 10,
+                  background: isToday ? "var(--surface-2)" : "rgba(253,251,246,0.03)",
+                  border: isToday
+                    ? "2px solid var(--maple-500)"
+                    : isJackpot && !isLocked
+                      ? "1.5px solid rgba(255,201,49,.45)"
+                      : "1.5px solid rgba(253,251,246,0.06)",
+                  boxShadow: isToday
+                    ? "0 0 16px rgba(255,201,49,.42)"
+                    : isJackpot && !isLocked
+                      ? "0 0 12px rgba(255,201,49,.28)"
+                      : "none",
+                  opacity: isLocked ? 0.5 : 1,
+                  ...(isToday ? { animation: "waffles-v2-lvl-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" } : {}),
+                }}
+              >
+                <div
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 800,
+                    letterSpacing: 0.2,
+                    textTransform: "uppercase",
+                    color: isToday ? "var(--maple-500)" : isJackpot ? "var(--maple-500)" : "var(--ink-faint)",
+                  }}
+                >
+                  {isJackpot ? `D7★` : `D${i + 1}`}
                 </div>
-                {reward.rarity !== "common" && (
+                <RewardGlyph reward={r} size={18} />
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 11, color: "var(--ink)", lineHeight: 1 }}>
+                  {r.amount}
+                </div>
+                {isClaimed && (
                   <div
-                    className="chip"
                     style={{
-                      fontSize: 9,
-                      padding: "2px 8px",
-                      background: reward.rarity === "jackpot" ? "rgba(255,201,49,.2)" : "rgba(0,207,242,.16)",
-                      color: reward.rarity === "jackpot" ? "var(--maple-500)" : "var(--leaf)",
-                      border: `1px solid ${reward.rarity === "jackpot" ? "rgba(255,201,49,.45)" : "rgba(0,207,242,.4)"}`,
+                      position: "absolute",
+                      inset: 0,
+                      borderRadius: 10,
+                      background: "rgba(8,10,14,0.58)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
                     }}
                   >
-                    {reward.rarity === "jackpot" ? "★ JACKPOT" : "RARE"}
+                    <span style={{ color: "var(--leaf)", fontFamily: "var(--font-hero)", fontWeight: 900, fontSize: 22 }}>✓</span>
                   </div>
                 )}
-              </>
-            ) : (
-              <span style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: claimed ? 44 : 64, color: "var(--frame)" }}>
-                {claimed ? "✓" : "?"}
-              </span>
-            )}
-          </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Open / claim CTA */}
+        {/* Just-claimed confirmation */}
+        {reward && (
+          <div style={{ textAlign: "center", marginBottom: 14, fontFamily: "var(--font-display)", fontSize: 14, color: reward.rarity === "jackpot" ? "var(--maple-500)" : "var(--leaf)" }}>
+            {reward.rarity === "jackpot" ? "★ JACKPOT · " : ""}+{reward.type === "xp" ? `${reward.amount} XP` : syrupLabel(reward.amount)} claimed
+          </div>
+        )}
+
+        {/* Claim CTA */}
         <button
           type="button"
           className="cta maple"
@@ -326,7 +334,7 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
           disabled={claimed}
           style={{ width: "100%", marginBottom: 10, opacity: claimed ? 0.55 : 1 }}
         >
-          {claimed ? "COME BACK TOMORROW" : "OPEN TODAY'S REWARD"}
+          {claimed ? "COME BACK TOMORROW" : `CLAIM DAY ${todayIdx + 1}`}
         </button>
 
         {/* Streak freeze */}
