@@ -1437,7 +1437,14 @@ export function ProtoProvider({
   // authoritative questions. Reuses v1's contract layer end-to-end.
   const enterTournamentOnChain = async (): Promise<{ ok: boolean; error?: string }> => {
     const t = await v2GetTournament();
-    if (!t || !t.game.onchainId) return { ok: false, error: "no_tournament" };
+    if (!t || !t.game.onchainId) {
+      console.warn("[buy-ticket] no tournament / not on-chain", { hasTournament: !!t, onchainId: t?.game.onchainId });
+      return { ok: false, error: "no_tournament" };
+    }
+    console.log("[buy-ticket] enter flow start", {
+      gameId: t.game.id, gameNumber: t.game.gameNumber, platform: t.game.platform,
+      onchainId: t.game.onchainId, entryFee: t.game.entryFee,
+    });
     try {
       const txHash = await tournamentWallet.enter(
         assertChainPlatform(t.game.platform),
@@ -1445,12 +1452,15 @@ export function ProtoProvider({
         t.game.entryFee,
         (step) => update({ tournamentStep: step }),
       );
+      console.log("[buy-ticket] on-chain done, verifying server-side", { txHash });
       update({ tournamentStep: "verifying" });
       const res = await v2EnterTournament(t.game.id, txHash);
       if (!res || !res.ok) {
+        console.warn("[buy-ticket] server verify rejected", { res });
         update({ tournamentStep: null });
         return { ok: false, error: res && !res.ok ? res.error : "entry_failed" };
       }
+      console.log("[buy-ticket] entry confirmed ✓ — entering lobby", { gameId: t.game.id });
       const mapped: Question[] = t.questions.map((q) => ({ ...q }));
       update({
         mode: "tournament",
@@ -1468,6 +1478,7 @@ export function ProtoProvider({
       goto("lobby");
       return { ok: true };
     } catch (e) {
+      console.error("[buy-ticket] enter flow threw", e);
       update({ tournamentStep: null });
       return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
     }

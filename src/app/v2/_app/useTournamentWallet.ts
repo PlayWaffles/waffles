@@ -94,10 +94,15 @@ export function useTournamentWallet() {
       const contractAddress = getWaffleContractAddress(target);
       const tokenAddress = getPaymentTokenAddress(target);
       const amount = parseUnits(entryFeeUsdc.toString(), PAYMENT_TOKEN_DECIMALS);
+      console.log("[buy-ticket] wallet.enter start", {
+        platform, chainId, currentChainId, address, contractAddress, tokenAddress,
+        onchainId, entryFeeUsdc, amount: amount.toString(),
+      });
 
       try {
         // Make sure the wallet is on the game's chain before any tx (v1 reuse).
         if (currentChainId !== chainId) {
+          console.log("[buy-ticket] switching chain", { from: currentChainId, to: chainId });
           onStep?.("switching");
           await switchChainAsync({ chainId });
         }
@@ -108,6 +113,7 @@ export function useTournamentWallet() {
           functionName: "allowance",
           args: [address, contractAddress],
         })) as bigint;
+        console.log("[buy-ticket] allowance read", { allowance: allowance.toString(), needed: amount.toString() });
 
         // Approve only when the standing allowance can't cover this entry; then
         // approve a buffer (≥ a few entries) so it's not a per-entry pop-up.
@@ -115,6 +121,7 @@ export function useTournamentWallet() {
           onStep?.("approving");
           const approvalAmount = parseUnits(MAX_ENTRY_APPROVAL_USDC, PAYMENT_TOKEN_DECIMALS);
           const approveAmount = approvalAmount > amount ? approvalAmount : amount;
+          console.log("[buy-ticket] approving", { approveAmount: approveAmount.toString() });
           const approveHash = await writeContractAsync(
             withBuilderCodeDataSuffix({
               chainId,
@@ -125,10 +132,13 @@ export function useTournamentWallet() {
             }),
           );
           onStep?.("approveConfirm");
+          console.log("[buy-ticket] approve tx sent, waiting", { approveHash });
           await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          console.log("[buy-ticket] approve confirmed");
         }
 
         onStep?.("paying");
+        console.log("[buy-ticket] sending buyTicket", { onchainId, amount: amount.toString() });
         const buyHash = await writeContractAsync(
           withBuilderCodeDataSuffix({
             chainId,
@@ -139,9 +149,13 @@ export function useTournamentWallet() {
           }),
         );
         onStep?.("confirming");
+        console.log("[buy-ticket] buyTicket tx sent, waiting", { buyHash });
         await publicClient.waitForTransactionReceipt({ hash: buyHash });
+        console.log("[buy-ticket] buyTicket confirmed ✓", { buyHash });
         return buyHash;
       } catch (error) {
+        // Log the RAW error (the friendly message hides the on-chain revert reason).
+        console.error("[buy-ticket] wallet.enter FAILED — raw error:", error);
         throw new Error(walletErrorMessage(error, platform));
       }
     },
