@@ -177,12 +177,6 @@ export const liveGame = {
     title: `${count} players just passed you`,
     body: "Your rank is slipping. Fight back.",
   }),
-
-  /** Chat is active */
-  chatActive: (messageCount: number): NotificationTemplate => ({
-    title: `${messageCount}+ messages in lobby`,
-    body: "The chat is going off. See what you're missing.",
-  }),
 };
 
 // ==========================================
