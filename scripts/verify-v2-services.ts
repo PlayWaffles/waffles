@@ -7,14 +7,14 @@
  */
 const { prisma } = await import("@/lib/db");
 const { UserPlatform, TicketLedgerReason } = await import("@prisma");
-const ps = await import("@/lib/v2/playerState");
-const econ = await import("@/lib/v2/economy");
-const missions = await import("@/lib/v2/missions");
-const leagues = await import("@/lib/v2/leagues");
-const partners = await import("@/lib/v2/partnerOffers");
-const seasonPass = await import("@/lib/v2/seasonPass");
-const roundQ = await import("@/lib/v2/roundQuestions");
-const scoring = await import("@/lib/v2/scoring");
+const ps = await import("@/lib/player/playerState");
+const econ = await import("@/lib/player/economy");
+const missions = await import("@/lib/player/missions");
+const leagues = await import("@/lib/player/leagues");
+const partners = await import("@/lib/player/partnerOffers");
+const seasonPass = await import("@/lib/player/seasonPass");
+const roundQ = await import("@/lib/player/roundQuestions");
+const scoring = await import("@/lib/player/scoring");
 
 const tag = `v2verify-${Date.now()}`;
 const user = await prisma.user.create({

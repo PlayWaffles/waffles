@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, TabBar, ToastButton } from "../shared";
-import { v2LoadTournamentLeaderboard } from "@/actions/v2";
-import type { TournamentBoard } from "@/lib/v2/tournamentGames";
+import { v2LoadTournamentLeaderboard } from "@/actions/player";
+import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Pre-generated medal art replaces the synthesized SVG medal.

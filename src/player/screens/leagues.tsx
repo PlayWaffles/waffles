@@ -3,8 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { v2LoadLeague } from "@/actions/v2";
-import type { V2League } from "@/lib/v2/leagues";
+import { v2LoadLeague } from "@/actions/player";
+import type { V2League } from "@/lib/player/leagues";
 
 const TIERS = [
   { key: "apprentice1", label: "APPRENTICE I", color: "#cd7f32" },

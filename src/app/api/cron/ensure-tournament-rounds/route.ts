@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { UserPlatform } from "@prisma";
 import { env } from "@/lib/env";
-import { ensureHourlyTournamentGame } from "@/lib/v2/tournamentGames";
+import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
 
 export const maxDuration = 60;
 

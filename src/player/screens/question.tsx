@@ -5,7 +5,7 @@ import { useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
 import { Illustration } from "../world-cup/components/parts";
-import { v2LoadCurrentTournamentBoard, v2LoadPowerUps } from "@/actions/v2";
+import { v2LoadCurrentTournamentBoard, v2LoadPowerUps } from "@/actions/player";
 import type { PowerUpName } from "../state";
 
 // Power-ups available to activate during a question (icon + label per kind).

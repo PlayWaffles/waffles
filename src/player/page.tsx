@@ -9,7 +9,7 @@ import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
 import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-takeover";
 import { MigrationTakeover } from "./screens/migration-takeover";
-import { v2GetMigrationNotice, v2DismissMigrationNotice } from "@/actions/v2";
+import { v2GetMigrationNotice, v2DismissMigrationNotice } from "@/actions/player";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";

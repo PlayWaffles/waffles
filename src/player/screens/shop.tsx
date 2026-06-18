@@ -4,8 +4,8 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactN
 import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, syrupLabel, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
 import { ASSETS, AssetWell, Button, Card, Confetti, GameLoader, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
-import { v2BuyBundle, v2GetShopCatalog, v2Purchase } from "@/actions/v2";
-import type { ShopCatalog } from "@/lib/v2/economy";
+import { v2BuyBundle, v2GetShopCatalog, v2Purchase } from "@/actions/player";
+import type { ShopCatalog } from "@/lib/player/economy";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TICKET_INFO = `Syrup is earned by playing — daily rewards, levels and missions. Spend it on lives, power-ups for solo levels, and cosmetics. Tournaments are entered with USDC and prizes are paid in USDT from your Prize Wallet.`;

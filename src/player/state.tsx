@@ -29,7 +29,7 @@ import {
   v2ResolveWinning,
   v2SetAnnouncementsRead,
   v2SetUsername,
-} from "@/actions/v2";
+} from "@/actions/player";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { assertChainPlatform } from "@/lib/chain/platform";
 import {
