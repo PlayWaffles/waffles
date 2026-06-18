@@ -108,11 +108,6 @@ export type LevelProgress = Prisma.LevelProgressModel
  */
 export type RoundEntry = Prisma.RoundEntryModel
 /**
- * Model Winning
- * 
- */
-export type Winning = Prisma.WinningModel
-/**
  * Model Announcement
  * 
  */

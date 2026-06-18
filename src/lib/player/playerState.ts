@@ -10,7 +10,17 @@
  */
 import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
-import { LevelTrack, TicketLedgerReason, WinningStatus, type Prisma } from "@prisma";
+import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
+import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+
+// Peg used to value an on-chain prize as in-app Syrup: 1 ticket = 0.1 USDT.
+// merkleAmount is in payment-token base units (6 decimals), so its ticket value
+// is (merkleAmount / 10^decimals) / 0.1.
+const USDT_PER_TICKET = 0.1;
+function merkleAmountToTickets(merkleAmount: string): number {
+  const usdt = Number(merkleAmount) / 10 ** PAYMENT_TOKEN_DECIMALS;
+  return Math.round(usdt / USDT_PER_TICKET);
+}
 import { accrueLeaguePoints } from "./leagues";
 
 // ── Shape returned to the client (mirrors Proto persistent fields) ──────────
@@ -48,12 +58,6 @@ const TRACK_TO_ENUM: Record<Track, LevelTrack> = {
 const ENUM_TO_TRACK: Record<LevelTrack, Track> = {
   [LevelTrack.STANDARD]: "standard",
   [LevelTrack.WORLD_CUP]: "world-cup",
-};
-
-const WINNING_STATUS_OUT: Record<WinningStatus, Winning["status"]> = {
-  [WinningStatus.PENDING]: "pending",
-  [WinningStatus.CLAIMED]: "claimed",
-  [WinningStatus.CONVERTED]: "converted",
 };
 
 // ── Lives / milestone economy (mirrors state.tsx pure helpers) ──────────────
@@ -118,10 +122,24 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
       },
     }),
     prisma.levelProgress.findMany({ where: { userId }, select: { track: true, level: true } }),
-    prisma.winning.findMany({
-      where: { userId },
-      orderBy: { wonAt: "desc" },
-      select: { id: true, rank: true, tickets: true, wonAt: true, status: true },
+    // Winnings = a player's on-chain tournament prizes, read straight from
+    // GameEntry (the canonical merkle prize record). Status derives from
+    // claimedAt; keyed by gameId so claiming acts on it via the merkle path.
+    prisma.gameEntry.findMany({
+      where: {
+        userId,
+        prize: { gt: 0 },
+        merkleAmount: { not: null },
+        game: { onChainAt: { not: null }, onchainId: { not: null } },
+      },
+      orderBy: { createdAt: "desc" },
+      select: {
+        gameId: true,
+        rank: true,
+        merkleAmount: true,
+        claimedAt: true,
+        game: { select: { endsAt: true } },
+      },
     }),
     prisma.roundEntry.findFirst({
       where: { userId, settled: true, finalRank: { not: null } },
@@ -151,11 +169,11 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
     avatarId: user.avatarId,
     levelByTrack,
     winnings: winnings.map((w) => ({
-      id: w.id,
-      rank: w.rank,
-      tickets: w.tickets,
-      wonAt: w.wonAt.getTime(),
-      status: WINNING_STATUS_OUT[w.status],
+      id: w.gameId,
+      rank: w.rank ?? 0,
+      tickets: merkleAmountToTickets(w.merkleAmount!),
+      wonAt: w.game.endsAt.getTime(),
+      status: w.claimedAt ? "claimed" : "pending",
     })),
     lastTournamentRank: lastSettled?.finalRank ?? null,
     annRead: annStates.filter((a) => a.readAt).map((a) => a.announcementId),
@@ -294,67 +312,6 @@ export async function refillLives(userId: string): Promise<{ lives: number; tick
       },
     });
     return { lives: LIVES_MAX, tickets };
-  });
-}
-
-// ── Prize wallet ────────────────────────────────────────────────────────────
-/** Resolve a pending winning: CLAIM (on-chain USDT, settled elsewhere) or
- *  CONVERT (credit ticket balance). Returns the new ticket balance for convert. */
-export async function resolveWinning(
-  userId: string,
-  winningId: string,
-  mode: "claim" | "convert",
-): Promise<{ tickets: number | null }> {
-  return prisma.$transaction(async (tx) => {
-    const w = await tx.winning.findFirst({
-      where: { id: winningId, userId, status: WinningStatus.PENDING },
-      select: { id: true, tickets: true },
-    });
-    if (!w) return { tickets: null };
-    if (mode === "convert") {
-      const tickets = await adjustTickets(userId, w.tickets, TicketLedgerReason.WINNING_CONVERT, {
-        refId: w.id,
-        tx,
-      });
-      await tx.winning.update({
-        where: { id: w.id },
-        data: { status: WinningStatus.CONVERTED, resolvedAt: new Date() },
-      });
-      await trackServerEvent({
-        name: "prize_resolution_authoritative",
-        userId,
-        tx,
-        properties: {
-          reward_type: "tickets",
-          reward_amount: w.tickets,
-          tickets_after: tickets,
-          winning_id_hash: hashServerAnalyticsId(w.id),
-          result: "converted",
-        },
-      });
-      return { tickets };
-    }
-    // claim: record the USDT payout (ticket value via the 0.1 peg, in 6-decimal
-    // token units) and mark CLAIMED. The actual on-chain transfer is fulfilled by
-    // the settler infra, which fills `claimTxHash` once the tx confirms.
-    const usdtUnits = Math.round(w.tickets * 0.1 * 1_000_000);
-    await tx.winning.update({
-      where: { id: w.id },
-      data: { status: WinningStatus.CLAIMED, resolvedAt: new Date(), merkleAmount: String(usdtUnits) },
-    });
-    await trackServerEvent({
-      name: "prize_resolution_authoritative",
-      userId,
-      tx,
-      properties: {
-        reward_type: "usdt",
-        reward_amount: w.tickets * 0.1,
-        winning_id_hash: hashServerAnalyticsId(w.id),
-        tx_present: false,
-        result: "claimed",
-      },
-    });
-    return { tickets: null };
   });
 }
 

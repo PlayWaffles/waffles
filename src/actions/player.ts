@@ -263,14 +263,6 @@ export async function refillLives(): Promise<{ lives: number; tickets: number } 
   return playerSvc.refillLives(user.id);
 }
 
-export async function resolveWinning(
-  winningId: string,
-  mode: "claim" | "convert",
-): Promise<{ tickets: number | null } | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  return playerSvc.resolveWinning(user.id, winningId, mode);
-}
 
 /** Generic ticket adjustment for client-side economy events (e.g. tournament
  *  entry charge, daily reward). Reason is validated against the enum. */

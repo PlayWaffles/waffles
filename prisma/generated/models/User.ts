@@ -449,7 +449,6 @@ export type UserWhereInput = {
   ticketLedger?: Prisma.TicketLedgerListRelationFilter
   levelProgress?: Prisma.LevelProgressListRelationFilter
   roundEntries?: Prisma.RoundEntryListRelationFilter
-  winnings?: Prisma.WinningListRelationFilter
   announcementState?: Prisma.AnnouncementStateListRelationFilter
   questProgress?: Prisma.QuestProgressListRelationFilter
   leagueMembers?: Prisma.LeagueMemberListRelationFilter
@@ -507,7 +506,6 @@ export type UserOrderByWithRelationInput = {
   ticketLedger?: Prisma.TicketLedgerOrderByRelationAggregateInput
   levelProgress?: Prisma.LevelProgressOrderByRelationAggregateInput
   roundEntries?: Prisma.RoundEntryOrderByRelationAggregateInput
-  winnings?: Prisma.WinningOrderByRelationAggregateInput
   announcementState?: Prisma.AnnouncementStateOrderByRelationAggregateInput
   questProgress?: Prisma.QuestProgressOrderByRelationAggregateInput
   leagueMembers?: Prisma.LeagueMemberOrderByRelationAggregateInput
@@ -568,7 +566,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   ticketLedger?: Prisma.TicketLedgerListRelationFilter
   levelProgress?: Prisma.LevelProgressListRelationFilter
   roundEntries?: Prisma.RoundEntryListRelationFilter
-  winnings?: Prisma.WinningListRelationFilter
   announcementState?: Prisma.AnnouncementStateListRelationFilter
   questProgress?: Prisma.QuestProgressListRelationFilter
   leagueMembers?: Prisma.LeagueMemberListRelationFilter
@@ -697,7 +694,6 @@ export type UserCreateInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -754,7 +750,6 @@ export type UserUncheckedCreateInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -811,7 +806,6 @@ export type UserUpdateInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -868,7 +862,6 @@ export type UserUncheckedUpdateInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -1390,20 +1383,6 @@ export type UserUpdateOneRequiredWithoutRoundEntriesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutRoundEntriesInput, Prisma.UserUpdateWithoutRoundEntriesInput>, Prisma.UserUncheckedUpdateWithoutRoundEntriesInput>
 }
 
-export type UserCreateNestedOneWithoutWinningsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutWinningsInput, Prisma.UserUncheckedCreateWithoutWinningsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWinningsInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutWinningsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutWinningsInput, Prisma.UserUncheckedCreateWithoutWinningsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutWinningsInput
-  upsert?: Prisma.UserUpsertWithoutWinningsInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWinningsInput, Prisma.UserUpdateWithoutWinningsInput>, Prisma.UserUncheckedUpdateWithoutWinningsInput>
-}
-
 export type UserCreateNestedOneWithoutAnnouncementStateInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutAnnouncementStateInput, Prisma.UserUncheckedCreateWithoutAnnouncementStateInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutAnnouncementStateInput
@@ -1599,7 +1578,6 @@ export type UserCreateWithoutReferralsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -1655,7 +1633,6 @@ export type UserUncheckedCreateWithoutReferralsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -1716,7 +1693,6 @@ export type UserCreateWithoutReferredByInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -1772,7 +1748,6 @@ export type UserUncheckedCreateWithoutReferredByInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -1849,7 +1824,6 @@ export type UserUpdateWithoutReferralsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -1905,7 +1879,6 @@ export type UserUncheckedUpdateWithoutReferralsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -2012,7 +1985,6 @@ export type UserCreateWithoutWalletsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -2068,7 +2040,6 @@ export type UserUncheckedCreateWithoutWalletsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -2140,7 +2111,6 @@ export type UserUpdateWithoutWalletsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -2196,7 +2166,6 @@ export type UserUncheckedUpdateWithoutWalletsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -2252,7 +2221,6 @@ export type UserCreateWithoutRewardsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -2308,7 +2276,6 @@ export type UserUncheckedCreateWithoutRewardsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -2380,7 +2347,6 @@ export type UserUpdateWithoutRewardsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -2436,7 +2402,6 @@ export type UserUncheckedUpdateWithoutRewardsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -2492,7 +2457,6 @@ export type UserCreateWithoutCompletedQuestsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -2548,7 +2512,6 @@ export type UserUncheckedCreateWithoutCompletedQuestsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -2620,7 +2583,6 @@ export type UserUpdateWithoutCompletedQuestsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -2676,7 +2638,6 @@ export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -2732,7 +2693,6 @@ export type UserCreateWithoutEntriesInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -2788,7 +2748,6 @@ export type UserUncheckedCreateWithoutEntriesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -2860,7 +2819,6 @@ export type UserUpdateWithoutEntriesInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -2916,7 +2874,6 @@ export type UserUncheckedUpdateWithoutEntriesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -2972,7 +2929,6 @@ export type UserCreateWithoutPendingPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -3028,7 +2984,6 @@ export type UserUncheckedCreateWithoutPendingPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -3100,7 +3055,6 @@ export type UserUpdateWithoutPendingPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -3156,7 +3110,6 @@ export type UserUncheckedUpdateWithoutPendingPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -3212,7 +3165,6 @@ export type UserCreateWithoutNotifsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -3268,7 +3220,6 @@ export type UserUncheckedCreateWithoutNotifsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -3340,7 +3291,6 @@ export type UserUpdateWithoutNotifsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -3396,7 +3346,6 @@ export type UserUncheckedUpdateWithoutNotifsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -3452,7 +3401,6 @@ export type UserCreateWithoutAuditLogsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -3508,7 +3456,6 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -3580,7 +3527,6 @@ export type UserUpdateWithoutAuditLogsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -3636,7 +3582,6 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -3693,7 +3638,6 @@ export type UserCreateWithoutAnalyticsEventsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -3749,7 +3693,6 @@ export type UserUncheckedCreateWithoutAnalyticsEventsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -3821,7 +3764,6 @@ export type UserUpdateWithoutAnalyticsEventsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -3877,7 +3819,6 @@ export type UserUncheckedUpdateWithoutAnalyticsEventsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -3932,7 +3873,6 @@ export type UserCreateWithoutRedeemedCodesInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -3988,7 +3928,6 @@ export type UserUncheckedCreateWithoutRedeemedCodesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -4060,7 +3999,6 @@ export type UserUpdateWithoutRedeemedCodesInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -4116,7 +4054,6 @@ export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -4172,7 +4109,6 @@ export type UserCreateWithoutTicketLedgerInput = {
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -4228,7 +4164,6 @@ export type UserUncheckedCreateWithoutTicketLedgerInput = {
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -4300,7 +4235,6 @@ export type UserUpdateWithoutTicketLedgerInput = {
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -4356,7 +4290,6 @@ export type UserUncheckedUpdateWithoutTicketLedgerInput = {
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -4412,7 +4345,6 @@ export type UserCreateWithoutLevelProgressInput = {
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -4468,7 +4400,6 @@ export type UserUncheckedCreateWithoutLevelProgressInput = {
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -4540,7 +4471,6 @@ export type UserUpdateWithoutLevelProgressInput = {
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -4596,7 +4526,6 @@ export type UserUncheckedUpdateWithoutLevelProgressInput = {
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -4652,7 +4581,6 @@ export type UserCreateWithoutRoundEntriesInput = {
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -4708,7 +4636,6 @@ export type UserUncheckedCreateWithoutRoundEntriesInput = {
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -4780,7 +4707,6 @@ export type UserUpdateWithoutRoundEntriesInput = {
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -4836,247 +4762,6 @@ export type UserUncheckedUpdateWithoutRoundEntriesInput = {
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
-  announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
-  questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
-  leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
-  purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
-  powerUps?: Prisma.PowerUpInventoryUncheckedUpdateManyWithoutUserNestedInput
-  cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
-  boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
-  earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
-  dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
-  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
-  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
-  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
-}
-
-export type UserCreateWithoutWinningsInput = {
-  id?: string
-  platform: $Enums.UserPlatform
-  fid?: number | null
-  username?: string | null
-  pfpUrl?: string | null
-  wallet?: string | null
-  role?: $Enums.UserRole
-  password?: string | null
-  inviteCode: string
-  inviteQuota?: number
-  hasGameAccess?: boolean
-  accessGrantedAt?: Date | string | null
-  accessGrantedBy?: string | null
-  onboardingCompletedAt?: Date | string | null
-  xp?: number
-  ticketBalance?: number
-  lives?: number
-  nextLifeAt?: Date | string | null
-  streakFreezes?: number
-  avatarId?: string | null
-  currentStreak?: number
-  bestStreak?: number
-  lastLoginAt?: Date | string | null
-  isBanned?: boolean
-  bannedAt?: Date | string | null
-  bannedBy?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
-  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
-  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
-  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
-  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
-  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
-  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
-  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
-  ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
-  levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
-  roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
-  questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
-  leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
-  purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
-  powerUps?: Prisma.PowerUpInventoryCreateNestedManyWithoutUserInput
-  cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
-  boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
-  earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
-  dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
-  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
-  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
-  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutWinningsInput = {
-  id?: string
-  platform: $Enums.UserPlatform
-  fid?: number | null
-  username?: string | null
-  pfpUrl?: string | null
-  wallet?: string | null
-  role?: $Enums.UserRole
-  password?: string | null
-  referredById?: string | null
-  inviteCode: string
-  inviteQuota?: number
-  hasGameAccess?: boolean
-  accessGrantedAt?: Date | string | null
-  accessGrantedBy?: string | null
-  onboardingCompletedAt?: Date | string | null
-  xp?: number
-  ticketBalance?: number
-  lives?: number
-  nextLifeAt?: Date | string | null
-  streakFreezes?: number
-  avatarId?: string | null
-  currentStreak?: number
-  bestStreak?: number
-  lastLoginAt?: Date | string | null
-  isBanned?: boolean
-  bannedAt?: Date | string | null
-  bannedBy?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
-  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
-  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
-  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
-  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
-  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
-  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
-  ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
-  levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
-  roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
-  questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
-  leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
-  purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
-  powerUps?: Prisma.PowerUpInventoryUncheckedCreateNestedManyWithoutUserInput
-  cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
-  boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
-  earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
-  dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
-  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
-  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
-  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutWinningsInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutWinningsInput, Prisma.UserUncheckedCreateWithoutWinningsInput>
-}
-
-export type UserUpsertWithoutWinningsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutWinningsInput, Prisma.UserUncheckedUpdateWithoutWinningsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutWinningsInput, Prisma.UserUncheckedCreateWithoutWinningsInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutWinningsInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutWinningsInput, Prisma.UserUncheckedUpdateWithoutWinningsInput>
-}
-
-export type UserUpdateWithoutWinningsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
-  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
-  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
-  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
-  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  xp?: Prisma.IntFieldUpdateOperationsInput | number
-  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
-  lives?: Prisma.IntFieldUpdateOperationsInput | number
-  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
-  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
-  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
-  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
-  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
-  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
-  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
-  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
-  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
-  ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
-  levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
-  roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
-  questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
-  leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
-  purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
-  powerUps?: Prisma.PowerUpInventoryUpdateManyWithoutUserNestedInput
-  cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
-  boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
-  earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
-  dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
-  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
-  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
-  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutWinningsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
-  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
-  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
-  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
-  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  xp?: Prisma.IntFieldUpdateOperationsInput | number
-  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
-  lives?: Prisma.IntFieldUpdateOperationsInput | number
-  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
-  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
-  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
-  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
-  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
-  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
-  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
-  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
-  ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
-  levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
-  roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -5133,7 +4818,6 @@ export type UserCreateWithoutAnnouncementStateInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
   purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
@@ -5189,7 +4873,6 @@ export type UserUncheckedCreateWithoutAnnouncementStateInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
   purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
@@ -5261,7 +4944,6 @@ export type UserUpdateWithoutAnnouncementStateInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
   purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
@@ -5317,7 +4999,6 @@ export type UserUncheckedUpdateWithoutAnnouncementStateInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
   purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
@@ -5373,7 +5054,6 @@ export type UserCreateWithoutQuestProgressInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
   purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
@@ -5429,7 +5109,6 @@ export type UserUncheckedCreateWithoutQuestProgressInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
   purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
@@ -5501,7 +5180,6 @@ export type UserUpdateWithoutQuestProgressInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
   purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
@@ -5557,7 +5235,6 @@ export type UserUncheckedUpdateWithoutQuestProgressInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
   purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
@@ -5613,7 +5290,6 @@ export type UserCreateWithoutLeagueMembersInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
@@ -5669,7 +5345,6 @@ export type UserUncheckedCreateWithoutLeagueMembersInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
@@ -5741,7 +5416,6 @@ export type UserUpdateWithoutLeagueMembersInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
@@ -5797,7 +5471,6 @@ export type UserUncheckedUpdateWithoutLeagueMembersInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
@@ -5853,7 +5526,6 @@ export type UserCreateWithoutPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -5909,7 +5581,6 @@ export type UserUncheckedCreateWithoutPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -5981,7 +5652,6 @@ export type UserUpdateWithoutPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -6037,7 +5707,6 @@ export type UserUncheckedUpdateWithoutPurchasesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -6093,7 +5762,6 @@ export type UserCreateWithoutPowerUpsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -6149,7 +5817,6 @@ export type UserUncheckedCreateWithoutPowerUpsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -6221,7 +5888,6 @@ export type UserUpdateWithoutPowerUpsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -6277,7 +5943,6 @@ export type UserUncheckedUpdateWithoutPowerUpsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -6333,7 +5998,6 @@ export type UserCreateWithoutCosmeticsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -6389,7 +6053,6 @@ export type UserUncheckedCreateWithoutCosmeticsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -6461,7 +6124,6 @@ export type UserUpdateWithoutCosmeticsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -6517,7 +6179,6 @@ export type UserUncheckedUpdateWithoutCosmeticsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -6573,7 +6234,6 @@ export type UserCreateWithoutBoostsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -6629,7 +6289,6 @@ export type UserUncheckedCreateWithoutBoostsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -6701,7 +6360,6 @@ export type UserUpdateWithoutBoostsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -6757,7 +6415,6 @@ export type UserUncheckedUpdateWithoutBoostsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -6813,7 +6470,6 @@ export type UserCreateWithoutEarnedBadgesInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -6869,7 +6525,6 @@ export type UserUncheckedCreateWithoutEarnedBadgesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -6941,7 +6596,6 @@ export type UserUpdateWithoutEarnedBadgesInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -6997,7 +6651,6 @@ export type UserUncheckedUpdateWithoutEarnedBadgesInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -7053,7 +6706,6 @@ export type UserCreateWithoutPartnerClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -7109,7 +6761,6 @@ export type UserUncheckedCreateWithoutPartnerClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -7181,7 +6832,6 @@ export type UserUpdateWithoutPartnerClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -7237,7 +6887,6 @@ export type UserUncheckedUpdateWithoutPartnerClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -7293,7 +6942,6 @@ export type UserCreateWithoutSeasonPassClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -7349,7 +6997,6 @@ export type UserUncheckedCreateWithoutSeasonPassClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -7421,7 +7068,6 @@ export type UserUpdateWithoutSeasonPassClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -7477,7 +7123,6 @@ export type UserUncheckedUpdateWithoutSeasonPassClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -7533,7 +7178,6 @@ export type UserCreateWithoutDailyClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
@@ -7589,7 +7233,6 @@ export type UserUncheckedCreateWithoutDailyClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
   levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
   roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
   announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
   questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
   leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
@@ -7661,7 +7304,6 @@ export type UserUpdateWithoutDailyClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -7717,7 +7359,6 @@ export type UserUncheckedUpdateWithoutDailyClaimsInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -7803,7 +7444,6 @@ export type UserUpdateWithoutReferredByInput = {
   ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
@@ -7859,7 +7499,6 @@ export type UserUncheckedUpdateWithoutReferredByInput = {
   ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
   levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
   roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
   announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
   questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
   leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
@@ -7923,7 +7562,6 @@ export type UserCountOutputType = {
   ticketLedger: number
   levelProgress: number
   roundEntries: number
-  winnings: number
   announcementState: number
   questProgress: number
   leagueMembers: number
@@ -7951,7 +7589,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   ticketLedger?: boolean | UserCountOutputTypeCountTicketLedgerArgs
   levelProgress?: boolean | UserCountOutputTypeCountLevelProgressArgs
   roundEntries?: boolean | UserCountOutputTypeCountRoundEntriesArgs
-  winnings?: boolean | UserCountOutputTypeCountWinningsArgs
   announcementState?: boolean | UserCountOutputTypeCountAnnouncementStateArgs
   questProgress?: boolean | UserCountOutputTypeCountQuestProgressArgs
   leagueMembers?: boolean | UserCountOutputTypeCountLeagueMembersArgs
@@ -8058,13 +7695,6 @@ export type UserCountOutputTypeCountLevelProgressArgs<ExtArgs extends runtime.Ty
  */
 export type UserCountOutputTypeCountRoundEntriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.RoundEntryWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountWinningsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.WinningWhereInput
 }
 
 /**
@@ -8195,7 +7825,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   ticketLedger?: boolean | Prisma.User$ticketLedgerArgs<ExtArgs>
   levelProgress?: boolean | Prisma.User$levelProgressArgs<ExtArgs>
   roundEntries?: boolean | Prisma.User$roundEntriesArgs<ExtArgs>
-  winnings?: boolean | Prisma.User$winningsArgs<ExtArgs>
   announcementState?: boolean | Prisma.User$announcementStateArgs<ExtArgs>
   questProgress?: boolean | Prisma.User$questProgressArgs<ExtArgs>
   leagueMembers?: boolean | Prisma.User$leagueMembersArgs<ExtArgs>
@@ -8324,7 +7953,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   ticketLedger?: boolean | Prisma.User$ticketLedgerArgs<ExtArgs>
   levelProgress?: boolean | Prisma.User$levelProgressArgs<ExtArgs>
   roundEntries?: boolean | Prisma.User$roundEntriesArgs<ExtArgs>
-  winnings?: boolean | Prisma.User$winningsArgs<ExtArgs>
   announcementState?: boolean | Prisma.User$announcementStateArgs<ExtArgs>
   questProgress?: boolean | Prisma.User$questProgressArgs<ExtArgs>
   leagueMembers?: boolean | Prisma.User$leagueMembersArgs<ExtArgs>
@@ -8362,7 +7990,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     ticketLedger: Prisma.$TicketLedgerPayload<ExtArgs>[]
     levelProgress: Prisma.$LevelProgressPayload<ExtArgs>[]
     roundEntries: Prisma.$RoundEntryPayload<ExtArgs>[]
-    winnings: Prisma.$WinningPayload<ExtArgs>[]
     announcementState: Prisma.$AnnouncementStatePayload<ExtArgs>[]
     questProgress: Prisma.$QuestProgressPayload<ExtArgs>[]
     leagueMembers: Prisma.$LeagueMemberPayload<ExtArgs>[]
@@ -8813,7 +8440,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   ticketLedger<T extends Prisma.User$ticketLedgerArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ticketLedgerArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TicketLedgerPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   levelProgress<T extends Prisma.User$levelProgressArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$levelProgressArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LevelProgressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   roundEntries<T extends Prisma.User$roundEntriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$roundEntriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RoundEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  winnings<T extends Prisma.User$winningsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$winningsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WinningPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   announcementState<T extends Prisma.User$announcementStateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$announcementStateArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementStatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   questProgress<T extends Prisma.User$questProgressArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$questProgressArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestProgressPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   leagueMembers<T extends Prisma.User$leagueMembersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$leagueMembersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LeagueMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -9584,30 +9210,6 @@ export type User$roundEntriesArgs<ExtArgs extends runtime.Types.Extensions.Inter
   take?: number
   skip?: number
   distinct?: Prisma.RoundEntryScalarFieldEnum | Prisma.RoundEntryScalarFieldEnum[]
-}
-
-/**
- * User.winnings
- */
-export type User$winningsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Winning
-   */
-  select?: Prisma.WinningSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Winning
-   */
-  omit?: Prisma.WinningOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.WinningInclude<ExtArgs> | null
-  where?: Prisma.WinningWhereInput
-  orderBy?: Prisma.WinningOrderByWithRelationInput | Prisma.WinningOrderByWithRelationInput[]
-  cursor?: Prisma.WinningWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.WinningScalarFieldEnum | Prisma.WinningScalarFieldEnum[]
 }
 
 /**

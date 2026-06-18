@@ -78,7 +78,6 @@ model User {
   ticketLedger      TicketLedger[]
   levelProgress     LevelProgress[]
   roundEntries      RoundEntry[]
-  winnings          Winning[]
   announcementState AnnouncementState[]
   questProgress     QuestProgress[]
   leagueMembers     LeagueMember[]
@@ -636,11 +635,6 @@ enum TicketLedgerReason {
   ADMIN_ADJUST
 }
 
-enum WinningStatus {
-  PENDING
-  CLAIMED
-  CONVERTED
-}
 
 enum ShopItemKind {
   POWERUP
@@ -734,25 +728,6 @@ model RoundEntry {
 
   @@unique([userId, roundId])
   @@index([roundId, score(sort: Desc)])
-}
-
-// -- Prize Wallet: a tournament prize the player resolves by CLAIM (on-chain
-//    USDT via the existing merkle path) or CONVERT (credit to ticket balance). --
-model Winning {
-  id           String        @id @default(cuid())
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId       String
-  roundId      BigInt?
-  rank         Int
-  tickets      Int // ticket-denominated value (USDT value derived via peg)
-  status       WinningStatus @default(PENDING)
-  wonAt        DateTime      @default(now())
-  resolvedAt   DateTime?
-  claimTxHash  String?       @db.VarChar(66)
-  merkleProof  Json?
-  merkleAmount String?       @db.VarChar(78)
-
-  @@index([userId, wonAt(sort: Desc)])
 }
 
 // -- In-app announcements + per-user read/dismiss state. --

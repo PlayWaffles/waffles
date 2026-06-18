@@ -69,7 +69,6 @@ export const ModelName = {
   TicketLedger: 'TicketLedger',
   LevelProgress: 'LevelProgress',
   RoundEntry: 'RoundEntry',
-  Winning: 'Winning',
   Announcement: 'Announcement',
   AnnouncementState: 'AnnouncementState',
   QuestProgress: 'QuestProgress',
@@ -447,23 +446,6 @@ export const RoundEntryScalarFieldEnum = {
 } as const
 
 export type RoundEntryScalarFieldEnum = (typeof RoundEntryScalarFieldEnum)[keyof typeof RoundEntryScalarFieldEnum]
-
-
-export const WinningScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  roundId: 'roundId',
-  rank: 'rank',
-  tickets: 'tickets',
-  status: 'status',
-  wonAt: 'wonAt',
-  resolvedAt: 'resolvedAt',
-  claimTxHash: 'claimTxHash',
-  merkleProof: 'merkleProof',
-  merkleAmount: 'merkleAmount'
-} as const
-
-export type WinningScalarFieldEnum = (typeof WinningScalarFieldEnum)[keyof typeof WinningScalarFieldEnum]
 
 
 export const AnnouncementScalarFieldEnum = {
