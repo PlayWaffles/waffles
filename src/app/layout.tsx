@@ -5,8 +5,14 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { env } from "@/lib/env";
 
-const UMAMI_HOST = process.env.NEXT_PUBLIC_UMAMI_HOST;
-const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+// These are PUBLIC values (they ship in the client tracker), so they're hardcoded
+// as defaults rather than relying on build-time env. The deploy platform (Dokploy)
+// injects env at RUNTIME, not into the Nixpacks build — and NEXT_PUBLIC_* must
+// exist at BUILD time to inline, so runtime env never reaches them. Env still
+// overrides the default if it's ever present at build.
+const UMAMI_HOST = process.env.NEXT_PUBLIC_UMAMI_HOST ?? "https://analytics.cyberverse.cloud";
+const UMAMI_WEBSITE_ID =
+  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "c93b9fef-6a59-4006-adb3-48d2bb001e8d";
 // Optional comma-separated allowlist of hostnames Umami should track on. Leave
 // UNSET to track on every host (incl. the in-app webview, localhost, previews).
 // If set, Umami silently ignores any host not in the list — so it must include
