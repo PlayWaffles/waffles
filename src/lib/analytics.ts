@@ -109,7 +109,7 @@ export const AnalyticsEvent = {
   ExpansionFormatSubmitted: "expansion_format_submitted",
   ExpansionFormatCompleted: "expansion_format_completed",
   ExpansionFormatExited: "expansion_format_exited",
-  V2ShellLoaded: "v2_shell_loaded",
+  ShellLoaded: "v2_shell_loaded",
   ScreenViewed: "screen_viewed",
   ScreenBackClicked: "screen_back_clicked",
   LevelTrackChanged: "level_track_changed",

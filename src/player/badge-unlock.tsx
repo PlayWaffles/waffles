@@ -5,7 +5,7 @@ import { useProto } from "./state";
 import { badgeById, deriveBadgeStats, earnedBadgeIds, type Badge } from "./data/badges";
 import { Confetti, PixelImg } from "./shared";
 import { playSound } from "./sound";
-import { v2RecordBadge } from "@/actions/player";
+import { recordBadge } from "@/actions/player";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // "Badge unlocked!" celebration.
@@ -84,7 +84,7 @@ export function BadgeUnlockWatcher() {
         badge_category: badge ? badgeAnalyticsCategory(id) : "unknown",
         unlock_source: "derived_state",
       });
-      void v2RecordBadge(id);
+      void recordBadge(id);
     });
     writeSeen(seen);
     const newly = fresh.map(badgeById).filter((b): b is Badge => Boolean(b));

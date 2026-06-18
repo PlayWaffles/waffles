@@ -4,14 +4,14 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactN
 import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, syrupLabel, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
 import { ASSETS, AssetWell, Button, Card, Confetti, GameLoader, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
-import { v2BuyBundle, v2GetShopCatalog, v2Purchase } from "@/actions/player";
+import { buyBundle, getShopCatalog, purchase } from "@/actions/player";
 import type { ShopCatalog } from "@/lib/player/economy";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TICKET_INFO = `Syrup is earned by playing — daily rewards, levels and missions. Spend it on lives, power-ups for solo levels, and cosmetics. Tournaments are entered with USDC and prizes are paid in USDT from your Prize Wallet.`;
 
 // ===== Catalog =================================================================
-// Prices/labels/ownership come from the DB via v2GetShopCatalog — the single
+// Prices/labels/ownership come from the DB via getShopCatalog — the single
 // source of truth, so the price shown is always the price charged. Only the bits
 // the DB doesn't hold live here: power-up icons (client assets) and the FEATURED
 // card's marketing copy, both keyed by slug.
@@ -106,7 +106,7 @@ export const ShopScreen = () => {
   const [catalog, setCatalog] = useState<ShopCatalog | null>(null);
   useEffect(() => {
     let active = true;
-    v2GetShopCatalog().then((c) => { if (active && c) setCatalog(c); }).catch(() => {});
+    getShopCatalog().then((c) => { if (active && c) setCatalog(c); }).catch(() => {});
     return () => { active = false; };
   }, []);
   const built = useMemo<BuiltCatalog>(
@@ -171,7 +171,7 @@ export const ShopScreen = () => {
       // Final commit (undo window elapsed without a refund): persist the spend +
       // grant server-side. Deferring to here means no server refund is needed.
       if (slug) {
-        void v2Purchase(slug)
+        void purchase(slug)
           .then((result) => {
             trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
               screen: "shop",
@@ -313,7 +313,7 @@ export const ShopScreen = () => {
   const confirmCosmetic = (c: Cosmetic) => {
     playSound("purchase");
     proto.update({ tickets: tickets - c.price });
-    void v2Purchase(c.id)
+    void purchase(c.id)
       .then((result) => {
         trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
           screen: "shop",
@@ -340,7 +340,7 @@ export const ShopScreen = () => {
     if (!featured) return;
     playSound("purchase");
     proto.update({ tickets: tickets - featured.price });
-    void v2Purchase("boost-double-xp")
+    void purchase("boost-double-xp")
       .then((result) => {
         trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
           screen: "shop",
@@ -385,7 +385,7 @@ export const ShopScreen = () => {
       const total = b.count + b.bonus;
       playSound("purchase");
       proto.update({ tickets: before + total });
-      void v2BuyBundle(`bundle-${b.count}`)
+      void buyBundle(`bundle-${b.count}`)
         .then((result) => {
           trackClientEvent(result ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
             screen: "shop",

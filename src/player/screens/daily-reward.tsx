@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { syrupLabel, useProto } from "../state";
 import { ASSETS, FlameIcon, PixelImg, Sheet, SyrupIcon } from "../shared";
 import { playSound } from "../sound";
-import { v2BuyStreakFreeze, v2ClaimDaily } from "@/actions/player";
+import { buyStreakFreeze, claimDaily } from "@/actions/player";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Daily reward + streak. The single biggest retention lever for a no-push app
@@ -134,9 +134,9 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
     // Server is authoritative: it rolls + credits, so we display ITS roll (a
     // separate local roll would mismatch the credited reward). Falls back to a
     // local roll only in the preview / unauthenticated context.
-    let server: Awaited<ReturnType<typeof v2ClaimDaily>>;
+    let server: Awaited<ReturnType<typeof claimDaily>>;
     try {
-      server = await v2ClaimDaily();
+      server = await claimDaily();
     } catch (error) {
       trackClientEvent(AnalyticsEvent.DailyRewardClaimFailed, {
         screen: "daily_reward",
@@ -208,7 +208,7 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
       price_tickets: STREAK_FREEZE_COST,
     });
     proto.update((s) => ({ tickets: s.tickets - STREAK_FREEZE_COST }));
-    void v2BuyStreakFreeze()
+    void buyStreakFreeze()
       .then((result) => {
         trackClientEvent(AnalyticsEvent.StreakFreezePurchaseSucceeded, {
           screen: "daily_reward",

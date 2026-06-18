@@ -9,12 +9,12 @@ import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
 import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-takeover";
 import { MigrationTakeover } from "./screens/migration-takeover";
-import { v2GetMigrationNotice, v2DismissMigrationNotice } from "@/actions/player";
+import { getMigrationNotice, dismissMigrationNotice } from "@/actions/player";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
 import { preloadSounds } from "./sound";
-import { V2AuthBootstrap } from "./auto-signin";
+import { AuthBootstrap } from "./auto-signin";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // First-load budget: only the screens needed for the first paint ship in the
@@ -137,14 +137,14 @@ const Stage = () => {
   useEffect(() => {
     if (showOnboarding || proto.screen !== "home" || migrationChecked.current) return;
     migrationChecked.current = true;
-    v2GetMigrationNotice()
+    getMigrationNotice()
       .then((r) => setShowMigration(r.show))
       .catch(() => {})
       .finally(() => setMigrationResolved(true));
   }, [showOnboarding, proto.screen]);
   const dismissMigration = () => {
     setShowMigration(false);
-    void v2DismissMigrationNotice();
+    void dismissMigrationNotice();
   };
 
   const dailyAutoShown = useRef(false);
@@ -222,7 +222,7 @@ const Stage = () => {
   );
 };
 
-export default function V2Page() {
+export default function Page() {
   // Active theme — resolved on the client (?theme=, localStorage, or an event
   // window). `data-theme` drives the CSS-variable skin; context carries copy.
   // Read via useSyncExternalStore so the server snapshot is "default" (no
@@ -246,7 +246,7 @@ export default function V2Page() {
     <div className="waffles-v2 waffles-v2-stage" data-theme={themeId}>
       <ThemeProvider value={THEMES[themeId]}>
         <ProtoProvider>
-          <V2AuthBootstrap />
+          <AuthBootstrap />
           <CoachmarkProvider>
             <Stage />
           </CoachmarkProvider>

@@ -13,7 +13,7 @@ import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
  * Extracted verbatim from the (now-removed) legacy AppInitializer/OnboardingOverlay
  * flow: connect the injected wallet → fetch a nonce → sign it → verify → establish
  * the session, then refetch the current user. This is what makes the v2 server
- * actions (loadV2State, etc.) resolve a real user instead of returning 401/mock.
+ * actions (loadState, etc.) resolve a real user instead of returning 401/mock.
  */
 export function useWalletSignIn() {
   const { address, isConnected } = useAccount();

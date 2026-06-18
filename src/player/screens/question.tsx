@@ -5,7 +5,7 @@ import { useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
 import { Illustration } from "../world-cup/components/parts";
-import { v2LoadCurrentTournamentBoard, v2LoadPowerUps } from "@/actions/player";
+import { loadCurrentTournamentBoard, loadPowerUps } from "@/actions/player";
 import type { PowerUpName } from "../state";
 
 // Power-ups available to activate during a question (icon + label per kind).
@@ -34,7 +34,7 @@ function LiveAnswerers() {
   // Real DB participants only — actual entrants of the current live tournament.
   useEffect(() => {
     let active = true;
-    v2LoadCurrentTournamentBoard()
+    loadCurrentTournamentBoard()
       .then((b) => {
         if (!active || !b) return;
         setPeople(b.standings.slice(0, 5).map((s, i) => ({ id: i + 1, av: avatarFor(s.name) })));
@@ -88,7 +88,7 @@ export const QuestionScreen = () => {
   const [powerUps, setPowerUps] = useState<Record<string, number>>({});
   useEffect(() => {
     let active = true;
-    v2LoadPowerUps()
+    loadPowerUps()
       .then((p) => {
         if (active && p) setPowerUps(p);
       })

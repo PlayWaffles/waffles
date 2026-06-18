@@ -9,111 +9,90 @@
  * its local/optimistic state so the screens still render and demo cleanly.
  */
 import { getCurrentUser } from "@/lib/auth";
-import {
-  adjustTickets,
-  advanceLevel,
-  loadPlayerState,
-  loseLife,
-  recordBadge,
-  refillLives,
-  resolveWinning,
-  setAnnouncementDismissed,
-  setAnnouncementRead,
-  setAvatar,
-  setUsername,
-  type V2PlayerState,
-  type V2Track,
-} from "@/lib/player/playerState";
+// Each lib module is namespace-imported as a `*Svc` so the action wrappers can
+// share the service's name (e.g. action `loseLife` delegates to `playerSvc.loseLife`).
+import * as playerSvc from "@/lib/player/playerState";
+import type { PlayerState, Track } from "@/lib/player/playerState";
 import { getRoundClientQuestions, getLevelClientQuestions, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
-import {
-  confirmTournamentClaim,
-  currentTournamentGame,
-  enterTournamentOnChain,
-  getTournamentClaim,
-  getTournamentClientQuestions,
-  latestTournamentStandings,
-  loadTournamentClaims,
-  submitTournamentAnswers,
-  tournamentStandings,
-  TOURNAMENT_STANDARD_FEE_USDC,
-  type EnterResult,
-  type TournamentBoard,
-  type TournamentClaim,
-  type TournamentClaimItem,
-  type TournamentGame,
-} from "@/lib/player/tournamentGames";
-import { getMigrationNotice, dismissMigrationNotice } from "@/lib/player/migrationNotice";
+import * as tournamentSvc from "@/lib/player/tournamentGames";
+import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentGame } from "@/lib/player/tournamentGames";
+import * as migrationSvc from "@/lib/player/migrationNotice";
 import type { RoundAnswer } from "@/lib/player/scoring";
-import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, loadShopCatalog, purchaseShopItem, type DailyClaimResult, type PurchaseResult, type ShopCatalog } from "@/lib/player/economy";
+import * as economySvc from "@/lib/player/economy";
+import type { DailyClaimResult, PurchaseResult, ShopCatalog } from "@/lib/player/economy";
 import { PowerUpKind } from "@prisma";
-import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/player/missions";
-import { loadLeague, type V2League } from "@/lib/player/leagues";
-import { loadPartnerOffers, claimPartnerOffer, type V2PartnerOffer, type PartnerClaimResult } from "@/lib/player/partnerOffers";
-import { loadSeasonPass, claimSeasonReward, type V2SeasonPass, type SeasonClaimResult } from "@/lib/player/seasonPass";
+import * as missionsSvc from "@/lib/player/missions";
+import type { Mission } from "@/lib/player/missions";
+import * as leaguesSvc from "@/lib/player/leagues";
+import type { League } from "@/lib/player/leagues";
+import * as partnerSvc from "@/lib/player/partnerOffers";
+import type { PartnerOffer, PartnerClaimResult } from "@/lib/player/partnerOffers";
+import * as seasonSvc from "@/lib/player/seasonPass";
+import type { SeasonPass, SeasonClaimResult } from "@/lib/player/seasonPass";
 import { TicketLedgerReason } from "@prisma";
 
-export async function v2LoadMissions(): Promise<V2Mission[] | null> {
+export async function loadMissions(): Promise<Mission[] | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loadMissions(user.id);
+  return missionsSvc.loadMissions(user.id);
 }
 
-export async function v2RecordMissionProgress(slug: string, n = 1): Promise<void> {
+export async function recordMissionProgress(slug: string, n = 1): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await recordMissionProgress(user.id, slug, n);
+  await missionsSvc.recordMissionProgress(user.id, slug, n);
 }
 
-export async function v2LoadLeague(): Promise<V2League | null> {
+export async function loadLeague(): Promise<League | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loadLeague(user.id);
+  return leaguesSvc.loadLeague(user.id);
 }
 
 /** Sponsored partner offers (Missions → Partners tab), with per-user claim state. */
-export async function v2LoadPartnerOffers(): Promise<V2PartnerOffer[] | null> {
+export async function loadPartnerOffers(): Promise<PartnerOffer[] | null> {
   const user = await getCurrentUser();
-  return loadPartnerOffers(user?.id);
+  return partnerSvc.loadPartnerOffers(user?.id);
 }
 
-export async function v2ClaimPartnerOffer(slug: string): Promise<PartnerClaimResult | null> {
+export async function claimPartnerOffer(slug: string): Promise<PartnerClaimResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return claimPartnerOffer(user.id, slug);
+  return partnerSvc.claimPartnerOffer(user.id, slug);
 }
 
 /** Season Pass level/progress + claimed reward cells for the current season. */
-export async function v2LoadSeasonPass(): Promise<V2SeasonPass | null> {
+export async function loadSeasonPass(): Promise<SeasonPass | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loadSeasonPass(user.id);
+  return seasonSvc.loadSeasonPass(user.id);
 }
 
-export async function v2ClaimSeasonReward(
+export async function claimSeasonReward(
   tier: number,
   premium: boolean,
 ): Promise<SeasonClaimResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return claimSeasonReward(user.id, tier, premium);
+  return seasonSvc.claimSeasonReward(user.id, tier, premium);
 }
 
-export async function loadV2State(): Promise<V2PlayerState | null> {
+export async function loadState(): Promise<PlayerState | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loadPlayerState(user.id);
+  return playerSvc.loadPlayerState(user.id);
 }
 
 /** The round's authoritative question set (same for every entrant, seeded by
  *  roundId). The client renders these instead of drawing its own, so the answers
  *  it submits can be re-scored server-side. */
-export async function v2GetRoundQuestions(roundId: number): Promise<ClientRoundQuestion[]> {
+export async function getRoundQuestions(roundId: number): Promise<ClientRoundQuestion[]> {
   return getRoundClientQuestions(roundId);
 }
 
 /** The solo level's questions, served from the DB (no local bank). Drawn by the
  *  track's theme + the level's difficulty ramp. */
-export async function v2GetLevelQuestions(
+export async function getLevelQuestions(
   track: LevelTrack,
   level: number,
 ): Promise<ClientRoundQuestion[]> {
@@ -126,7 +105,7 @@ export async function v2GetLevelQuestions(
 
 /** The current on-chain tournament round for the player's platform, plus its
  *  questions. Null when unauthenticated or no game is scheduled. */
-export async function v2GetTournament(): Promise<
+export async function getTournament(): Promise<
   {
     game: TournamentGame;
     questions: ClientRoundQuestion[];
@@ -141,9 +120,9 @@ export async function v2GetTournament(): Promise<
 > {
   const user = await getCurrentUser();
   if (!user) return null;
-  const game = await currentTournamentGame(user.platform);
+  const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
-  const questions = await getTournamentClientQuestions(game.id);
+  const questions = await tournamentSvc.getTournamentClientQuestions(game.id);
   // Everyone pays the game's flat on-chain floor — the contract requires the
   // exact price, so there's no per-user amount. The discount framing
   // (standardFee struck through) is shown to all; nobody is charged standardFee.
@@ -151,7 +130,7 @@ export async function v2GetTournament(): Promise<
     game,
     questions,
     entryFee: game.entryFee,
-    standardFee: TOURNAMENT_STANDARD_FEE_USDC,
+    standardFee: tournamentSvc.TOURNAMENT_STANDARD_FEE_USDC,
     firstEntry: true,
   };
 }
@@ -159,215 +138,215 @@ export async function v2GetTournament(): Promise<
 /** Record a tournament entry after the player's on-chain `buyTicket` deposit.
  *  The client sends the entry tx hash; the server verifies it on-chain (reusing
  *  v1's `verifyTicketPurchase`) before creating the entry. */
-export async function v2EnterTournament(gameId: string, txHash: string): Promise<EnterResult | null> {
+export async function enterTournament(gameId: string, txHash: string): Promise<EnterResult | null> {
   const user = await getCurrentUser();
   if (!user) {
-    console.warn("[buy-ticket] v2EnterTournament: no authed user", { gameId, txHash });
+    console.warn("[buy-ticket] enterTournament: no authed user", { gameId, txHash });
     return null;
   }
   if (!user.wallet) {
-    console.warn("[buy-ticket] v2EnterTournament: user has no wallet", { userId: user.id, gameId });
+    console.warn("[buy-ticket] enterTournament: user has no wallet", { userId: user.id, gameId });
     return { ok: false, error: "no_wallet" };
   }
-  const res = await enterTournamentOnChain({ userId: user.id, gameId, txHash, wallet: user.wallet });
-  console.log("[buy-ticket] v2EnterTournament result", { userId: user.id, gameId, ok: res.ok, error: res.ok ? undefined : res.error });
+  const res = await tournamentSvc.enterTournamentOnChain({ userId: user.id, gameId, txHash, wallet: user.wallet });
+  console.log("[buy-ticket] enterTournament result", { userId: user.id, gameId, ok: res.ok, error: res.ok ? undefined : res.error });
   return res;
 }
 
 /** Submit the tournament round's answers; the server re-scores against the
  *  game's authoritative questions and records the score on the GameEntry. */
-export async function v2SubmitTournamentAnswers(
+export async function submitTournamentAnswers(
   gameId: string,
   answers: RoundAnswer[],
 ): Promise<{ score: number; updated: boolean } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return submitTournamentAnswers(user.id, gameId, answers);
+  return tournamentSvc.submitTournamentAnswers(user.id, gameId, answers);
 }
 
 /** The player's claimable prize (onchain id + merkle amount/proof) for a settled
  *  tournament game, or null if nothing to claim. The client sends the on-chain
  *  `claimPrize` then confirms via the v1 claim route. */
-export async function v2GetTournamentClaim(gameId: string): Promise<TournamentClaim | null> {
+export async function getTournamentClaim(gameId: string): Promise<TournamentClaim | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return getTournamentClaim(user.id, gameId);
+  return tournamentSvc.getTournamentClaim(user.id, gameId);
 }
 
 /** The player's claimable on-chain tournament prizes (for the profile list). */
-export async function v2LoadTournamentClaims(): Promise<TournamentClaimItem[]> {
+export async function loadTournamentClaims(): Promise<TournamentClaimItem[]> {
   const user = await getCurrentUser();
   if (!user) return [];
-  return loadTournamentClaims(user.id);
+  return tournamentSvc.loadTournamentClaims(user.id);
 }
 
 /** Standings (from the DB) for a specific tournament game — results screen +
  *  the in-quiz presence strip. */
-export async function v2LoadTournamentBoard(gameId: string): Promise<TournamentBoard> {
+export async function loadTournamentBoard(gameId: string): Promise<TournamentBoard> {
   const user = await getCurrentUser();
-  return tournamentStandings(gameId, { userId: user?.id, limit: 10 });
+  return tournamentSvc.tournamentStandings(gameId, { userId: user?.id, limit: 10 });
 }
 
 /** Standings for the platform's latest tournament game — leaderboard screen. */
-export async function v2LoadTournamentLeaderboard(): Promise<TournamentBoard | null> {
+export async function loadTournamentLeaderboard(): Promise<TournamentBoard | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return latestTournamentStandings(user.platform, { userId: user.id, limit: 50 });
+  return tournamentSvc.latestTournamentStandings(user.platform, { userId: user.id, limit: 50 });
 }
 
 /** Standings for the player's CURRENT live tournament game — home card +
  *  in-quiz presence strip (entrant count). */
-export async function v2LoadCurrentTournamentBoard(): Promise<TournamentBoard | null> {
+export async function loadCurrentTournamentBoard(): Promise<TournamentBoard | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  const game = await currentTournamentGame(user.platform);
+  const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
-  return tournamentStandings(game.id, { userId: user.id, limit: 10 });
+  return tournamentSvc.tournamentStandings(game.id, { userId: user.id, limit: 10 });
 }
 
 /** Confirm an on-chain prize claim after the client sends `claimPrize`. Verifies
  *  the tx (reused `verifyClaim`) and marks the entry claimed. */
-export async function v2ConfirmTournamentClaim(
+export async function confirmTournamentClaim(
   gameId: string,
   txHash: string,
 ): Promise<{ ok: boolean; error?: string } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
   if (!user.wallet) return { ok: false, error: "no_wallet" };
-  return confirmTournamentClaim({ userId: user.id, gameId, txHash, wallet: user.wallet });
+  return tournamentSvc.confirmTournamentClaim({ userId: user.id, gameId, txHash, wallet: user.wallet });
 }
 
-export async function v2ClaimDaily(): Promise<DailyClaimResult | null> {
+export async function claimDaily(): Promise<DailyClaimResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return claimDailyReward(user.id);
+  return economySvc.claimDailyReward(user.id);
 }
 
-export async function v2Purchase(slug: string): Promise<PurchaseResult | null> {
+export async function purchase(slug: string): Promise<PurchaseResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return purchaseShopItem(user.id, slug);
+  return economySvc.purchaseShopItem(user.id, slug);
 }
 
 /** The shop catalog (prices/labels) from the DB + this user's owned cosmetics.
  *  Single source of truth — the client renders from this, never hardcoded prices. */
-export async function v2GetShopCatalog(): Promise<ShopCatalog | null> {
+export async function getShopCatalog(): Promise<ShopCatalog | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loadShopCatalog(user.id);
+  return economySvc.loadShopCatalog(user.id);
 }
 
-export async function v2AdvanceLevel(
-  track: V2Track,
+export async function advanceLevel(
+  track: Track,
   xpGain: number,
 ): Promise<{ level: number; ticketAwarded: boolean } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return advanceLevel(user.id, track, xpGain);
+  return playerSvc.advanceLevel(user.id, track, xpGain);
 }
 
-export async function v2LoseLife(): Promise<{ lives: number; nextLifeAt: number | null } | null> {
+export async function loseLife(): Promise<{ lives: number; nextLifeAt: number | null } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loseLife(user.id);
+  return playerSvc.loseLife(user.id);
 }
 
-export async function v2RefillLives(): Promise<{ lives: number; tickets: number } | null> {
+export async function refillLives(): Promise<{ lives: number; tickets: number } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return refillLives(user.id);
+  return playerSvc.refillLives(user.id);
 }
 
-export async function v2ResolveWinning(
+export async function resolveWinning(
   winningId: string,
   mode: "claim" | "convert",
 ): Promise<{ tickets: number | null } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return resolveWinning(user.id, winningId, mode);
+  return playerSvc.resolveWinning(user.id, winningId, mode);
 }
 
 /** Generic ticket adjustment for client-side economy events (e.g. tournament
  *  entry charge, daily reward). Reason is validated against the enum. */
-export async function v2AdjustTickets(
+export async function adjustTickets(
   delta: number,
   reason: keyof typeof TicketLedgerReason,
   refId?: string,
 ): Promise<{ tickets: number } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  const tickets = await adjustTickets(user.id, delta, TicketLedgerReason[reason], { refId });
+  const tickets = await playerSvc.adjustTickets(user.id, delta, TicketLedgerReason[reason], { refId });
   return { tickets };
 }
 
-export async function v2SetAnnouncementsRead(ids: string[]): Promise<void> {
+export async function setAnnouncementsRead(ids: string[]): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await setAnnouncementRead(user.id, ids);
+  await playerSvc.setAnnouncementRead(user.id, ids);
 }
 
 /** One-time v2-migration welcome modal: whether to show it (migrated + not yet
  *  dismissed), and dismissal. */
-export async function v2GetMigrationNotice(): Promise<{ show: boolean }> {
+export async function getMigrationNotice(): Promise<{ show: boolean }> {
   const user = await getCurrentUser();
   if (!user) return { show: false };
-  return getMigrationNotice(user.id);
+  return migrationSvc.getMigrationNotice(user.id);
 }
 
-export async function v2DismissMigrationNotice(): Promise<void> {
+export async function dismissMigrationNotice(): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await dismissMigrationNotice(user.id);
+  await migrationSvc.dismissMigrationNotice(user.id);
 }
 
-export async function v2DismissAnnouncement(id: string): Promise<void> {
+export async function dismissAnnouncement(id: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await setAnnouncementDismissed(user.id, id);
+  await playerSvc.setAnnouncementDismissed(user.id, id);
 }
 
-export async function v2SetUsername(username: string): Promise<void> {
+export async function setUsername(username: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await setUsername(user.id, username);
+  await playerSvc.setUsername(user.id, username);
 }
 
-export async function v2SetAvatar(avatarId: string): Promise<void> {
+export async function setAvatar(avatarId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await setAvatar(user.id, avatarId);
+  await playerSvc.setAvatar(user.id, avatarId);
 }
 
-export async function v2RecordBadge(badgeId: string): Promise<void> {
+export async function recordBadge(badgeId: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await recordBadge(user.id, badgeId);
+  await playerSvc.recordBadge(user.id, badgeId);
 }
 
-export async function v2BuyStreakFreeze(): Promise<{ tickets: number; freezes: number } | null> {
+export async function buyStreakFreeze(): Promise<{ tickets: number; freezes: number } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return buyStreakFreeze(user.id);
+  return economySvc.buyStreakFreeze(user.id);
 }
 
-export async function v2BuyBundle(slug: string, txHash?: string): Promise<{ tickets: number } | null> {
+export async function buyBundle(slug: string, txHash?: string): Promise<{ tickets: number } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return buyBundle(user.id, slug, txHash);
+  return economySvc.buyBundle(user.id, slug, txHash);
 }
 
-export type V2PowerUps = Record<keyof typeof PowerUpKind, number>;
+export type PowerUps = Record<keyof typeof PowerUpKind, number>;
 
-export async function v2LoadPowerUps(): Promise<V2PowerUps | null> {
+export async function loadPowerUps(): Promise<PowerUps | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return loadPowerUps(user.id) as Promise<V2PowerUps>;
+  return economySvc.loadPowerUps(user.id) as Promise<PowerUps>;
 }
 
-export async function v2ConsumePowerUp(
+export async function consumePowerUp(
   kind: keyof typeof PowerUpKind,
 ): Promise<{ ok: boolean; remaining: number } | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return consumePowerUp(user.id, PowerUpKind[kind]);
+  return economySvc.consumePowerUp(user.id, PowerUpKind[kind]);
 }

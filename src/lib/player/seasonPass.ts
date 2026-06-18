@@ -15,7 +15,7 @@ import {
   seasonPassLevel,
 } from "./seasonPassTiers";
 
-export type V2SeasonPass = {
+export type SeasonPass = {
   season: string;
   level: number;
   xp: number;
@@ -23,7 +23,7 @@ export type V2SeasonPass = {
   claimed: { tier: number; premium: boolean }[];
 };
 
-export async function loadSeasonPass(userId: string): Promise<V2SeasonPass> {
+export async function loadSeasonPass(userId: string): Promise<SeasonPass> {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
     select: { xp: true },

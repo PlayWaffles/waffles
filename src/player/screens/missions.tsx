@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { syrupLabel, useProto } from "../state";
 import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { v2LoadMissions, v2LoadPartnerOffers, v2ClaimPartnerOffer } from "@/actions/player";
-import type { V2Mission } from "@/lib/player/missions";
-import type { V2PartnerOffer } from "@/lib/player/partnerOffers";
+import { loadMissions, loadPartnerOffers, claimPartnerOffer } from "@/actions/player";
+import type { Mission } from "@/lib/player/missions";
+import type { PartnerOffer } from "@/lib/player/partnerOffers";
 
 const ICON_ASSETS: Record<string, string> = {
   iconTarget: ASSETS.iconTarget,
@@ -20,10 +20,10 @@ export const MissionsScreen = () => {
 
   // Load real daily missions (Quest + per-user progress). Falls back to the
   // static list in the preview / unauthenticated context.
-  const [loaded, setLoaded] = useState<V2Mission[] | null>(null);
+  const [loaded, setLoaded] = useState<Mission[] | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadMissions()
+    loadMissions()
       .then((m) => {
         if (active && m && m.length) setLoaded(m);
       })
@@ -46,11 +46,11 @@ export const MissionsScreen = () => {
 
   // Real sponsored partner offers (+ per-user claim state). Falls back to the
   // static list in the preview / unauthenticated context.
-  const [offers, setOffers] = useState<V2PartnerOffer[] | null>(null);
+  const [offers, setOffers] = useState<PartnerOffer[] | null>(null);
   const [claimedSlugs, setClaimedSlugs] = useState<Set<string>>(new Set());
   useEffect(() => {
     let active = true;
-    v2LoadPartnerOffers()
+    loadPartnerOffers()
       .then((o) => {
         if (active && o && o.length) {
           setOffers(o);
@@ -63,7 +63,7 @@ export const MissionsScreen = () => {
     };
   }, []);
 
-  const STATIC_PARTNERS: V2PartnerOffer[] = [
+  const STATIC_PARTNERS: PartnerOffer[] = [
     { slug: "duolingo-lesson", brand: "Duolingo", brandColor: "#58CC02", glyph: "🦉", title: "Try a free language lesson", cta: "Open app", tickets: 3, estTime: "~2 min", verified: true, hot: false, claimed: false },
     { slug: "spotify-trial", brand: "Spotify", brandColor: "#1DB954", glyph: "♫", title: "Sign up for Spotify Free trial", cta: "Get offer", tickets: 5, estTime: "~5 min", verified: true, hot: false, claimed: false },
     { slug: "doordash-first-order", brand: "Doordash", brandColor: "#FF3008", glyph: "D", title: "Place your first order, $10 off", cta: "Claim", tickets: 10, estTime: "varies", verified: true, hot: true, claimed: false },
@@ -78,7 +78,7 @@ export const MissionsScreen = () => {
     setClaimedSlugs((prev) => new Set(prev).add(slug));
     proto.update((s) => ({ tickets: s.tickets + tickets }));
     try {
-      const res = await v2ClaimPartnerOffer(slug);
+      const res = await claimPartnerOffer(slug);
       if (res?.ok && res.tickets != null) proto.update(() => ({ tickets: res.tickets! }));
     } catch {
       /* no session — keep the optimistic local credit */

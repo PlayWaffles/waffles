@@ -13,7 +13,7 @@ import {
   useProto,
 } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
-import { v2GetTournament } from "@/actions/player";
+import { getTournament } from "@/actions/player";
 import { playSound } from "../sound";
 
 // One-time tournament upsell, shown the first time a player clears a level —
@@ -47,7 +47,7 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
   const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
   useEffect(() => {
     let active = true;
-    v2GetTournament()
+    getTournament()
       .then((t) => { if (active && t) setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry }); })
       .catch(() => {});
     return () => { active = false; };

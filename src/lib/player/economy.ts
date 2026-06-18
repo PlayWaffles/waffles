@@ -430,7 +430,7 @@ async function grantPowerUpTx(
 }
 
 // ── Shop catalog (single source of truth for prices/labels) ─────────────────
-// The client renders the shop from THIS (via v2GetShopCatalog) instead of its
+// The client renders the shop from THIS (via getShopCatalog) instead of its
 // own hardcoded constants, so the price shown is always the price charged.
 export type ShopCatalogItem = {
   slug: string;

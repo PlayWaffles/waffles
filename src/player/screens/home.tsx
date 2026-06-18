@@ -3,7 +3,7 @@
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { v2GetTournament, v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/player";
+import { getTournament, loadCurrentTournamentBoard, loadMissions } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
@@ -140,7 +140,7 @@ const HomeMissions = () => {
   const [loaded, setLoaded] = useState<typeof STATIC_HOME_MISSIONS | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadMissions()
+    loadMissions()
       .then((m) => {
         if (!active || !m || !m.length) return;
         setLoaded(
@@ -281,7 +281,7 @@ export const HomeScreen = () => {
   const now = useNow();
   useEffect(() => {
     let active = true;
-    v2GetTournament()
+    getTournament()
       .then((t) => {
         if (!active || !t) return;
         setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
@@ -331,7 +331,7 @@ export const HomeScreen = () => {
   const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadCurrentTournamentBoard()
+    loadCurrentTournamentBoard()
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })

@@ -3,9 +3,9 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
-import { v2LoadLeague, v2LoadSeasonPass, v2ClaimSeasonReward, v2LoadMissions, v2LoadPartnerOffers } from "@/actions/player";
-import type { V2League } from "@/lib/player/leagues";
-import type { V2SeasonPass } from "@/lib/player/seasonPass";
+import { loadLeague, loadSeasonPass, claimSeasonReward, loadMissions, loadPartnerOffers } from "@/actions/player";
+import type { League } from "@/lib/player/leagues";
+import type { SeasonPass } from "@/lib/player/seasonPass";
 import { SEASON_PASS_TIERS, type SeasonReward as PassReward } from "@/lib/player/seasonPassTiers";
 
 const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?: string; size?: number; state?: "current" | "locked" | "passed" }) => {
@@ -220,16 +220,16 @@ export const CompeteScreen = () => {
 
   // Real league standing + season pass + mission/offer counts. Each falls back
   // to a sensible preview default before the server responds.
-  const [league, setLeague] = useState<V2League | null>(null);
-  const [pass, setPass] = useState<V2SeasonPass | null>(null);
+  const [league, setLeague] = useState<League | null>(null);
+  const [pass, setPass] = useState<SeasonPass | null>(null);
   const [counts, setCounts] = useState<{ daily: number; partner: number; xp: number; open: number } | null>(null);
   const [localClaimed, setLocalClaimed] = useState<Set<number>>(new Set());
   const [claiming, setClaiming] = useState(false);
   useEffect(() => {
     let active = true;
-    v2LoadLeague().then((l) => { if (active && l) setLeague(l); }).catch(() => {});
-    v2LoadSeasonPass().then((p) => { if (active && p) setPass(p); }).catch(() => {});
-    Promise.all([v2LoadMissions(), v2LoadPartnerOffers()])
+    loadLeague().then((l) => { if (active && l) setLeague(l); }).catch(() => {});
+    loadSeasonPass().then((p) => { if (active && p) setPass(p); }).catch(() => {});
+    Promise.all([loadMissions(), loadPartnerOffers()])
       .then(([m, o]) => {
         if (!active || !m) return;
         setCounts({
@@ -292,7 +292,7 @@ export const CompeteScreen = () => {
     else if (reward.type === "xp") proto.update((s) => ({ xp: s.xp + reward.amount }));
     flash(reward.type === "cosmetic" ? "Cosmetic unlocked!" : `Claimed ${reward.label}`);
     try {
-      const res = await v2ClaimSeasonReward(level, false);
+      const res = await claimSeasonReward(level, false);
       if (res?.ok) {
         if (res.tickets != null) proto.update(() => ({ tickets: res.tickets! }));
         if (res.xp != null) proto.update(() => ({ xp: res.xp! }));

@@ -8,7 +8,7 @@ import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics"
 import { TicketLedgerReason } from "@prisma";
 import { adjustTickets } from "./playerState";
 
-export type V2PartnerOffer = {
+export type PartnerOffer = {
   slug: string;
   brand: string;
   brandColor: string;
@@ -22,7 +22,7 @@ export type V2PartnerOffer = {
   claimed: boolean;
 };
 
-export async function loadPartnerOffers(userId?: string): Promise<V2PartnerOffer[]> {
+export async function loadPartnerOffers(userId?: string): Promise<PartnerOffer[]> {
   const offers = await prisma.partnerOffer.findMany({
     where: { isActive: true },
     orderBy: { sortOrder: "asc" },
