@@ -230,6 +230,15 @@ export async function confirmTournamentClaim(
   return tournamentSvc.confirmTournamentClaim({ userId: user.id, gameId, txHash, wallet: user.wallet });
 }
 
+export async function reconcileTournamentClaim(
+  gameId: string,
+): Promise<{ ok: boolean; reconciled: boolean; error?: string } | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  if (!user.wallet) return { ok: false, reconciled: false, error: "no_wallet" };
+  return tournamentSvc.reconcileTournamentClaim({ userId: user.id, gameId, wallet: user.wallet });
+}
+
 export async function claimDaily(): Promise<DailyClaimResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
