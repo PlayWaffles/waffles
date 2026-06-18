@@ -2,6 +2,11 @@ import { z } from "zod";
 
 const isServer = typeof window === "undefined";
 
+function isProductionRuntime() {
+  if (process.env.NODE_ENV !== "production") return false;
+  return !process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production";
+}
+
 function cleanEnvString(value: unknown) {
   if (typeof value !== "string") return value;
 
@@ -255,6 +260,7 @@ const getEnv = () => {
 
   return {
     rootUrl: resolveRootUrl().replace(/\/$/, ""),
+    isProduction: isProductionRuntime(),
     neynarApiKey: data.NEYNAR_API_KEY!,
     // Database
     databaseUrl: data.DATABASE_URL,
@@ -329,6 +335,16 @@ const getEnv = () => {
 };
 
 export const env = getEnv();
+
+export function assertProductionCron() {
+  if (env.isProduction) return null;
+
+  return {
+    error: "Cron jobs only run in production",
+    nodeEnv: process.env.NODE_ENV ?? null,
+    vercelEnv: process.env.VERCEL_ENV ?? null,
+  };
+}
 
 export function getTreasuryWalletForPlatform(platform: string): `0x${string}` {
   if (platform === "MINIPAY") {

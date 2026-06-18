@@ -6,6 +6,7 @@ import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
 import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
+import { env } from "@/lib/env";
 
 /**
  * Roundup ended games that haven't been settled yet. Finds games where
@@ -121,6 +122,11 @@ async function ensureTournamentRoundsJob() {
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
 export function startCronJobs() {
+  if (!env.isProduction) {
+    console.log("[Cron] Skipped: cron jobs only run in production");
+    return;
+  }
+
   // Every 5 minutes: roundup unranked ended games
   cron.schedule("*/5 * * * *", roundupGames);
   console.log("[Cron] Scheduled: roundup-games (every 5 min)");

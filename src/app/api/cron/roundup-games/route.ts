@@ -12,13 +12,18 @@ import {
   publishResults,
 } from "@/lib/game/lifecycle";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
-import { env } from "@/lib/env";
+import { assertProductionCron, env } from "@/lib/env";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 
 export const maxDuration = 60;
 
 export async function POST(request: NextRequest) {
   const startedAt = Date.now();
+  const productionOnly = assertProductionCron();
+  if (productionOnly) {
+    return NextResponse.json(productionOnly, { status: 404 });
+  }
+
   if (request.headers.get("Authorization") !== `Bearer ${env.authSecret}`) {
     await trackServerEvent({
       name: "legacy_cron_roundup_unauthorized",
