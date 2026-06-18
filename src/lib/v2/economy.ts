@@ -19,14 +19,16 @@ import { adjustTickets } from "./playerState";
 // cycle, so the calendar the player sees is exactly what gets credited.
 type Roll = { type: "xp" | "ticket"; amount: number; rarity: "common" | "rare" | "jackpot" };
 
+// Kept in the game's 1–10 Syrup scale (lives refill 1, freeze 2, power-ups 1–2,
+// cosmetics 4–8) so a week of logins (~21 Syrup) doesn't trivialize the shop.
 const DAILY_SCHEDULE: Roll[] = [
-  { type: "ticket", amount: 5, rarity: "common" },   // Day 1
-  { type: "ticket", amount: 10, rarity: "common" },  // Day 2
-  { type: "xp", amount: 50, rarity: "common" },      // Day 3
-  { type: "ticket", amount: 15, rarity: "rare" },    // Day 4
-  { type: "xp", amount: 100, rarity: "rare" },       // Day 5
-  { type: "ticket", amount: 25, rarity: "rare" },    // Day 6
-  { type: "ticket", amount: 50, rarity: "jackpot" }, // Day 7
+  { type: "ticket", amount: 1, rarity: "common" },   // Day 1
+  { type: "ticket", amount: 2, rarity: "common" },   // Day 2
+  { type: "xp", amount: 25, rarity: "common" },      // Day 3
+  { type: "ticket", amount: 3, rarity: "rare" },     // Day 4
+  { type: "xp", amount: 50, rarity: "rare" },        // Day 5
+  { type: "ticket", amount: 5, rarity: "rare" },     // Day 6
+  { type: "ticket", amount: 10, rarity: "jackpot" }, // Day 7
 ];
 
 /** The reward for the given (1-based) streak day — repeats every 7 days. */

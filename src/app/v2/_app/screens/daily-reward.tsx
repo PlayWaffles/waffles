@@ -32,13 +32,13 @@ type Roll = { type: "ticket" | "xp"; amount: number; rarity: "common" | "rare" |
 // exactly what gets credited (the server mirrors this in economy.ts). Day 7 is
 // the jackpot — the loss-aversion payoff for not missing a day all week.
 const DAILY_SCHEDULE: Roll[] = [
-  { type: "ticket", amount: 5, rarity: "common" },   // Day 1
-  { type: "ticket", amount: 10, rarity: "common" },  // Day 2
-  { type: "xp", amount: 50, rarity: "common" },      // Day 3
-  { type: "ticket", amount: 15, rarity: "rare" },    // Day 4
-  { type: "xp", amount: 100, rarity: "rare" },       // Day 5
-  { type: "ticket", amount: 25, rarity: "rare" },    // Day 6
-  { type: "ticket", amount: 50, rarity: "jackpot" }, // Day 7
+  { type: "ticket", amount: 1, rarity: "common" },   // Day 1
+  { type: "ticket", amount: 2, rarity: "common" },   // Day 2
+  { type: "xp", amount: 25, rarity: "common" },      // Day 3
+  { type: "ticket", amount: 3, rarity: "rare" },     // Day 4
+  { type: "xp", amount: 50, rarity: "rare" },        // Day 5
+  { type: "ticket", amount: 5, rarity: "rare" },     // Day 6
+  { type: "ticket", amount: 10, rarity: "jackpot" }, // Day 7
 ];
 
 /** The reward for the given (1-based) streak day — repeats every 7 days. */
