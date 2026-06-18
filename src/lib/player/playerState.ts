@@ -13,9 +13,9 @@ import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics"
 import { LevelTrack, TicketLedgerReason, WinningStatus, type Prisma } from "@prisma";
 
 // ── Shape returned to the client (mirrors Proto persistent fields) ──────────
-export type V2Track = "standard" | "world-cup";
+export type Track = "standard" | "world-cup";
 
-export type V2Winning = {
+export type Winning = {
   id: string;
   rank: number;
   tickets: number;
@@ -23,7 +23,7 @@ export type V2Winning = {
   status: "pending" | "claimed" | "converted";
 };
 
-export type V2PlayerState = {
+export type PlayerState = {
   tickets: number;
   xp: number;
   streak: number;
@@ -32,24 +32,24 @@ export type V2PlayerState = {
   streakFreezes: number;
   username: string;
   avatarId: string | null;
-  levelByTrack: Record<V2Track, number>;
-  winnings: V2Winning[];
+  levelByTrack: Record<Track, number>;
+  winnings: Winning[];
   lastTournamentRank: number | null;
   annRead: string[];
   annDismissed: string[];
 };
 
 // ── Track <-> enum mapping ──────────────────────────────────────────────────
-const TRACK_TO_ENUM: Record<V2Track, LevelTrack> = {
+const TRACK_TO_ENUM: Record<Track, LevelTrack> = {
   standard: LevelTrack.STANDARD,
   "world-cup": LevelTrack.WORLD_CUP,
 };
-const ENUM_TO_TRACK: Record<LevelTrack, V2Track> = {
+const ENUM_TO_TRACK: Record<LevelTrack, Track> = {
   [LevelTrack.STANDARD]: "standard",
   [LevelTrack.WORLD_CUP]: "world-cup",
 };
 
-const WINNING_STATUS_OUT: Record<WinningStatus, V2Winning["status"]> = {
+const WINNING_STATUS_OUT: Record<WinningStatus, Winning["status"]> = {
   [WinningStatus.PENDING]: "pending",
   [WinningStatus.CLAIMED]: "claimed",
   [WinningStatus.CONVERTED]: "converted",
@@ -99,7 +99,7 @@ export async function ensurePlayerDefaults(userId: string): Promise<void> {
 }
 
 // ── Load ────────────────────────────────────────────────────────────────────
-export async function loadPlayerState(userId: string): Promise<V2PlayerState> {
+export async function loadPlayerState(userId: string): Promise<PlayerState> {
   await ensurePlayerDefaults(userId);
 
   const [user, progress, winnings, lastSettled, annStates] = await Promise.all([
@@ -133,7 +133,7 @@ export async function loadPlayerState(userId: string): Promise<V2PlayerState> {
     }),
   ]);
 
-  const levelByTrack: Record<V2Track, number> = { standard: 1, "world-cup": 1 };
+  const levelByTrack: Record<Track, number> = { standard: 1, "world-cup": 1 };
   for (const p of progress) levelByTrack[ENUM_TO_TRACK[p.track]] = p.level;
 
   // Reconcile lives on read so the meter is correct without a write.
@@ -205,7 +205,7 @@ export async function adjustTickets(
 /** Advance a track by one level; credit a milestone ticket when earned. */
 export async function advanceLevel(
   userId: string,
-  track: V2Track,
+  track: Track,
   xpGain: number,
 ): Promise<{ level: number; ticketAwarded: boolean }> {
   return prisma.$transaction(async (tx) => {

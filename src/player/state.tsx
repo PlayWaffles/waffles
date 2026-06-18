@@ -13,22 +13,24 @@ import { QUESTION_BANK, type BankQuestion, type Difficulty } from "./data/questi
 import { FORMATS, type VMedia, type VQuestion, type FormatDef } from "./world-cup/data";
 import { THEMES, resolveThemeId } from "./theme";
 import {
-  loadV2State,
-  v2AdvanceLevel,
-  v2DismissAnnouncement,
-  v2GetLevelQuestions,
-  v2GetTournament,
-  v2EnterTournament,
-  v2SubmitTournamentAnswers,
-  v2GetTournamentClaim,
-  v2ConfirmTournamentClaim,
-  v2LoseLife,
-  v2ConsumePowerUp,
-  v2RecordMissionProgress,
-  v2RefillLives,
-  v2ResolveWinning,
-  v2SetAnnouncementsRead,
-  v2SetUsername,
+  loadState,
+  advanceLevel,
+  // Aliased: these collide with same-named local proto methods below whose
+  // bodies call the server action (e.g. local `refillLives` → `refillLivesAction`).
+  dismissAnnouncement as dismissAnnouncementAction,
+  getLevelQuestions,
+  getTournament,
+  enterTournament,
+  submitTournamentAnswers,
+  getTournamentClaim,
+  confirmTournamentClaim,
+  loseLife,
+  consumePowerUp,
+  recordMissionProgress,
+  refillLives as refillLivesAction,
+  resolveWinning,
+  setAnnouncementsRead,
+  setUsername as setUsernameAction,
 } from "@/actions/player";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { assertChainPlatform } from "@/lib/chain/platform";
@@ -234,7 +236,7 @@ export type ResultNotif = {
 
 export type Question = {
   // Server-issued question id (tournament rounds only). Present when the set
-  // came from `v2GetRoundQuestions`; absent for locally-drawn level questions.
+  // came from `getRoundQuestions`; absent for locally-drawn level questions.
   // The answers a player gives are submitted keyed by this id so the server can
   // re-score them authoritatively.
   id?: string;
@@ -592,12 +594,12 @@ const initialState = (tweaks: Tweaks): State => ({
   tickets: tweaks.startingTickets,
   levelTrack: "world-cup",
   // Both tracks start fresh at level 1; real progress overlays from the server
-  // once loadV2State resolves.
+  // once loadState resolves.
   levelByTrack: { standard: 1, "world-cup": 1 },
   lives: LIVES_MAX,
   nextLifeAt: null,
   // Clean new-player seed: real values overlay from the server once
-  // loadV2State resolves (logged-out / pre-load shows a fresh account).
+  // loadState resolves (logged-out / pre-load shows a fresh account).
   xp: 0,
   streak: 0,
   lastTournamentRank: null,
@@ -737,7 +739,7 @@ export function ProtoProvider({
   useEffect(() => {
     if (!shellTrackedRef.current) {
       shellTrackedRef.current = true;
-      track(AnalyticsEvent.V2ShellLoaded, { entry_reason: "mount" });
+      track(AnalyticsEvent.ShellLoaded, { entry_reason: "mount" });
     }
   }, [track]);
 
@@ -768,11 +770,11 @@ export function ProtoProvider({
   }, [update]);
 
   // Hydrate real player state from the server after mount, overlaying the mock
-  // seed. No-ops in the preview / unauthenticated context (loadV2State → null),
+  // seed. No-ops in the preview / unauthenticated context (loadState → null),
   // so the screens still render and demo on local state.
   useEffect(() => {
     let active = true;
-    loadV2State()
+    loadState()
       .then((s) => {
         if (!active || !s) return;
         update({
@@ -935,7 +937,7 @@ export function ProtoProvider({
             lives: Math.max(0, state.lives - 1),
             nextLifeAt: wasFull ? Date.now() + LIFE_REGEN_MS : state.nextLifeAt,
           });
-          void v2LoseLife(); // persist the life loss (regen clock is server-side too)
+          void loseLife(); // persist the life loss (regen clock is server-side too)
           goto("levelFail");
           return;
         }
@@ -961,7 +963,7 @@ export function ProtoProvider({
           });
           update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
           // Persist: advanceLevel credits the same milestone ticket + xp server-side.
-          void v2AdvanceLevel(track, state.score);
+          void advanceLevel(track, state.score);
           goto("levelWin");
           return;
         }
@@ -992,15 +994,15 @@ export function ProtoProvider({
         if (state.tournamentGameId) {
           // On-chain tournament: score is recorded server-side against the
           // game's own questions (settlement + prize are fully server/chain).
-          void v2SubmitTournamentAnswers(state.tournamentGameId, nextAnswers);
+          void submitTournamentAnswers(state.tournamentGameId, nextAnswers);
         }
         // Daily mission accrual — questions answered this round.
         track(AnalyticsEvent.MissionProgressRecorded, {
           reason: "tournament_questions_answered",
           question_count: totalQs,
         });
-        void v2RecordMissionProgress("daily-answer-5", totalQs);
-        void v2RecordMissionProgress("daily-answer-3", totalQs);
+        void recordMissionProgress("daily-answer-5", totalQs);
+        void recordMissionProgress("daily-answer-3", totalQs);
         goto("results");
         update((s) => ({
           xp: s.xp + s.score * xpMult,
@@ -1129,7 +1131,7 @@ export function ProtoProvider({
       reward_amount: winning ? ticketsToUsdt(winning.tickets) : null,
       winning_id_hash: hashAnalyticsValue(id),
     });
-    void v2ResolveWinning(id, "claim")
+    void resolveWinning(id, "claim")
       .then(() => {
         trackClientEvent(AnalyticsEvent.PrizeResolutionSucceeded, {
           screen: "profile",
@@ -1161,7 +1163,7 @@ export function ProtoProvider({
       reward_amount: winning?.tickets ?? null,
       winning_id_hash: hashAnalyticsValue(id),
     });
-    void v2ResolveWinning(id, "convert")
+    void resolveWinning(id, "convert")
       .then(() => {
         trackClientEvent(AnalyticsEvent.PrizeResolutionSucceeded, {
           screen: "profile",
@@ -1196,7 +1198,7 @@ export function ProtoProvider({
       ref_id_kind: "announcement",
       announcement_id_hash: hashAnalyticsValue(id),
     });
-    void v2DismissAnnouncement(id).then(() => {
+    void dismissAnnouncementAction(id).then(() => {
       trackClientEvent(AnalyticsEvent.AnnouncementDismissSucceeded, {
         screen: state.screen,
         ref_id_kind: "announcement",
@@ -1217,7 +1219,7 @@ export function ProtoProvider({
       ref_id_kind: "announcement",
       count: ids.length,
     });
-    void v2SetAnnouncementsRead(ids).then(() => {
+    void setAnnouncementsRead(ids).then(() => {
       trackClientEvent(AnalyticsEvent.AnnouncementMarkReadSucceeded, {
         screen: state.screen,
         ref_id_kind: "announcement",
@@ -1260,7 +1262,7 @@ export function ProtoProvider({
     // this hasn't resolved (or returned nothing).
     const lvTrack = state.levelTrack;
     const lvLevel = state.levelByTrack[lvTrack];
-    void v2GetLevelQuestions(lvTrack, lvLevel)
+    void getLevelQuestions(lvTrack, lvLevel)
       .then((qs) => {
         if (!qs || qs.length === 0) return;
         const mapped: Question[] = qs.map((q) => ({ ...q }));
@@ -1289,7 +1291,7 @@ export function ProtoProvider({
       lives: state.lives,
       ticket_delta: -LIVES_REFILL_COST,
     });
-    void v2RefillLives().then((result) => {
+    void refillLivesAction().then((result) => {
       trackClientEvent(AnalyticsEvent.LivesRefillSucceeded, {
         screen: state.screen,
         tickets_after: result?.tickets ?? state.tickets - LIVES_REFILL_COST,
@@ -1335,7 +1337,7 @@ export function ProtoProvider({
       question_index: state.qIdx + 1,
       inventory_before: null,
     });
-    void v2ConsumePowerUp(kind)
+    void consumePowerUp(kind)
       .then((result) => {
         trackClientEvent(AnalyticsEvent.PowerupUseSucceeded, {
           screen: state.screen,
@@ -1414,7 +1416,7 @@ export function ProtoProvider({
       username_length: clean.length,
     });
     writeUsername(clean);
-    void v2SetUsername(clean)
+    void setUsernameAction(clean)
       .then(() => {
         trackClientEvent(AnalyticsEvent.UsernameSetSucceeded, {
           screen: state.screen,
@@ -1436,7 +1438,7 @@ export function ProtoProvider({
   // record the verified entry server-side and start the round on the server's
   // authoritative questions. Reuses v1's contract layer end-to-end.
   const enterTournamentOnChain = async (): Promise<{ ok: boolean; error?: string }> => {
-    const t = await v2GetTournament();
+    const t = await getTournament();
     if (!t || !t.game.onchainId) {
       console.warn("[buy-ticket] no tournament / not on-chain", { hasTournament: !!t, onchainId: t?.game.onchainId });
       return { ok: false, error: "no_tournament" };
@@ -1454,7 +1456,7 @@ export function ProtoProvider({
       );
       console.log("[buy-ticket] on-chain done, verifying server-side", { txHash });
       update({ tournamentStep: "verifying" });
-      const res = await v2EnterTournament(t.game.id, txHash);
+      const res = await enterTournament(t.game.id, txHash);
       if (!res || !res.ok) {
         console.warn("[buy-ticket] server verify rejected", { res });
         update({ tournamentStep: null });
@@ -1487,7 +1489,7 @@ export function ProtoProvider({
   // Claim a settled on-chain prize: send `claimPrize` with the merkle proof, then
   // confirm server-side (reused `verifyClaim`).
   const claimTournamentPrize = async (gameId: string): Promise<{ ok: boolean; error?: string }> => {
-    const claim = await v2GetTournamentClaim(gameId);
+    const claim = await getTournamentClaim(gameId);
     if (!claim) return { ok: false, error: "nothing_to_claim" };
     try {
       const txHash = await tournamentWallet.claim(
@@ -1498,7 +1500,7 @@ export function ProtoProvider({
         (step) => update({ tournamentStep: step }),
       );
       update({ tournamentStep: "verifying" });
-      const res = await v2ConfirmTournamentClaim(gameId, txHash);
+      const res = await confirmTournamentClaim(gameId, txHash);
       update({ tournamentStep: null });
       if (!res || !res.ok) {
         return { ok: false, error: res && !res.ok ? res.error : "claim_failed" };

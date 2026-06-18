@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { syrupLabel, usdtLabel, USDT_PER_TICKET, useProto, type Winning } from "../state";
-import { v2LoadTournamentClaims } from "@/actions/player";
+import { loadTournamentClaims } from "@/actions/player";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
@@ -132,7 +132,7 @@ export const ProfileScreen = () => {
   const [claimingGameId, setClaimingGameId] = useState<string | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadTournamentClaims().then((c) => { if (active) setOnchainClaims(c); }).catch(() => {});
+    loadTournamentClaims().then((c) => { if (active) setOnchainClaims(c); }).catch(() => {});
     return () => { active = false; };
   }, []);
   const onClaimOnchain = async (item: TournamentClaimItem) => {

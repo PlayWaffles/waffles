@@ -16,7 +16,7 @@ import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
  * wallet signature. Runs at most once per mount; silent failure (no wallet) just
  * leaves the app on local/mock state.
  */
-export function V2AuthBootstrap() {
+export function AuthBootstrap() {
   const { isUnauthenticated } = useUser();
   const { signIn, signingIn } = useWalletSignIn();
   const tried = useRef(false);

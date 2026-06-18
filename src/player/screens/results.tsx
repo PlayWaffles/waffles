@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
-import { v2LoadTournamentBoard } from "@/actions/player";
+import { loadTournamentBoard } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
 import { playSound } from "../sound";
@@ -88,7 +88,7 @@ export const ResultsScreen = () => {
   useEffect(() => {
     if (!proto.tournamentGameId) return;
     let active = true;
-    v2LoadTournamentBoard(proto.tournamentGameId)
+    loadTournamentBoard(proto.tournamentGameId)
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })

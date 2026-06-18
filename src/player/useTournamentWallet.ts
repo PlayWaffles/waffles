@@ -78,7 +78,7 @@ export function useTournamentWallet() {
 
   /**
    * Approve (if needed) + `buyTicket`. Resolves with the entry tx hash once it's
-   * confirmed, ready to hand to `v2EnterTournament` for on-chain verification.
+   * confirmed, ready to hand to `enterTournament` for on-chain verification.
    */
   const enter = useCallback(
     async (

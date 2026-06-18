@@ -7,7 +7,7 @@
 import { prisma } from "@/lib/db";
 import { QuestCategory, RepeatFrequency } from "@prisma";
 
-export type V2Mission = {
+export type Mission = {
   slug: string;
   title: string;
   count: number; // current progress
@@ -26,7 +26,7 @@ const ICON_BY_SLUG: Record<string, string> = {
   "daily-play-5-days": "iconCalendar",
 };
 
-export async function loadMissions(userId: string): Promise<V2Mission[]> {
+export async function loadMissions(userId: string): Promise<Mission[]> {
   const quests = await prisma.quest.findMany({
     where: { category: QuestCategory.ENGAGEMENT, repeatFrequency: RepeatFrequency.DAILY, isActive: true },
     orderBy: { sortOrder: "asc" },

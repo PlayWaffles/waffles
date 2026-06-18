@@ -78,8 +78,8 @@ export async function seedLeagues(): Promise<number> {
   return prisma.league.count();
 }
 
-export type V2LeagueTierInfo = { key: string; label: string; color: string; rewards: LeagueRewardRow[] };
-export type V2League = {
+export type LeagueTierInfo = { key: string; label: string; color: string; rewards: LeagueRewardRow[] };
+export type League = {
   tier: string;
   key: string;
   label: string;
@@ -87,13 +87,13 @@ export type V2League = {
   points: number;
   season: string;
   seasonEndsAt: number;
-  tiers: V2LeagueTierInfo[];
+  tiers: LeagueTierInfo[];
 };
 
 /** Resolve (and persist) the player's current-season tier from their XP, plus
  *  the full DB-backed tier ladder (with reward chests) the Leagues + Compete
  *  screens render. */
-export async function loadLeague(userId: string): Promise<V2League> {
+export async function loadLeague(userId: string): Promise<League> {
   const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { xp: true } });
   const def = tierForXp(user.xp);
   const season = currentSeason();
@@ -110,7 +110,7 @@ export async function loadLeague(userId: string): Promise<V2League> {
     });
   }
 
-  const tiers: V2LeagueTierInfo[] = LEAGUE_TIERS.map((t) => ({
+  const tiers: LeagueTierInfo[] = LEAGUE_TIERS.map((t) => ({
     key: t.key,
     label: t.label,
     color: t.color,

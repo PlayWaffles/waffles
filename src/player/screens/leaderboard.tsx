@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, TabBar, ToastButton } from "../shared";
-import { v2LoadTournamentLeaderboard } from "@/actions/player";
+import { loadTournamentLeaderboard } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -52,7 +52,7 @@ export const LeaderboardScreen = () => {
   const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadTournamentLeaderboard()
+    loadTournamentLeaderboard()
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })

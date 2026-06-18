@@ -3,8 +3,8 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { v2LoadLeague } from "@/actions/player";
-import type { V2League } from "@/lib/player/leagues";
+import { loadLeague } from "@/actions/player";
+import type { League } from "@/lib/player/leagues";
 
 const TIERS = [
   { key: "apprentice1", label: "APPRENTICE I", color: "#cd7f32" },
@@ -134,10 +134,10 @@ export const LeaguesScreen = () => {
   // Real current-season tier + DB-backed reward ladder. Defaults to the
   // prototype's tier/rewards so the preview / unauthenticated context still
   // renders before the server responds.
-  const [league, setLeague] = useState<V2League | null>(null);
+  const [league, setLeague] = useState<League | null>(null);
   useEffect(() => {
     let active = true;
-    v2LoadLeague()
+    loadLeague()
       .then((l) => {
         if (active && l) setLeague(l);
       })
