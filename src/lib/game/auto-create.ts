@@ -1,4 +1,4 @@
-import { GameTheme, Prisma, UserPlatform } from "@prisma";
+import { GameTheme, Prisma, QuestionKind, UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { createGameOnChain, generateOnchainGameId } from "@/lib/chain";
 import { defaultNetworkForPlatform } from "@/lib/chain";
@@ -48,21 +48,48 @@ export interface AutoCreateGameInput {
   maxPlayers: number;
 }
 
+type QT = Awaited<ReturnType<typeof prisma.questionTemplate.findMany>>[number];
+
+// Build a kind-VARIED question set so a round isn't all multiple-choice: take the
+// least-used of each available non-single format (MULTI/ORDER/SPATIAL) first,
+// then fill the rest with the least-used SINGLE questions, and shuffle so the
+// varied formats don't always land in the same slots. (Least-used-first rotates
+// the bank over time; usageCount is bumped when a template is assigned.)
 async function getAutoQuestionTemplates() {
-  const templates = await prisma.questionTemplate.findMany({
-    where: { theme: DEFAULT_GAME_THEME },
-    orderBy: [
-      { usageCount: "asc" },
-      { updatedAt: "asc" },
-      { createdAt: "asc" },
-    ],
-    take: AUTO_QUESTION_COUNT,
+  const orderBy: Prisma.QuestionTemplateOrderByWithRelationInput[] = [
+    { usageCount: "asc" },
+    { updatedAt: "asc" },
+    { createdAt: "asc" },
+  ];
+
+  const varied: QT[] = [];
+  for (const kind of [QuestionKind.MULTI, QuestionKind.ORDER, QuestionKind.SPATIAL]) {
+    if (varied.length >= AUTO_QUESTION_COUNT) break;
+    const [t] = await prisma.questionTemplate.findMany({
+      where: { theme: DEFAULT_GAME_THEME, kind },
+      orderBy,
+      take: 1,
+    });
+    if (t) varied.push(t);
+  }
+
+  const singles = await prisma.questionTemplate.findMany({
+    where: { theme: DEFAULT_GAME_THEME, kind: QuestionKind.SINGLE, id: { notIn: varied.map((t) => t.id) } },
+    orderBy,
+    take: AUTO_QUESTION_COUNT - varied.length,
   });
 
+  const templates = [...varied, ...singles];
   if (templates.length < AUTO_QUESTION_COUNT) {
     throw new Error(
-      `Need at least ${AUTO_QUESTION_COUNT} movie question templates before creating a game.`,
+      `Need at least ${AUTO_QUESTION_COUNT} ${DEFAULT_GAME_THEME} question templates before creating a game.`,
     );
+  }
+
+  // Fisher–Yates shuffle so the varied formats aren't always first.
+  for (let i = templates.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [templates[i], templates[j]] = [templates[j], templates[i]];
   }
 
   return templates;
