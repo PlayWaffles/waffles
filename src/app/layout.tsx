@@ -7,6 +7,11 @@ import { env } from "@/lib/env";
 
 const UMAMI_HOST = process.env.NEXT_PUBLIC_UMAMI_HOST;
 const UMAMI_WEBSITE_ID = process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
+// Optional comma-separated allowlist of hostnames Umami should track on. Leave
+// UNSET to track on every host (incl. the in-app webview, localhost, previews).
+// If set, Umami silently ignores any host not in the list — so it must include
+// EVERY real runtime host (e.g. the MiniPay/Farcaster webview host).
+const UMAMI_DOMAINS = process.env.NEXT_PUBLIC_UMAMI_DOMAINS;
 
 export const metadata: Metadata = {
   title: "Waffles",
@@ -77,6 +82,7 @@ export default function RootLayout({
             data-cfasync="false"
             src={`${UMAMI_HOST.replace(/\/$/, "")}/script.js`}
             data-website-id={UMAMI_WEBSITE_ID}
+            {...(UMAMI_DOMAINS ? { "data-domains": UMAMI_DOMAINS } : {})}
             strategy="afterInteractive"
           />
         ) : null}
