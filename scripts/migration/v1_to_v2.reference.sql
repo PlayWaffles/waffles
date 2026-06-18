@@ -1,7 +1,6 @@
 -- ============================================================
 -- REFERENCE ONLY — net v1→v2 schema delta from `prisma migrate diff`.
--- Do NOT apply directly. Use `prisma migrate deploy` (run-v1-to-v2.sh)
--- so _prisma_migrations stays correct. This file is for review/dry-read.
+-- Do NOT apply directly. Use `prisma migrate deploy` (run-v1-to-v2.sh).
 -- ============================================================
 
 -- CreateEnum
@@ -12,9 +11,6 @@ CREATE TYPE "LevelTrack" AS ENUM ('STANDARD', 'WORLD_CUP');
 
 -- CreateEnum
 CREATE TYPE "TicketLedgerReason" AS ENUM ('LEVEL_MILESTONE', 'TOURNAMENT_REWARD', 'TOURNAMENT_ENTRY', 'DAILY_REWARD', 'SHOP_PURCHASE', 'BUNDLE_TOPUP', 'LIVES_REFILL', 'WINNING_CONVERT', 'FIRST_TICKET_OFFER', 'PARTNER_OFFER', 'SEASON_PASS', 'LEAGUE_REWARD', 'ADMIN_ADJUST');
-
--- CreateEnum
-CREATE TYPE "WinningStatus" AS ENUM ('PENDING', 'CLAIMED', 'CONVERTED');
 
 -- CreateEnum
 CREATE TYPE "ShopItemKind" AS ENUM ('POWERUP', 'COSMETIC', 'BUNDLE', 'BOOST', 'FEATURED');
@@ -42,6 +38,8 @@ ALTER TABLE "Chat" DROP CONSTRAINT "Chat_userId_fkey";
 
 -- DropIndex
 DROP INDEX "User_onboardingCompletedAt_idx";
+
+-- AlterTable
 
 -- AlterTable
 ALTER TABLE "Question" ADD COLUMN     "clues" TEXT[] DEFAULT ARRAY[]::TEXT[],
@@ -127,23 +125,6 @@ CREATE TABLE "RoundEntry" (
     "settledAt" TIMESTAMP(3),
 
     CONSTRAINT "RoundEntry_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "Winning" (
-    "id" TEXT NOT NULL,
-    "userId" TEXT NOT NULL,
-    "roundId" BIGINT,
-    "rank" INTEGER NOT NULL,
-    "tickets" INTEGER NOT NULL,
-    "status" "WinningStatus" NOT NULL DEFAULT 'PENDING',
-    "wonAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "resolvedAt" TIMESTAMP(3),
-    "claimTxHash" VARCHAR(66),
-    "merkleProof" JSONB,
-    "merkleAmount" VARCHAR(78),
-
-    CONSTRAINT "Winning_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -377,9 +358,6 @@ CREATE INDEX "RoundEntry_roundId_score_idx" ON "RoundEntry"("roundId", "score" D
 CREATE UNIQUE INDEX "RoundEntry_userId_roundId_key" ON "RoundEntry"("userId", "roundId");
 
 -- CreateIndex
-CREATE INDEX "Winning_userId_wonAt_idx" ON "Winning"("userId", "wonAt" DESC);
-
--- CreateIndex
 CREATE UNIQUE INDEX "Announcement_slug_key" ON "Announcement"("slug");
 
 -- CreateIndex
@@ -450,9 +428,6 @@ ALTER TABLE "LevelProgress" ADD CONSTRAINT "LevelProgress_userId_fkey" FOREIGN K
 
 -- AddForeignKey
 ALTER TABLE "RoundEntry" ADD CONSTRAINT "RoundEntry_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE "Winning" ADD CONSTRAINT "Winning_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AnnouncementState" ADD CONSTRAINT "AnnouncementState_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

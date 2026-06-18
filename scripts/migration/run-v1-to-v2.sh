@@ -5,7 +5,7 @@
 # The v1 DB's migration history is a clean PREFIX of this repo's history
 # (applied through 20260613133500_add_onboarding_completion), so we do NOT need
 # a manual baseline / `migrate resolve`. A plain `prisma migrate deploy` applies
-# exactly the 7 pending v2 migrations in order:
+# exactly the 8 pending v2 migrations in order:
 #
 #   20260614223726_v2_progression_economy        (Syrup/lives/xp, LevelProgress, …)
 #   20260615061321_v2_partner_offers_season_pass
@@ -14,6 +14,7 @@
 #   20260618120000_v2_league_cohorts
 #   20260618130000_league_reward_ticket_reason
 #   20260618140000_remove_chat                    (DROPS Chat — destructive)
+#   20260618150000_drop_winning     (DROPS empty Winning table)
 #
 # All 7 are safe on the 15,536 existing users (every added column is nullable or
 # has a default; no NOT-NULL-without-default; no unique index on a populated
