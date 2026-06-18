@@ -22,9 +22,8 @@ const timeAgo = (ts: number) => {
 // One badge in the profile grid. Earned = full-colour coin with an accent ring +
 // glow and a check; locked = greyed icon with a progress arc showing how close
 // the player is to unlocking it.
-const BadgeCoin = ({ badge, stats, onClick }: { badge: Badge; stats: BadgeStats; onClick: () => void }) => {
-  const earned = isBadgeEarned(badge, stats);
-  const pct = badgeProgress(badge, stats);
+const BadgeCoin = ({ badge, stats, earned, onClick }: { badge: Badge; stats: BadgeStats; earned: boolean; onClick: () => void }) => {
+  const pct = earned ? 1 : badgeProgress(badge, stats);
   const size = 56;
   const r = 25;
   const circ = 2 * Math.PI * r;
@@ -75,7 +74,11 @@ export const ProfileScreen = () => {
   // Badge stats are derived from existing game state — no separate store. The
   // same shape can be filled from server data once state moves server-side.
   const badgeStats: BadgeStats = deriveBadgeStats(proto);
-  const earnedBadges = BADGES.filter((b) => isBadgeEarned(b, badgeStats)).length;
+  // DB-backed: earned = persisted (UserBadge, via loadState) OR freshly derivable
+  // from current stats (a new unlock the watcher will record). The DB is the
+  // durable, cross-device source; derivation just catches in-session unlocks.
+  const isEarned = (b: Badge) => proto.earnedBadges.includes(b.id) || isBadgeEarned(b, badgeStats);
+  const earnedBadges = BADGES.filter(isEarned).length;
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
 
@@ -212,11 +215,12 @@ export const ProfileScreen = () => {
                 key={b.id}
                 badge={b}
                 stats={badgeStats}
+                earned={isEarned(b)}
                 onClick={() => {
                   trackClientEvent(AnalyticsEvent.BadgeDetailOpened, {
                     screen: "profile",
                     badge_id: b.id,
-                    badge_earned: isBadgeEarned(b, badgeStats),
+                    badge_earned: isEarned(b),
                     badge_progress: Math.round(badgeProgress(b, badgeStats) * 100),
                   });
                   setSelectedBadge(b);
@@ -376,7 +380,7 @@ export const ProfileScreen = () => {
 
       {/* Badge detail — tap any coin to see what it's for and how close you are. */}
       {selectedBadge && (() => {
-        const earned = isBadgeEarned(selectedBadge, badgeStats);
+        const earned = isEarned(selectedBadge);
         const pct = badgeProgress(selectedBadge, badgeStats);
         const cur = Math.min(selectedBadge.current(badgeStats), selectedBadge.goal);
         return (

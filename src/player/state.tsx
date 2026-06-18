@@ -30,9 +30,11 @@ import {
   recordMissionProgress,
   refillLives as refillLivesAction,
   setAnnouncementsRead,
+  loadAnnouncements,
   setUsername as setUsernameAction,
   logClient,
 } from "@/actions/player";
+import { type Announcement } from "./announcements";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { useUser } from "@/hooks/useUser";
 import { assertChainPlatform } from "@/lib/chain/platform";
@@ -480,26 +482,10 @@ function markDailyBonusUsed(): void {
   }
 }
 
-// Announcement read/dismissed state persists in localStorage (like coach marks)
-// so the inbox unread dot and dismissed banners survive reloads.
-const ANN_READ_KEY = "waffles.v2.ann.read";
-const ANN_DISMISSED_KEY = "waffles.v2.ann.dismissed";
-const readIdList = (key: string): string[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const v = localStorage.getItem(key);
-    return v ? (JSON.parse(v) as string[]) : [];
-  } catch {
-    return [];
-  }
-};
-const writeIdList = (key: string, ids: string[]): void => {
-  try {
-    localStorage.setItem(key, JSON.stringify(ids));
-  } catch {
-    /* storage disabled — state just won't persist this session */
-  }
-};
+// Announcement read/dismissed state is DB-backed (AnnouncementState): loaded via
+// loadState() and written through the server actions, so it's authoritative and
+// cross-device. Triggered ("auto:") cards are session-only (no DB row), so their
+// dismissal lives in proto state for the session and re-evaluates on reload.
 
 // The player's chosen username (set in onboarding), persisted across sessions.
 const USERNAME_KEY = "waffles.v2.username";
@@ -562,9 +548,16 @@ type State = {
   // Prize Wallet (claim as USDT or convert to spendable tickets).
   winnings: Winning[];
   // Announcement ids the player has read (clears the inbox unread dot) and
-  // dismissed (hides the Home banner). Seeded from localStorage post-mount.
+  // dismissed (hides the Home banner). DB-backed (AnnouncementState), overlaid
+  // from loadState once a session resolves.
   annRead: string[];
   annDismissed: string[];
+  // Earned badge ids — DB-backed (UserBadge), overlaid from loadState. The
+  // authoritative set; badge displays union this with any freshly-derived badge.
+  earnedBadges: string[];
+  // The live announcement feed (authored DB rows + per-user triggered cards),
+  // fetched from the server. Empty until that load resolves.
+  announcements: Announcement[];
   // The player's chosen handle (set in onboarding). Empty until set; persisted
   // to localStorage and hydrated post-mount.
   username: string;
@@ -631,10 +624,13 @@ const initialState = (tweaks: Tweaks): State => ({
   lastTournamentRank: null,
   resultNotifs: [],
   winnings: [],
-  // Start empty so SSR and the first client render match; hydrated from
-  // localStorage in a post-mount effect (see ProtoProvider).
+  // Start empty so SSR and the first client render match; overlaid from the DB
+  // (AnnouncementState via loadState) once a session resolves.
   annRead: [],
   annDismissed: [],
+  earnedBadges: [],
+  // Empty until the DB feed loads (loadAnnouncements) — fully server-driven.
+  announcements: [],
   username: "",
   levelJustUnlocked: null,
   mode: "tournament",
@@ -773,9 +769,7 @@ export function ProtoProvider({
     setState((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) }));
   }, []);
 
-  // Hydrate announcement read/dismissed sets from localStorage after mount, so
-  // SSR and first render stay matched (both start empty). Done in rAF (before
-  // paint, not in the effect body) so there's no flash and no setState-in-effect.
+  // One-shot shell-loaded telemetry on mount.
   useEffect(() => {
     if (!shellTrackedRef.current) {
       shellTrackedRef.current = true;
@@ -806,16 +800,10 @@ export function ProtoProvider({
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
-      const annRead = readIdList(ANN_READ_KEY);
-      const annDismissed = readIdList(ANN_DISMISSED_KEY);
+      // Announcement read/dismissed state is loaded from the DB (loadState); only
+      // the username still hydrates from localStorage here.
       const username = readUsername();
-      const patch: Partial<State> = {};
-      if (annRead.length || annDismissed.length) {
-        patch.annRead = annRead;
-        patch.annDismissed = annDismissed;
-      }
-      if (username) patch.username = username;
-      if (Object.keys(patch).length) update(patch);
+      if (username) update({ username });
     });
     return () => cancelAnimationFrame(id);
   }, [update]);
@@ -843,7 +831,24 @@ export function ProtoProvider({
           lastTournamentRank: s.lastTournamentRank,
           annRead: s.annRead,
           annDismissed: s.annDismissed,
+          earnedBadges: s.earnedBadges,
         });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [authedUserId, update]);
+
+  // Fetch the live announcement feed (authored DB rows + per-user triggered
+  // cards). Runs on mount for authored content and refetches once a session
+  // lands so triggered cards (e.g. unclaimed prize) appear. The DB is the sole
+  // source of truth — an empty result clears the feed.
+  useEffect(() => {
+    let active = true;
+    loadAnnouncements()
+      .then((list) => {
+        if (active && list) update({ announcements: list });
       })
       .catch(() => {});
     return () => {
@@ -1204,7 +1209,9 @@ export function ProtoProvider({
     update((s) => ({ resultNotifs: s.resultNotifs.map((r) => (r.id === id ? { ...r, read: true } : r)) }));
   };
 
-  // Hide a banner announcement; persisted so it stays hidden next session.
+  // Hide a banner announcement; persisted to the DB (AnnouncementState) for
+  // authored items so it stays hidden cross-device. Triggered cards are
+  // session-only (the server skips their persistence).
   const dismissAnnouncement = (id: string) => {
     track(AnalyticsEvent.AnnouncementDismissStarted, {
       ref_id_kind: "announcement",
@@ -1219,13 +1226,12 @@ export function ProtoProvider({
     });
     update((s) => {
       if (s.annDismissed.includes(id)) return {};
-      const next = [...s.annDismissed, id];
-      writeIdList(ANN_DISMISSED_KEY, next);
-      return { annDismissed: next };
+      return { annDismissed: [...s.annDismissed, id] };
     });
   };
 
-  // Mark announcements read (clears the inbox unread dot); persisted.
+  // Mark announcements read (clears the inbox unread dot); persisted to the DB
+  // (AnnouncementState) for authored items.
   const markAnnouncementsRead = (ids: string[]) => {
     track(AnalyticsEvent.AnnouncementMarkReadStarted, {
       ref_id_kind: "announcement",
@@ -1241,7 +1247,6 @@ export function ProtoProvider({
     update((s) => {
       const next = Array.from(new Set([...s.annRead, ...ids]));
       if (next.length === s.annRead.length) return {};
-      writeIdList(ANN_READ_KEY, next);
       return { annRead: next };
     });
   };

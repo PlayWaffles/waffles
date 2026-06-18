@@ -12,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import { isTriggeredId } from "@/lib/player/announcements";
 
 // Peg used to value an on-chain prize as in-app Syrup: 1 ticket = 0.1 USDT.
 // merkleAmount is in payment-token base units (6 decimals), so its ticket value
@@ -48,6 +49,7 @@ export type PlayerState = {
   lastTournamentRank: number | null;
   annRead: string[];
   annDismissed: string[];
+  earnedBadges: string[];
 };
 
 // ── Track <-> enum mapping ──────────────────────────────────────────────────
@@ -107,7 +109,7 @@ export async function ensurePlayerDefaults(userId: string): Promise<void> {
 export async function loadPlayerState(userId: string): Promise<PlayerState> {
   await ensurePlayerDefaults(userId);
 
-  const [user, progress, winnings, lastSettled, annStates] = await Promise.all([
+  const [user, progress, winnings, lastSettled, annStates, badges] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
@@ -150,6 +152,9 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
       where: { userId },
       select: { announcementId: true, readAt: true, dismissedAt: true },
     }),
+    // Earned badges — the durable, cross-device record. The client unions this
+    // with any badge freshly derived from current stats (and records new ones).
+    prisma.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
   ]);
 
   const levelByTrack: Record<Track, number> = { standard: 1, "world-cup": 1 };
@@ -178,6 +183,7 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
     lastTournamentRank: lastSettled?.finalRank ?? null,
     annRead: annStates.filter((a) => a.readAt).map((a) => a.announcementId),
     annDismissed: annStates.filter((a) => a.dismissedAt).map((a) => a.announcementId),
+    earnedBadges: badges.map((b) => b.badgeId),
   };
 }
 
@@ -316,18 +322,23 @@ export async function refillLives(userId: string): Promise<{ lives: number; tick
 }
 
 // ── Announcements ───────────────────────────────────────────────────────────
+// Triggered (`auto:`) announcements aren't DB rows — their read/dismiss state is
+// session-local (the condition resolves them), so skip the FK-backed persistence.
 export async function setAnnouncementRead(userId: string, ids: string[]): Promise<void> {
   await Promise.all(
-    ids.map((announcementId) =>
-      prisma.announcementState.upsert({
-        where: { userId_announcementId: { userId, announcementId } },
-        create: { userId, announcementId, readAt: new Date() },
-        update: { readAt: new Date() },
-      }),
-    ),
+    ids
+      .filter((id) => !isTriggeredId(id))
+      .map((announcementId) =>
+        prisma.announcementState.upsert({
+          where: { userId_announcementId: { userId, announcementId } },
+          create: { userId, announcementId, readAt: new Date() },
+          update: { readAt: new Date() },
+        }),
+      ),
   );
 }
 export async function setAnnouncementDismissed(userId: string, id: string): Promise<void> {
+  if (isTriggeredId(id)) return;
   await prisma.announcementState.upsert({
     where: { userId_announcementId: { userId, announcementId: id } },
     create: { userId, announcementId: id, dismissedAt: new Date() },

@@ -737,8 +737,13 @@ model Announcement {
   title     String              @db.VarChar(140)
   body      String              @db.VarChar(1000)
   ctaLabel  String?             @db.VarChar(60)
+  // CTA routing target, encoded as "screen:<name>" or "theme:<id>" (parsed client-side).
   ctaAction String?             @db.VarChar(120)
   kind      String              @default("info") @db.VarChar(30)
+  // Display tone (banner/inbox accent): "maple" | "berry" | "leaf".
+  tone      String              @default("leaf") @db.VarChar(12)
+  // Leading emoji shown on the banner/inbox card.
+  emoji     String              @default("📣") @db.VarChar(8)
   isActive  Boolean             @default(true)
   startsAt  DateTime?
   endsAt    DateTime?

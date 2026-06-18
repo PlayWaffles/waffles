@@ -42,6 +42,8 @@ export type AnnouncementMinAggregateOutputType = {
   ctaLabel: string | null
   ctaAction: string | null
   kind: string | null
+  tone: string | null
+  emoji: string | null
   isActive: boolean | null
   startsAt: Date | null
   endsAt: Date | null
@@ -57,6 +59,8 @@ export type AnnouncementMaxAggregateOutputType = {
   ctaLabel: string | null
   ctaAction: string | null
   kind: string | null
+  tone: string | null
+  emoji: string | null
   isActive: boolean | null
   startsAt: Date | null
   endsAt: Date | null
@@ -72,6 +76,8 @@ export type AnnouncementCountAggregateOutputType = {
   ctaLabel: number
   ctaAction: number
   kind: number
+  tone: number
+  emoji: number
   isActive: number
   startsAt: number
   endsAt: number
@@ -97,6 +103,8 @@ export type AnnouncementMinAggregateInputType = {
   ctaLabel?: true
   ctaAction?: true
   kind?: true
+  tone?: true
+  emoji?: true
   isActive?: true
   startsAt?: true
   endsAt?: true
@@ -112,6 +120,8 @@ export type AnnouncementMaxAggregateInputType = {
   ctaLabel?: true
   ctaAction?: true
   kind?: true
+  tone?: true
+  emoji?: true
   isActive?: true
   startsAt?: true
   endsAt?: true
@@ -127,6 +137,8 @@ export type AnnouncementCountAggregateInputType = {
   ctaLabel?: true
   ctaAction?: true
   kind?: true
+  tone?: true
+  emoji?: true
   isActive?: true
   startsAt?: true
   endsAt?: true
@@ -229,6 +241,8 @@ export type AnnouncementGroupByOutputType = {
   ctaLabel: string | null
   ctaAction: string | null
   kind: string
+  tone: string
+  emoji: string
   isActive: boolean
   startsAt: Date | null
   endsAt: Date | null
@@ -267,6 +281,8 @@ export type AnnouncementWhereInput = {
   ctaLabel?: Prisma.StringNullableFilter<"Announcement"> | string | null
   ctaAction?: Prisma.StringNullableFilter<"Announcement"> | string | null
   kind?: Prisma.StringFilter<"Announcement"> | string
+  tone?: Prisma.StringFilter<"Announcement"> | string
+  emoji?: Prisma.StringFilter<"Announcement"> | string
   isActive?: Prisma.BoolFilter<"Announcement"> | boolean
   startsAt?: Prisma.DateTimeNullableFilter<"Announcement"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Announcement"> | Date | string | null
@@ -283,6 +299,8 @@ export type AnnouncementOrderByWithRelationInput = {
   ctaLabel?: Prisma.SortOrderInput | Prisma.SortOrder
   ctaAction?: Prisma.SortOrderInput | Prisma.SortOrder
   kind?: Prisma.SortOrder
+  tone?: Prisma.SortOrder
+  emoji?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -302,6 +320,8 @@ export type AnnouncementWhereUniqueInput = Prisma.AtLeast<{
   ctaLabel?: Prisma.StringNullableFilter<"Announcement"> | string | null
   ctaAction?: Prisma.StringNullableFilter<"Announcement"> | string | null
   kind?: Prisma.StringFilter<"Announcement"> | string
+  tone?: Prisma.StringFilter<"Announcement"> | string
+  emoji?: Prisma.StringFilter<"Announcement"> | string
   isActive?: Prisma.BoolFilter<"Announcement"> | boolean
   startsAt?: Prisma.DateTimeNullableFilter<"Announcement"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Announcement"> | Date | string | null
@@ -318,6 +338,8 @@ export type AnnouncementOrderByWithAggregationInput = {
   ctaLabel?: Prisma.SortOrderInput | Prisma.SortOrder
   ctaAction?: Prisma.SortOrderInput | Prisma.SortOrder
   kind?: Prisma.SortOrder
+  tone?: Prisma.SortOrder
+  emoji?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -341,6 +363,8 @@ export type AnnouncementScalarWhereWithAggregatesInput = {
   ctaLabel?: Prisma.StringNullableWithAggregatesFilter<"Announcement"> | string | null
   ctaAction?: Prisma.StringNullableWithAggregatesFilter<"Announcement"> | string | null
   kind?: Prisma.StringWithAggregatesFilter<"Announcement"> | string
+  tone?: Prisma.StringWithAggregatesFilter<"Announcement"> | string
+  emoji?: Prisma.StringWithAggregatesFilter<"Announcement"> | string
   isActive?: Prisma.BoolWithAggregatesFilter<"Announcement"> | boolean
   startsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Announcement"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Announcement"> | Date | string | null
@@ -356,6 +380,8 @@ export type AnnouncementCreateInput = {
   ctaLabel?: string | null
   ctaAction?: string | null
   kind?: string
+  tone?: string
+  emoji?: string
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -372,6 +398,8 @@ export type AnnouncementUncheckedCreateInput = {
   ctaLabel?: string | null
   ctaAction?: string | null
   kind?: string
+  tone?: string
+  emoji?: string
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -388,6 +416,8 @@ export type AnnouncementUpdateInput = {
   ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -404,6 +434,8 @@ export type AnnouncementUncheckedUpdateInput = {
   ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -420,6 +452,8 @@ export type AnnouncementCreateManyInput = {
   ctaLabel?: string | null
   ctaAction?: string | null
   kind?: string
+  tone?: string
+  emoji?: string
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -435,6 +469,8 @@ export type AnnouncementUpdateManyMutationInput = {
   ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -450,6 +486,8 @@ export type AnnouncementUncheckedUpdateManyInput = {
   ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -465,6 +503,8 @@ export type AnnouncementCountOrderByAggregateInput = {
   ctaLabel?: Prisma.SortOrder
   ctaAction?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  tone?: Prisma.SortOrder
+  emoji?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
@@ -484,6 +524,8 @@ export type AnnouncementMaxOrderByAggregateInput = {
   ctaLabel?: Prisma.SortOrder
   ctaAction?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  tone?: Prisma.SortOrder
+  emoji?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
@@ -499,6 +541,8 @@ export type AnnouncementMinOrderByAggregateInput = {
   ctaLabel?: Prisma.SortOrder
   ctaAction?: Prisma.SortOrder
   kind?: Prisma.SortOrder
+  tone?: Prisma.SortOrder
+  emoji?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
@@ -537,6 +581,8 @@ export type AnnouncementCreateWithoutStatesInput = {
   ctaLabel?: string | null
   ctaAction?: string | null
   kind?: string
+  tone?: string
+  emoji?: string
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -552,6 +598,8 @@ export type AnnouncementUncheckedCreateWithoutStatesInput = {
   ctaLabel?: string | null
   ctaAction?: string | null
   kind?: string
+  tone?: string
+  emoji?: string
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -583,6 +631,8 @@ export type AnnouncementUpdateWithoutStatesInput = {
   ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -598,6 +648,8 @@ export type AnnouncementUncheckedUpdateWithoutStatesInput = {
   ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -644,6 +696,8 @@ export type AnnouncementSelect<ExtArgs extends runtime.Types.Extensions.Internal
   ctaLabel?: boolean
   ctaAction?: boolean
   kind?: boolean
+  tone?: boolean
+  emoji?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -661,6 +715,8 @@ export type AnnouncementSelectCreateManyAndReturn<ExtArgs extends runtime.Types.
   ctaLabel?: boolean
   ctaAction?: boolean
   kind?: boolean
+  tone?: boolean
+  emoji?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -676,6 +732,8 @@ export type AnnouncementSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.
   ctaLabel?: boolean
   ctaAction?: boolean
   kind?: boolean
+  tone?: boolean
+  emoji?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -691,6 +749,8 @@ export type AnnouncementSelectScalar = {
   ctaLabel?: boolean
   ctaAction?: boolean
   kind?: boolean
+  tone?: boolean
+  emoji?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -698,7 +758,7 @@ export type AnnouncementSelectScalar = {
   createdAt?: boolean
 }
 
-export type AnnouncementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "body" | "ctaLabel" | "ctaAction" | "kind" | "isActive" | "startsAt" | "endsAt" | "sortOrder" | "createdAt", ExtArgs["result"]["announcement"]>
+export type AnnouncementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "body" | "ctaLabel" | "ctaAction" | "kind" | "tone" | "emoji" | "isActive" | "startsAt" | "endsAt" | "sortOrder" | "createdAt", ExtArgs["result"]["announcement"]>
 export type AnnouncementInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   states?: boolean | Prisma.Announcement$statesArgs<ExtArgs>
   _count?: boolean | Prisma.AnnouncementCountOutputTypeDefaultArgs<ExtArgs>
@@ -719,6 +779,8 @@ export type $AnnouncementPayload<ExtArgs extends runtime.Types.Extensions.Intern
     ctaLabel: string | null
     ctaAction: string | null
     kind: string
+    tone: string
+    emoji: string
     isActive: boolean
     startsAt: Date | null
     endsAt: Date | null
@@ -1155,6 +1217,8 @@ export interface AnnouncementFieldRefs {
   readonly ctaLabel: Prisma.FieldRef<"Announcement", 'String'>
   readonly ctaAction: Prisma.FieldRef<"Announcement", 'String'>
   readonly kind: Prisma.FieldRef<"Announcement", 'String'>
+  readonly tone: Prisma.FieldRef<"Announcement", 'String'>
+  readonly emoji: Prisma.FieldRef<"Announcement", 'String'>
   readonly isActive: Prisma.FieldRef<"Announcement", 'Boolean'>
   readonly startsAt: Prisma.FieldRef<"Announcement", 'DateTime'>
   readonly endsAt: Prisma.FieldRef<"Announcement", 'DateTime'>

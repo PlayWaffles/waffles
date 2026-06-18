@@ -22,6 +22,8 @@ import * as economySvc from "@/lib/player/economy";
 import type { DailyClaimResult, PurchaseResult, ShopCatalog } from "@/lib/player/economy";
 import { PowerUpKind } from "@prisma";
 import * as missionsSvc from "@/lib/player/missions";
+import * as announcementsSvc from "@/lib/player/announcements";
+import type { PlayerAnnouncement } from "@/lib/player/announcements";
 import type { Mission, ClaimMissionResult } from "@/lib/player/missions";
 import * as leaguesSvc from "@/lib/player/leagues";
 import type { League } from "@/lib/player/leagues";
@@ -304,6 +306,12 @@ export async function setAnnouncementsRead(ids: string[]): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
   await playerSvc.setAnnouncementRead(user.id, ids);
+}
+
+/** Active announcement feed (authored DB rows + per-user triggered cards). */
+export async function loadAnnouncements(): Promise<PlayerAnnouncement[]> {
+  const user = await getCurrentUser();
+  return announcementsSvc.loadAnnouncements(user?.id ?? null);
 }
 
 /** One-time v2-migration welcome modal: whether to show it (migrated + not yet
