@@ -27,7 +27,7 @@ export const SOUNDS = {
   defeat: "/sounds/defeat.wav",
 } as const;
 
-export const BG_TRACK = "/sounds/bg-loop.wav";
+export const BG_TRACK = "/sounds/bg-loop.mp3";
 
 export type SoundName = keyof typeof SOUNDS;
 
