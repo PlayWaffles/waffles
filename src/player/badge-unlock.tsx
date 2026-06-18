@@ -97,7 +97,9 @@ export function BadgeUnlockWatcher() {
     // render path and clear of the set-state-in-effect rule).
     const t = setTimeout(() => setQueue((q) => [...q, ...newly]), 0);
     return () => clearTimeout(t);
-  }, [earnedKey]);
+    // dbKey is the stable primitive proxy for proto.earnedBadges (read inside).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [earnedKey, dbKey]);
 
   const current = queue[0];
   return <BadgeUnlockOverlay badge={current} onDismiss={() => setQueue((q) => q.slice(1))} more={queue.length > 1} />;
