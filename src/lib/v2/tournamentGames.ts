@@ -230,22 +230,36 @@ export async function enterTournamentOnChain(input: {
   wallet: string;
 }): Promise<EnterResult> {
   const { userId, gameId, txHash, wallet } = input;
+  console.log("[buy-ticket] server verify start", { userId, gameId, txHash, wallet });
   const game = await prisma.game.findUnique({
     where: { id: gameId },
     select: { id: true, onchainId: true, platform: true, network: true, tierPrices: true, endsAt: true },
   });
-  if (!game?.onchainId) return { ok: false, error: "game_not_onchain" };
-  if (new Date() >= game.endsAt) return { ok: false, error: "game_ended" };
+  if (!game?.onchainId) {
+    console.warn("[buy-ticket] reject: game_not_onchain", { gameId, hasGame: !!game });
+    return { ok: false, error: "game_not_onchain" };
+  }
+  if (new Date() >= game.endsAt) {
+    console.warn("[buy-ticket] reject: game_ended", { gameId, endsAt: game.endsAt.toISOString() });
+    return { ok: false, error: "game_ended" };
+  }
 
   const existing = await prisma.gameEntry.findUnique({
     where: { gameId_userId: { gameId, userId } },
     select: { id: true },
   });
-  if (existing) return { ok: true, entryId: existing.id, alreadyEntered: true };
+  if (existing) {
+    console.log("[buy-ticket] already entered (short-circuit)", { gameId, userId, entryId: existing.id });
+    return { ok: true, entryId: existing.id, alreadyEntered: true };
+  }
 
   // Flat price = the game's on-chain floor. The contract enforces the exact
   // amount, so verify the deposit against that floor (never a client value).
   const entryFee = game.tierPrices[0] ?? DEFAULT_ENTRY_FEE_USDC;
+  console.log("[buy-ticket] verifying on-chain", {
+    gameId, platform: game.platform, network: game.network,
+    onchainId: game.onchainId, expectedBuyer: wallet, entryFee, txHash,
+  });
   const verification = await verifyTicketPurchase({
     platform: game.platform,
     network: game.network,
@@ -255,8 +269,12 @@ export async function enterTournamentOnChain(input: {
     minimumAmount: parseUnits(entryFee.toString(), PAYMENT_TOKEN_DECIMALS),
   });
   if (!verification.verified) {
+    console.warn("[buy-ticket] verification FAILED", {
+      gameId, userId, txHash, error: verification.error, retryable: verification.retryable,
+    });
     return { ok: false, error: verification.error ?? "verification_failed", retryable: verification.retryable };
   }
+  console.log("[buy-ticket] verified ✓ — recording entry", { gameId, userId, entryFee });
 
   try {
     const entry = await prisma.$transaction(async (tx) => {
@@ -279,6 +297,7 @@ export async function enterTournamentOnChain(input: {
       });
       return created;
     });
+    console.log("[buy-ticket] entry recorded ✓", { gameId, userId, entryId: entry.id });
     return { ok: true, entryId: entry.id, alreadyEntered: false };
   } catch (error) {
     // Unique violation on (gameId,userId) or txHash → treat as already recorded.
@@ -287,8 +306,12 @@ export async function enterTournamentOnChain(input: {
         where: { gameId_userId: { gameId, userId } },
         select: { id: true },
       });
-      if (existingNow) return { ok: true, entryId: existingNow.id, alreadyEntered: true };
+      if (existingNow) {
+        console.log("[buy-ticket] entry race (P2002) — already recorded", { gameId, userId, entryId: existingNow.id });
+        return { ok: true, entryId: existingNow.id, alreadyEntered: true };
+      }
     }
+    console.error("[buy-ticket] entry write FAILED", { gameId, userId, error: error instanceof Error ? error.message : String(error) });
     throw error;
   }
 }

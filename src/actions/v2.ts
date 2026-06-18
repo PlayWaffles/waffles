@@ -161,9 +161,17 @@ export async function v2GetTournament(): Promise<
  *  v1's `verifyTicketPurchase`) before creating the entry. */
 export async function v2EnterTournament(gameId: string, txHash: string): Promise<EnterResult | null> {
   const user = await getCurrentUser();
-  if (!user) return null;
-  if (!user.wallet) return { ok: false, error: "no_wallet" };
-  return enterTournamentOnChain({ userId: user.id, gameId, txHash, wallet: user.wallet });
+  if (!user) {
+    console.warn("[buy-ticket] v2EnterTournament: no authed user", { gameId, txHash });
+    return null;
+  }
+  if (!user.wallet) {
+    console.warn("[buy-ticket] v2EnterTournament: user has no wallet", { userId: user.id, gameId });
+    return { ok: false, error: "no_wallet" };
+  }
+  const res = await enterTournamentOnChain({ userId: user.id, gameId, txHash, wallet: user.wallet });
+  console.log("[buy-ticket] v2EnterTournament result", { userId: user.id, gameId, ok: res.ok, error: res.ok ? undefined : res.error });
+  return res;
 }
 
 /** Submit the tournament round's answers; the server re-scores against the
