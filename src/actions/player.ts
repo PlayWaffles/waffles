@@ -31,6 +31,14 @@ import * as seasonSvc from "@/lib/player/seasonPass";
 import type { SeasonPass, SeasonClaimResult } from "@/lib/player/seasonPass";
 import { TicketLedgerReason } from "@prisma";
 
+/** Forward a client-side log line to the server terminal. The wallet/render
+ *  flows run in the browser; this surfaces their logs (and errors) where the
+ *  operator watches. Best-effort, no auth — diagnostics only. */
+export async function logClient(tag: string, data?: unknown): Promise<void> {
+  if (data === undefined) console.log(tag);
+  else console.log(tag, data);
+}
+
 export async function loadMissions(): Promise<Mission[] | null> {
   const user = await getCurrentUser();
   if (!user) return null;

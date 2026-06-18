@@ -10,7 +10,7 @@ import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-rewar
 import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-takeover";
 import { MigrationTakeover } from "./screens/migration-takeover";
 import { LeagueResultTakeover, hasSeenLeagueResult } from "./screens/league-result";
-import { getMigrationNotice, dismissMigrationNotice, loadLeagueResult } from "@/actions/player";
+import { getMigrationNotice, dismissMigrationNotice, loadLeagueResult, logClient } from "@/actions/player";
 import type { LeagueResult } from "@/lib/player/leagues";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
@@ -259,6 +259,25 @@ export default function Page() {
       console.log("%cReal-time multiplayer trivia. Built with care on Celo.", small);
       console.log("%cLike what you see? Drop us a line — playwaffles.xyz", small);
     }
+  }, []);
+
+  // Forward uncaught client errors + promise rejections to the server terminal,
+  // so browser-side crashes (e.g. a screen render error) show up alongside the
+  // server logs the operator is watching.
+  useEffect(() => {
+    const trunc = (s: string) => s.slice(0, 2000);
+    const onError = (e: ErrorEvent) =>
+      void logClient("[client-error]", trunc(`${e.message}  @ ${e.filename}:${e.lineno}:${e.colno}\n${e.error?.stack ?? ""}`));
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const r = e.reason;
+      void logClient("[client-unhandled-rejection]", trunc(r instanceof Error ? `${r.message}\n${r.stack ?? ""}` : String(r)));
+    };
+    window.addEventListener("error", onError);
+    window.addEventListener("unhandledrejection", onRejection);
+    return () => {
+      window.removeEventListener("error", onError);
+      window.removeEventListener("unhandledrejection", onRejection);
+    };
   }, []);
 
   return (
