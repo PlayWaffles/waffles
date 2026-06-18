@@ -287,7 +287,7 @@ export const ProfileScreen = () => {
                   <PixelImg src={ASSETS.trophy} size={28} alt="" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#fff", lineHeight: 1 }}>#{c.rank} · WAFFLES #{c.gameNumber}</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#fff", lineHeight: 1 }}>#{c.rank} · {c.title || `WAFFLES #${c.gameNumber}`}</div>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3 }}>{timeAgo(c.wonAt)} · on-chain</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
