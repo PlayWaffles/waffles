@@ -684,6 +684,38 @@ const ComingSoonVeil = ({ note, children }: { note: string; children: ReactNode 
   </div>
 );
 
+// Shared syrup price tag — one consistent affordable/unaffordable treatment for
+// every "spend Syrup" button in the shop (power-ups + cosmetics), so they all
+// read the same. `block` makes it a full-width button face; `committed` shows
+// the post-buy ✓ flash.
+const PriceTag = ({ price, affordable, committed = false, block = false }: {
+  price: number;
+  affordable: boolean;
+  committed?: boolean;
+  block?: boolean;
+}) => (
+  <div
+    style={{
+      background: committed ? "rgba(0,207,242,.25)" : affordable ? "rgba(255,201,49,.1)" : "rgba(253,251,246,0.04)",
+      border: `1px solid ${committed ? "var(--leaf)" : affordable ? "rgba(255,201,49,.3)" : "rgba(253,251,246,0.08)"}`,
+      color: committed ? "var(--leaf)" : affordable ? "#FFC931" : "var(--ink-faint)",
+      borderRadius: 8,
+      padding: block ? "6px 0" : "6px 14px",
+      width: block ? "100%" : undefined,
+      fontFamily: "var(--font-display)",
+      fontSize: 13,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 5,
+      transition: "transform 120ms cubic-bezier(0.22, 1, 0.36, 1), background 160ms ease, color 160ms ease",
+      transform: committed ? "scale(1.04)" : "scale(1)",
+    }}
+  >
+    {committed ? "✓" : (<><SyrupIcon size={13} />{price}</>)}
+  </div>
+);
+
 const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: boolean; onBuy: () => void }) => {
   const [committed, setCommitted] = useState(false);
   const click = () => {
@@ -710,24 +742,9 @@ const PowerUpCard = ({ item, affordable, onBuy }: { item: PowerUp; affordable: b
         type="button"
         aria-label={`Buy ${item.label} for ${syrupLabel(item.price)}`}
         onClick={click}
-        style={{
-          background: committed ? "rgba(0, 207, 242, 0.25)" : affordable ? "rgba(255,201,49,.1)" : "rgba(253,251,246,0.04)",
-          border: `1px solid ${committed ? "var(--leaf)" : affordable ? "rgba(255,201,49,.3)" : "rgba(253,251,246,0.08)"}`,
-          color: committed ? "var(--leaf)" : affordable ? "#FFC931" : "var(--ink-faint)",
-          borderRadius: 8,
-          padding: "6px 0",
-          fontFamily: "var(--font-display)",
-          fontSize: 13,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 5,
-          cursor: "pointer",
-          transition: "transform 120ms cubic-bezier(0.22, 1, 0.36, 1), background 160ms ease, color 160ms ease",
-          transform: committed ? "scale(1.04)" : "scale(1)",
-        }}
+        style={{ border: "none", background: "transparent", padding: 0, width: "100%", cursor: "pointer" }}
       >
-        {committed ? "✓" : (<><SyrupIcon size={13} />{item.price}</>)}
+        <PriceTag price={item.price} affordable={affordable} committed={committed} block />
       </button>
     </Card>
   );
@@ -761,22 +778,7 @@ const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable:
     {item.owned ? (
       <div style={{ background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", borderRadius: 8, padding: "6px 12px", fontFamily: "var(--font-display)", fontSize: 11 }}>OWNED</div>
     ) : (
-      <div
-        style={{
-          background: affordable ? "#FFC931" : "rgba(255,201,49,0.25)",
-          color: affordable ? "#1e1e1e" : "var(--ink-faint)",
-          padding: "7px 12px",
-          borderRadius: 8,
-          fontFamily: "var(--font-display)",
-          fontSize: 13,
-          display: "flex",
-          alignItems: "center",
-          gap: 5,
-          boxShadow: affordable ? "0 3px 0 rgba(0,0,0,.25)" : undefined,
-        }}
-      >
-        <SyrupIcon size={13} />{item.price}
-      </div>
+      <PriceTag price={item.price} affordable={affordable} />
     )}
   </button>
 );
