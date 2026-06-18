@@ -53,6 +53,7 @@ const SCREEN_COMPONENTS: Record<ScreenName, React.ComponentType> = {
 // Warmed during idle after first paint so navigating to a code-split screen is
 // instant. Ordered by how soon a new player is likely to hit each one.
 const SCREEN_PRELOADERS: Array<() => Promise<unknown>> = [
+  () => import("./screens/shop"),
   () => import("./screens/levels"),
   () => import("./screens/level-intro"),
   () => import("./screens/lobby"),
@@ -61,7 +62,6 @@ const SCREEN_PRELOADERS: Array<() => Promise<unknown>> = [
   () => import("./screens/level-result"),
   () => import("./screens/compete"),
   () => import("./screens/profile"),
-  () => import("./screens/shop"),
   () => import("./screens/leaderboard"),
   () => import("./screens/leagues"),
   () => import("./screens/missions"),
