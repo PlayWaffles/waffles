@@ -94,11 +94,9 @@ try {
   const lvlWc = await roundQ.getLevelClientQuestions("world-cup", 1);
   check("level questions served from DB (world-cup)", lvlWc.length > 0, `n=${lvlWc.length}`);
 
-  // 7. resolve winning (convert → tickets)
-  const w = await prisma.winning.create({ data: { userId: uid, rank: 1, tickets: 10 }, select: { id: true, tickets: true } });
-  const before = (await prisma.user.findUniqueOrThrow({ where: { id: uid }, select: { ticketBalance: true } })).ticketBalance;
-  const res = await ps.resolveWinning(uid, w.id, "convert");
-  check("convert winning → tickets", res.tickets === before + w.tickets, `before=${before} +${w.tickets} → ${res.tickets}`);
+  // 7. (prize wallet) Tournament prizes are read from GameEntry and claimed via
+  //    the on-chain merkle path; convert-to-Syrup is deferred until the contract
+  //    supports it, so there's nothing to unit-test here yet.
 
   // 8. shop purchase (requires seeded catalog: node scripts/seed-v2-shop.ts)
   const balBefore = (await prisma.user.findUniqueOrThrow({ where: { id: uid }, select: { ticketBalance: true } })).ticketBalance;
@@ -120,11 +118,8 @@ try {
   const member = await prisma.leagueMember.findUnique({ where: { userId_season: { userId: uid, season: lg.season } }, select: { id: true } });
   check("league tier resolved + membership persisted", typeof lg.key === "string" && !!member, `tier=${lg.key} season=${lg.season} pts=${lg.points}`);
 
-  // 11. claim winning → on-chain USDT payout amount recorded (10 tickets = 1 USDT = 1e6 units)
-  const w2 = await prisma.winning.create({ data: { userId: uid, rank: 1, tickets: 10 }, select: { id: true } });
-  await ps.resolveWinning(uid, w2.id, "claim");
-  const claimed = await prisma.winning.findUniqueOrThrow({ where: { id: w2.id }, select: { status: true, merkleAmount: true } });
-  check("claim records USDT payout units", claimed.status === "CLAIMED" && claimed.merkleAmount === "1000000", `amount=${claimed.merkleAmount}`);
+  // 11. claiming is the on-chain merkle path (confirmTournamentClaim) — exercised
+  //     via the wallet in the live runtime, not unit-tested here.
 
   // 12. announcement read/dismiss (FK to seeded Announcement — must not throw)
   await ps.setAnnouncementRead(uid, ["world-cup-season"]);

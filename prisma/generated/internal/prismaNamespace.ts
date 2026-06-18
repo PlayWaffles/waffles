@@ -402,7 +402,6 @@ export const ModelName = {
   TicketLedger: 'TicketLedger',
   LevelProgress: 'LevelProgress',
   RoundEntry: 'RoundEntry',
-  Winning: 'Winning',
   Announcement: 'Announcement',
   AnnouncementState: 'AnnouncementState',
   QuestProgress: 'QuestProgress',
@@ -434,7 +433,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "winning" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1767,80 +1766,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.RoundEntryCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.RoundEntryCountAggregateOutputType> | number
-        }
-      }
-    }
-    Winning: {
-      payload: Prisma.$WinningPayload<ExtArgs>
-      fields: Prisma.WinningFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.WinningFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.WinningFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>
-        }
-        findFirst: {
-          args: Prisma.WinningFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.WinningFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>
-        }
-        findMany: {
-          args: Prisma.WinningFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>[]
-        }
-        create: {
-          args: Prisma.WinningCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>
-        }
-        createMany: {
-          args: Prisma.WinningCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.WinningCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>[]
-        }
-        delete: {
-          args: Prisma.WinningDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>
-        }
-        update: {
-          args: Prisma.WinningUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>
-        }
-        deleteMany: {
-          args: Prisma.WinningDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.WinningUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.WinningUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>[]
-        }
-        upsert: {
-          args: Prisma.WinningUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$WinningPayload>
-        }
-        aggregate: {
-          args: Prisma.WinningAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateWinning>
-        }
-        groupBy: {
-          args: Prisma.WinningGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.WinningGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.WinningCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.WinningCountAggregateOutputType> | number
         }
       }
     }
@@ -3412,23 +3337,6 @@ export const RoundEntryScalarFieldEnum = {
 export type RoundEntryScalarFieldEnum = (typeof RoundEntryScalarFieldEnum)[keyof typeof RoundEntryScalarFieldEnum]
 
 
-export const WinningScalarFieldEnum = {
-  id: 'id',
-  userId: 'userId',
-  roundId: 'roundId',
-  rank: 'rank',
-  tickets: 'tickets',
-  status: 'status',
-  wonAt: 'wonAt',
-  resolvedAt: 'resolvedAt',
-  claimTxHash: 'claimTxHash',
-  merkleProof: 'merkleProof',
-  merkleAmount: 'merkleAmount'
-} as const
-
-export type WinningScalarFieldEnum = (typeof WinningScalarFieldEnum)[keyof typeof WinningScalarFieldEnum]
-
-
 export const AnnouncementScalarFieldEnum = {
   id: 'id',
   slug: 'slug',
@@ -3980,20 +3888,6 @@ export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaMod
 
 
 /**
- * Reference to a field of type 'WinningStatus'
- */
-export type EnumWinningStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WinningStatus'>
-    
-
-
-/**
- * Reference to a field of type 'WinningStatus[]'
- */
-export type ListEnumWinningStatusFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'WinningStatus[]'>
-    
-
-
-/**
  * Reference to a field of type 'LeagueTier'
  */
 export type EnumLeagueTierFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeagueTier'>
@@ -4189,7 +4083,6 @@ export type GlobalOmitConfig = {
   ticketLedger?: Prisma.TicketLedgerOmit
   levelProgress?: Prisma.LevelProgressOmit
   roundEntry?: Prisma.RoundEntryOmit
-  winning?: Prisma.WinningOmit
   announcement?: Prisma.AnnouncementOmit
   announcementState?: Prisma.AnnouncementStateOmit
   questProgress?: Prisma.QuestProgressOmit

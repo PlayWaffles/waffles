@@ -155,15 +155,6 @@ export const TicketLedgerReason = {
 export type TicketLedgerReason = (typeof TicketLedgerReason)[keyof typeof TicketLedgerReason]
 
 
-export const WinningStatus = {
-  PENDING: 'PENDING',
-  CLAIMED: 'CLAIMED',
-  CONVERTED: 'CONVERTED'
-} as const
-
-export type WinningStatus = (typeof WinningStatus)[keyof typeof WinningStatus]
-
-
 export const ShopItemKind = {
   POWERUP: 'POWERUP',
   COSMETIC: 'COSMETIC',

@@ -623,50 +623,6 @@ export type BigIntWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedBigIntFilter<$PrismaModel>
 }
 
-export type BigIntNullableFilter<$PrismaModel = never> = {
-  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
-  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
-}
-
-export type EnumWinningStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.WinningStatus | Prisma.EnumWinningStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumWinningStatusFilter<$PrismaModel> | $Enums.WinningStatus
-}
-
-export type BigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
-  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
-  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
-  _sum?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
-  _min?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
-  _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
-}
-
-export type EnumWinningStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.WinningStatus | Prisma.EnumWinningStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumWinningStatusWithAggregatesFilter<$PrismaModel> | $Enums.WinningStatus
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumWinningStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumWinningStatusFilter<$PrismaModel>
-}
-
 export type EnumLeagueTierFilter<$PrismaModel = never> = {
   equals?: $Enums.LeagueTier | Prisma.EnumLeagueTierFieldRefInput<$PrismaModel>
   in?: $Enums.LeagueTier[] | Prisma.ListEnumLeagueTierFieldRefInput<$PrismaModel>
@@ -1313,50 +1269,6 @@ export type NestedBigIntWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedBigIntFilter<$PrismaModel>
   _min?: Prisma.NestedBigIntFilter<$PrismaModel>
   _max?: Prisma.NestedBigIntFilter<$PrismaModel>
-}
-
-export type NestedBigIntNullableFilter<$PrismaModel = never> = {
-  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
-  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBigIntNullableFilter<$PrismaModel> | bigint | number | null
-}
-
-export type NestedEnumWinningStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.WinningStatus | Prisma.EnumWinningStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumWinningStatusFilter<$PrismaModel> | $Enums.WinningStatus
-}
-
-export type NestedBigIntNullableWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel> | null
-  in?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  notIn?: bigint[] | number[] | Prisma.ListBigIntFieldRefInput<$PrismaModel> | null
-  lt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  lte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gt?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  gte?: bigint | number | Prisma.BigIntFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedBigIntNullableWithAggregatesFilter<$PrismaModel> | bigint | number | null
-  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
-  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
-  _sum?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
-  _min?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
-  _max?: Prisma.NestedBigIntNullableFilter<$PrismaModel>
-}
-
-export type NestedEnumWinningStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.WinningStatus | Prisma.EnumWinningStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  notIn?: $Enums.WinningStatus[] | Prisma.ListEnumWinningStatusFieldRefInput<$PrismaModel>
-  not?: Prisma.NestedEnumWinningStatusWithAggregatesFilter<$PrismaModel> | $Enums.WinningStatus
-  _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumWinningStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumWinningStatusFilter<$PrismaModel>
 }
 
 export type NestedEnumLeagueTierFilter<$PrismaModel = never> = {

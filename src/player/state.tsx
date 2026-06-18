@@ -28,7 +28,6 @@ import {
   consumePowerUp,
   recordMissionProgress,
   refillLives as refillLivesAction,
-  resolveWinning,
   setAnnouncementsRead,
   setUsername as setUsernameAction,
 } from "@/actions/player";
@@ -650,8 +649,6 @@ export type Proto = State & {
   enterTournamentOnChain: () => Promise<{ ok: boolean; error?: string }>;
   claimTournamentPrize: (gameId: string) => Promise<{ ok: boolean; error?: string }>;
   markResultRead: (id: string) => void;
-  claimWinning: (id: string) => void;
-  convertWinning: (id: string) => void;
   dismissAnnouncement: (id: string) => void;
   markAnnouncementsRead: (ids: string[]) => void;
   setUsername: (name: string) => void;
@@ -1122,76 +1119,6 @@ export function ProtoProvider({
     update((s) => ({ resultNotifs: s.resultNotifs.map((r) => (r.id === id ? { ...r, read: true } : r)) }));
   };
 
-  // Claim a winning as USDT. Optimistic locally; the server marks it resolved
-  // (the on-chain USDT transfer runs via the existing merkle-claim path).
-  const claimWinning = (id: string) => {
-    const winning = state.winnings.find((w) => w.id === id);
-    track(AnalyticsEvent.PrizeResolutionStarted, {
-      reward_type: "usdt",
-      reward_amount: winning ? ticketsToUsdt(winning.tickets) : null,
-      winning_id_hash: hashAnalyticsValue(id),
-    });
-    void resolveWinning(id, "claim")
-      .then(() => {
-        trackClientEvent(AnalyticsEvent.PrizeResolutionSucceeded, {
-          screen: "profile",
-          mode: "tournament",
-          reward_type: "usdt",
-          reward_amount: winning ? ticketsToUsdt(winning.tickets) : null,
-          winning_id_hash: hashAnalyticsValue(id),
-        });
-      })
-      .catch((error) => {
-        trackClientEvent(AnalyticsEvent.PrizeResolutionFailed, {
-          screen: "profile",
-          mode: "tournament",
-          reward_type: "usdt",
-          reason: error instanceof Error ? error.message : "resolve_failed",
-          winning_id_hash: hashAnalyticsValue(id),
-        });
-      });
-    update((s) => ({
-      winnings: s.winnings.map((w) => (w.id === id && w.status === "pending" ? { ...w, status: "claimed" } : w)),
-    }));
-  };
-
-  // Convert a winning into spendable in-app tickets instead of claiming USDT.
-  const convertWinning = (id: string) => {
-    const winning = state.winnings.find((w) => w.id === id);
-    track(AnalyticsEvent.PrizeResolutionStarted, {
-      reward_type: "tickets",
-      reward_amount: winning?.tickets ?? null,
-      winning_id_hash: hashAnalyticsValue(id),
-    });
-    void resolveWinning(id, "convert")
-      .then(() => {
-        trackClientEvent(AnalyticsEvent.PrizeResolutionSucceeded, {
-          screen: "profile",
-          mode: "tournament",
-          reward_type: "tickets",
-          reward_amount: winning?.tickets ?? null,
-          winning_id_hash: hashAnalyticsValue(id),
-        });
-      })
-      .catch((error) => {
-        trackClientEvent(AnalyticsEvent.PrizeResolutionFailed, {
-          screen: "profile",
-          mode: "tournament",
-          reward_type: "tickets",
-          reason: error instanceof Error ? error.message : "resolve_failed",
-          winning_id_hash: hashAnalyticsValue(id),
-        });
-      });
-    update((s) => {
-      const w = s.winnings.find((x) => x.id === id && x.status === "pending");
-      if (!w) return {};
-      return {
-        tickets: s.tickets + w.tickets,
-        winnings: s.winnings.map((x) => (x.id === id ? { ...x, status: "converted" } : x)),
-      };
-    });
-  };
-
   // Hide a banner announcement; persisted so it stays hidden next session.
   const dismissAnnouncement = (id: string) => {
     track(AnalyticsEvent.AnnouncementDismissStarted, {
@@ -1525,8 +1452,6 @@ export function ProtoProvider({
     answerMulti,
     answerOrder,
     markResultRead,
-    claimWinning,
-    convertWinning,
     dismissAnnouncement,
     markAnnouncementsRead,
     setUsername,

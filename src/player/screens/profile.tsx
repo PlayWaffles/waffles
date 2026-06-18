@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { syrupLabel, usdtLabel, USDT_PER_TICKET, useProto, type Winning } from "../state";
+import { syrupLabel, USDT_PER_TICKET, useProto } from "../state";
 import { loadTournamentClaims } from "@/actions/player";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
@@ -72,27 +72,12 @@ export const ProfileScreen = () => {
   const level = proto.level;
   const streak = proto.streak;
 
-  const pendingWinnings = proto.winnings.filter((w) => w.status === "pending");
-  const claimableTickets = pendingWinnings.reduce((s, w) => s + w.tickets, 0);
-
   // Badge stats are derived from existing game state — no separate store. The
   // same shape can be filled from server data once state moves server-side.
   const badgeStats: BadgeStats = deriveBadgeStats(proto);
   const earnedBadges = BADGES.filter((b) => isBadgeEarned(b, badgeStats)).length;
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
-  useEffect(() => {
-    trackClientEvent(AnalyticsEvent.ProfileViewed, {
-      screen: "profile",
-      tickets_balance: tickets,
-      level,
-      streak_days: streak,
-      pending_prizes: pendingWinnings.length,
-      claimable_tickets: claimableTickets,
-      badges_earned: earnedBadges,
-      badges_total: BADGES.length,
-    });
-  }, [tickets, level, streak, pendingWinnings.length, claimableTickets, earnedBadges]);
 
   const [toast, setToast] = useState<string | null>(null);
   useEffect(() => {
@@ -101,40 +86,29 @@ export const ProfileScreen = () => {
     return () => clearTimeout(t);
   }, [toast]);
 
-  const onClaim = (w: Winning) => {
-    trackClientEvent(AnalyticsEvent.PrizeClaimStarted, {
-      screen: "profile",
-      prize_id_kind: "winning",
-      rank: w.rank,
-      reward_amount: w.tickets,
-      amount_usdt: Number((w.tickets * USDT_PER_TICKET).toFixed(2)),
-    });
-    proto.claimWinning(w.id);
-    setToast(`Claimed ${usdtLabel(w.tickets)}`);
-  };
-  const onConvert = (w: Winning) => {
-    trackClientEvent(AnalyticsEvent.PrizeConvertStarted, {
-      screen: "profile",
-      prize_id_kind: "winning",
-      rank: w.rank,
-      reward_amount: w.tickets,
-      tickets_before: tickets,
-      tickets_after: tickets + w.tickets,
-    });
-    proto.convertWinning(w.id);
-    setToast(`Added ${syrupLabel(w.tickets)} to your balance`);
-  };
-
-  // On-chain tournament prizes — claimed via the wallet (claimPrize) using the
-  // merkle proof, then confirmed server-side. Separate from the off-chain
-  // Winning list above (which has no on-chain claim).
+  // The Prize Wallet — a player's settled on-chain tournament prizes. Each can be
+  // CLAIMED as USDT (merkle `claimPrize`) or CONVERTED into off-chain Syrup.
   const [onchainClaims, setOnchainClaims] = useState<TournamentClaimItem[]>([]);
   const [claimingGameId, setClaimingGameId] = useState<string | null>(null);
+  const claimableUsdt = onchainClaims.reduce((s, c) => s + c.amount, 0);
   useEffect(() => {
     let active = true;
     loadTournamentClaims().then((c) => { if (active) setOnchainClaims(c); }).catch(() => {});
     return () => { active = false; };
   }, []);
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.ProfileViewed, {
+      screen: "profile",
+      tickets_balance: tickets,
+      level,
+      streak_days: streak,
+      pending_prizes: onchainClaims.length,
+      claimable_tickets: Math.round(claimableUsdt / USDT_PER_TICKET),
+      badges_earned: earnedBadges,
+      badges_total: BADGES.length,
+    });
+  }, [tickets, level, streak, onchainClaims.length, claimableUsdt, earnedBadges]);
+
   const onClaimOnchain = async (item: TournamentClaimItem) => {
     setClaimingGameId(item.gameId);
     const res = await proto.claimTournamentPrize(item.gameId);
@@ -268,13 +242,13 @@ export const ProfileScreen = () => {
         {/* Prize Wallet — tournament winnings (USDT-backed) the player resolves
             per prize: claim the USDT value or convert into spendable Syrup. */}
         <div style={{ background: "#0F0F10", border: "1px solid rgba(0,207,242,.22)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(0,207,242,.05)" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: pendingWinnings.length ? 12 : 0 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: onchainClaims.length ? 12 : 0 }}>
             <div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", letterSpacing: 0.4 }}>PRIZE WALLET</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Tournament winnings · paid in USDT</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#00CFF2", lineHeight: 1 }}>{usdtLabel(claimableTickets)}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#00CFF2", lineHeight: 1 }}>{claimableUsdt.toFixed(2)} USDT</div>
               <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.6, textTransform: "uppercase", marginTop: 3 }}>claimable</div>
             </div>
           </div>
@@ -304,45 +278,11 @@ export const ProfileScreen = () => {
             </div>
           ))}
 
-          {pendingWinnings.length === 0 && onchainClaims.length === 0 ? (
+          {onchainClaims.length === 0 ? (
             <div style={{ marginTop: 12, textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.4)", padding: "10px 0", lineHeight: 1.4 }}>
               No prizes to claim yet.<br />Finish Top 100 in a tournament to win USDT.
             </div>
-          ) : pendingWinnings.length === 0 ? null : (
-            pendingWinnings.map((w) => (
-              <div key={w.id} style={{ background: "#1a1a1c", border: "1px solid rgba(255,255,255,.05)", borderRadius: 12, padding: "10px 12px", marginBottom: 8 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                  <div style={{ width: 42, height: 42, borderRadius: 11, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <PixelImg src={ASSETS.trophy} size={28} alt="" />
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#fff", lineHeight: 1 }}>#{w.rank} finish</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3 }}>{timeAgo(w.wonAt)}</div>
-                  </div>
-                  <div style={{ textAlign: "right" }}>
-                    <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#00CFF2", lineHeight: 1 }}>{usdtLabel(w.tickets)}</div>
-                    <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)", marginTop: 3, display: "inline-flex", alignItems: "center", gap: 3 }}>{w.tickets} <SyrupIcon size={11} /></div>
-                  </div>
-                </div>
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    type="button"
-                    onClick={() => onConvert(w)}
-                    style={{ flex: 1, background: "transparent", border: "1.5px solid rgba(255,201,49,.4)", color: "var(--maple-500)", borderRadius: 10, padding: "9px 0", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 5 }}
-                  >
-                    Use {w.tickets} <SyrupIcon size={13} />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => onClaim(w)}
-                    style={{ flex: 1.3, background: "#00CFF2", border: "1.5px solid var(--frame)", color: "var(--frame)", borderRadius: 10, padding: "9px 0", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer", boxShadow: "0 3px 0 var(--frame)" }}
-                  >
-                    Claim {usdtLabel(w.tickets)}
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+          ) : null}
         </div>
 
         <div style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: 14 }}>
