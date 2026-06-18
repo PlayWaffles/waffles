@@ -229,6 +229,12 @@ export const QuestionScreen = () => {
               <Illustration media={q.media} />
             </div>
           )}
+          {q.image && (
+            <div style={{ maxWidth: 300, margin: "0 auto 12px", borderRadius: 12, overflow: "hidden", border: "2px solid var(--frame)", background: "#000" }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={q.image} alt="" loading="lazy" style={{ width: "100%", display: "block", aspectRatio: "16 / 10", objectFit: "cover" }} />
+            </div>
+          )}
           {q.clues && q.clues.length > 0 && (
             <ul style={{ listStyle: "none", margin: "0 0 10px", padding: 0, display: "flex", flexDirection: "column", gap: 5 }}>
               {q.clues.map((c, i) => (

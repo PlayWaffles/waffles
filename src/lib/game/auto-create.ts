@@ -36,6 +36,16 @@ interface AutoQuestionTemplate {
   durationSec: number;
   mediaUrl: string | null;
   soundUrl: string | null;
+  // Format fields — must be carried into the game's Question rows or every
+  // tournament question collapses to plain single-choice.
+  kind: QuestionKind;
+  correctSet: number[];
+  pick: number | null;
+  correctOrder: number[];
+  flags: string[];
+  minefield: boolean;
+  kicker: string | null;
+  clues: string[];
 }
 
 export interface AutoCreateGameInput {
@@ -110,6 +120,15 @@ async function assignAutoQuestionsToGame(
         durationSec: template.durationSec,
         mediaUrl: template.mediaUrl,
         soundUrl: template.soundUrl,
+        // Carry the format so the game question isn't flattened to single-choice.
+        kind: template.kind,
+        correctSet: template.correctSet,
+        pick: template.pick,
+        correctOrder: template.correctOrder,
+        flags: template.flags,
+        minefield: template.minefield,
+        kicker: template.kicker,
+        clues: template.clues,
         roundIndex: 1,
         orderInRound: index,
         templateId: template.id,
