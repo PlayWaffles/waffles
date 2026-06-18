@@ -363,3 +363,28 @@ export async function recordBadge(userId: string, badgeId: string): Promise<void
     update: {},
   });
 }
+
+/**
+ * Permanently delete a user and all their owned data. Most child rows are
+ * `onDelete: Cascade`, but a few FKs are `Restrict` (would block the delete) or
+ * point at SHARED rows that must be detached rather than deleted:
+ *   - GameEntry / AuditLog / ReferralReward → owned, removed first
+ *   - InviteCode.usedById / User.referredById → shared, set null (don't delete
+ *     someone else's invite code or orphan-delete the users they referred)
+ *   - AnalyticsEvent.userId is SetNull; everything else cascades.
+ * Atomic: a failure rolls the whole thing back. Used by the self-serve "delete
+ * my account" reset.
+ */
+export async function deleteOwnAccount(userId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    // Detach shared rows that merely reference this user.
+    await tx.inviteCode.updateMany({ where: { usedById: userId }, data: { usedById: null } });
+    await tx.user.updateMany({ where: { referredById: userId }, data: { referredById: null } });
+    // Remove owned rows whose FK to User is Restrict (so the delete won't block).
+    await tx.referralReward.deleteMany({ where: { inviterId: userId } });
+    await tx.gameEntry.deleteMany({ where: { userId } });
+    await tx.auditLog.deleteMany({ where: { adminId: userId } });
+    // Everything else is Cascade / SetNull.
+    await tx.user.delete({ where: { id: userId } });
+  });
+}

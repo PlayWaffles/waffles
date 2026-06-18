@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { syrupLabel, USDT_PER_TICKET, useProto } from "../state";
-import { loadTournamentClaims } from "@/actions/player";
+import { loadTournamentClaims, deleteMyAccount } from "@/actions/player";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
@@ -136,6 +136,39 @@ export const ProfileScreen = () => {
         .forEach((k) => localStorage.removeItem(k));
     } catch {
       /* storage disabled — nothing to replay */
+    }
+    window.location.reload();
+  };
+
+  // Full reset to a true first-launch: delete the server account, clear the
+  // session cookie (server-side, since it's httpOnly), wipe every app flag + the
+  // wallet connection in localStorage, then reload into onboarding. Two-tap
+  // confirm so it can't be hit by accident. (Account deletion is auth-scoped —
+  // it only ever removes the caller's own account.)
+  const [resetting, setResetting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  const resetApp = async () => {
+    if (!confirmReset) {
+      setConfirmReset(true);
+      return;
+    }
+    setResetting(true);
+    try {
+      await deleteMyAccount(); // must run first, while the session is still valid
+    } catch {
+      /* keep going — still clear the local session + flags */
+    }
+    try {
+      await fetch("/api/v1/auth/logout", { method: "POST" });
+    } catch {
+      /* offline — still clear local state below */
+    }
+    try {
+      Object.keys(localStorage)
+        .filter((k) => k.startsWith("waffles.v2.") || k.startsWith("wagmi."))
+        .forEach((k) => localStorage.removeItem(k));
+    } catch {
+      /* storage disabled */
     }
     window.location.reload();
   };
@@ -321,6 +354,19 @@ export const ProfileScreen = () => {
             <path d="M3 12a9 9 0 1 0 3-6.7L3 8m0 0V3m0 5h5" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
           Replay tutorial
+        </button>
+
+        <button
+          type="button"
+          className="pressable"
+          onClick={resetApp}
+          disabled={resetting}
+          style={{ marginTop: 8, width: "100%", background: confirmReset ? "rgba(255,107,107,.12)" : "transparent", border: "1px solid rgba(255,107,107,.35)", borderRadius: 12, padding: "11px 14px", color: "#ff6b6b", fontWeight: 800, fontSize: 13, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, opacity: resetting ? 0.6 : 1 }}
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+          {resetting ? "Resetting…" : confirmReset ? "Tap again to delete account + reset" : "Delete account & reset app"}
         </button>
 
         {/* Support & legal — opens the in-app tabbed sheet. */}

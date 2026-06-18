@@ -105,6 +105,15 @@ export async function loadState(): Promise<PlayerState | null> {
   return playerSvc.loadPlayerState(user.id);
 }
 
+/** Self-serve account deletion (the in-app reset). Only ever deletes the caller's
+ *  own account — auth-scoped, so a user can't delete anyone else. */
+export async function deleteMyAccount(): Promise<{ ok: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) return { ok: false };
+  await playerSvc.deleteOwnAccount(user.id);
+  return { ok: true };
+}
+
 /** The round's authoritative question set (same for every entrant, seeded by
  *  roundId). The client renders these instead of drawing its own, so the answers
  *  it submits can be re-scored server-side. */
