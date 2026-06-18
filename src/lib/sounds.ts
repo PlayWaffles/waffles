@@ -39,7 +39,7 @@ export const SOUNDS = {
 } as const;
 
 // Background music (looping)
-export const BG_TRACK = "/sounds/bg-loop.wav";
+export const BG_TRACK = "/sounds/bg-loop.mp3";
 
 export type SoundName = keyof typeof SOUNDS;
 
