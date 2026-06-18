@@ -13,10 +13,10 @@ divergence and no baseline/`migrate resolve` needed**. Just run:
 DATABASE_URL="postgresql://…/railway" ./scripts/migration/run-v1-to-v2.sh
 ```
 
-That backs up the DB, runs `prisma migrate deploy` (applies the 7 pending v2
+That backs up the DB, runs `prisma migrate deploy` (applies the 8 pending v2
 migrations in order), and tells you how to re-seed the shop.
 
-## What gets applied (7 pending migrations)
+## What gets applied (8 pending migrations)
 
 | migration | effect |
 |---|---|
@@ -27,6 +27,7 @@ migrations in order), and tells you how to re-seed the shop.
 | `20260618120000_v2_league_cohorts` | `League`, `LeagueCohort`, `LeagueMember` |
 | `20260618130000_league_reward_ticket_reason` | enum value |
 | `20260618140000_remove_chat` | **DROP TABLE "Chat"** (≈181 rows) |
+| `20260618150000_drop_winning` | DROPs the empty `Winning` table (Prize Wallet now reads GameEntry) |
 
 ## Safety
 
