@@ -1,16 +1,10 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import { OnchainKitProvider } from "./OnchainKitProvider";
 import { SoundProvider } from "./SoundProvider";
 import GlobalToaster from "../ui/Toaster";
 import { AppInitializer } from "./AppInitializer";
 import { SplashProvider } from "./SplashProvider";
-
-const StreakModal = dynamic(
-  () => import("../StreakModal").then((mod) => mod.StreakModal),
-  { ssr: false },
-);
 
 /**
  * Root Providers - Wraps entire app with necessary providers.
@@ -28,7 +22,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <AppInitializer>
           <SoundProvider>
             {children}
-            <StreakModal />
             <GlobalToaster />
           </SoundProvider>
         </AppInitializer>
