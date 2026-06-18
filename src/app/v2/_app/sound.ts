@@ -1,10 +1,8 @@
 // Sound system (ported from waffles-celo).
 //
-// A tiny singleton audio manager — lazy-loaded <audio> elements for instant
-// playback, a mute toggle persisted to localStorage, and an optional looping
-// background track. SFX always play (mute only silences the bg music); the
-// whole thing is a no-op on the server and fails silently if a file is missing
-// or the browser blocks autoplay.
+// SFX use pre-decoded Web Audio buffers so taps start immediately. Background
+// music stays on <audio> because it is long, looping media rather than a short
+// latency-sensitive effect.
 //
 // Usage: `import { playSound } from "./sound"; playSound("click");`
 
@@ -35,22 +33,101 @@ export type SoundName = keyof typeof SOUNDS;
 
 const STORAGE_KEY_MUTED = "waffles.v2.sound.muted";
 
-const audioCache = new Map<SoundName, HTMLAudioElement>();
+const bufferCache = new Map<SoundName, AudioBuffer>();
+const bufferPromises = new Map<SoundName, Promise<AudioBuffer | null>>();
 
-const getAudio = (name: SoundName): HTMLAudioElement | null => {
+let audioContext: AudioContext | null = null;
+let unlockBound = false;
+
+const getAudioContext = (): AudioContext | null => {
   if (typeof window === "undefined") return null;
-  let audio = audioCache.get(name);
-  if (!audio) {
-    try {
-      audio = new Audio(SOUNDS[name]);
-      audio.preload = "auto";
-      audio.onerror = () => audioCache.delete(name);
-      audioCache.set(name, audio);
-    } catch {
-      return null;
+  if (!audioContext) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    audioContext = new AudioContextClass();
+  }
+  return audioContext;
+};
+
+const unlockAudio = () => {
+  const ctx = getAudioContext();
+  if (ctx?.state === "suspended") void ctx.resume();
+};
+
+const bindUnlock = () => {
+  if (typeof window === "undefined" || unlockBound) return;
+  unlockBound = true;
+  window.addEventListener("pointerdown", unlockAudio, { passive: true, capture: true });
+  window.addEventListener("keydown", unlockAudio, { passive: true, capture: true });
+};
+
+const loadBuffer = (name: SoundName): Promise<AudioBuffer | null> => {
+  const cached = bufferCache.get(name);
+  if (cached) return Promise.resolve(cached);
+
+  const pending = bufferPromises.get(name);
+  if (pending) return pending;
+
+  const ctx = getAudioContext();
+  if (!ctx) return Promise.resolve(null);
+
+  const promise = fetch(SOUNDS[name])
+    .then((response) => {
+      if (!response.ok) throw new Error(`Unable to load sound ${name}`);
+      return response.arrayBuffer();
+    })
+    .then((data) => ctx.decodeAudioData(data))
+    .then((buffer) => {
+      bufferCache.set(name, buffer);
+      return buffer;
+    })
+    .catch(() => null)
+    .finally(() => {
+      bufferPromises.delete(name);
+    });
+
+  bufferPromises.set(name, promise);
+  return promise;
+};
+
+const playBuffer = (name: SoundName, volume: number) => {
+  const ctx = getAudioContext();
+  const buffer = bufferCache.get(name);
+  if (!ctx || !buffer) {
+    void loadBuffer(name);
+    return;
+  }
+
+  if (ctx.state === "suspended") void ctx.resume();
+
+  const source = ctx.createBufferSource();
+  const gain = ctx.createGain();
+  source.buffer = buffer;
+  gain.gain.value = volume;
+  source.connect(gain);
+  gain.connect(ctx.destination);
+  source.start();
+  source.onended = () => {
+    source.disconnect();
+    gain.disconnect();
+  };
+};
+
+declare global {
+  interface Window {
+    webkitAudioContext?: typeof AudioContext;
+  }
+}
+
+const stopSfx = () => {
+  if (audioContext) {
+    void audioContext.close();
+    audioContext = null;
+    bufferCache.clear();
+    bufferPromises.clear();
+    for (const name of Object.keys(SOUNDS) as SoundName[]) {
+      void loadBuffer(name);
     }
   }
-  return audio;
 };
 
 class SoundManager {
@@ -88,20 +165,15 @@ class SoundManager {
   preload() {
     if (typeof window === "undefined") return;
     for (const name of Object.keys(SOUNDS) as SoundName[]) {
-      getAudio(name)?.load();
+      void loadBuffer(name);
     }
+    bindUnlock();
   }
 
   // SFX always play; mute only silences the looping background track.
   play(name: SoundName) {
     this.init();
-    const audio = getAudio(name);
-    if (!audio) return;
-    audio.currentTime = 0;
-    audio.volume = this._volume;
-    audio.play().catch(() => {
-      /* autoplay blocked until first user gesture — ignore */
-    });
+    playBuffer(name, this._volume);
   }
 
   get isMuted() {
@@ -147,6 +219,10 @@ class SoundManager {
       this._bgAudio.pause();
       this._bgAudio.currentTime = 0;
     }
+  }
+
+  stopSfx() {
+    stopSfx();
   }
 }
 
