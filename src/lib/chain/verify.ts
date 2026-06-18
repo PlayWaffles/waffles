@@ -699,29 +699,51 @@ export async function verifyClaim(
     // Layer 3: Contract State Verification (Reorg Protection)
     // =========================================================================
 
-    try {
-      const hasClaimed = (await publicClient.readContract({
-        address: contractAddress,
-        abi: waffleGameAbi,
-        functionName: "hasClaimed",
-        args: [expectedGameId, expectedClaimer],
-      })) as boolean;
-
-      if (!hasClaimed) {
-        return {
-          verified: false,
-          error:
-            "Claim not recorded on-chain. Possible chain reorganization - please wait and try again.",
-        };
+    // Belt-and-suspenders only: Layer 1+2 already proved the PrizeClaimed event
+    // is in a successful, canonical receipt, which IS the claim. Public RPC URLs
+    // are load-balanced across nodes at slightly different heights, so a read
+    // immediately after the receipt can land on a replica that's a block behind
+    // and return a stale `false`. Retry a few times to let it catch up; if it
+    // still doesn't confirm (or the read throws), trust the event proof rather
+    // than failing a claim that already settled — a real reorg would have
+    // removed the receipt too, failing Layer 1. (A stale `false` was previously
+    // a hard failure while a thrown read was ignored — this makes them
+    // consistent, and stops the DB from desyncing from a successful on-chain
+    // claim.)
+    let confirmedClaimed = false;
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        const hasClaimed = (await publicClient.readContract({
+          address: contractAddress,
+          abi: waffleGameAbi,
+          functionName: "hasClaimed",
+          args: [expectedGameId, expectedClaimer],
+        })) as boolean;
+        if (hasClaimed) {
+          confirmedClaimed = true;
+          break;
+        }
+      } catch (error) {
+        console.error("[verifyClaim]", {
+          stage: "claim-state-read-failed",
+          platform,
+          txHash,
+          expectedGameId,
+          expectedClaimer,
+          error: error instanceof Error ? error.message : "Unknown error",
+        });
+        break; // read errors are non-fatal — the event proof stands
       }
-    } catch (error) {
-      console.error("[verifyClaim]", {
-        stage: "claim-state-read-failed",
+      if (attempt < 3) await new Promise((r) => setTimeout(r, 1200));
+    }
+    if (!confirmedClaimed) {
+      console.warn("[verifyClaim]", {
+        stage: "has-claimed-unconfirmed",
+        message: "hasClaimed() did not confirm after retries; trusting PrizeClaimed event (likely RPC lag)",
         platform,
         txHash,
         expectedGameId,
         expectedClaimer,
-        error: error instanceof Error ? error.message : "Unknown error",
       });
     }
 
@@ -747,5 +769,38 @@ export async function verifyClaim(
       verified: false,
       error: `Verification error: ${error instanceof Error ? error.message : "Unknown error"}`,
     };
+  }
+}
+
+/**
+ * Read-only check of the contract's `hasClaimed(gameId, claimer)` state — used to
+ * reconcile a prize that was claimed on-chain but never recorded in the DB (e.g.
+ * a prior confirm failed on transient RPC lag). No tx hash needed. Returns false
+ * on any read error so callers never mark a claim settled on bad data.
+ */
+export async function isPrizeClaimedOnChain(input: {
+  platform: ChainPlatform;
+  network?: GameNetwork | null;
+  gameId: `0x${string}`;
+  claimer: `0x${string}`;
+}): Promise<boolean> {
+  const { platform, network, gameId, claimer } = input;
+  const target = { platform, network };
+  try {
+    const publicClient = getPublicClient(target);
+    const contractAddress = getWaffleContractAddress(target);
+    return (await publicClient.readContract({
+      address: contractAddress,
+      abi: waffleGameAbi,
+      functionName: "hasClaimed",
+      args: [gameId, claimer],
+    })) as boolean;
+  } catch (error) {
+    console.error("[isPrizeClaimedOnChain]", {
+      gameId,
+      claimer,
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+    return false;
   }
 }
