@@ -8,23 +8,23 @@
 
 export const SOUNDS = {
   // UI feedback
-  click: "/sounds/click.wav",
-  exitWarning: "/sounds/exit-warning.wav",
+  click: "/sounds/click.mp3",
+  exitWarning: "/sounds/exit-warning.mp3",
   // Invite code
-  codeValid: "/sounds/code-valid.wav",
-  codeInvalid: "/sounds/code-invalid.wav",
+  codeValid: "/sounds/code-valid.mp3",
+  codeInvalid: "/sounds/code-invalid.mp3",
   // Purchase
-  purchase: "/sounds/purchase.wav",
+  purchase: "/sounds/purchase.mp3",
   // Chat
-  chatSend: "/sounds/chat-send.wav",
-  chatReceive: "/sounds/chat-receive.wav",
+  chatSend: "/sounds/chat-send.mp3",
+  chatReceive: "/sounds/chat-receive.mp3",
   // Game
-  answerSubmit: "/sounds/answer-submit.wav",
-  timerFinal: "/sounds/timer-final.wav",
-  timeUp: "/sounds/time-up.wav",
+  answerSubmit: "/sounds/answer-submit.mp3",
+  timerFinal: "/sounds/timer-final.mp3",
+  timeUp: "/sounds/time-up.mp3",
   // Results
-  victory: "/sounds/victory.wav",
-  defeat: "/sounds/defeat.wav",
+  victory: "/sounds/victory.mp3",
+  defeat: "/sounds/defeat.mp3",
 } as const;
 
 export const BG_TRACK = "/sounds/bg-loop.mp3";
@@ -160,7 +160,7 @@ class SoundManager {
   }
 
   /** Warm the SFX cache so the FIRST play of each sound is instant — otherwise
-   *  the browser has to fetch the .wav on first use, which shows up as a delay
+   *  the browser has to fetch the audio on first use, which shows up as a delay
    *  between the trigger and the sound. Safe to call repeatedly; no-op on SSR. */
   preload() {
     if (typeof window === "undefined") return;
