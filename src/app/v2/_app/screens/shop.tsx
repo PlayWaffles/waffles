@@ -28,10 +28,10 @@ const FEATURED: Featured = {
 };
 
 const POWER_UPS: PowerUp[] = [
-  { id: "5050", label: "50/50", sub: "Eliminate 2 wrong", price: 1, color: "#00CFF2", icon: ASSETS.powerup5050 },
-  { id: "time", label: "+5 sec", sub: "Per question, once", price: 1, color: "#FFC931", icon: ASSETS.powerupTime },
-  { id: "skip", label: "Skip", sub: "Pass on one Q", price: 2, color: "#FB72FF", icon: ASSETS.powerupSkip },
-  { id: "shield", label: "Shield", sub: "Protect 1 streak", price: 2, color: "#00CFF2", icon: ASSETS.powerupShield },
+  { id: "5050", label: "50/50", sub: "Eliminate 2 wrong", price: 4, color: "#00CFF2", icon: ASSETS.powerup5050 },
+  { id: "time", label: "+5 sec", sub: "Per question, once", price: 3, color: "#FFC931", icon: ASSETS.powerupTime },
+  { id: "skip", label: "Skip", sub: "Pass on one Q", price: 5, color: "#FB72FF", icon: ASSETS.powerupSkip },
+  { id: "shield", label: "Shield", sub: "Protect 1 streak", price: 5, color: "#00CFF2", icon: ASSETS.powerupShield },
 ];
 
 const COSMETICS: Cosmetic[] = [
