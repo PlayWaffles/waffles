@@ -9,7 +9,9 @@ import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
 import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-takeover";
 import { MigrationTakeover } from "./screens/migration-takeover";
-import { getMigrationNotice, dismissMigrationNotice } from "@/actions/player";
+import { LeagueResultTakeover, hasSeenLeagueResult } from "./screens/league-result";
+import { getMigrationNotice, dismissMigrationNotice, loadLeagueResult } from "@/actions/player";
+import type { LeagueResult } from "@/lib/player/leagues";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
@@ -147,6 +149,21 @@ const Stage = () => {
     void dismissMigrationNotice();
   };
 
+  // Last settled league season's result (promotion/demotion + rewards), shown
+  // once per season. Gated to Home and checked once; the component records the
+  // season as seen on dismiss so it won't reappear.
+  const [leagueResult, setLeagueResult] = useState<LeagueResult | null>(null);
+  const leagueResultChecked = useRef(false);
+  useEffect(() => {
+    if (showOnboarding || proto.screen !== "home" || leagueResultChecked.current) return;
+    leagueResultChecked.current = true;
+    loadLeagueResult()
+      .then((r) => {
+        if (r && !hasSeenLeagueResult(r.season)) setLeagueResult(r);
+      })
+      .catch(() => {});
+  }, [showOnboarding, proto.screen]);
+
   const dailyAutoShown = useRef(false);
   const { screen, update } = proto;
   useEffect(() => {
@@ -192,7 +209,7 @@ const Stage = () => {
   // They run after the overlay is dismissed — progressive disclosure: big moment
   // first, then the contextual tips.
   useCoachTour(proto.screen, TOURS[proto.screen] ?? [], {
-    enabled: !showOnboarding && !showWcTakeover && !proto.wcTakeoverOpen && !proto.dailyOpen,
+    enabled: !showOnboarding && !showWcTakeover && !proto.wcTakeoverOpen && !proto.dailyOpen && !leagueResult,
   });
 
   return (
@@ -211,6 +228,8 @@ const Stage = () => {
                 proto.update({ wcTakeoverOpen: false });
               }}
             />
+          ) : leagueResult ? (
+            <LeagueResultTakeover result={leagueResult} onClose={() => setLeagueResult(null)} />
           ) : (
             proto.dailyOpen && <DailyRewardSheet onClose={() => proto.update({ dailyOpen: false })} />
           )}

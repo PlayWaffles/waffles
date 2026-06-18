@@ -1,11 +1,13 @@
 /**
- * v2 leagues — seasonal tier ladder. Tier definitions live in `League`; per-user,
- * per-season standing in `LeagueMember`. A player's tier is derived from XP (the
- * progression proxy) until a dedicated league-points accrual exists. The screen
- * renders the static ladder and highlights the tier this returns as "current".
+ * v2 leagues — seasonal tier ladder with weekly cohort competition. Tier
+ * definitions live in `League`; per-user, per-season standing in `LeagueMember`,
+ * grouped into `LeagueCohort` rooms of ~30. Season points accrue from games
+ * played that week (see `accrueLeaguePoints`); a player's tier carries over
+ * season-to-season, shifted up/down by the prior season's promotion/demotion
+ * outcome (XP only seeds a brand-new player's first placement).
  */
 import { prisma } from "@/lib/db";
-import { LeagueTier } from "@prisma";
+import { BoostKind, LeagueOutcome, LeagueTier, PowerUpKind, Prisma } from "@prisma";
 
 type TierDef = { tier: LeagueTier; key: string; label: string; color: string; minXp: number };
 
@@ -26,19 +28,62 @@ export const LEAGUE_TIERS: TierDef[] = [
 
 const TIER_BY_ENUM = new Map(LEAGUE_TIERS.map((t) => [t.tier, t]));
 
-// Promotion/demotion reward ladder per tier (chest tier = finishing rank band).
-// Keyed by tier key; the Leagues screen renders these chests, and they're seeded
-// into League.rewards so the numbers are DB-backed (no longer inline in the UI).
-export type LeagueRewardRow = { r: "rainbow" | "purple" | "brown"; n: number | null; t: number; c: number };
-export const LEAGUE_REWARDS: Record<string, LeagueRewardRow[]> = {
-  apprentice1: [{ r: "rainbow", n: 2, t: 200, c: 5000 }, { r: "purple", n: 1, t: 50, c: 3000 }, { r: "brown", n: null, t: 20, c: 1000 }],
-  apprentice2: [{ r: "rainbow", n: 4, t: 300, c: 7500 }, { r: "purple", n: 1, t: 100, c: 4500 }, { r: "brown", n: null, t: 40, c: 2000 }],
-  silver1: [{ r: "rainbow", n: 5, t: 350, c: 8500 }, { r: "purple", n: 2, t: 150, c: 5500 }, { r: "brown", n: null, t: 60, c: 2500 }],
-  advanced1: [{ r: "rainbow", n: 8, t: 500, c: 12500 }, { r: "purple", n: 3, t: 200, c: 7500 }, { r: "brown", n: null, t: 80, c: 4000 }],
-  advanced2: [{ r: "rainbow", n: 10, t: 600, c: 15000 }, { r: "purple", n: 3, t: 250, c: 9000 }, { r: "brown", n: null, t: 100, c: 5000 }],
-  master3: [{ r: "rainbow", n: 18, t: 1000, c: 25000 }, { r: "purple", n: 5, t: 450, c: 15000 }, { r: "brown", n: null, t: 180, c: 9000 }],
-  master1: [{ r: "rainbow", n: 25, t: 1500, c: 40000 }, { r: "purple", n: 8, t: 600, c: 25000 }, { r: "brown", n: null, t: 250, c: 15000 }],
+// Promotion/demotion reward ladder per tier. Each row is a finishing-rank band
+// (rainbow = 1st, purple = 2nd–5th, brown = 6th–20th) granting syrup + power-ups
+// (+ a DOUBLE_XP boost for the top bands). No tickets/coins are ever minted here.
+// Keyed by tier key; seeded into League.rewards so the season-close job + UI both
+// read the same DB-backed numbers.
+export type RewardPowerUp = { kind: PowerUpKind; n: number };
+export type RewardBoost = { kind: BoostKind; charges: number };
+export type LeagueRewardRow = {
+  r: "rainbow" | "purple" | "brown";
+  syrup: number;
+  powerUps: RewardPowerUp[];
+  boost?: RewardBoost;
 };
+
+// Power-up / boost grants depend on the band only; syrup scales by tier (below).
+const BAND_GRANTS: Record<"rainbow" | "purple" | "brown", Omit<LeagueRewardRow, "r" | "syrup">> = {
+  rainbow: {
+    powerUps: [{ kind: PowerUpKind.SHIELD, n: 1 }, { kind: PowerUpKind.FIFTY_FIFTY, n: 2 }],
+    boost: { kind: BoostKind.DOUBLE_XP, charges: 3 },
+  },
+  purple: {
+    powerUps: [{ kind: PowerUpKind.FIFTY_FIFTY, n: 1 }],
+    boost: { kind: BoostKind.DOUBLE_XP, charges: 1 },
+  },
+  brown: { powerUps: [] },
+};
+
+// Syrup payout per tier per band [rainbow, purple, brown].
+const SYRUP_BY_TIER: Record<string, [number, number, number]> = {
+  apprentice1: [200, 50, 20],
+  apprentice2: [300, 100, 40],
+  silver1: [350, 150, 60],
+  advanced1: [500, 200, 80],
+  advanced2: [600, 250, 100],
+  master3: [1000, 450, 180],
+  master1: [1500, 600, 250],
+};
+
+export const LEAGUE_REWARDS: Record<string, LeagueRewardRow[]> = Object.fromEntries(
+  Object.entries(SYRUP_BY_TIER).map(([key, [rainbow, purple, brown]]) => [
+    key,
+    [
+      { r: "rainbow", syrup: rainbow, ...BAND_GRANTS.rainbow },
+      { r: "purple", syrup: purple, ...BAND_GRANTS.purple },
+      { r: "brown", syrup: brown, ...BAND_GRANTS.brown },
+    ],
+  ]),
+);
+
+/** Reward band for a 1-based finishing rank, or null outside the paid range. */
+export function bandForRank(rank: number): LeagueRewardRow["r"] | null {
+  if (rank === 1) return "rainbow";
+  if (rank >= 2 && rank <= 5) return "purple";
+  if (rank >= 6 && rank <= 20) return "brown";
+  return null;
+}
 
 export function tierForXp(xp: number): TierDef {
   let chosen = LEAGUE_TIERS[0];
@@ -84,30 +129,140 @@ export type League = {
   key: string;
   label: string;
   color: string;
-  points: number;
+  points: number; // this season's accrued points (NOT lifetime XP)
+  rank: number | null; // live 1-based standing within the player's cohort
+  cohortSize: number; // how many players share the cohort
   season: string;
   seasonEndsAt: number;
   tiers: LeagueTierInfo[];
 };
 
-/** Resolve (and persist) the player's current-season tier from their XP, plus
- *  the full DB-backed tier ladder (with reward chests) the Leagues + Compete
- *  screens render. */
-export async function loadLeague(userId: string): Promise<League> {
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { xp: true } });
-  const def = tierForXp(user.xp);
-  const season = currentSeason();
+// Players compete in rooms of up to this many; a new room opens when full.
+export const COHORT_SIZE = 30;
 
+type SeasonMember = { id: string; leagueId: string; cohortId: string | null; points: number };
+
+/** Shift a tier up (promoted) / down (demoted) / same, clamped to ladder ends. */
+function shiftedTier(currentTier: LeagueTier, outcome: LeagueOutcome | null): LeagueTier {
+  const i = LEAGUE_TIERS.findIndex((t) => t.tier === currentTier);
+  if (i < 0) return LEAGUE_TIERS[0].tier;
+  if (outcome === LeagueOutcome.PROMOTED) return LEAGUE_TIERS[Math.min(i + 1, LEAGUE_TIERS.length - 1)].tier;
+  if (outcome === LeagueOutcome.DEMOTED) return LEAGUE_TIERS[Math.max(i - 1, 0)].tier;
+  return currentTier;
+}
+
+/** Find an open (under-capacity) cohort for this tier+season, else open a new one. */
+async function assignCohort(tx: Prisma.TransactionClient, leagueId: string, season: string): Promise<string> {
+  const cohorts = await tx.leagueCohort.findMany({
+    where: { leagueId, season },
+    select: { id: true, index: true, _count: { select: { members: true } } },
+    orderBy: { index: "asc" },
+  });
+  const open = cohorts.find((c) => c._count.members < COHORT_SIZE);
+  if (open) return open.id;
+  const nextIndex = cohorts.length ? Math.max(...cohorts.map((c) => c.index)) + 1 : 0;
+  const created = await tx.leagueCohort.create({
+    data: { leagueId, season, index: nextIndex },
+    select: { id: true },
+  });
+  return created.id;
+}
+
+/** Resolve (creating if needed) the player's standing for `season`: tier carried
+ *  from their last season (shifted by that season's outcome), else seeded from XP
+ *  for a first-timer; then assigned to an open cohort. Returns null only if the
+ *  League ladder hasn't been seeded. */
+async function ensureSeasonMember(
+  tx: Prisma.TransactionClient,
+  userId: string,
+  season: string,
+): Promise<SeasonMember | null> {
+  const existing = await tx.leagueMember.findUnique({
+    where: { userId_season: { userId, season } },
+    select: { id: true, leagueId: true, cohortId: true, points: true },
+  });
+  if (existing) {
+    if (existing.cohortId) return existing;
+    // Backfill a cohort for a member that predates cohort assignment.
+    const cohortId = await assignCohort(tx, existing.leagueId, season);
+    await tx.leagueMember.update({ where: { id: existing.id }, data: { cohortId } });
+    return { ...existing, cohortId };
+  }
+
+  const prior = await tx.leagueMember.findFirst({
+    where: { userId, season: { not: season } },
+    orderBy: { season: "desc" },
+    select: { outcome: true, league: { select: { tier: true } } },
+  });
+  let tier: LeagueTier;
+  if (prior) {
+    tier = shiftedTier(prior.league.tier, prior.outcome);
+  } else {
+    const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xp: true } });
+    tier = tierForXp(user.xp).tier;
+  }
+
+  const league = await tx.league.findUnique({ where: { tier }, select: { id: true } });
+  if (!league) return null; // ladder not seeded — accrual is a no-op
+  const cohortId = await assignCohort(tx, league.id, season);
+  return tx.leagueMember.create({
+    data: { userId, season, leagueId: league.id, cohortId, points: 0 },
+    select: { id: true, leagueId: true, cohortId: true, points: true },
+  });
+}
+
+/** Credit `points` to the player's current-season standing (best-effort: a
+ *  failure here must never break the game-completion flow that calls it).
+ *  Creates the season membership + cohort assignment on first accrual. */
+export async function accrueLeaguePoints(userId: string, points: number): Promise<void> {
+  if (points <= 0) return;
+  const season = currentSeason();
+  try {
+    await prisma.$transaction(async (tx) => {
+      const member = await ensureSeasonMember(tx, userId, season);
+      if (!member) return;
+      await tx.leagueMember.update({
+        where: { id: member.id },
+        data: { points: { increment: points } },
+      });
+    });
+  } catch (e) {
+    console.error("[leagues] accrueLeaguePoints failed:", e);
+  }
+}
+
+/** Load the player's current-season standing (tier, season points, live cohort
+ *  rank) plus the full DB-backed tier ladder the Leagues + Compete screens render. */
+export async function loadLeague(userId: string): Promise<League> {
+  const season = currentSeason();
   const leagues = await prisma.league.findMany({ orderBy: { sortOrder: "asc" } });
   const rewardsByTier = new Map(leagues.map((l) => [l.tier, (l.rewards ?? []) as LeagueRewardRow[]]));
-  const current = leagues.find((l) => l.tier === def.tier);
 
-  if (current) {
-    await prisma.leagueMember.upsert({
-      where: { userId_season: { userId, season } },
-      create: { userId, season, leagueId: current.id, points: user.xp },
-      update: { leagueId: current.id, points: user.xp },
-    });
+  let member: SeasonMember | null = null;
+  try {
+    member = await prisma.$transaction((tx) => ensureSeasonMember(tx, userId, season));
+  } catch (e) {
+    console.error("[leagues] loadLeague ensureSeasonMember failed:", e);
+  }
+
+  // Tier for display: the member's standing, else an XP-seeded fallback.
+  const memberTier = member ? leagues.find((l) => l.id === member!.leagueId)?.tier : undefined;
+  let def = memberTier ? LEAGUE_TIERS.find((t) => t.tier === memberTier) : undefined;
+  if (!def) {
+    const user = await prisma.user.findUniqueOrThrow({ where: { id: userId }, select: { xp: true } });
+    def = tierForXp(user.xp);
+  }
+
+  // Live 1-based rank within the cohort: count of cohort-mates outscoring me.
+  let rank: number | null = null;
+  let cohortSize = 0;
+  if (member?.cohortId) {
+    const [ahead, total] = await Promise.all([
+      prisma.leagueMember.count({ where: { cohortId: member.cohortId, points: { gt: member.points } } }),
+      prisma.leagueMember.count({ where: { cohortId: member.cohortId } }),
+    ]);
+    rank = ahead + 1;
+    cohortSize = total;
   }
 
   const tiers: LeagueTierInfo[] = LEAGUE_TIERS.map((t) => ({
@@ -122,7 +277,9 @@ export async function loadLeague(userId: string): Promise<League> {
     key: def.key,
     label: def.label,
     color: def.color,
-    points: user.xp,
+    points: member?.points ?? 0,
+    rank,
+    cohortSize,
     season,
     seasonEndsAt: seasonEndsAt(),
     tiers,
@@ -131,4 +288,57 @@ export async function loadLeague(userId: string): Promise<League> {
 
 export function tierKeyForEnum(tier: LeagueTier): string {
   return TIER_BY_ENUM.get(tier)?.key ?? "apprentice1";
+}
+
+export type LeagueTierBadge = { key: string; label: string; color: string };
+export type LeagueResult = {
+  season: string;
+  rank: number;
+  cohortSize: number;
+  outcome: LeagueOutcome;
+  from: LeagueTierBadge;
+  to: LeagueTierBadge;
+  reward: LeagueRewardRow | null; // what the finishing rank earned, if any
+};
+
+function tierBadge(tier: LeagueTier): LeagueTierBadge {
+  const def = TIER_BY_ENUM.get(tier) ?? LEAGUE_TIERS[0];
+  return { key: def.key, label: def.label, color: def.color };
+}
+
+/** The player's most recent *settled* season result (rank, promotion/demotion,
+ *  earned reward) — for the season-start "here's how you did" takeover. Returns
+ *  null when they've never been settled. The client gates one-time display by
+ *  season key (localStorage), so this always returns the latest result. */
+export async function loadLeagueResult(userId: string): Promise<LeagueResult | null> {
+  const member = await prisma.leagueMember.findFirst({
+    where: { userId, season: { lt: currentSeason() }, outcome: { not: null }, rank: { not: null } },
+    orderBy: { season: "desc" },
+    select: {
+      season: true,
+      rank: true,
+      outcome: true,
+      cohortId: true,
+      league: { select: { tier: true, rewards: true } },
+    },
+  });
+  if (!member || member.rank == null || member.outcome == null) return null;
+
+  const fromTier = member.league.tier;
+  const cohortSize = member.cohortId
+    ? await prisma.leagueMember.count({ where: { cohortId: member.cohortId } })
+    : 0;
+  const band = bandForRank(member.rank);
+  const rewards = (Array.isArray(member.league.rewards) ? member.league.rewards : []) as LeagueRewardRow[];
+  const reward = band ? rewards.find((r) => r.r === band) ?? null : null;
+
+  return {
+    season: member.season,
+    rank: member.rank,
+    cohortSize,
+    outcome: member.outcome,
+    from: tierBadge(fromTier),
+    to: tierBadge(shiftedTier(fromTier, member.outcome)),
+    reward,
+  };
 }

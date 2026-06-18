@@ -6,6 +6,7 @@ import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
 import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
+import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
 import { env } from "@/lib/env";
 
 /**
@@ -119,6 +120,22 @@ async function ensureTournamentRoundsJob() {
 }
 
 /**
+ * Settle finished league seasons: rank each cohort, pay band rewards, and
+ * promote/demote. Idempotent (per-cohort settledAt guard), so a daily run
+ * self-heals — it closes last week's cohorts on the first run after rollover.
+ */
+async function closeLeagueSeasonJob() {
+  try {
+    const { cohorts, rewarded } = await closeLeagueSeason();
+    if (cohorts > 0) {
+      console.log(`[Cron] League settlement: ${cohorts} cohort(s) settled, ${rewarded} rewarded`);
+    }
+  } catch (e) {
+    console.error("[Cron] League settlement failed:", e);
+  }
+}
+
+/**
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
 export function startCronJobs() {
@@ -144,4 +161,10 @@ export function startCronJobs() {
   cron.schedule("0 * * * *", ensureTournamentRoundsJob);
   console.log("[Cron] Scheduled: ensure-tournament-rounds (hourly)");
   ensureTournamentRoundsJob();
+
+  // Daily at 00:10 UTC: settle any finished league season (idempotent). Runs
+  // once now too, to cover a restart on the day a week rolled over.
+  cron.schedule("10 0 * * *", closeLeagueSeasonJob);
+  console.log("[Cron] Scheduled: close-league-season (daily 00:10 UTC)");
+  closeLeagueSeasonJob();
 }
