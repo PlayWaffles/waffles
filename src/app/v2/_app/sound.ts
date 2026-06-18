@@ -132,7 +132,7 @@ const stopSfx = () => {
 
 class SoundManager {
   private _muted = false;
-  private _volume = 0.7;
+  private _volume = 0.45;
   private _initialized = false;
   private _bgAudio: HTMLAudioElement | null = null;
   private _bgWanted = false;

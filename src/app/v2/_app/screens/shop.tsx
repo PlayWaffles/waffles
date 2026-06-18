@@ -1,56 +1,70 @@
 "use client";
 
-import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, syrupLabel, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
-import { ASSETS, AssetWell, Button, Card, Confetti, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
+import { ASSETS, AssetWell, Button, Card, Confetti, GameLoader, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
-import { v2BuyBundle, v2Purchase } from "@/actions/v2";
+import { v2BuyBundle, v2GetShopCatalog, v2Purchase } from "@/actions/v2";
+import type { ShopCatalog } from "@/lib/v2/economy";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TICKET_INFO = `Syrup is earned by playing — daily rewards, levels and missions. Spend it on lives, power-ups for solo levels, and cosmetics. Tournaments are entered with USDC and prizes are paid in USDT from your Prize Wallet.`;
 
 // ===== Catalog =================================================================
-// Pulled out of the component so the purchase sub-views can read items by id
-// without prop-drilling.
+// Prices/labels/ownership come from the DB via v2GetShopCatalog — the single
+// source of truth, so the price shown is always the price charged. Only the bits
+// the DB doesn't hold live here: power-up icons (client assets) and the FEATURED
+// card's marketing copy, both keyed by slug.
 
 type PowerUp = { id: string; label: string; sub: string; price: number; color: string; icon: string };
 type Cosmetic = { id: string; label: string; type: string; price: number; color: string; owned: boolean };
 type Bundle = { count: number; bonus: number; price: string; badge: string | null };
 type Featured = { title: string; sub: string; price: number; accent: string; benefits: string[]; endsIn: string };
 
-const FEATURED: Featured = {
-  title: "Double XP",
-  sub: "Boost your tournament hauls",
-  price: 5,
+// Power-up icons are client assets (not in the DB), keyed by catalog slug.
+const POWERUP_ICON: Record<string, string> = {
+  "pu-5050": ASSETS.powerup5050,
+  "pu-time": ASSETS.powerupTime,
+  "pu-skip": ASSETS.powerupSkip,
+  "pu-shield": ASSETS.powerupShield,
+};
+
+// Marketing copy for the FEATURED card (presentation only — not in the DB).
+const FEATURED_PRESENTATION = {
   accent: "#FB72FF",
   benefits: ["2× XP on the next 3 tournaments", "Stacks with daily missions", "Streak counter still ticks"],
   endsIn: "1d 22h",
 };
 
-const POWER_UPS: PowerUp[] = [
-  { id: "5050", label: "50/50", sub: "Eliminate 2 wrong", price: 4, color: "#00CFF2", icon: ASSETS.powerup5050 },
-  { id: "time", label: "+5 sec", sub: "Per question, once", price: 3, color: "#FFC931", icon: ASSETS.powerupTime },
-  { id: "skip", label: "Skip", sub: "Pass on one Q", price: 5, color: "#FB72FF", icon: ASSETS.powerupSkip },
-  { id: "shield", label: "Shield", sub: "Protect 1 streak", price: 5, color: "#00CFF2", icon: ASSETS.powerupShield },
-];
+type BuiltCatalog = { powerUps: PowerUp[]; cosmetics: Cosmetic[]; bundles: Bundle[]; featured: Featured | null };
 
-const COSMETICS: Cosmetic[] = [
-  { id: "frame-gold", label: "Gold Frame", type: "Avatar frame", price: 8, color: "#FFC931", owned: false },
-  { id: "name-pink", label: "Pink Name", type: "Name color", price: 6, color: "#FB72FF", owned: false },
-  { id: "emote-waffle", label: "Waffle Emote", type: "Emote", price: 4, color: "#00CFF2", owned: true },
-];
-
-const BUNDLES: Bundle[] = [
-  { count: 5, bonus: 0, price: "$0.99", badge: null },
-  { count: 25, bonus: 5, price: "$3.99", badge: "POPULAR" },
-  { count: 60, bonus: 20, price: "$7.99", badge: "BEST" },
-];
+// Map the DB catalog rows into the render-ready shapes, merging in the
+// client-only presentation (icons + featured marketing).
+function buildCatalog(cat: ShopCatalog): BuiltCatalog {
+  const powerUps: PowerUp[] = [];
+  const cosmetics: Cosmetic[] = [];
+  const bundles: Bundle[] = [];
+  let featured: Featured | null = null;
+  for (const it of cat.items) {
+    if (it.kind === "POWERUP") {
+      powerUps.push({ id: it.slug.replace(/^pu-/, ""), label: it.label, sub: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#00CFF2", icon: POWERUP_ICON[it.slug] ?? ASSETS.powerup5050 });
+    } else if (it.kind === "COSMETIC") {
+      cosmetics.push({ id: it.slug, label: it.label, type: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#FFC931", owned: cat.ownedCosmetics.includes(it.slug) });
+    } else if (it.kind === "BUNDLE") {
+      const p = (it.payload ?? {}) as { count?: number; bonus?: number };
+      bundles.push({ count: p.count ?? 0, bonus: p.bonus ?? 0, price: `$${(it.priceFiat ?? 0).toFixed(2)}`, badge: it.sub });
+    } else if (it.kind === "FEATURED") {
+      featured = { title: it.label, sub: it.sub ?? "", price: it.priceTickets ?? 0, ...FEATURED_PRESENTATION };
+    }
+  }
+  return { powerUps, cosmetics, bundles, featured };
+}
 
 // Cheapest bundle that covers the shortfall — used for the insufficient-tickets
 // auto-suggest pivot. Falls back to the largest bundle if nothing covers it.
-const suggestBundleFor = (shortfall: number): Bundle => {
-  const fit = BUNDLES.find((b) => b.count + b.bonus >= shortfall);
-  return fit ?? BUNDLES[BUNDLES.length - 1];
+const suggestBundleFor = (bundles: Bundle[], shortfall: number): Bundle => {
+  const fit = bundles.find((b) => b.count + b.bonus >= shortfall);
+  return fit ?? bundles[bundles.length - 1];
 };
 
 // ===== Flow state ==============================================================
@@ -85,6 +99,21 @@ export const ShopScreen = () => {
   const [equippedToast, setEquippedToast] = useState<string | null>(null);
   const [ticketCountUp, setTicketCountUp] = useState<{ from: number; to: number; key: number } | null>(null);
   const firstTicketViewedRef = useRef(false);
+
+  // Catalog (prices/labels/ownership) from the DB — the single source of truth.
+  // Built into the render shapes once loaded; empty while fetching (the screen
+  // shows a loader until `catalog` resolves, below).
+  const [catalog, setCatalog] = useState<ShopCatalog | null>(null);
+  useEffect(() => {
+    let active = true;
+    v2GetShopCatalog().then((c) => { if (active && c) setCatalog(c); }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+  const built = useMemo<BuiltCatalog>(
+    () => (catalog ? buildCatalog(catalog) : { powerUps: [], cosmetics: [], bundles: [], featured: null }),
+    [catalog],
+  );
+  const { powerUps, cosmetics, bundles, featured } = built;
 
   // First-timer half-price ticket offer (client-read, hydration-safe). Hidden
   // locally the moment it's bought, since localStorage changes don't re-notify.
@@ -258,13 +287,14 @@ export const ShopScreen = () => {
   };
 
   const tryOpenFeatured = () => {
-    if (tickets < FEATURED.price) {
+    if (!featured) return;
+    if (tickets < featured.price) {
       trackClientEvent(AnalyticsEvent.ShopPurchaseFailed, {
         screen: "shop",
         sku: "boost-double-xp",
         item_kind: "featured",
         reason: "insufficient_tickets",
-        price_tickets: FEATURED.price,
+        price_tickets: featured.price,
         tickets_before: tickets,
       });
       setFlow({ type: "shortfall", intent: { kind: "featured" } });
@@ -274,7 +304,7 @@ export const ShopScreen = () => {
       screen: "shop",
       sku: "boost-double-xp",
       item_kind: "featured",
-      price_tickets: FEATURED.price,
+      price_tickets: featured.price,
       tickets_before: tickets,
     });
     setFlow({ type: "featured" });
@@ -307,8 +337,9 @@ export const ShopScreen = () => {
   };
 
   const confirmFeatured = () => {
+    if (!featured) return;
     playSound("purchase");
-    proto.update({ tickets: tickets - FEATURED.price });
+    proto.update({ tickets: tickets - featured.price });
     void v2Purchase("boost-double-xp")
       .then((result) => {
         trackClientEvent(result?.ok ? AnalyticsEvent.ShopPurchaseSucceeded : AnalyticsEvent.ShopPurchaseFailed, {
@@ -316,8 +347,8 @@ export const ShopScreen = () => {
           sku: "boost-double-xp",
           item_kind: "featured",
           reason: result?.ok ? null : result?.reason ?? "purchase_failed",
-          price_tickets: FEATURED.price,
-          tickets_after: result?.ok ? result.tickets : tickets - FEATURED.price,
+          price_tickets: featured.price,
+          tickets_after: result?.ok ? result.tickets : tickets - featured.price,
         });
       })
       .catch((error) => {
@@ -328,12 +359,12 @@ export const ShopScreen = () => {
           reason: error instanceof Error ? error.message : "purchase_failed",
         });
       });
-    setBoostBanner(`${FEATURED.title} active — ${FEATURED.benefits[0]}`);
+    setBoostBanner(`${featured.title} active — ${featured.benefits[0]}`);
     setFlow(null);
   };
 
   const beginBundleCheckout = (idx: number) => {
-    const b = BUNDLES[idx];
+    const b = bundles[idx];
     trackClientEvent(AnalyticsEvent.ShopPurchaseIntent, {
       screen: "shop",
       sku: `bundle-${b.count}`,
@@ -347,7 +378,7 @@ export const ShopScreen = () => {
   };
 
   const confirmBundle = (b: Bundle) => {
-    setFlow({ type: "bundle", bundleIdx: BUNDLES.indexOf(b), phase: "processing" });
+    setFlow({ type: "bundle", bundleIdx: bundles.indexOf(b), phase: "processing" });
     // Simulated payment processing — short shimmer before the success state.
     const before = tickets;
     setTimeout(() => {
@@ -382,6 +413,21 @@ export const ShopScreen = () => {
 
   // ---- Render ---------------------------------------------------------------
 
+  // Hold the catalog-dependent UI until the DB catalog resolves (prices/labels
+  // come from there now, so there's nothing meaningful to show before it loads).
+  if (!catalog) {
+    return (
+      <Phone statusDark>
+        <div className="bg-deep" />
+        <TopHeader tickets={tickets} title="SHOP" />
+        <GameLoader />
+        <div className="bottom-bar">
+          <TabBar active="shop" />
+        </div>
+      </Phone>
+    );
+  }
+
   return (
     <Phone statusDark>
       <div className="bg-deep" />
@@ -401,48 +447,52 @@ export const ShopScreen = () => {
         </Card>
 
         {/* Featured offer card */}
+        {featured && (
+        <>
         <ComingSoonLabel>FEATURED</ComingSoonLabel>
         <ComingSoonVeil note="Limited-time boosts like 2× XP arrive here soon.">
           <button
             type="button"
             onClick={tryOpenFeatured}
-            aria-label={`Featured offer — ${FEATURED.title} for ${syrupLabel(FEATURED.price)}`}
+            aria-label={`Featured offer — ${featured.title} for ${syrupLabel(featured.price)}`}
             style={{
-              background: `linear-gradient(135deg, ${FEATURED.accent}33, #0F0F10 70%)`,
-              border: `1px solid ${FEATURED.accent}55`,
+              background: `linear-gradient(135deg, ${featured.accent}33, #0F0F10 70%)`,
+              border: `1px solid ${featured.accent}55`,
               borderRadius: 18,
               padding: "14px 16px",
               display: "flex",
               alignItems: "center",
               gap: 14,
-              boxShadow: `0 0 30px ${FEATURED.accent}22`,
+              boxShadow: `0 0 30px ${featured.accent}22`,
               width: "100%",
               textAlign: "left",
               cursor: "pointer",
             }}
           >
-            <div style={{ width: 62, height: 62, borderRadius: 14, background: `${FEATURED.accent}25`, border: `1.5px solid ${FEATURED.accent}66`, display: "flex", alignItems: "center", justifyContent: "center", color: FEATURED.accent, fontFamily: "var(--font-display)", fontSize: 22, flexShrink: 0 }}>2×</div>
+            <div style={{ width: 62, height: 62, borderRadius: 14, background: `${featured.accent}25`, border: `1.5px solid ${featured.accent}66`, display: "flex", alignItems: "center", justifyContent: "center", color: featured.accent, fontFamily: "var(--font-display)", fontSize: 22, flexShrink: 0 }}>2×</div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 9, fontWeight: 900, color: FEATURED.accent, letterSpacing: 1.4 }}>FEATURED · ENDS IN {FEATURED.endsIn.toUpperCase()}</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", lineHeight: 1.05, marginTop: 2 }}>{FEATURED.title}</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 2 }}>{FEATURED.sub}</div>
+              <div style={{ fontSize: 9, fontWeight: 900, color: featured.accent, letterSpacing: 1.4 }}>FEATURED · ENDS IN {featured.endsIn.toUpperCase()}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", lineHeight: 1.05, marginTop: 2 }}>{featured.title}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)", marginTop: 2 }}>{featured.sub}</div>
             </div>
-            <div style={{ background: FEATURED.accent, color: "#1e1e1e", padding: "8px 12px", borderRadius: 10, fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 0.3, boxShadow: "0 3px 0 rgba(0,0,0,.3)", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-              <SyrupIcon size={14} />{FEATURED.price}
+            <div style={{ background: featured.accent, color: "#1e1e1e", padding: "8px 12px", borderRadius: 10, fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 0.3, boxShadow: "0 3px 0 rgba(0,0,0,.3)", display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+              <SyrupIcon size={14} />{featured.price}
             </div>
           </button>
         </ComingSoonVeil>
+        </>
+        )}
 
         <ShopSectionLabel>POWER-UPS · solo levels</ShopSectionLabel>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 14 }}>
-          {POWER_UPS.map((p) => (
+          {powerUps.map((p) => (
             <PowerUpCard key={p.id} item={p} affordable={tickets >= p.price} onBuy={() => tryBuyPowerUp(p)} />
           ))}
         </div>
 
         <ShopSectionLabel>COSMETICS</ShopSectionLabel>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 }}>
-          {COSMETICS.map((c) => (
+          {cosmetics.map((c) => (
             <CosmeticRow key={c.id} item={c} affordable={tickets >= c.price} onOpen={() => tryOpenCosmetic(c)} />
           ))}
         </div>
@@ -472,7 +522,7 @@ export const ShopScreen = () => {
             </button>
           )}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-            {BUNDLES.map((b, i) => (
+            {bundles.map((b, i) => (
               <BundleCard key={i} bundle={b} onBuy={() => beginBundleCheckout(i)} />
             ))}
           </div>
@@ -485,36 +535,49 @@ export const ShopScreen = () => {
 
       {/* Per-flow overlays */}
       {flow?.type === "cosmetic" && (() => {
-        const c = COSMETICS.find((x) => x.id === flow.id)!;
-        return <CosmeticSheet item={c} canAfford={tickets >= c.price} onClose={() => setFlow(null)} onConfirm={() => confirmCosmetic(c)} />;
+        const c = cosmetics.find((x) => x.id === flow.id);
+        return c ? <CosmeticSheet item={c} canAfford={tickets >= c.price} onClose={() => setFlow(null)} onConfirm={() => confirmCosmetic(c)} /> : null;
       })()}
       {flow?.type === "bundle" && (() => {
-        const b = BUNDLES[flow.bundleIdx];
-        return (
+        const b = bundles[flow.bundleIdx];
+        return b ? (
           <BundleSheet
             bundle={b}
             phase={flow.phase}
             onClose={() => setFlow(null)}
             onConfirm={() => confirmBundle(b)}
           />
-        );
+        ) : null;
       })()}
-      {flow?.type === "featured" && (
+      {flow?.type === "featured" && featured && (
         <FeaturedSheet
-          featured={FEATURED}
-          canAfford={tickets >= FEATURED.price}
+          featured={featured}
+          canAfford={tickets >= featured.price}
           onClose={() => setFlow(null)}
           onConfirm={confirmFeatured}
         />
       )}
-      {flow?.type === "shortfall" && (
-        <ShortfallSheet
-          intent={flow.intent}
-          haveTickets={tickets}
-          onClose={() => setFlow(null)}
-          onTopUp={(idx) => beginBundleCheckout(idx)}
-        />
-      )}
+      {flow?.type === "shortfall" && (() => {
+        const intent = flow.intent;
+        const need =
+          intent.kind === "powerup" ? (powerUps.find((p) => p.id === intent.id)?.price ?? 0) :
+          intent.kind === "cosmetic" ? (cosmetics.find((c) => c.id === intent.id)?.price ?? 0) :
+          (featured?.price ?? 0);
+        const itemLabel =
+          intent.kind === "powerup" ? (powerUps.find((p) => p.id === intent.id)?.label ?? "") :
+          intent.kind === "cosmetic" ? (cosmetics.find((c) => c.id === intent.id)?.label ?? "") :
+          (featured?.title ?? "");
+        return (
+          <ShortfallSheet
+            need={need}
+            itemLabel={itemLabel}
+            bundles={bundles}
+            haveTickets={tickets}
+            onClose={() => setFlow(null)}
+            onTopUp={(idx) => beginBundleCheckout(idx)}
+          />
+        );
+      })()}
 
       {/* Snackbar (power-up undo) */}
       {snackbar && (
@@ -1099,18 +1162,10 @@ const FeaturedSheet = ({ featured, canAfford, onClose, onConfirm }: { featured: 
 
 // ----- Shortfall pivot sheet -----
 
-const ShortfallSheet = ({ intent, haveTickets, onClose, onTopUp }: { intent: SpendIntent; haveTickets: number; onClose: () => void; onTopUp: (idx: number) => void }) => {
-  const need =
-    intent.kind === "powerup" ? POWER_UPS.find((p) => p.id === intent.id)!.price :
-    intent.kind === "cosmetic" ? COSMETICS.find((c) => c.id === intent.id)!.price :
-    FEATURED.price;
-  const itemLabel =
-    intent.kind === "powerup" ? POWER_UPS.find((p) => p.id === intent.id)!.label :
-    intent.kind === "cosmetic" ? COSMETICS.find((c) => c.id === intent.id)!.label :
-    FEATURED.title;
+const ShortfallSheet = ({ need, itemLabel, bundles, haveTickets, onClose, onTopUp }: { need: number; itemLabel: string; bundles: Bundle[]; haveTickets: number; onClose: () => void; onTopUp: (idx: number) => void }) => {
   const shortfall = need - haveTickets;
-  const suggested = suggestBundleFor(shortfall);
-  const suggestedIdx = BUNDLES.indexOf(suggested);
+  const suggested = suggestBundleFor(bundles, shortfall);
+  const suggestedIdx = bundles.indexOf(suggested);
   return (
       <Sheet onClose={onClose} accent="#FFC931" ariaLabel={`Need more Syrup to buy ${itemLabel}`}>
         {(close) => (

@@ -1,7 +1,7 @@
 /**
- * v2 economy services — daily reward roll, shop purchases, and inventory grants.
- * Server-authoritative; mirrors the pure logic in the ported screens
- * (daily-reward.tsx DAILY_SCHEDULE, shop.tsx catalog) but is the source of truth.
+ * v2 economy services — daily reward, shop catalog/purchases, and inventory
+ * grants. Server-authoritative source of truth: the shop catalog (loadShopCatalog)
+ * drives the client UI, and the daily reward mirrors daily-reward.tsx DAILY_SCHEDULE.
  */
 import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
@@ -427,4 +427,41 @@ async function grantPowerUpTx(
     create: { userId, kind, count: 1 },
     update: { count: { increment: 1 } },
   });
+}
+
+// ── Shop catalog (single source of truth for prices/labels) ─────────────────
+// The client renders the shop from THIS (via v2GetShopCatalog) instead of its
+// own hardcoded constants, so the price shown is always the price charged.
+export type ShopCatalogItem = {
+  slug: string;
+  kind: ShopItemKind;
+  label: string;
+  sub: string | null;
+  priceTickets: number | null;
+  priceFiat: number | null;
+  color: string | null;
+  payload: unknown;
+};
+export type ShopCatalog = { items: ShopCatalogItem[]; ownedCosmetics: string[] };
+
+/** Active catalog ordered for display, plus the cosmetic slugs this user owns. */
+export async function loadShopCatalog(userId: string): Promise<ShopCatalog> {
+  const [items, owned] = await Promise.all([
+    prisma.shopItem.findMany({
+      where: { isActive: true },
+      orderBy: { sortOrder: "asc" },
+      select: {
+        slug: true,
+        kind: true,
+        label: true,
+        sub: true,
+        priceTickets: true,
+        priceFiat: true,
+        color: true,
+        payload: true,
+      },
+    }),
+    prisma.userCosmetic.findMany({ where: { userId }, select: { slug: true } }),
+  ]);
+  return { items, ownedCosmetics: owned.map((o) => o.slug) };
 }
