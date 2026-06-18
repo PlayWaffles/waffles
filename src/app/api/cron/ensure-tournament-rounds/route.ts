@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { UserPlatform } from "@prisma";
-import { env } from "@/lib/env";
+import { assertProductionCron, env } from "@/lib/env";
 import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
 
 export const maxDuration = 60;
@@ -12,6 +12,11 @@ export const maxDuration = 60;
  * Register on an hourly schedule alongside the game lifecycle settlement cron.
  */
 export async function POST(request: NextRequest) {
+  const productionOnly = assertProductionCron();
+  if (productionOnly) {
+    return NextResponse.json(productionOnly, { status: 404 });
+  }
+
   if (request.headers.get("Authorization") !== `Bearer ${env.authSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
