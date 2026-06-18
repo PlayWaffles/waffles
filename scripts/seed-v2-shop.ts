@@ -22,10 +22,10 @@ type Seed = {
 
 const ITEMS: Seed[] = [
   // Power-ups (payload.powerUp = PowerUpKind enum)
-  { slug: "pu-5050", kind: ShopItemKind.POWERUP, label: "50/50", sub: "Eliminate 2 wrong", priceTickets: 1, payload: { powerUp: "FIFTY_FIFTY" }, color: "#00CFF2", sortOrder: 1 },
-  { slug: "pu-time", kind: ShopItemKind.POWERUP, label: "+5 sec", sub: "Per question, once", priceTickets: 1, payload: { powerUp: "EXTRA_TIME" }, color: "#FFC931", sortOrder: 2 },
-  { slug: "pu-skip", kind: ShopItemKind.POWERUP, label: "Skip", sub: "Pass on one Q", priceTickets: 2, payload: { powerUp: "SKIP" }, color: "#FB72FF", sortOrder: 3 },
-  { slug: "pu-shield", kind: ShopItemKind.POWERUP, label: "Shield", sub: "Protect 1 streak", priceTickets: 2, payload: { powerUp: "SHIELD" }, color: "#00CFF2", sortOrder: 4 },
+  { slug: "pu-5050", kind: ShopItemKind.POWERUP, label: "50/50", sub: "Eliminate 2 wrong", priceTickets: 4, payload: { powerUp: "FIFTY_FIFTY" }, color: "#00CFF2", sortOrder: 1 },
+  { slug: "pu-time", kind: ShopItemKind.POWERUP, label: "+5 sec", sub: "Per question, once", priceTickets: 3, payload: { powerUp: "EXTRA_TIME" }, color: "#FFC931", sortOrder: 2 },
+  { slug: "pu-skip", kind: ShopItemKind.POWERUP, label: "Skip", sub: "Pass on one Q", priceTickets: 5, payload: { powerUp: "SKIP" }, color: "#FB72FF", sortOrder: 3 },
+  { slug: "pu-shield", kind: ShopItemKind.POWERUP, label: "Shield", sub: "Protect 1 streak", priceTickets: 5, payload: { powerUp: "SHIELD" }, color: "#00CFF2", sortOrder: 4 },
   // Cosmetics (payload.cosmetic = CosmeticKind enum)
   { slug: "frame-gold", kind: ShopItemKind.COSMETIC, label: "Gold Frame", sub: "Avatar frame", priceTickets: 8, payload: { cosmetic: "AVATAR_FRAME" }, color: "#FFC931", sortOrder: 5 },
   { slug: "name-pink", kind: ShopItemKind.COSMETIC, label: "Pink Name", sub: "Name color", priceTickets: 6, payload: { cosmetic: "NAME_COLOR" }, color: "#FB72FF", sortOrder: 6 },
