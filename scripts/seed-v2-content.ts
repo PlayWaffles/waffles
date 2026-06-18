@@ -9,18 +9,21 @@ const { prisma } = await import("@/lib/db");
 const { GameTheme, Difficulty, QuestionKind } = await import("@prisma");
 
 // ── Announcements (id = the client's announcement id, mirrors announcements.tsx) ──
+// sortOrder doubles as banner priority (higher shows first). tone + emoji drive
+// the in-app card styling; ctaAction is "screen:<name>" | "theme:<id>".
 const ANNOUNCEMENTS = [
-  { id: "world-cup-season", title: "The World Cup is here", body: "Football trivia, live every hour, with real prizes on the line. See what's new this season.", sortOrder: 1 },
-  { id: "prize-wallet", title: "Cash out your winnings", body: "Tournament prizes are paid in USDT. Claim them anytime from your new Prize Wallet.", sortOrder: 2 },
-  { id: "double-xp-weekend", title: "Double XP weekend", body: "Every tournament you play this weekend earns 2× XP. Climb the leagues faster.", sortOrder: 3 },
-  { id: "prize-pool-boost", title: "Prize pool boosted", body: "Top of the Hour now pays out up to 25 tickets — finish Top 100 to win.", sortOrder: 4 },
+  { id: "world-cup-season", title: "The World Cup is here", body: "Football trivia, live every hour, with real prizes on the line. See what's new this season.", sortOrder: 40, tone: "leaf", emoji: "⚽", ctaLabel: "See what's new", ctaAction: "theme:world-cup" },
+  { id: "prize-wallet", title: "Cash out your winnings", body: "Tournament prizes are paid in USDT. Claim them anytime from your new Prize Wallet.", sortOrder: 30, tone: "leaf", emoji: "💸", ctaLabel: "Open Prize Wallet", ctaAction: "screen:profile" },
+  { id: "double-xp-weekend", title: "Double XP weekend", body: "Every tournament you play this weekend earns 2× XP. Climb the leagues faster.", sortOrder: 20, tone: "berry", emoji: "⚡", ctaLabel: "Play now", ctaAction: "screen:home" },
+  { id: "prize-pool-boost", title: "Prize pool boosted", body: "Top of the Hour now pays out up to 25 tickets — finish Top 100 to win.", sortOrder: 10, tone: "maple", emoji: "🏆", ctaLabel: null, ctaAction: null },
 ];
 
 for (const a of ANNOUNCEMENTS) {
+  const data = { title: a.title, body: a.body, sortOrder: a.sortOrder, tone: a.tone, emoji: a.emoji, ctaLabel: a.ctaLabel, ctaAction: a.ctaAction, isActive: true };
   await prisma.announcement.upsert({
     where: { id: a.id },
-    create: { id: a.id, slug: a.id, title: a.title, body: a.body, sortOrder: a.sortOrder, isActive: true },
-    update: { title: a.title, body: a.body, sortOrder: a.sortOrder, isActive: true },
+    create: { id: a.id, slug: a.id, ...data },
+    update: data,
   });
 }
 

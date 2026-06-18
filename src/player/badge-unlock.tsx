@@ -40,8 +40,10 @@ const writeSeen = (ids: Set<string>) => {
 export function BadgeUnlockWatcher() {
   const proto = useProto();
   const earned = earnedBadgeIds(deriveBadgeStats(proto));
-  // Stable primitive dependency so the effect only runs when the *set* changes.
+  // Stable primitive dependencies so the effect only runs when a *set* changes:
+  // the derived-earned set, and the DB-persisted set (loads async via loadState).
   const earnedKey = earned.join(",");
+  const dbKey = proto.earnedBadges.join(",");
 
   // The acknowledged set, loaded once. `null` until the first effect resolves it.
   const seenRef = useRef<Set<string> | null>(null);
@@ -73,7 +75,10 @@ export function BadgeUnlockWatcher() {
     }
 
     const seen = seenRef.current;
-    const fresh = earnedIds.filter((id) => !seen.has(id));
+    // Already-earned per the DB (UserBadge, via loadState) are never "fresh" —
+    // this is the authoritative, cross-device record, so a badge earned on
+    // another device won't re-celebrate here.
+    const fresh = earnedIds.filter((id) => !seen.has(id) && !proto.earnedBadges.includes(id));
     if (fresh.length === 0) return;
 
     fresh.forEach((id) => seen.add(id));

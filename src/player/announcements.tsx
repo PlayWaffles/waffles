@@ -2,94 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useProto, type ScreenName } from "./state";
-import { type ThemeId } from "./theme";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+import type { AnnouncementTone, PlayerAnnouncement } from "@/lib/player/announcements";
 
 // ===== Model + data ===========================================================
-// Announcements are surfaced two ways for the MVP: a dismissable Home banner
-// (the highest-priority active one) and an inbox opened from the bell. Both read
-// from the same active list; read/dismissed state lives in proto (persisted to
-// localStorage). In production this list would come from remote config so news
-// ships without an app release.
+// Announcements are surfaced two ways: a dismissable Home banner (the
+// highest-priority active one) and an inbox opened from the bell. Both render
+// `proto.announcements` — the live, fully DB-backed server feed (authored
+// Announcement rows + per-user triggered cards), fetched in state.tsx and
+// already filtered to active + sorted by priority. Read/dismissed state is
+// DB-backed for authored items and session-only for triggered ones.
 
-type Tone = "maple" | "berry" | "leaf";
+type Tone = AnnouncementTone;
 
-export type Announcement = {
-  id: string;
-  priority: number; // higher wins the banner slot
-  tone: Tone;
-  emoji: string;
-  title: string;
-  body: string;
-  // A CTA either navigates to a screen, or (for a season like the World Cup)
-  // opens that season's full-page welcome via the `theme` tag.
-  cta?: { label: string; screen?: ScreenName; theme?: ThemeId };
-  publishedAt: number;
-  startsAt: number;
-  endsAt: number;
-};
+export type Announcement = PlayerAnnouncement;
 
 const HOUR = 3_600_000;
-const NOW = Date.now();
-const FAR_FUTURE = NOW + 365 * 24 * HOUR;
-
-export const ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: "world-cup-season",
-    priority: 40,
-    tone: "leaf",
-    emoji: "⚽",
-    title: "The World Cup is here",
-    body: "Football trivia, live every hour, with real prizes on the line. See what's new this season.",
-    cta: { label: "See what's new", theme: "world-cup" },
-    publishedAt: NOW - 1 * HOUR,
-    startsAt: 0,
-    endsAt: FAR_FUTURE,
-  },
-  {
-    id: "prize-wallet",
-    priority: 30,
-    tone: "leaf",
-    emoji: "💸",
-    title: "Cash out your winnings",
-    body: "Tournament prizes are paid in USDT. Claim them anytime from your new Prize Wallet.",
-    cta: { label: "Open Prize Wallet", screen: "profile" },
-    publishedAt: NOW - 2 * HOUR,
-    startsAt: 0,
-    endsAt: FAR_FUTURE,
-  },
-  {
-    id: "double-xp-weekend",
-    priority: 20,
-    tone: "berry",
-    emoji: "⚡",
-    title: "Double XP weekend",
-    body: "Every tournament you play this weekend earns 2× XP. Climb the leagues faster.",
-    cta: { label: "Play now", screen: "home" },
-    publishedAt: NOW - 26 * HOUR,
-    startsAt: 0,
-    endsAt: FAR_FUTURE,
-  },
-  {
-    id: "prize-pool-boost",
-    priority: 10,
-    tone: "maple",
-    emoji: "🏆",
-    title: "Prize pool boosted",
-    body: "Top of the Hour now pays out up to 25 tickets — finish Top 100 to win.",
-    publishedAt: NOW - 50 * HOUR,
-    startsAt: 0,
-    endsAt: FAR_FUTURE,
-  },
-];
-
-// Active = inside its [startsAt, endsAt] window. Sorted highest-priority first.
-// We intentionally do NOT hide a theme-activation announcement once its theme is
-// active: it's the persistent entry point to the full-page takeover, so removing
-// it would make that content unreachable (there's no UI to leave the theme).
-export function activeAnnouncements(at: number = Date.now()): Announcement[] {
-  return ANNOUNCEMENTS.filter((a) => at >= a.startsAt && at <= a.endsAt).sort((a, b) => b.priority - a.priority);
-}
 
 const TONE: Record<Tone, { fg: string; bg: string; bd: string }> = {
   maple: { fg: "#FFC931", bg: "rgba(255,201,49,.12)", bd: "rgba(255,201,49,.32)" },
@@ -110,7 +38,7 @@ const timeAgo = (ts: number) => {
 export const AnnouncementBanner = () => {
   const proto = useProto();
   const viewedRef = useRef<string | null>(null);
-  const top = activeAnnouncements().find((a) => !proto.annDismissed.includes(a.id));
+  const top = proto.announcements.find((a) => !proto.annDismissed.includes(a.id));
   useEffect(() => {
     if (!top || viewedRef.current === top.id) return;
     viewedRef.current = top.id;
@@ -155,7 +83,7 @@ export const AnnouncementBanner = () => {
         cta_target: top.cta.screen,
         source_screen: proto.screen,
       });
-      proto.goto(top.cta.screen);
+      proto.goto(top.cta.screen as ScreenName);
     }
   };
 
@@ -198,7 +126,7 @@ export const AnnouncementBanner = () => {
 export const AnnouncementBell = () => {
   const proto = useProto();
   const [open, setOpen] = useState(false);
-  const active = activeAnnouncements();
+  const active = proto.announcements;
   const unread = active.filter((a) => !proto.annRead.includes(a.id)).length;
 
   const openInbox = () => {
@@ -241,7 +169,7 @@ export const AnnouncementBell = () => {
 
 const AnnouncementInbox = ({ sourceScreen, onClose }: { sourceScreen: ScreenName; onClose: () => void }) => {
   const proto = useProto();
-  const active = activeAnnouncements();
+  const active = proto.announcements;
   const closeInbox = () => {
     trackClientEvent(AnalyticsEvent.AnnouncementInboxClosed, {
       source_screen: sourceScreen,
@@ -290,7 +218,7 @@ const AnnouncementInbox = ({ sourceScreen, onClose }: { sourceScreen: ScreenName
                             source_screen: sourceScreen,
                           });
                           if (a.cta!.theme) { proto.update({ wcTakeoverOpen: true }); closeInbox(); return; }
-                          if (a.cta!.screen) proto.goto(a.cta!.screen);
+                          if (a.cta!.screen) proto.goto(a.cta!.screen as ScreenName);
                           closeInbox();
                         }}
                         style={{ marginTop: 10, background: "transparent", border: `1.5px solid ${c.bd}`, color: c.fg, borderRadius: 9, padding: "6px 12px", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer" }}

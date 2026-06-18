@@ -456,6 +456,8 @@ export const AnnouncementScalarFieldEnum = {
   ctaLabel: 'ctaLabel',
   ctaAction: 'ctaAction',
   kind: 'kind',
+  tone: 'tone',
+  emoji: 'emoji',
   isActive: 'isActive',
   startsAt: 'startsAt',
   endsAt: 'endsAt',
