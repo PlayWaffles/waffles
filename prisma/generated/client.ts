@@ -85,11 +85,6 @@ export type Question = Prisma.QuestionModel
  */
 export type GameEntry = Prisma.GameEntryModel
 /**
- * Model Chat
- * 
- */
-export type Chat = Prisma.ChatModel
-/**
  * Model PendingPurchase
  * 
  */
@@ -159,6 +154,11 @@ export type QuestProgress = Prisma.QuestProgressModel
  * 
  */
 export type League = Prisma.LeagueModel
+/**
+ * Model LeagueCohort
+ * 
+ */
+export type LeagueCohort = Prisma.LeagueCohortModel
 /**
  * Model LeagueMember
  * 

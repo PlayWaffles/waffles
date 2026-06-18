@@ -148,6 +148,7 @@ export const TicketLedgerReason = {
   FIRST_TICKET_OFFER: 'FIRST_TICKET_OFFER',
   PARTNER_OFFER: 'PARTNER_OFFER',
   SEASON_PASS: 'SEASON_PASS',
+  LEAGUE_REWARD: 'LEAGUE_REWARD',
   ADMIN_ADJUST: 'ADMIN_ADJUST'
 } as const
 
@@ -215,3 +216,12 @@ export const LeagueTier = {
 } as const
 
 export type LeagueTier = (typeof LeagueTier)[keyof typeof LeagueTier]
+
+
+export const LeagueOutcome = {
+  PROMOTED: 'PROMOTED',
+  DEMOTED: 'DEMOTED',
+  STAYED: 'STAYED'
+} as const
+
+export type LeagueOutcome = (typeof LeagueOutcome)[keyof typeof LeagueOutcome]

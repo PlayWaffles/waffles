@@ -69,7 +69,6 @@ model User {
 
   // -- RELATIONS --
   entries   GameEntry[]
-  chats     Chat[]
   notifs    NotificationToken[]
   auditLogs AuditLog[]
   wallets   UserWallet[]
@@ -297,7 +296,6 @@ model Game {
   // -- RELATIONS --
   questions Question[]
   entries   GameEntry[]
-  chats     Chat[]
   pendingPurchases PendingPurchase[]
 
   // -- TIMESTAMPS --
@@ -489,18 +487,6 @@ enum TicketPurchaseSource {
 // 4. CHAT (Persisted messages)
 // ==========================================
 
-model Chat {
-  id        String   @id @default(cuid())
-  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
-  gameId    String
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  text      String   @db.VarChar(500)
-  createdAt DateTime @default(now())
-
-  @@index([gameId, createdAt])
-}
-
 model PendingPurchase {
   id             String                @id @default(cuid())
   txHash         String                @unique @db.VarChar(66)
@@ -646,6 +632,7 @@ enum TicketLedgerReason {
   FIRST_TICKET_OFFER
   PARTNER_OFFER
   SEASON_PASS
+  LEAGUE_REWARD
   ADMIN_ADJUST
 }
 
@@ -692,6 +679,13 @@ enum LeagueTier {
   MASTER_3
   MASTER_2
   MASTER_1
+}
+
+// Season-close outcome for a LeagueMember (top finishers move up, bottom move down).
+enum LeagueOutcome {
+  PROMOTED
+  DEMOTED
+  STAYED
 }
 
 // -- Soft-currency ledger: every ticket balance change is recorded here; the
@@ -813,21 +807,41 @@ model League {
   sortOrder Int            @db.SmallInt
   rewards   Json
   members   LeagueMember[]
+  cohorts   LeagueCohort[]
+}
+
+// A room of (up to ~30) players competing within one tier for one season.
+// Ranking, promotion/demotion and reward payout all happen per cohort.
+model LeagueCohort {
+  id        String         @id @default(cuid())
+  league    League         @relation(fields: [leagueId], references: [id])
+  leagueId  String
+  season    String         @db.VarChar(20)
+  index     Int            @db.SmallInt // 0-based cohort number within tier+season
+  settledAt DateTime? // set when the season-close job has paid + promoted this cohort
+  members   LeagueMember[]
+
+  @@unique([leagueId, season, index])
+  @@index([season, settledAt])
 }
 
 model LeagueMember {
-  id        String   @id @default(cuid())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String         @id @default(cuid())
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  league    League   @relation(fields: [leagueId], references: [id])
+  league    League         @relation(fields: [leagueId], references: [id])
   leagueId  String
-  season    String   @db.VarChar(20)
-  points    Int      @default(0)
+  cohort    LeagueCohort?  @relation(fields: [cohortId], references: [id])
+  cohortId  String?
+  season    String         @db.VarChar(20)
+  points    Int            @default(0)
   rank      Int?
-  updatedAt DateTime @updatedAt
+  outcome   LeagueOutcome? // set at season close
+  updatedAt DateTime       @updatedAt
 
   @@unique([userId, season])
   @@index([season, points(sort: Desc)])
+  @@index([cohortId, points(sort: Desc)])
 }
 
 // -- Shop catalog + purchases (power-ups, cosmetics, bundles, boosts, featured). --

@@ -684,6 +684,23 @@ export type EnumLeagueTierWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedEnumLeagueTierFilter<$PrismaModel>
 }
 
+export type EnumLeagueOutcomeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.LeagueOutcome | Prisma.EnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumLeagueOutcomeNullableFilter<$PrismaModel> | $Enums.LeagueOutcome | null
+}
+
+export type EnumLeagueOutcomeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LeagueOutcome | Prisma.EnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumLeagueOutcomeNullableWithAggregatesFilter<$PrismaModel> | $Enums.LeagueOutcome | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLeagueOutcomeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLeagueOutcomeNullableFilter<$PrismaModel>
+}
+
 export type EnumShopItemKindFilter<$PrismaModel = never> = {
   equals?: $Enums.ShopItemKind | Prisma.EnumShopItemKindFieldRefInput<$PrismaModel>
   in?: $Enums.ShopItemKind[] | Prisma.ListEnumShopItemKindFieldRefInput<$PrismaModel>
@@ -1357,6 +1374,23 @@ export type NestedEnumLeagueTierWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedEnumLeagueTierFilter<$PrismaModel>
   _max?: Prisma.NestedEnumLeagueTierFilter<$PrismaModel>
+}
+
+export type NestedEnumLeagueOutcomeNullableFilter<$PrismaModel = never> = {
+  equals?: $Enums.LeagueOutcome | Prisma.EnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumLeagueOutcomeNullableFilter<$PrismaModel> | $Enums.LeagueOutcome | null
+}
+
+export type NestedEnumLeagueOutcomeNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.LeagueOutcome | Prisma.EnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  in?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  notIn?: $Enums.LeagueOutcome[] | Prisma.ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> | null
+  not?: Prisma.NestedEnumLeagueOutcomeNullableWithAggregatesFilter<$PrismaModel> | $Enums.LeagueOutcome | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumLeagueOutcomeNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumLeagueOutcomeNullableFilter<$PrismaModel>
 }
 
 export type NestedEnumShopItemKindFilter<$PrismaModel = never> = {

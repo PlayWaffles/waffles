@@ -393,7 +393,6 @@ export const ModelName = {
   QuestionTemplate: 'QuestionTemplate',
   Question: 'Question',
   GameEntry: 'GameEntry',
-  Chat: 'Chat',
   PendingPurchase: 'PendingPurchase',
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
@@ -408,6 +407,7 @@ export const ModelName = {
   AnnouncementState: 'AnnouncementState',
   QuestProgress: 'QuestProgress',
   League: 'League',
+  LeagueCohort: 'LeagueCohort',
   LeagueMember: 'LeagueMember',
   ShopItem: 'ShopItem',
   Purchase: 'Purchase',
@@ -434,7 +434,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "chat" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "winning" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "winning" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1101,80 +1101,6 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.GameEntryCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.GameEntryCountAggregateOutputType> | number
-        }
-      }
-    }
-    Chat: {
-      payload: Prisma.$ChatPayload<ExtArgs>
-      fields: Prisma.ChatFieldRefs
-      operations: {
-        findUnique: {
-          args: Prisma.ChatFindUniqueArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload> | null
-        }
-        findUniqueOrThrow: {
-          args: Prisma.ChatFindUniqueOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
-        }
-        findFirst: {
-          args: Prisma.ChatFindFirstArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload> | null
-        }
-        findFirstOrThrow: {
-          args: Prisma.ChatFindFirstOrThrowArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
-        }
-        findMany: {
-          args: Prisma.ChatFindManyArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>[]
-        }
-        create: {
-          args: Prisma.ChatCreateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
-        }
-        createMany: {
-          args: Prisma.ChatCreateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        createManyAndReturn: {
-          args: Prisma.ChatCreateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>[]
-        }
-        delete: {
-          args: Prisma.ChatDeleteArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
-        }
-        update: {
-          args: Prisma.ChatUpdateArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
-        }
-        deleteMany: {
-          args: Prisma.ChatDeleteManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateMany: {
-          args: Prisma.ChatUpdateManyArgs<ExtArgs>
-          result: BatchPayload
-        }
-        updateManyAndReturn: {
-          args: Prisma.ChatUpdateManyAndReturnArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>[]
-        }
-        upsert: {
-          args: Prisma.ChatUpsertArgs<ExtArgs>
-          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChatPayload>
-        }
-        aggregate: {
-          args: Prisma.ChatAggregateArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.AggregateChat>
-        }
-        groupBy: {
-          args: Prisma.ChatGroupByArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ChatGroupByOutputType>[]
-        }
-        count: {
-          args: Prisma.ChatCountArgs<ExtArgs>
-          result: runtime.Types.Utils.Optional<Prisma.ChatCountAggregateOutputType> | number
         }
       }
     }
@@ -2211,6 +2137,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.LeagueCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.LeagueCountAggregateOutputType> | number
+        }
+      }
+    }
+    LeagueCohort: {
+      payload: Prisma.$LeagueCohortPayload<ExtArgs>
+      fields: Prisma.LeagueCohortFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LeagueCohortFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LeagueCohortFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>
+        }
+        findFirst: {
+          args: Prisma.LeagueCohortFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LeagueCohortFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>
+        }
+        findMany: {
+          args: Prisma.LeagueCohortFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>[]
+        }
+        create: {
+          args: Prisma.LeagueCohortCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>
+        }
+        createMany: {
+          args: Prisma.LeagueCohortCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LeagueCohortCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>[]
+        }
+        delete: {
+          args: Prisma.LeagueCohortDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>
+        }
+        update: {
+          args: Prisma.LeagueCohortUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>
+        }
+        deleteMany: {
+          args: Prisma.LeagueCohortDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LeagueCohortUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LeagueCohortUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>[]
+        }
+        upsert: {
+          args: Prisma.LeagueCohortUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LeagueCohortPayload>
+        }
+        aggregate: {
+          args: Prisma.LeagueCohortAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLeagueCohort>
+        }
+        groupBy: {
+          args: Prisma.LeagueCohortGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LeagueCohortGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LeagueCohortCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LeagueCohortCountAggregateOutputType> | number
         }
       }
     }
@@ -3280,17 +3280,6 @@ export const GameEntryScalarFieldEnum = {
 export type GameEntryScalarFieldEnum = (typeof GameEntryScalarFieldEnum)[keyof typeof GameEntryScalarFieldEnum]
 
 
-export const ChatScalarFieldEnum = {
-  id: 'id',
-  gameId: 'gameId',
-  userId: 'userId',
-  text: 'text',
-  createdAt: 'createdAt'
-} as const
-
-export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
-
-
 export const PendingPurchaseScalarFieldEnum = {
   id: 'id',
   txHash: 'txHash',
@@ -3492,13 +3481,26 @@ export const LeagueScalarFieldEnum = {
 export type LeagueScalarFieldEnum = (typeof LeagueScalarFieldEnum)[keyof typeof LeagueScalarFieldEnum]
 
 
+export const LeagueCohortScalarFieldEnum = {
+  id: 'id',
+  leagueId: 'leagueId',
+  season: 'season',
+  index: 'index',
+  settledAt: 'settledAt'
+} as const
+
+export type LeagueCohortScalarFieldEnum = (typeof LeagueCohortScalarFieldEnum)[keyof typeof LeagueCohortScalarFieldEnum]
+
+
 export const LeagueMemberScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   leagueId: 'leagueId',
+  cohortId: 'cohortId',
   season: 'season',
   points: 'points',
   rank: 'rank',
+  outcome: 'outcome',
   updatedAt: 'updatedAt'
 } as const
 
@@ -4006,6 +4008,20 @@ export type ListEnumLeagueTierFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
+ * Reference to a field of type 'LeagueOutcome'
+ */
+export type EnumLeagueOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeagueOutcome'>
+    
+
+
+/**
+ * Reference to a field of type 'LeagueOutcome[]'
+ */
+export type ListEnumLeagueOutcomeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LeagueOutcome[]'>
+    
+
+
+/**
  * Reference to a field of type 'ShopItemKind'
  */
 export type EnumShopItemKindFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'ShopItemKind'>
@@ -4164,7 +4180,6 @@ export type GlobalOmitConfig = {
   questionTemplate?: Prisma.QuestionTemplateOmit
   question?: Prisma.QuestionOmit
   gameEntry?: Prisma.GameEntryOmit
-  chat?: Prisma.ChatOmit
   pendingPurchase?: Prisma.PendingPurchaseOmit
   notificationToken?: Prisma.NotificationTokenOmit
   notificationLog?: Prisma.NotificationLogOmit
@@ -4179,6 +4194,7 @@ export type GlobalOmitConfig = {
   announcementState?: Prisma.AnnouncementStateOmit
   questProgress?: Prisma.QuestProgressOmit
   league?: Prisma.LeagueOmit
+  leagueCohort?: Prisma.LeagueCohortOmit
   leagueMember?: Prisma.LeagueMemberOmit
   shopItem?: Prisma.ShopItemOmit
   purchase?: Prisma.PurchaseOmit
