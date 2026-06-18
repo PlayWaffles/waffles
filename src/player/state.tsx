@@ -24,6 +24,7 @@ import {
   submitTournamentAnswers,
   getTournamentClaim,
   confirmTournamentClaim,
+  reconcileTournamentClaim,
   loseLife,
   consumePowerUp,
   recordMissionProgress,
@@ -272,6 +273,9 @@ export type Question = {
   kicker?: string;
   clues?: string[];
   media?: VMedia;
+  // Real image URL (DB-backed questions, e.g. Visual ID / Get the Picture).
+  // Distinct from `media` (the Format Lab's hardcoded illustrations).
+  image?: string;
   time?: number;
   minefield?: boolean;
 };
@@ -1429,6 +1433,11 @@ export function ProtoProvider({
   const claimTournamentPrize = async (gameId: string): Promise<{ ok: boolean; error?: string }> => {
     const claim = await getTournamentClaim(gameId);
     if (!claim) return { ok: false, error: "nothing_to_claim" };
+    // Self-heal first: if the prize is already claimed on-chain (a prior confirm
+    // desynced from a successful claim), settle it in the DB without sending a
+    // tx that would just revert with "already claimed".
+    const pre = await reconcileTournamentClaim(gameId);
+    if (pre?.reconciled) return { ok: true };
     try {
       const txHash = await tournamentWallet.claim(
         assertChainPlatform(claim.platform),
@@ -1446,6 +1455,10 @@ export function ProtoProvider({
       return { ok: true };
     } catch (e) {
       update({ tournamentStep: null });
+      // The wallet tx may have reverted because it was already claimed on-chain
+      // — reconcile as a last resort so the prize isn't stuck "claimable".
+      const recon = await reconcileTournamentClaim(gameId);
+      if (recon?.reconciled) return { ok: true };
       return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
     }
   };

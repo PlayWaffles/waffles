@@ -85,6 +85,7 @@ type TemplateRow = {
   clues: string[];
   theme: string;
   category: string | null;
+  mediaUrl: string | null;
 };
 
 const TEMPLATE_SELECT = {
@@ -103,6 +104,7 @@ const TEMPLATE_SELECT = {
   clues: true,
   theme: true,
   category: true,
+  mediaUrl: true,
 } as const;
 
 /** Load the round's issued templates, preserving play order. */
@@ -149,6 +151,7 @@ export type ClientRoundQuestion = {
   flags?: string[];
   kicker?: string;
   clues?: string[];
+  image?: string;
   time?: number;
   minefield?: boolean;
 };
@@ -171,6 +174,7 @@ function rowToClient(r: TemplateRow): ClientRoundQuestion {
     flags: r.flags.length ? r.flags : undefined,
     kicker: r.kicker ?? undefined,
     clues: r.clues.length ? r.clues : undefined,
+    image: r.mediaUrl ?? undefined,
     time: r.durationSec,
     minefield: r.minefield || undefined,
   };

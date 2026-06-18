@@ -19,7 +19,7 @@ import { prisma } from "@/lib/db";
 import { Prisma, QuestionKind, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
-import { verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
+import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 import {
   scoreAnswer,
@@ -52,6 +52,7 @@ const GAME_QUESTION_SELECT = {
   kicker: true,
   clues: true,
   durationSec: true,
+  mediaUrl: true,
 } as const;
 
 type GameQuestionRow = Prisma.QuestionGetPayload<{ select: typeof GAME_QUESTION_SELECT }>;
@@ -206,6 +207,7 @@ export async function getTournamentClientQuestions(gameId: string) {
     flags: q.flags.length ? q.flags : undefined,
     kicker: q.kicker ?? undefined,
     clues: q.clues.length ? q.clues : undefined,
+    image: q.mediaUrl ?? undefined,
     time: q.durationSec,
     minefield: q.minefield || undefined,
   }));
@@ -583,4 +585,44 @@ export async function confirmTournamentClaim(input: {
     data: { claimedAt: new Date() },
   });
   return { ok: true };
+}
+
+/**
+ * Self-heal a stuck claim: a prize that's already claimed on-chain but still
+ * shows as claimable because a prior confirm failed (e.g. transient RPC lag on
+ * the hasClaimed read). Reads the contract's hasClaimed() for the player's
+ * wallet and, if true, marks the entry claimed — no new transaction needed.
+ * Idempotent and safe: only ever sets claimedAt when the chain says it's claimed.
+ */
+export async function reconcileTournamentClaim(input: {
+  userId: string;
+  gameId: string;
+  wallet: string;
+}): Promise<{ ok: boolean; reconciled: boolean; error?: string }> {
+  const { userId, gameId, wallet } = input;
+  const entry = await prisma.gameEntry.findUnique({
+    where: { gameId_userId: { gameId, userId } },
+    select: {
+      id: true,
+      claimedAt: true,
+      game: { select: { onchainId: true, platform: true, network: true } },
+    },
+  });
+  if (!entry) return { ok: false, reconciled: false, error: "no_entry" };
+  if (entry.claimedAt) return { ok: true, reconciled: false };
+  if (!entry.game.onchainId) return { ok: false, reconciled: false, error: "game_not_onchain" };
+
+  const claimed = await isPrizeClaimedOnChain({
+    platform: entry.game.platform,
+    network: entry.game.network,
+    gameId: entry.game.onchainId as `0x${string}`,
+    claimer: wallet as `0x${string}`,
+  });
+  if (!claimed) return { ok: false, reconciled: false, error: "not_claimed_onchain" };
+
+  await prisma.gameEntry.update({
+    where: { id: entry.id },
+    data: { claimedAt: new Date() },
+  });
+  return { ok: true, reconciled: true };
 }
