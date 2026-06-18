@@ -6,7 +6,7 @@ import { useProto } from "./state";
 import { playSound, soundManager } from "./sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
-const ASSETS_BASE = "/images/v2";
+const ASSETS_BASE = "/images/player";
 const OPTIMIZED_ASSETS_BASE = `${ASSETS_BASE}/optimized`;
 
 // Re-rendering clock. Returns `Date.now()` refreshed every `intervalMs` while

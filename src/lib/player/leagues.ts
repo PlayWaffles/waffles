@@ -12,16 +12,16 @@ type TierDef = { tier: LeagueTier; key: string; label: string; color: string; mi
 // Ordered low→high. `key` matches the screen's TIERS[].key.
 export const LEAGUE_TIERS: TierDef[] = [
   { tier: LeagueTier.APPRENTICE_1, key: "apprentice1", label: "APPRENTICE I", color: "#cd7f32", minXp: 0 },
-  { tier: LeagueTier.APPRENTICE_2, key: "apprentice2", label: "APPRENTICE II", color: "#cd7f32", minXp: 200 },
-  { tier: LeagueTier.SILVER_1, key: "silver1", label: "SILVER I", color: "#bfc7d0", minXp: 500 },
-  { tier: LeagueTier.SILVER_2, key: "silver2", label: "SILVER II", color: "#bfc7d0", minXp: 1000 },
-  { tier: LeagueTier.SILVER_3, key: "silver3", label: "SILVER III", color: "#bfc7d0", minXp: 1800 },
-  { tier: LeagueTier.ADVANCED_1, key: "advanced1", label: "ADVANCED I", color: "#9aa6b3", minXp: 3000 },
-  { tier: LeagueTier.ADVANCED_2, key: "advanced2", label: "ADVANCED II", color: "#9aa6b3", minXp: 5000 },
-  { tier: LeagueTier.GENIUS, key: "genius", label: "GENIUS", color: "#3ddbb8", minXp: 8000 },
-  { tier: LeagueTier.MASTER_3, key: "master3", label: "MASTER III", color: "#FFC931", minXp: 12000 },
-  { tier: LeagueTier.MASTER_2, key: "master2", label: "MASTER II", color: "#FFC931", minXp: 18000 },
-  { tier: LeagueTier.MASTER_1, key: "master1", label: "MASTER I", color: "#FFC931", minXp: 25000 },
+  { tier: LeagueTier.APPRENTICE_2, key: "apprentice2", label: "APPRENTICE II", color: "#cd7f32", minXp: 2000 },
+  { tier: LeagueTier.SILVER_1, key: "silver1", label: "SILVER I", color: "#bfc7d0", minXp: 6000 },
+  { tier: LeagueTier.SILVER_2, key: "silver2", label: "SILVER II", color: "#bfc7d0", minXp: 14000 },
+  { tier: LeagueTier.SILVER_3, key: "silver3", label: "SILVER III", color: "#bfc7d0", minXp: 28000 },
+  { tier: LeagueTier.ADVANCED_1, key: "advanced1", label: "ADVANCED I", color: "#9aa6b3", minXp: 50000 },
+  { tier: LeagueTier.ADVANCED_2, key: "advanced2", label: "ADVANCED II", color: "#9aa6b3", minXp: 85000 },
+  { tier: LeagueTier.GENIUS, key: "genius", label: "GENIUS", color: "#3ddbb8", minXp: 140000 },
+  { tier: LeagueTier.MASTER_3, key: "master3", label: "MASTER III", color: "#FFC931", minXp: 220000 },
+  { tier: LeagueTier.MASTER_2, key: "master2", label: "MASTER II", color: "#FFC931", minXp: 340000 },
+  { tier: LeagueTier.MASTER_1, key: "master1", label: "MASTER I", color: "#FFC931", minXp: 500000 },
 ];
 
 const TIER_BY_ENUM = new Map(LEAGUE_TIERS.map((t) => [t.tier, t]));

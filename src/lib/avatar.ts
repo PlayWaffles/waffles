@@ -1,12 +1,12 @@
 const DEFAULT_AVATARS = [
-  "/images/v2/avatar-fox.webp",
-  "/images/v2/avatar-bear.webp",
-  "/images/v2/avatar-frog.webp",
-  "/images/v2/avatar-panda.webp",
-  "/images/v2/avatar-owl.webp",
-  "/images/v2/avatar-cat.webp",
-  "/images/v2/avatar-dog.webp",
-  "/images/v2/avatar-rabbit.webp",
+  "/images/player/avatar-fox.webp",
+  "/images/player/avatar-bear.webp",
+  "/images/player/avatar-frog.webp",
+  "/images/player/avatar-panda.webp",
+  "/images/player/avatar-owl.webp",
+  "/images/player/avatar-cat.webp",
+  "/images/player/avatar-dog.webp",
+  "/images/player/avatar-rabbit.webp",
 ];
 
 export function getDefaultAvatarUrl(seed: string | null | undefined) {
