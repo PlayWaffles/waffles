@@ -44,7 +44,7 @@ import {
 } from "@/lib/v2/tournamentGames";
 import { getMigrationNotice, dismissMigrationNotice } from "@/lib/v2/migrationNotice";
 import type { RoundAnswer } from "@/lib/v2/scoring";
-import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, purchaseShopItem, type DailyClaimResult, type PurchaseResult } from "@/lib/v2/economy";
+import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, loadShopCatalog, purchaseShopItem, type DailyClaimResult, type PurchaseResult, type ShopCatalog } from "@/lib/v2/economy";
 import { PowerUpKind } from "@prisma";
 import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/v2/missions";
 import { loadLeague, type V2League } from "@/lib/v2/leagues";
@@ -247,6 +247,14 @@ export async function v2Purchase(slug: string): Promise<PurchaseResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
   return purchaseShopItem(user.id, slug);
+}
+
+/** The shop catalog (prices/labels) from the DB + this user's owned cosmetics.
+ *  Single source of truth — the client renders from this, never hardcoded prices. */
+export async function v2GetShopCatalog(): Promise<ShopCatalog | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return loadShopCatalog(user.id);
 }
 
 export async function v2AdvanceLevel(
