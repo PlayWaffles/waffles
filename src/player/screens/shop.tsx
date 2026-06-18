@@ -7,6 +7,7 @@ import { playSound } from "../sound";
 import { buyBundle, getShopCatalog, purchase } from "@/actions/player";
 import type { ShopCatalog } from "@/lib/player/economy";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+import { useUser } from "@/hooks/useUser";
 
 const TICKET_INFO = `Syrup is earned by playing — daily rewards, levels and missions. Spend it on lives, power-ups for solo levels, and cosmetics. Tournaments are entered with USDC and prizes are paid in USDT from your Prize Wallet.`;
 
@@ -92,6 +93,8 @@ type Snackbar = { id: string; label: string; slug?: string; refundedAt?: number;
 export const ShopScreen = () => {
   const proto = useProto();
   const tickets = proto.tickets;
+  const { user } = useUser();
+  const authedUserId = user?.id ?? null;
 
   const [flow, setFlow] = useState<Flow>(null);
   const [snackbar, setSnackbar] = useState<Snackbar | null>(null);
@@ -104,39 +107,33 @@ export const ShopScreen = () => {
   // Built into the render shapes once loaded; empty while fetching (the screen
   // shows a loader until `catalog` resolves, below).
   const [catalog, setCatalog] = useState<ShopCatalog | null>(null);
-  // `getShopCatalog()` returns null when the session isn't ready yet (the screen
-  // can mount before auth bootstrap finishes) and can also reject on a transient
-  // error. Either case used to leave the loader spinning forever. Retry a few
-  // times (covers the auth-readiness race), then surface a manual retry instead
-  // of hanging. `reqId` invalidates stale/in-flight attempts.
+  // Wait for the shared user query before fetching. Calling the server action
+  // before the session cookie is ready returns null, which created a visible
+  // retry delay on first Shop navigation.
   const [loadError, setLoadError] = useState(false);
   const reqId = useRef(0);
   const fetchCatalog = useCallback(() => {
+    if (!authedUserId) return;
     const id = ++reqId.current;
     setLoadError(false);
-    let attempt = 0;
-    const tryLoad = () => {
-      getShopCatalog()
-        .then((c) => {
-          if (id !== reqId.current) return;
-          if (c) setCatalog(c);
-          else if (attempt < 4) setTimeout(tryLoad, 600 * ++attempt);
-          else setLoadError(true);
-        })
-        .catch(() => {
-          if (id !== reqId.current) return;
-          if (attempt < 4) setTimeout(tryLoad, 600 * ++attempt);
-          else setLoadError(true);
-        });
-    };
-    tryLoad();
-  }, []);
+    getShopCatalog()
+      .then((c) => {
+        if (id !== reqId.current) return;
+        if (c) setCatalog(c);
+        else setLoadError(true);
+      })
+      .catch(() => {
+        if (id !== reqId.current) return;
+        setLoadError(true);
+      });
+  }, [authedUserId]);
   useEffect(() => {
+    if (!authedUserId) return;
     const ref = reqId;
     fetchCatalog();
     // Invalidate any in-flight attempt / pending retry on unmount.
     return () => { ref.current++; };
-  }, [fetchCatalog]);
+  }, [authedUserId, fetchCatalog]);
   const built = useMemo<BuiltCatalog>(
     () => (catalog ? buildCatalog(catalog) : { powerUps: [], cosmetics: [], bundles: [], featured: null }),
     [catalog],
