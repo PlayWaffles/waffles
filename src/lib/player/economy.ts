@@ -416,17 +416,27 @@ export async function buyBundle(
   });
 }
 
-// transaction-scoped powerup grant (the exported grantPowerUp uses its own client)
-async function grantPowerUpTx(
-  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
-  userId: string,
-  kind: PowerUpKind,
-): Promise<void> {
+// Transaction-scoped grants (the non-Tx exports above use their own client).
+// Exported so league settlement can do the rank/outcome write + reward grant
+// atomically in one transaction.
+type Tx = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+export async function grantPowerUpTx(tx: Tx, userId: string, kind: PowerUpKind, n = 1): Promise<void> {
   await tx.powerUpInventory.upsert({
     where: { userId_kind: { userId, kind } },
-    create: { userId, kind, count: 1 },
-    update: { count: { increment: 1 } },
+    create: { userId, kind, count: n },
+    update: { count: { increment: n } },
   });
+}
+
+export async function grantBoostTx(
+  tx: Tx,
+  userId: string,
+  kind: BoostKind,
+  charges: number | null,
+  expiresAt: Date | null,
+): Promise<void> {
+  await tx.userBoost.create({ data: { userId, kind, remainingCharges: charges, expiresAt } });
 }
 
 // ── Shop catalog (single source of truth for prices/labels) ─────────────────
