@@ -1,7 +1,7 @@
 /**
  * v2 economy services — daily reward roll, shop purchases, and inventory grants.
  * Server-authoritative; mirrors the pure logic in the ported screens
- * (daily-reward.tsx REWARD_POOL, shop.tsx catalog) but is the source of truth.
+ * (daily-reward.tsx DAILY_SCHEDULE, shop.tsx catalog) but is the source of truth.
  */
 import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
@@ -14,29 +14,24 @@ import {
 } from "@prisma";
 import { adjustTickets } from "./playerState";
 
-// ── Daily reward (mirrors daily-reward.tsx REWARD_POOL + rollReward) ─────────
+// ── Daily reward — fixed 7-day calendar (mirrors daily-reward.tsx DAILY_SCHEDULE)
+// The reward for a day is deterministic by its position in the repeating 7-day
+// cycle, so the calendar the player sees is exactly what gets credited.
 type Roll = { type: "xp" | "ticket"; amount: number; rarity: "common" | "rare" | "jackpot" };
 
-const REWARD_POOL: { roll: Roll; weight: number }[] = [
-  { roll: { type: "xp", amount: 25, rarity: "common" }, weight: 26 },
-  { roll: { type: "ticket", amount: 1, rarity: "common" }, weight: 26 },
-  { roll: { type: "xp", amount: 50, rarity: "common" }, weight: 16 },
-  { roll: { type: "ticket", amount: 2, rarity: "rare" }, weight: 14 },
-  { roll: { type: "xp", amount: 100, rarity: "rare" }, weight: 8 },
-  { roll: { type: "ticket", amount: 5, rarity: "jackpot" }, weight: 3 },
-  { roll: { type: "ticket", amount: 10, rarity: "jackpot" }, weight: 1 },
+const DAILY_SCHEDULE: Roll[] = [
+  { type: "ticket", amount: 5, rarity: "common" },   // Day 1
+  { type: "ticket", amount: 10, rarity: "common" },  // Day 2
+  { type: "xp", amount: 50, rarity: "common" },      // Day 3
+  { type: "ticket", amount: 15, rarity: "rare" },    // Day 4
+  { type: "xp", amount: 100, rarity: "rare" },       // Day 5
+  { type: "ticket", amount: 25, rarity: "rare" },    // Day 6
+  { type: "ticket", amount: 50, rarity: "jackpot" }, // Day 7
 ];
 
-function rollReward(streak: number): Roll {
-  const boost = 1 + Math.min(streak, 30) / 15; // 1× → 3×
-  const weighted = REWARD_POOL.map((e) => ({
-    roll: e.roll,
-    w: e.roll.rarity === "common" ? e.weight : e.weight * boost,
-  }));
-  const total = weighted.reduce((s, e) => s + e.w, 0);
-  let r = Math.random() * total;
-  for (const e of weighted) if ((r -= e.w) <= 0) return e.roll;
-  return weighted[0].roll;
+/** The reward for the given (1-based) streak day — repeats every 7 days. */
+function rewardForStreak(streak: number): Roll {
+  return DAILY_SCHEDULE[(Math.max(1, streak) - 1) % DAILY_SCHEDULE.length];
 }
 
 const dayKeyUTC = (d = new Date()): string => d.toISOString().slice(0, 10);
@@ -99,7 +94,7 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
       }
     }
 
-    const roll = rollReward(streak);
+    const roll = rewardForStreak(streak);
 
     await tx.dailyRewardClaim.create({
       data: { userId, dayKey: today, streak, reward: roll, usedFreeze },
