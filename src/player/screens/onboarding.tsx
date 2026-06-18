@@ -232,10 +232,22 @@ export const OnboardingScreen = ({
         step_index: step,
         step_id: stepId,
       });
-      void signIn().finally(() => {
-        setConnecting(false);
-        setStep((s) => s + 1);
-      });
+      void signIn()
+        .then((ok) => {
+          // Sign-in failure doesn't block onboarding (we proceed on local state),
+          // but capture it so the wallet-signup drop-off is measurable.
+          if (!ok) {
+            trackClientEvent(AnalyticsEvent.OnboardingFailed, {
+              step_index: step,
+              step_id: stepId,
+              reason: "signin_failed",
+            });
+          }
+        })
+        .finally(() => {
+          setConnecting(false);
+          setStep((s) => s + 1);
+        });
       return;
     }
     setStep((s) => s + 1);

@@ -1,8 +1,11 @@
 /**
  * v2 daily missions — backed by the existing Quest / QuestProgress / CompletedQuest
  * models. Daily missions are `Quest` rows (category ENGAGEMENT, repeatFrequency
- * DAILY); per-user progress lives in `QuestProgress`; completion + XP award in
- * `CompletedQuest`. The partner-offer tab stays static (external sponsored offers).
+ * DAILY); per-user progress lives in `QuestProgress`. A mission becomes
+ * *claimable* once `QuestProgress.count` reaches `requiredCount`; the player then
+ * explicitly claims it, which writes the `CompletedQuest` row and awards XP. So
+ * `CompletedQuest` means "claimed" (not merely "reached"). The partner-offer tab
+ * stays static (external sponsored offers).
  */
 import { prisma } from "@/lib/db";
 import { QuestCategory, RepeatFrequency } from "@prisma";
@@ -13,9 +16,14 @@ export type Mission = {
   count: number; // current progress
   total: number; // requiredCount
   xp: number;
-  done: boolean;
+  done: boolean; // claimed (XP awarded)
+  claimable: boolean; // reached requiredCount but not yet claimed
   icon: string; // client asset key (mapped in the screen)
 };
+
+export type ClaimMissionResult =
+  | { ok: true; xpAwarded: number; xp: number }
+  | { ok: false; error: "not_found" | "not_complete" | "already_claimed" };
 
 // Asset key per mission slug (the screen maps these to ASSETS.*).
 const ICON_BY_SLUG: Record<string, string> = {
@@ -48,28 +56,31 @@ export async function loadMissions(userId: string): Promise<Mission[]> {
   const doneSet = new Set(completed.map((c) => c.questId));
 
   return quests.map((q) => {
-    const done = doneSet.has(q.id);
-    const count = done ? q.requiredCount : Math.min(countById.get(q.id) ?? 0, q.requiredCount);
+    const claimed = doneSet.has(q.id);
+    const rawCount = Math.min(countById.get(q.id) ?? 0, q.requiredCount);
+    const claimable = !claimed && rawCount >= q.requiredCount;
     return {
       slug: q.slug,
       title: q.title,
-      count,
+      count: claimed ? q.requiredCount : rawCount,
       total: q.requiredCount,
       xp: q.points,
-      done,
+      done: claimed,
+      claimable,
       icon: ICON_BY_SLUG[q.slug] ?? "iconTarget",
     };
   });
 }
 
 /**
- * Advance a mission's progress for a user. When it reaches requiredCount, mark it
- * complete and award its XP (once). Called from gameplay events.
+ * Advance a mission's progress for a user. Stops once the mission is already
+ * claimed; reaching `requiredCount` makes it *claimable* (XP is awarded only on
+ * an explicit `claimMission`, not here). Called from gameplay events.
  */
 export async function recordMissionProgress(userId: string, slug: string, n = 1): Promise<void> {
   const quest = await prisma.quest.findUnique({
     where: { slug },
-    select: { id: true, requiredCount: true, points: true },
+    select: { id: true, requiredCount: true },
   });
   if (!quest) return;
 
@@ -78,20 +89,48 @@ export async function recordMissionProgress(userId: string, slug: string, n = 1)
       where: { userId_questId: { userId, questId: quest.id } },
       select: { id: true },
     });
-    if (already) return; // already done today
+    if (already) return; // already claimed today — nothing more to track
 
-    const prog = await tx.questProgress.upsert({
+    await tx.questProgress.upsert({
       where: { userId_questId: { userId, questId: quest.id } },
       create: { userId, questId: quest.id, count: Math.min(n, quest.requiredCount) },
       update: { count: { increment: n } },
+    });
+  });
+}
+
+/**
+ * Claim a completed mission: writes the `CompletedQuest` row and awards XP, once.
+ * Guards against claiming an incomplete or already-claimed mission.
+ */
+export async function claimMission(userId: string, slug: string): Promise<ClaimMissionResult> {
+  const quest = await prisma.quest.findUnique({
+    where: { slug },
+    select: { id: true, requiredCount: true, points: true },
+  });
+  if (!quest) return { ok: false, error: "not_found" };
+
+  return prisma.$transaction(async (tx): Promise<ClaimMissionResult> => {
+    const already = await tx.completedQuest.findUnique({
+      where: { userId_questId: { userId, questId: quest.id } },
+      select: { id: true },
+    });
+    if (already) return { ok: false, error: "already_claimed" };
+
+    const prog = await tx.questProgress.findUnique({
+      where: { userId_questId: { userId, questId: quest.id } },
       select: { count: true },
     });
+    if (!prog || prog.count < quest.requiredCount) return { ok: false, error: "not_complete" };
 
-    if (prog.count >= quest.requiredCount) {
-      await tx.completedQuest.create({
-        data: { userId, questId: quest.id, pointsAwarded: quest.points },
-      });
-      await tx.user.update({ where: { id: userId }, data: { xp: { increment: quest.points } } });
-    }
+    await tx.completedQuest.create({
+      data: { userId, questId: quest.id, pointsAwarded: quest.points },
+    });
+    const updated = await tx.user.update({
+      where: { id: userId },
+      data: { xp: { increment: quest.points } },
+      select: { xp: true },
+    });
+    return { ok: true, xpAwarded: quest.points, xp: updated.xp };
   });
 }

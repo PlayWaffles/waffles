@@ -22,7 +22,7 @@ import * as economySvc from "@/lib/player/economy";
 import type { DailyClaimResult, PurchaseResult, ShopCatalog } from "@/lib/player/economy";
 import { PowerUpKind } from "@prisma";
 import * as missionsSvc from "@/lib/player/missions";
-import type { Mission } from "@/lib/player/missions";
+import type { Mission, ClaimMissionResult } from "@/lib/player/missions";
 import * as leaguesSvc from "@/lib/player/leagues";
 import type { League } from "@/lib/player/leagues";
 import * as partnerSvc from "@/lib/player/partnerOffers";
@@ -49,6 +49,12 @@ export async function recordMissionProgress(slug: string, n = 1): Promise<void> 
   const user = await getCurrentUser();
   if (!user) return;
   await missionsSvc.recordMissionProgress(user.id, slug, n);
+}
+
+export async function claimMission(slug: string): Promise<ClaimMissionResult | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return missionsSvc.claimMission(user.id, slug);
 }
 
 export async function loadLeague(): Promise<League | null> {

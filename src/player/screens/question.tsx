@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { Illustration } from "../world-cup/components/parts";
 import { loadCurrentTournamentBoard, loadPowerUps } from "@/actions/player";
 import type { PowerUpName } from "../state";
@@ -126,7 +127,25 @@ export const QuestionScreen = () => {
   // Quit confirmation. Levels just discard progress; tournaments forfeit the
   // already-spent entry ticket (and any winnings), so we confirm before leaving.
   const [confirmExit, setConfirmExit] = useState(false);
+  // Common context for the abandonment funnel — captures exactly where (which
+  // question) and in what mode the player considered/confirmed quitting.
+  const quitContext = () => ({
+    screen: "question",
+    mode: proto.mode,
+    is_level: isLevel,
+    question_index: idx + 1,
+    question_count: total,
+    score: proto.score,
+    level_track: proto.levelTrack,
+    level_number: proto.level,
+    category: q?.cat ?? null,
+  });
+  const promptExit = () => {
+    trackClientEvent(AnalyticsEvent.GameQuitPrompted, quitContext());
+    setConfirmExit(true);
+  };
   const onQuit = () => {
+    trackClientEvent(AnalyticsEvent.GameQuit, { ...quitContext(), confirmed: true });
     setConfirmExit(false);
     proto.goto(isLevel ? "levels" : "home", { back: true });
   };
@@ -165,7 +184,7 @@ export const QuestionScreen = () => {
       <div className="glow-top" style={{ height: 240 }} />
 
       <div style={{ position: "absolute", top: 66, left: 0, right: 0, padding: "0 16px", display: "flex", gap: 8, alignItems: "center", zIndex: 5 }}>
-        <button type="button" aria-label={isLevel ? "Quit level" : "Leave tournament"} onClick={() => setConfirmExit(true)} style={{ width: 32, height: 32, flexShrink: 0, padding: 0, borderRadius: 99, background: "rgba(0,0,0,.45)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
+        <button type="button" aria-label={isLevel ? "Quit level" : "Leave tournament"} onClick={promptExit} style={{ width: 32, height: 32, flexShrink: 0, padding: 0, borderRadius: 99, background: "rgba(0,0,0,.45)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" /></svg>
         </button>
         <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.08)", display: "flex", border: "1px solid rgba(255,255,255,.05)" }}>

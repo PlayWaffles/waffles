@@ -6,6 +6,7 @@ import { loadTournamentBoard } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
 import { playSound } from "../sound";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const FIELD_SIZE = TOURNAMENT_FIELD_SIZE;
 
@@ -121,6 +122,53 @@ export const ResultsScreen = () => {
   const missedTier = TOURNAMENT_PRIZES.filter((t) => t.maxRank < rank).sort((a, b) => b.maxRank - a.maxRank)[0];
   const missGap = missedTier ? rank - missedTier.maxRank : 0;
   const showNearMiss = settled && !!missedTier && missGap > 0 && missGap <= 12;
+
+  // Fire the results-viewed event once on mount (independent of the async board
+  // read, so we always capture the visit even in preview / before entrants).
+  const viewedRef = useRef(false);
+  useEffect(() => {
+    if (viewedRef.current) return;
+    viewedRef.current = true;
+    trackClientEvent(AnalyticsEvent.ResultsViewed, {
+      screen: "results",
+      mode: proto.mode,
+      game_id: proto.tournamentGameId,
+      score,
+      question_count: total,
+    });
+  }, [proto.mode, proto.tournamentGameId, score, total]);
+
+  // Reveal suite: fires once per settled-state (so a provisional→settled board
+  // arrival logs both the waiting view and the locked view + rank reveal).
+  const revealedRef = useRef<boolean | null>(null);
+  useEffect(() => {
+    if (revealedRef.current === settled) return;
+    revealedRef.current = settled;
+    const base = {
+      screen: "results",
+      game_id: proto.tournamentGameId,
+      rank,
+      field_size: fieldSize,
+      percentile: pct,
+      score,
+      prize: won,
+      won: wonTicket,
+      settled,
+    };
+    trackClientEvent(
+      settled ? AnalyticsEvent.ResultsSettledViewed : AnalyticsEvent.ResultsWaitingViewed,
+      base,
+    );
+    trackClientEvent(AnalyticsEvent.RankRevealed, base);
+    if (showNearMiss) {
+      trackClientEvent(AnalyticsEvent.NearMissViewed, {
+        ...base,
+        miss_gap: missGap,
+        missed_tier: missedTier?.label,
+        missed_tier_tickets: missedTier?.tickets,
+      });
+    }
+  }, [settled, rank, fieldSize, pct, score, won, wonTicket, showNearMiss, missGap, missedTier, proto.tournamentGameId]);
 
   // Real leaderboard rows from the round board. The podium is the real top 3;
   // your row + the entrant just behind you come from the same standings. Falls
@@ -239,7 +287,16 @@ export const ResultsScreen = () => {
         {settled && wonTicket && (
           <button
             type="button"
-            onClick={() => proto.goto("profile")}
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.PrizeWalletCtaClicked, {
+                screen: "results",
+                source: "results_claim_bridge",
+                game_id: proto.tournamentGameId,
+                prize: won,
+                rank,
+              });
+              proto.goto("profile");
+            }}
             style={{ marginTop: 12, flexShrink: 0, width: "100%", background: "rgba(0,207,242,.1)", border: "1px solid rgba(0,207,242,.3)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", textAlign: "left", animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) .9s both" }}
           >
             <TicketIcon size={22} />
@@ -283,7 +340,15 @@ export const ResultsScreen = () => {
         // and check back. No replay (one entry per round).
         <BottomCTA
           label="DONE — CHECK BACK AT CLOSE"
-          onClick={() => proto.goto("home")}
+          onClick={() => {
+            trackClientEvent(AnalyticsEvent.ResultsDoneClicked, {
+              screen: "results",
+              settled: false,
+              game_id: proto.tournamentGameId,
+              rank,
+            });
+            proto.goto("home");
+          }}
         />
       ) : (
         <div className="bottom-bar">
@@ -291,13 +356,29 @@ export const ResultsScreen = () => {
             <button
               className="cta icon-btn"
               aria-label="Back to home"
-              onClick={() => proto.goto("home")}
+              onClick={() => {
+                trackClientEvent(AnalyticsEvent.ResultsDoneClicked, {
+                  screen: "results",
+                  settled: true,
+                  game_id: proto.tournamentGameId,
+                  rank,
+                });
+                proto.goto("home");
+              }}
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 12l9-8 9 8v8a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2v-8z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" fill="none" /></svg>
             </button>
             <button
               className="cta maple"
-              onClick={() => proto.goto("home")}
+              onClick={() => {
+                trackClientEvent(AnalyticsEvent.ResultsPlayNextHourClicked, {
+                  screen: "results",
+                  game_id: proto.tournamentGameId,
+                  rank,
+                  won: wonTicket,
+                });
+                proto.goto("home");
+              }}
             >
               PLAY NEXT HOUR
             </button>

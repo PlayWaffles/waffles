@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
 import { loadLeague } from "@/actions/player";
 import type { League } from "@/lib/player/leagues";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TIERS = [
   { key: "apprentice1", label: "APPRENTICE I", color: "#cd7f32" },
@@ -233,6 +234,31 @@ export const LeaguesScreen = () => {
     };
   }, []);
 
+  // Screen impression — fired once on mount, independent of the async load.
+  const viewedRef = useRef(false);
+  useEffect(() => {
+    if (viewedRef.current) return;
+    viewedRef.current = true;
+    trackClientEvent(AnalyticsEvent.LeaguesViewed, { screen: "leagues" });
+  }, []);
+
+  // Once the real league resolves, log the current-tier card + rewards ladder
+  // impressions with tier context (the ladder is always rendered inline).
+  const detailRef = useRef(false);
+  useEffect(() => {
+    if (detailRef.current || !league) return;
+    detailRef.current = true;
+    const ctx = {
+      screen: "leagues",
+      tier: league.key,
+      rank: league.rank ?? null,
+      cohort_size: league.cohortSize,
+      points: league.points,
+    };
+    trackClientEvent(AnalyticsEvent.LeagueCardViewed, ctx);
+    trackClientEvent(AnalyticsEvent.LeagueRewardsViewed, ctx);
+  }, [league]);
+
   // Tick once a second so the season-reset countdown stays live.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -300,7 +326,16 @@ export const LeaguesScreen = () => {
       />
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "var(--ink)", zIndex: 2 }}>
-        <BackButton label="Back to leaderboard" onClick={() => proto.goto("leaderboard", { back: true })} />
+        <BackButton
+          label="Back to leaderboard"
+          onClick={() => {
+            trackClientEvent(AnalyticsEvent.LeaguesBackClicked, {
+              screen: "leagues",
+              tier: league?.key ?? null,
+            });
+            proto.goto("leaderboard", { back: true });
+          }}
+        />
         <div style={{ flex: 1, textAlign: "center", fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 1, marginRight: 34 }}>LEAGUES</div>
       </div>
 
