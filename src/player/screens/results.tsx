@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
-import { v2LoadTournamentBoard } from "@/actions/v2";
-import type { TournamentBoard } from "@/lib/v2/tournamentGames";
+import { v2LoadTournamentBoard } from "@/actions/player";
+import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 

@@ -13,7 +13,7 @@ import {
   useProto,
 } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
-import { v2GetTournament } from "@/actions/v2";
+import { v2GetTournament } from "@/actions/player";
 import { playSound } from "../sound";
 
 // One-time tournament upsell, shown the first time a player clears a level —

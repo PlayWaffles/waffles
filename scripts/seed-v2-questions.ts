@@ -7,7 +7,7 @@
  */
 const { prisma } = await import("@/lib/db");
 const { GameTheme, Difficulty, QuestionKind } = await import("@prisma");
-const { QUESTION_BANK } = await import("@/app/v2/_app/data/questions");
+const { QUESTION_BANK } = await import("@/player/data/questions");
 
 const THEME_BY_CATEGORY: Record<string, (typeof GameTheme)[keyof typeof GameTheme]> = {
   Movies: GameTheme.MOVIES,

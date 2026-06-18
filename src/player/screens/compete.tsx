@@ -3,10 +3,10 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
-import { v2LoadLeague, v2LoadSeasonPass, v2ClaimSeasonReward, v2LoadMissions, v2LoadPartnerOffers } from "@/actions/v2";
-import type { V2League } from "@/lib/v2/leagues";
-import type { V2SeasonPass } from "@/lib/v2/seasonPass";
-import { SEASON_PASS_TIERS, type SeasonReward as PassReward } from "@/lib/v2/seasonPassTiers";
+import { v2LoadLeague, v2LoadSeasonPass, v2ClaimSeasonReward, v2LoadMissions, v2LoadPartnerOffers } from "@/actions/player";
+import type { V2League } from "@/lib/player/leagues";
+import type { V2SeasonPass } from "@/lib/player/seasonPass";
+import { SEASON_PASS_TIERS, type SeasonReward as PassReward } from "@/lib/player/seasonPassTiers";
 
 const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?: string; size?: number; state?: "current" | "locked" | "passed" }) => {
   const dim = state === "locked" ? 0.35 : 1;

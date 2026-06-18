@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import { syrupLabel, useProto } from "../state";
 import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { v2LoadMissions, v2LoadPartnerOffers, v2ClaimPartnerOffer } from "@/actions/v2";
-import type { V2Mission } from "@/lib/v2/missions";
-import type { V2PartnerOffer } from "@/lib/v2/partnerOffers";
+import { v2LoadMissions, v2LoadPartnerOffers, v2ClaimPartnerOffer } from "@/actions/player";
+import type { V2Mission } from "@/lib/player/missions";
+import type { V2PartnerOffer } from "@/lib/player/partnerOffers";
 
 const ICON_ASSETS: Record<string, string> = {
   iconTarget: ASSETS.iconTarget,

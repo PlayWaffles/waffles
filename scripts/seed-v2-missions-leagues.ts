@@ -5,7 +5,7 @@
  */
 const { prisma } = await import("@/lib/db");
 const { QuestType, QuestCategory, RepeatFrequency } = await import("@prisma");
-const { seedLeagues } = await import("@/lib/v2/leagues");
+const { seedLeagues } = await import("@/lib/player/leagues");
 
 const MISSIONS = [
   { slug: "daily-answer-5", title: "Answer 5 questions in Survival", requiredCount: 5, points: 300, sortOrder: 1 },

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { syrupLabel, useProto } from "../state";
 import { ASSETS, FlameIcon, PixelImg, Sheet, SyrupIcon } from "../shared";
 import { playSound } from "../sound";
-import { v2BuyStreakFreeze, v2ClaimDaily } from "@/actions/v2";
+import { v2BuyStreakFreeze, v2ClaimDaily } from "@/actions/player";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Daily reward + streak. The single biggest retention lever for a no-push app

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Nunito, Fredoka, Baloo_2 } from "next/font/google";
-import "@/app/v2/_app/styles.css";
+import "@/player/styles.css";
 
 // v2's canonical type system, scoped to the player experience. Mounted under the
 // (app) group so it inherits <Providers> (auth/wagmi/query) — the v2 app's

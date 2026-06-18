@@ -23,8 +23,8 @@ import {
   setUsername,
   type V2PlayerState,
   type V2Track,
-} from "@/lib/v2/playerState";
-import { getRoundClientQuestions, getLevelClientQuestions, type ClientRoundQuestion, type LevelTrack } from "@/lib/v2/roundQuestions";
+} from "@/lib/player/playerState";
+import { getRoundClientQuestions, getLevelClientQuestions, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
 import {
   confirmTournamentClaim,
   currentTournamentGame,
@@ -41,15 +41,15 @@ import {
   type TournamentClaim,
   type TournamentClaimItem,
   type TournamentGame,
-} from "@/lib/v2/tournamentGames";
-import { getMigrationNotice, dismissMigrationNotice } from "@/lib/v2/migrationNotice";
-import type { RoundAnswer } from "@/lib/v2/scoring";
-import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, loadShopCatalog, purchaseShopItem, type DailyClaimResult, type PurchaseResult, type ShopCatalog } from "@/lib/v2/economy";
+} from "@/lib/player/tournamentGames";
+import { getMigrationNotice, dismissMigrationNotice } from "@/lib/player/migrationNotice";
+import type { RoundAnswer } from "@/lib/player/scoring";
+import { buyBundle, buyStreakFreeze, claimDailyReward, consumePowerUp, loadPowerUps, loadShopCatalog, purchaseShopItem, type DailyClaimResult, type PurchaseResult, type ShopCatalog } from "@/lib/player/economy";
 import { PowerUpKind } from "@prisma";
-import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/v2/missions";
-import { loadLeague, type V2League } from "@/lib/v2/leagues";
-import { loadPartnerOffers, claimPartnerOffer, type V2PartnerOffer, type PartnerClaimResult } from "@/lib/v2/partnerOffers";
-import { loadSeasonPass, claimSeasonReward, type V2SeasonPass, type SeasonClaimResult } from "@/lib/v2/seasonPass";
+import { loadMissions, recordMissionProgress, type V2Mission } from "@/lib/player/missions";
+import { loadLeague, type V2League } from "@/lib/player/leagues";
+import { loadPartnerOffers, claimPartnerOffer, type V2PartnerOffer, type PartnerClaimResult } from "@/lib/player/partnerOffers";
+import { loadSeasonPass, claimSeasonReward, type V2SeasonPass, type SeasonClaimResult } from "@/lib/player/seasonPass";
 import { TicketLedgerReason } from "@prisma";
 
 export async function v2LoadMissions(): Promise<V2Mission[] | null> {

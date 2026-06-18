@@ -5,7 +5,7 @@ import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/li
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
-import { ensureHourlyTournamentGame } from "@/lib/v2/tournamentGames";
+import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
 
 /**
  * Roundup ended games that haven't been settled yet. Finds games where

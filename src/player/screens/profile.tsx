@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { syrupLabel, usdtLabel, USDT_PER_TICKET, useProto, type Winning } from "../state";
-import { v2LoadTournamentClaims } from "@/actions/v2";
+import { v2LoadTournamentClaims } from "@/actions/player";
 import { txStepLabel } from "../useTournamentWallet";
-import type { TournamentClaimItem } from "@/lib/v2/tournamentGames";
+import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
 import { BADGES, badgeProgress, deriveBadgeStats, isBadgeEarned, type Badge, type BadgeStats } from "../data/badges";
 import { LegalSheet, type LegalTab } from "../legal";

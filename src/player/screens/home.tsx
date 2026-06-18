@@ -3,8 +3,8 @@
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { v2GetTournament, v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/v2";
-import type { TournamentBoard } from "@/lib/v2/tournamentGames";
+import { v2GetTournament, v2LoadCurrentTournamentBoard, v2LoadMissions } from "@/actions/player";
+import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
