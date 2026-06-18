@@ -158,9 +158,9 @@ export const ProfileScreen = () => {
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           {[
             { l: "LEVEL", v: String(level), c: "#FFC931" },
-            { l: "WINS", v: "4", c: "#fff" },
+            { l: "WINS", v: String(badgeStats.prizesWon), c: "#fff" },
             { l: "STREAK", v: `${streak}`, c: "#FB72FF" },
-            { l: "BEST", v: "#11", c: "#00CFF2" },
+            { l: "BEST", v: badgeStats.bestRank != null ? `#${badgeStats.bestRank}` : "—", c: "#00CFF2" },
           ].map((s) => {
             // The streak tile opens the daily-reward sheet (manual entry point).
             const isStreak = s.l === "STREAK";

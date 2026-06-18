@@ -152,7 +152,10 @@ export const MissionsScreen = () => {
         )}
 
         {tab === "partner" && (
-          <>
+          <div style={{ position: "relative" }}>
+            {/* Partner offers aren't live yet — the real list is rendered dimmed
+                behind a "coming soon" scrim, kept intact for when it ships. */}
+            <div aria-hidden="true" style={{ filter: "blur(3px)", opacity: 0.35, pointerEvents: "none", userSelect: "none" }}>
             <div style={{ background: "linear-gradient(180deg, rgba(0,207,242,.12), rgba(0,207,242,.03))", border: "1px solid rgba(0,207,242,.25)", borderRadius: 14, padding: "12px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
               <AssetWell size={46} accent="var(--leaf)" radius={12}>
                 <SyrupIcon size={24} />
@@ -212,7 +215,22 @@ export const MissionsScreen = () => {
             </div>
 
             <div style={{ fontSize: 9, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 14, lineHeight: 1.5, textAlign: "center", padding: "0 12px" }}>Syrup is credited within 24h after the offer is verified by the partner. By engaging with offers you accept our partner terms.</div>
-          </>
+            </div>
+
+            {/* Coming-soon scrim */}
+            <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", gap: 12, padding: "24px" }}>
+              <AssetWell size={64} accent="var(--leaf)" radius={16}>
+                <SyrupIcon size={32} />
+              </AssetWell>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", letterSpacing: 0.3 }}>Partner offers</div>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: "#00CFF2", background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", padding: "4px 10px", borderRadius: 99 }}>
+                Coming soon
+              </span>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.6)", lineHeight: 1.5, maxWidth: 260 }}>
+                Sponsored offers that pay out bonus Syrup are on the way. Check back soon.
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
