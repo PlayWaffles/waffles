@@ -72,9 +72,11 @@ export default function RootLayout({
         {UMAMI_HOST && UMAMI_WEBSITE_ID ? (
           <Script
             defer
+            // data-cfasync="false" stops Cloudflare Rocket Loader from rewriting
+            // this tag (Rocket Loader breaks Umami's attribute/`window.umami` init).
+            data-cfasync="false"
             src={`${UMAMI_HOST.replace(/\/$/, "")}/script.js`}
             data-website-id={UMAMI_WEBSITE_ID}
-            data-domains="playwaffles.fun,www.playwaffles.fun,miniapp.playwaffles.fun,waffles-staging.cyberverse.cloud"
             strategy="afterInteractive"
           />
         ) : null}
