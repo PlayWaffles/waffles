@@ -516,6 +516,11 @@ export async function inspectTicketPurchase(input: {
     };
   }
 
+  // The parsed TicketPurchased event (on the expected contract, matched against
+  // game/buyer/amount by the caller) is the DEFINITIVE proof of purchase. The
+  // hasTicket read below is only a sanity log: a load-balanced RPC can serve it
+  // from a block behind the tx and briefly return false — we must never reject a
+  // paid entry over that lag (the event is already in a mined, successful tx).
   try {
     const hasTicket = (await publicClient.readContract({
       address: contractAddress,
@@ -523,13 +528,14 @@ export async function inspectTicketPurchase(input: {
       functionName: "hasTicket",
       args: [purchase.gameId, purchase.buyer],
     })) as boolean;
-
     if (!hasTicket) {
-      return {
-        found: false,
-        error:
-          "TicketPurchased was emitted, but the ticket is not currently recorded on-chain.",
-      };
+      console.warn("[inspect-ticket-purchase]", {
+        stage: "has-ticket-false-trusting-event",
+        platform,
+        txHash,
+        gameId: purchase.gameId,
+        buyer: purchase.buyer,
+      });
     }
   } catch (err) {
     console.error("[inspect-ticket-purchase]", {
@@ -540,8 +546,6 @@ export async function inspectTicketPurchase(input: {
       buyer: purchase.buyer,
       error: err instanceof Error ? err.message : "Unknown error",
     });
-    // The TicketPurchased event on the expected contract is the primary proof.
-    // If the follow-up state read is flaky, don't block purchase finalization.
   }
 
   return {
