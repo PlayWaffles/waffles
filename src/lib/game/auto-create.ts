@@ -72,29 +72,36 @@ async function getAutoQuestionTemplates() {
     { createdAt: "asc" },
   ];
 
-  const varied: QT[] = [];
-  for (const kind of [QuestionKind.MULTI, QuestionKind.ORDER, QuestionKind.SPATIAL]) {
-    if (varied.length >= AUTO_QUESTION_COUNT) break;
-    const [t] = await prisma.questionTemplate.findMany({
-      where: { theme: DEFAULT_GAME_THEME, kind },
-      orderBy,
-      take: 1,
-    });
-    if (t) varied.push(t);
+  // One question per distinct CATEGORY (= format/topic, e.g. "WC: Map Click",
+  // "WC: Who Am I", "Sports") so a round showcases different styles instead of
+  // six of the same. Least-used-first rotates the bank and surfaces the freshly
+  // seeded formats; then top up with the next least-used if formats run short.
+  const candidates = await prisma.questionTemplate.findMany({
+    where: { theme: DEFAULT_GAME_THEME },
+    orderBy,
+    select: { id: true, category: true },
+  });
+  const seenCat = new Set<string>();
+  const pickedIds: string[] = [];
+  for (const c of candidates) {
+    if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
+    const cat = c.category ?? "_general";
+    if (!seenCat.has(cat)) {
+      seenCat.add(cat);
+      pickedIds.push(c.id);
+    }
+  }
+  for (const c of candidates) {
+    if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
+    if (!pickedIds.includes(c.id)) pickedIds.push(c.id);
   }
 
-  const singles = await prisma.questionTemplate.findMany({
-    where: { theme: DEFAULT_GAME_THEME, kind: QuestionKind.SINGLE, id: { notIn: varied.map((t) => t.id) } },
-    orderBy,
-    take: AUTO_QUESTION_COUNT - varied.length,
-  });
-
-  const templates = [...varied, ...singles];
-  if (templates.length < AUTO_QUESTION_COUNT) {
+  if (pickedIds.length < AUTO_QUESTION_COUNT) {
     throw new Error(
       `Need at least ${AUTO_QUESTION_COUNT} ${DEFAULT_GAME_THEME} question templates before creating a game.`,
     );
   }
+  const templates: QT[] = await prisma.questionTemplate.findMany({ where: { id: { in: pickedIds } } });
 
   // Fisher–Yates shuffle so the varied formats aren't always first.
   for (let i = templates.length - 1; i > 0; i--) {
