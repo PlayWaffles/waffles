@@ -50,9 +50,93 @@ const RewardChest = ({ variant, idx }: { variant: "rainbow" | "purple" | "brown"
   );
 };
 
+type RewardRow = {
+  r: "rainbow" | "purple" | "brown";
+  syrup: number;
+  powerUps: { kind: string; n: number }[];
+  boost?: { kind: string; charges: number };
+};
 type Tier = (typeof TIERS)[number] & {
   current?: boolean;
-  rewards: { r: "rainbow" | "purple" | "brown"; n: number | null; t: number; c: number }[];
+  rewards: RewardRow[];
+};
+
+// Short glyph for each power-up kind shown on a reward row.
+const POWERUP_GLYPH: Record<string, string> = {
+  FIFTY_FIFTY: "½",
+  EXTRA_TIME: "⏱",
+  SKIP: "⏭",
+  SHIELD: "🛡",
+};
+
+// Cohort movement thresholds — mirrors PROMOTE_TOP / DEMOTE_BOTTOM in
+// src/lib/player/leagueSettlement.ts (kept in sync by hand; a client component
+// can't import the server-only settlement module).
+const PROMOTE_TOP = 7;
+const DEMOTE_BOTTOM = 5;
+
+function formatCountdown(ms: number): string {
+  if (ms <= 0) return "0m";
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${m}m`;
+  return `${m}m ${s % 60}s`;
+}
+
+type Zone = { label: string; color: string; bg: string; arrow: string };
+// Where the player sits relative to the promotion (top 7) / demotion (bottom 5)
+// lines, with the same small-cohort clamp the settlement job uses.
+function zoneFor(league: League): Zone | null {
+  const { rank, cohortSize, key } = league;
+  if (rank == null || cohortSize <= 0) return null;
+  const demoteFrom = Math.max(PROMOTE_TOP, cohortSize - DEMOTE_BOTTOM);
+  if (key !== "master1" && rank <= PROMOTE_TOP) {
+    return { label: "Promotion zone", color: "#3dd17a", bg: "rgba(61,209,122,0.14)", arrow: "▲" };
+  }
+  if (key !== "apprentice1" && rank > demoteFrom) {
+    return { label: "Demotion zone", color: "#ff6b6b", bg: "rgba(255,107,107,0.14)", arrow: "▼" };
+  }
+  return { label: "Safe zone", color: "var(--ink-soft)", bg: "var(--surface-2)", arrow: "—" };
+}
+
+// Live "where you stand this week" card: tier, cohort rank, points, the
+// promotion/demotion status, and a ticking countdown to the season reset.
+const StandingCard = ({ league, now }: { league: League; now: number }) => {
+  const zone = zoneFor(league);
+  return (
+    <div style={{ background: "var(--maple-100)", borderRadius: 14, marginBottom: 16, padding: 14, boxShadow: "0 4px 0 rgba(0, 0, 0, 0.25)", border: "2px solid var(--maple-500)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <BigMedal color={league.color} size={52} />
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: "var(--ink-soft)" }}>YOUR STANDING</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 0.5, color: "var(--ink)" }}>{league.label}</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+            {league.rank != null ? `Rank #${league.rank}` : "Unranked"}
+            {league.cohortSize > 0 ? ` of ${league.cohortSize}` : ""}
+          </div>
+        </div>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--ink)", fontVariantNumeric: "tabular-nums", lineHeight: 1 }}>{league.points.toLocaleString()}</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1, color: "var(--ink-soft)", marginTop: 2 }}>PTS</div>
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 12 }}>
+        {zone && (
+          <div style={{ display: "flex", alignItems: "center", gap: 4, background: zone.bg, color: zone.color, borderRadius: 99, padding: "5px 10px", fontSize: 11, fontWeight: 800 }}>
+            <span aria-hidden>{zone.arrow}</span>
+            {zone.label}
+          </div>
+        )}
+        <div style={{ flex: 1 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 5, color: "var(--ink-soft)", fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+          <span aria-hidden>⏳</span> Resets in {formatCountdown(league.seasonEndsAt - now)}
+        </div>
+      </div>
+    </div>
+  );
 };
 
 const LeagueCard = ({ tier }: { tier: Tier }) => {
@@ -118,9 +202,11 @@ const LeagueCard = ({ tier }: { tier: Tier }) => {
             }}
           >
             <RewardChest variant={r.r} idx={i} />
-            {r.n != null && <Pill icon="✓" color="#3dd17a" value={r.n} />}
-            <Pill icon={<SyrupIcon size={14} />} color="var(--berry)" value={r.t} />
-            <Pill icon="🪙" color="var(--maple-500)" value={r.c} />
+            <Pill icon={<SyrupIcon size={14} />} color="var(--berry)" value={r.syrup} />
+            {r.powerUps.map((p) => (
+              <Pill key={p.kind} icon={POWERUP_GLYPH[p.kind] ?? "⚡"} color="var(--maple-500)" value={p.n} />
+            ))}
+            {r.boost && <Pill icon="⚡" color="#3dd17a" value={r.boost.charges} />}
           </div>
         ))}
       </div>
@@ -147,17 +233,31 @@ export const LeaguesScreen = () => {
     };
   }, []);
 
+  // Tick once a second so the season-reset countdown stays live.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, []);
+
   const currentKey = league?.key ?? "apprentice1";
   // Server reward ladder keyed by tier; fall back to inline preview values.
   const rewardsByKey = new Map((league?.tiers ?? []).map((t) => [t.key, t.rewards as Tier["rewards"]]));
+  // Preview-only fallback (server `league.tiers[].rewards` is the real source).
+  // Mirrors the band grants in src/lib/player/leagues.ts; syrup scales by tier.
+  const rows = (rainbow: number, purple: number, brown: number): RewardRow[] => [
+    { r: "rainbow", syrup: rainbow, powerUps: [{ kind: "SHIELD", n: 1 }, { kind: "FIFTY_FIFTY", n: 2 }], boost: { kind: "DOUBLE_XP", charges: 3 } },
+    { r: "purple", syrup: purple, powerUps: [{ kind: "FIFTY_FIFTY", n: 1 }], boost: { kind: "DOUBLE_XP", charges: 1 } },
+    { r: "brown", syrup: brown, powerUps: [] },
+  ];
   const FALLBACK_REWARDS: Record<string, Tier["rewards"]> = {
-    apprentice2: [{ r: "rainbow", n: 4, t: 300, c: 7500 }, { r: "purple", n: 1, t: 100, c: 4500 }, { r: "brown", n: null, t: 40, c: 2000 }],
-    apprentice1: [{ r: "rainbow", n: 2, t: 200, c: 5000 }, { r: "purple", n: 1, t: 50, c: 3000 }, { r: "brown", n: null, t: 20, c: 1000 }],
-    silver1: [{ r: "rainbow", n: 5, t: 350, c: 8500 }, { r: "purple", n: 2, t: 150, c: 5500 }, { r: "brown", n: null, t: 60, c: 2500 }],
-    advanced1: [{ r: "rainbow", n: 8, t: 500, c: 12500 }, { r: "purple", n: 3, t: 200, c: 7500 }, { r: "brown", n: null, t: 80, c: 4000 }],
-    advanced2: [{ r: "rainbow", n: 10, t: 600, c: 15000 }, { r: "purple", n: 3, t: 250, c: 9000 }, { r: "brown", n: null, t: 100, c: 5000 }],
-    master3: [{ r: "rainbow", n: 18, t: 1000, c: 25000 }, { r: "purple", n: 5, t: 450, c: 15000 }, { r: "brown", n: null, t: 180, c: 9000 }],
-    master1: [{ r: "rainbow", n: 25, t: 1500, c: 40000 }, { r: "purple", n: 8, t: 600, c: 25000 }, { r: "brown", n: null, t: 250, c: 15000 }],
+    apprentice2: rows(300, 100, 40),
+    apprentice1: rows(200, 50, 20),
+    silver1: rows(350, 150, 60),
+    advanced1: rows(500, 200, 80),
+    advanced2: rows(600, 250, 100),
+    master3: rows(1000, 450, 180),
+    master1: rows(1500, 600, 250),
   };
   // Canonical displayed subset + order of tiers.
   const DISPLAY_KEYS = ["apprentice2", "apprentice1", "silver1", "advanced1", "advanced2", "master3", "master1"];
@@ -205,8 +305,10 @@ export const LeaguesScreen = () => {
       </div>
 
       <div style={{ position: "absolute", top: 90, left: 0, right: 0, bottom: 64, padding: "0 16px 16px", overflow: "auto", scrollbarWidth: "none" }}>
+        {league && <StandingCard league={league} now={now} />}
+
         <div style={{ textAlign: "center", color: "var(--ink-soft)", fontSize: 12, fontWeight: 700, padding: "0 20px 18px", lineHeight: 1.4 }}>
-          Move up to the next league for better rewards!
+          Finish in the top {PROMOTE_TOP} to move up — bottom {DEMOTE_BOTTOM} drop a league.
         </div>
 
         {displayed.map((tier, i) => <LeagueCard key={i} tier={tier} />)}

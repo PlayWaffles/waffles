@@ -49,6 +49,12 @@ export async function loadLeague(): Promise<League | null> {
   return leaguesSvc.loadLeague(user.id);
 }
 
+export async function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return leaguesSvc.loadLeagueResult(user.id);
+}
+
 /** Sponsored partner offers (Missions → Partners tab), with per-user claim state. */
 export async function loadPartnerOffers(): Promise<PartnerOffer[] | null> {
   const user = await getCurrentUser();

@@ -17,6 +17,7 @@
 import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
 import { Prisma, QuestionKind, TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { accrueLeaguePoints } from "./leagues";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
@@ -356,6 +357,13 @@ export async function submitTournamentAnswers(
     };
   }
 
+  // Prior best score for this entry, so league points accrue only the
+  // improvement (the tournament keeps the best of repeated submissions).
+  const prev = await prisma.gameEntry.findUnique({
+    where: { gameId_userId: { gameId, userId } },
+    select: { score: true },
+  });
+
   const result = await prisma.gameEntry.updateMany({
     where: {
       gameId,
@@ -364,6 +372,11 @@ export async function submitTournamentAnswers(
     },
     data: { score, answered: Object.keys(answersJson).length, answers: answersJson },
   });
+
+  if (result.count > 0) {
+    const gained = Math.max(0, score - (prev?.score ?? 0));
+    await accrueLeaguePoints(userId, gained);
+  }
 
   return { score, updated: result.count > 0 };
 }
@@ -493,6 +506,7 @@ export async function getTournamentClaim(
 export type TournamentClaimItem = {
   gameId: string;
   gameNumber: number;
+  title: string;
   rank: number;
   /** Prize in whole payment-token units (6-decimals → human), for display. */
   amount: number;
@@ -513,13 +527,14 @@ export async function loadTournamentClaims(userId: string): Promise<TournamentCl
     select: {
       rank: true,
       merkleAmount: true,
-      game: { select: { id: true, gameNumber: true, endsAt: true } },
+      game: { select: { id: true, gameNumber: true, title: true, endsAt: true } },
     },
     orderBy: { createdAt: "desc" },
   });
   return entries.map((e) => ({
     gameId: e.game.id,
     gameNumber: e.game.gameNumber,
+    title: e.game.title,
     rank: e.rank ?? 0,
     amount: Number(e.merkleAmount) / 10 ** PAYMENT_TOKEN_DECIMALS,
     wonAt: e.game.endsAt.getTime(),

@@ -11,6 +11,7 @@
 import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { LevelTrack, TicketLedgerReason, WinningStatus, type Prisma } from "@prisma";
+import { accrueLeaguePoints } from "./leagues";
 
 // ── Shape returned to the client (mirrors Proto persistent fields) ──────────
 export type Track = "standard" | "world-cup";
@@ -208,7 +209,7 @@ export async function advanceLevel(
   track: Track,
   xpGain: number,
 ): Promise<{ level: number; ticketAwarded: boolean }> {
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.levelProgress.update({
       where: { userId_track: { userId, track: TRACK_TO_ENUM[track] } },
       data: { level: { increment: 1 } },
@@ -235,6 +236,10 @@ export async function advanceLevel(
     });
     return { level: updated.level, ticketAwarded };
   });
+  // League standing accrues the same score as XP — best-effort, outside the tx
+  // so a leagues failure can't roll back the level advance.
+  await accrueLeaguePoints(userId, xpGain);
+  return result;
 }
 
 /** Consume one life on a failed level; start the regen clock if we were full. */
