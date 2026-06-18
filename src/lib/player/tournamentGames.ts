@@ -489,10 +489,13 @@ export async function getTournamentClaim(
   });
   if (!entry || entry.claimedAt) return null;
   if (!entry.game.onChainAt || !entry.game.onchainId) return null;
-  if (!entry.merkleAmount || !entry.merkleProof) return null;
+  if (!entry.merkleAmount) return null;
 
+  // A single-winner game has a one-leaf merkle tree, so the proof is an EMPTY
+  // array — the leaf is the root, and the contract verifies it directly
+  // (claimPrize(id, amount, []) succeeds). An empty proof is a valid claim, not
+  // "nothing to claim"; only the published amount + unclaimed state matter here.
   const proof = Array.isArray(entry.merkleProof) ? (entry.merkleProof as string[]) : [];
-  if (proof.length === 0) return null;
 
   return {
     gameId,
