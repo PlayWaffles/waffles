@@ -30,6 +30,7 @@ import {
   refillLives as refillLivesAction,
   setAnnouncementsRead,
   setUsername as setUsernameAction,
+  logClient,
 } from "@/actions/player";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { assertChainPlatform } from "@/lib/chain/platform";
@@ -40,6 +41,16 @@ import {
   trackClientEvent,
   type AnalyticsProperties,
 } from "@/lib/analytics";
+
+// Forward the buy-ticket flow trace to the SERVER terminal (these run in the
+// browser). Errors are flattened since Error objects don't cross the RSC wire.
+const blog = (msg: string, data?: unknown) => {
+  const safe =
+    data instanceof Error
+      ? `${(data as { shortMessage?: string }).shortMessage ?? data.message}\n${data.stack ?? ""}`.slice(0, 1500)
+      : data;
+  void logClient(msg, safe);
+};
 
 export type ScreenName =
   | "home"
@@ -1367,10 +1378,10 @@ export function ProtoProvider({
   const enterTournamentOnChain = async (): Promise<{ ok: boolean; error?: string }> => {
     const t = await getTournament();
     if (!t || !t.game.onchainId) {
-      console.warn("[buy-ticket] no tournament / not on-chain", { hasTournament: !!t, onchainId: t?.game.onchainId });
+      blog("[buy-ticket] no tournament / not on-chain", { hasTournament: !!t, onchainId: t?.game.onchainId });
       return { ok: false, error: "no_tournament" };
     }
-    console.log("[buy-ticket] enter flow start", {
+    blog("[buy-ticket] enter flow start", {
       gameId: t.game.id, gameNumber: t.game.gameNumber, platform: t.game.platform,
       onchainId: t.game.onchainId, entryFee: t.game.entryFee,
     });
@@ -1381,15 +1392,15 @@ export function ProtoProvider({
         t.game.entryFee,
         (step) => update({ tournamentStep: step }),
       );
-      console.log("[buy-ticket] on-chain done, verifying server-side", { txHash });
+      blog("[buy-ticket] on-chain done, verifying server-side", { txHash });
       update({ tournamentStep: "verifying" });
       const res = await enterTournament(t.game.id, txHash);
       if (!res || !res.ok) {
-        console.warn("[buy-ticket] server verify rejected", { res });
+        blog("[buy-ticket] server verify rejected", { res });
         update({ tournamentStep: null });
         return { ok: false, error: res && !res.ok ? res.error : "entry_failed" };
       }
-      console.log("[buy-ticket] entry confirmed ✓ — entering lobby", { gameId: t.game.id });
+      blog("[buy-ticket] entry confirmed ✓ — entering lobby", { gameId: t.game.id });
       const mapped: Question[] = t.questions.map((q) => ({ ...q }));
       update({
         mode: "tournament",
@@ -1407,7 +1418,7 @@ export function ProtoProvider({
       goto("lobby");
       return { ok: true };
     } catch (e) {
-      console.error("[buy-ticket] enter flow threw", e);
+      blog("[buy-ticket] enter flow threw", e);
       update({ tournamentStep: null });
       return { ok: false, error: e instanceof Error ? e.message : "wallet_error" };
     }
