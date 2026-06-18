@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, syrupLabel, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
 import { ASSETS, AssetWell, Button, Card, Confetti, GameLoader, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
@@ -104,11 +104,39 @@ export const ShopScreen = () => {
   // Built into the render shapes once loaded; empty while fetching (the screen
   // shows a loader until `catalog` resolves, below).
   const [catalog, setCatalog] = useState<ShopCatalog | null>(null);
-  useEffect(() => {
-    let active = true;
-    getShopCatalog().then((c) => { if (active && c) setCatalog(c); }).catch(() => {});
-    return () => { active = false; };
+  // `getShopCatalog()` returns null when the session isn't ready yet (the screen
+  // can mount before auth bootstrap finishes) and can also reject on a transient
+  // error. Either case used to leave the loader spinning forever. Retry a few
+  // times (covers the auth-readiness race), then surface a manual retry instead
+  // of hanging. `reqId` invalidates stale/in-flight attempts.
+  const [loadError, setLoadError] = useState(false);
+  const reqId = useRef(0);
+  const fetchCatalog = useCallback(() => {
+    const id = ++reqId.current;
+    setLoadError(false);
+    let attempt = 0;
+    const tryLoad = () => {
+      getShopCatalog()
+        .then((c) => {
+          if (id !== reqId.current) return;
+          if (c) setCatalog(c);
+          else if (attempt < 4) setTimeout(tryLoad, 600 * ++attempt);
+          else setLoadError(true);
+        })
+        .catch(() => {
+          if (id !== reqId.current) return;
+          if (attempt < 4) setTimeout(tryLoad, 600 * ++attempt);
+          else setLoadError(true);
+        });
+    };
+    tryLoad();
   }, []);
+  useEffect(() => {
+    const ref = reqId;
+    fetchCatalog();
+    // Invalidate any in-flight attempt / pending retry on unmount.
+    return () => { ref.current++; };
+  }, [fetchCatalog]);
   const built = useMemo<BuiltCatalog>(
     () => (catalog ? buildCatalog(catalog) : { powerUps: [], cosmetics: [], bundles: [], featured: null }),
     [catalog],
@@ -420,7 +448,15 @@ export const ShopScreen = () => {
       <Phone statusDark>
         <div className="bg-deep" />
         <TopHeader tickets={tickets} title="SHOP" />
-        <GameLoader />
+        {loadError ? (
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: "0 32px", textAlign: "center" }}>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)" }}>Couldn’t load the shop</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", maxWidth: 260 }}>Check your connection and try again.</div>
+            <Button onClick={fetchCatalog}>TRY AGAIN</Button>
+          </div>
+        ) : (
+          <GameLoader />
+        )}
         <div className="bottom-bar">
           <TabBar active="shop" />
         </div>
