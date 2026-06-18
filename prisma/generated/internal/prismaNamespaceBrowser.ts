@@ -60,7 +60,6 @@ export const ModelName = {
   QuestionTemplate: 'QuestionTemplate',
   Question: 'Question',
   GameEntry: 'GameEntry',
-  Chat: 'Chat',
   PendingPurchase: 'PendingPurchase',
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
@@ -75,6 +74,7 @@ export const ModelName = {
   AnnouncementState: 'AnnouncementState',
   QuestProgress: 'QuestProgress',
   League: 'League',
+  LeagueCohort: 'LeagueCohort',
   LeagueMember: 'LeagueMember',
   ShopItem: 'ShopItem',
   Purchase: 'Purchase',
@@ -317,17 +317,6 @@ export const GameEntryScalarFieldEnum = {
 export type GameEntryScalarFieldEnum = (typeof GameEntryScalarFieldEnum)[keyof typeof GameEntryScalarFieldEnum]
 
 
-export const ChatScalarFieldEnum = {
-  id: 'id',
-  gameId: 'gameId',
-  userId: 'userId',
-  text: 'text',
-  createdAt: 'createdAt'
-} as const
-
-export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
-
-
 export const PendingPurchaseScalarFieldEnum = {
   id: 'id',
   txHash: 'txHash',
@@ -529,13 +518,26 @@ export const LeagueScalarFieldEnum = {
 export type LeagueScalarFieldEnum = (typeof LeagueScalarFieldEnum)[keyof typeof LeagueScalarFieldEnum]
 
 
+export const LeagueCohortScalarFieldEnum = {
+  id: 'id',
+  leagueId: 'leagueId',
+  season: 'season',
+  index: 'index',
+  settledAt: 'settledAt'
+} as const
+
+export type LeagueCohortScalarFieldEnum = (typeof LeagueCohortScalarFieldEnum)[keyof typeof LeagueCohortScalarFieldEnum]
+
+
 export const LeagueMemberScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
   leagueId: 'leagueId',
+  cohortId: 'cohortId',
   season: 'season',
   points: 'points',
   rank: 'rank',
+  outcome: 'outcome',
   updatedAt: 'updatedAt'
 } as const
 

@@ -221,6 +221,7 @@ export type LeagueWhereInput = {
   sortOrder?: Prisma.IntFilter<"League"> | number
   rewards?: Prisma.JsonFilter<"League">
   members?: Prisma.LeagueMemberListRelationFilter
+  cohorts?: Prisma.LeagueCohortListRelationFilter
 }
 
 export type LeagueOrderByWithRelationInput = {
@@ -231,6 +232,7 @@ export type LeagueOrderByWithRelationInput = {
   sortOrder?: Prisma.SortOrder
   rewards?: Prisma.SortOrder
   members?: Prisma.LeagueMemberOrderByRelationAggregateInput
+  cohorts?: Prisma.LeagueCohortOrderByRelationAggregateInput
 }
 
 export type LeagueWhereUniqueInput = Prisma.AtLeast<{
@@ -244,6 +246,7 @@ export type LeagueWhereUniqueInput = Prisma.AtLeast<{
   sortOrder?: Prisma.IntFilter<"League"> | number
   rewards?: Prisma.JsonFilter<"League">
   members?: Prisma.LeagueMemberListRelationFilter
+  cohorts?: Prisma.LeagueCohortListRelationFilter
 }, "id" | "tier">
 
 export type LeagueOrderByWithAggregationInput = {
@@ -280,6 +283,7 @@ export type LeagueCreateInput = {
   sortOrder: number
   rewards: Prisma.JsonNullValueInput | runtime.InputJsonValue
   members?: Prisma.LeagueMemberCreateNestedManyWithoutLeagueInput
+  cohorts?: Prisma.LeagueCohortCreateNestedManyWithoutLeagueInput
 }
 
 export type LeagueUncheckedCreateInput = {
@@ -290,6 +294,7 @@ export type LeagueUncheckedCreateInput = {
   sortOrder: number
   rewards: Prisma.JsonNullValueInput | runtime.InputJsonValue
   members?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutLeagueInput
+  cohorts?: Prisma.LeagueCohortUncheckedCreateNestedManyWithoutLeagueInput
 }
 
 export type LeagueUpdateInput = {
@@ -300,6 +305,7 @@ export type LeagueUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   rewards?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   members?: Prisma.LeagueMemberUpdateManyWithoutLeagueNestedInput
+  cohorts?: Prisma.LeagueCohortUpdateManyWithoutLeagueNestedInput
 }
 
 export type LeagueUncheckedUpdateInput = {
@@ -310,6 +316,7 @@ export type LeagueUncheckedUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   rewards?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   members?: Prisma.LeagueMemberUncheckedUpdateManyWithoutLeagueNestedInput
+  cohorts?: Prisma.LeagueCohortUncheckedUpdateManyWithoutLeagueNestedInput
 }
 
 export type LeagueCreateManyInput = {
@@ -381,6 +388,20 @@ export type EnumLeagueTierFieldUpdateOperationsInput = {
   set?: $Enums.LeagueTier
 }
 
+export type LeagueCreateNestedOneWithoutCohortsInput = {
+  create?: Prisma.XOR<Prisma.LeagueCreateWithoutCohortsInput, Prisma.LeagueUncheckedCreateWithoutCohortsInput>
+  connectOrCreate?: Prisma.LeagueCreateOrConnectWithoutCohortsInput
+  connect?: Prisma.LeagueWhereUniqueInput
+}
+
+export type LeagueUpdateOneRequiredWithoutCohortsNestedInput = {
+  create?: Prisma.XOR<Prisma.LeagueCreateWithoutCohortsInput, Prisma.LeagueUncheckedCreateWithoutCohortsInput>
+  connectOrCreate?: Prisma.LeagueCreateOrConnectWithoutCohortsInput
+  upsert?: Prisma.LeagueUpsertWithoutCohortsInput
+  connect?: Prisma.LeagueWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.LeagueUpdateToOneWithWhereWithoutCohortsInput, Prisma.LeagueUpdateWithoutCohortsInput>, Prisma.LeagueUncheckedUpdateWithoutCohortsInput>
+}
+
 export type LeagueCreateNestedOneWithoutMembersInput = {
   create?: Prisma.XOR<Prisma.LeagueCreateWithoutMembersInput, Prisma.LeagueUncheckedCreateWithoutMembersInput>
   connectOrCreate?: Prisma.LeagueCreateOrConnectWithoutMembersInput
@@ -395,6 +416,62 @@ export type LeagueUpdateOneRequiredWithoutMembersNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.LeagueUpdateToOneWithWhereWithoutMembersInput, Prisma.LeagueUpdateWithoutMembersInput>, Prisma.LeagueUncheckedUpdateWithoutMembersInput>
 }
 
+export type LeagueCreateWithoutCohortsInput = {
+  id?: string
+  tier: $Enums.LeagueTier
+  label: string
+  color: string
+  sortOrder: number
+  rewards: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  members?: Prisma.LeagueMemberCreateNestedManyWithoutLeagueInput
+}
+
+export type LeagueUncheckedCreateWithoutCohortsInput = {
+  id?: string
+  tier: $Enums.LeagueTier
+  label: string
+  color: string
+  sortOrder: number
+  rewards: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  members?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutLeagueInput
+}
+
+export type LeagueCreateOrConnectWithoutCohortsInput = {
+  where: Prisma.LeagueWhereUniqueInput
+  create: Prisma.XOR<Prisma.LeagueCreateWithoutCohortsInput, Prisma.LeagueUncheckedCreateWithoutCohortsInput>
+}
+
+export type LeagueUpsertWithoutCohortsInput = {
+  update: Prisma.XOR<Prisma.LeagueUpdateWithoutCohortsInput, Prisma.LeagueUncheckedUpdateWithoutCohortsInput>
+  create: Prisma.XOR<Prisma.LeagueCreateWithoutCohortsInput, Prisma.LeagueUncheckedCreateWithoutCohortsInput>
+  where?: Prisma.LeagueWhereInput
+}
+
+export type LeagueUpdateToOneWithWhereWithoutCohortsInput = {
+  where?: Prisma.LeagueWhereInput
+  data: Prisma.XOR<Prisma.LeagueUpdateWithoutCohortsInput, Prisma.LeagueUncheckedUpdateWithoutCohortsInput>
+}
+
+export type LeagueUpdateWithoutCohortsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tier?: Prisma.EnumLeagueTierFieldUpdateOperationsInput | $Enums.LeagueTier
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  color?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  rewards?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  members?: Prisma.LeagueMemberUpdateManyWithoutLeagueNestedInput
+}
+
+export type LeagueUncheckedUpdateWithoutCohortsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  tier?: Prisma.EnumLeagueTierFieldUpdateOperationsInput | $Enums.LeagueTier
+  label?: Prisma.StringFieldUpdateOperationsInput | string
+  color?: Prisma.StringFieldUpdateOperationsInput | string
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  rewards?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  members?: Prisma.LeagueMemberUncheckedUpdateManyWithoutLeagueNestedInput
+}
+
 export type LeagueCreateWithoutMembersInput = {
   id?: string
   tier: $Enums.LeagueTier
@@ -402,6 +479,7 @@ export type LeagueCreateWithoutMembersInput = {
   color: string
   sortOrder: number
   rewards: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cohorts?: Prisma.LeagueCohortCreateNestedManyWithoutLeagueInput
 }
 
 export type LeagueUncheckedCreateWithoutMembersInput = {
@@ -411,6 +489,7 @@ export type LeagueUncheckedCreateWithoutMembersInput = {
   color: string
   sortOrder: number
   rewards: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cohorts?: Prisma.LeagueCohortUncheckedCreateNestedManyWithoutLeagueInput
 }
 
 export type LeagueCreateOrConnectWithoutMembersInput = {
@@ -436,6 +515,7 @@ export type LeagueUpdateWithoutMembersInput = {
   color?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   rewards?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cohorts?: Prisma.LeagueCohortUpdateManyWithoutLeagueNestedInput
 }
 
 export type LeagueUncheckedUpdateWithoutMembersInput = {
@@ -445,6 +525,7 @@ export type LeagueUncheckedUpdateWithoutMembersInput = {
   color?: Prisma.StringFieldUpdateOperationsInput | string
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   rewards?: Prisma.JsonNullValueInput | runtime.InputJsonValue
+  cohorts?: Prisma.LeagueCohortUncheckedUpdateManyWithoutLeagueNestedInput
 }
 
 
@@ -454,10 +535,12 @@ export type LeagueUncheckedUpdateWithoutMembersInput = {
 
 export type LeagueCountOutputType = {
   members: number
+  cohorts: number
 }
 
 export type LeagueCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | LeagueCountOutputTypeCountMembersArgs
+  cohorts?: boolean | LeagueCountOutputTypeCountCohortsArgs
 }
 
 /**
@@ -477,6 +560,13 @@ export type LeagueCountOutputTypeCountMembersArgs<ExtArgs extends runtime.Types.
   where?: Prisma.LeagueMemberWhereInput
 }
 
+/**
+ * LeagueCountOutputType without action
+ */
+export type LeagueCountOutputTypeCountCohortsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.LeagueCohortWhereInput
+}
+
 
 export type LeagueSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -486,6 +576,7 @@ export type LeagueSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   sortOrder?: boolean
   rewards?: boolean
   members?: boolean | Prisma.League$membersArgs<ExtArgs>
+  cohorts?: boolean | Prisma.League$cohortsArgs<ExtArgs>
   _count?: boolean | Prisma.LeagueCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["league"]>
 
@@ -519,6 +610,7 @@ export type LeagueSelectScalar = {
 export type LeagueOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "tier" | "label" | "color" | "sortOrder" | "rewards", ExtArgs["result"]["league"]>
 export type LeagueInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   members?: boolean | Prisma.League$membersArgs<ExtArgs>
+  cohorts?: boolean | Prisma.League$cohortsArgs<ExtArgs>
   _count?: boolean | Prisma.LeagueCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type LeagueIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -528,6 +620,7 @@ export type $LeaguePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs
   name: "League"
   objects: {
     members: Prisma.$LeagueMemberPayload<ExtArgs>[]
+    cohorts: Prisma.$LeagueCohortPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -931,6 +1024,7 @@ readonly fields: LeagueFieldRefs;
 export interface Prisma__LeagueClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   members<T extends Prisma.League$membersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.League$membersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LeagueMemberPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  cohorts<T extends Prisma.League$cohortsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.League$cohortsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LeagueCohortPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1375,6 +1469,30 @@ export type League$membersArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   distinct?: Prisma.LeagueMemberScalarFieldEnum | Prisma.LeagueMemberScalarFieldEnum[]
+}
+
+/**
+ * League.cohorts
+ */
+export type League$cohortsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the LeagueCohort
+   */
+  select?: Prisma.LeagueCohortSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the LeagueCohort
+   */
+  omit?: Prisma.LeagueCohortOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.LeagueCohortInclude<ExtArgs> | null
+  where?: Prisma.LeagueCohortWhereInput
+  orderBy?: Prisma.LeagueCohortOrderByWithRelationInput | Prisma.LeagueCohortOrderByWithRelationInput[]
+  cursor?: Prisma.LeagueCohortWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.LeagueCohortScalarFieldEnum | Prisma.LeagueCohortScalarFieldEnum[]
 }
 
 /**

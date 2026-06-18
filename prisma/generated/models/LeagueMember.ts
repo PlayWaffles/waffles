@@ -40,9 +40,11 @@ export type LeagueMemberMinAggregateOutputType = {
   id: string | null
   userId: string | null
   leagueId: string | null
+  cohortId: string | null
   season: string | null
   points: number | null
   rank: number | null
+  outcome: $Enums.LeagueOutcome | null
   updatedAt: Date | null
 }
 
@@ -50,9 +52,11 @@ export type LeagueMemberMaxAggregateOutputType = {
   id: string | null
   userId: string | null
   leagueId: string | null
+  cohortId: string | null
   season: string | null
   points: number | null
   rank: number | null
+  outcome: $Enums.LeagueOutcome | null
   updatedAt: Date | null
 }
 
@@ -60,9 +64,11 @@ export type LeagueMemberCountAggregateOutputType = {
   id: number
   userId: number
   leagueId: number
+  cohortId: number
   season: number
   points: number
   rank: number
+  outcome: number
   updatedAt: number
   _all: number
 }
@@ -82,9 +88,11 @@ export type LeagueMemberMinAggregateInputType = {
   id?: true
   userId?: true
   leagueId?: true
+  cohortId?: true
   season?: true
   points?: true
   rank?: true
+  outcome?: true
   updatedAt?: true
 }
 
@@ -92,9 +100,11 @@ export type LeagueMemberMaxAggregateInputType = {
   id?: true
   userId?: true
   leagueId?: true
+  cohortId?: true
   season?: true
   points?: true
   rank?: true
+  outcome?: true
   updatedAt?: true
 }
 
@@ -102,9 +112,11 @@ export type LeagueMemberCountAggregateInputType = {
   id?: true
   userId?: true
   leagueId?: true
+  cohortId?: true
   season?: true
   points?: true
   rank?: true
+  outcome?: true
   updatedAt?: true
   _all?: true
 }
@@ -199,9 +211,11 @@ export type LeagueMemberGroupByOutputType = {
   id: string
   userId: string
   leagueId: string
+  cohortId: string | null
   season: string
   points: number
   rank: number | null
+  outcome: $Enums.LeagueOutcome | null
   updatedAt: Date
   _count: LeagueMemberCountAggregateOutputType | null
   _avg: LeagueMemberAvgAggregateOutputType | null
@@ -232,24 +246,30 @@ export type LeagueMemberWhereInput = {
   id?: Prisma.StringFilter<"LeagueMember"> | string
   userId?: Prisma.StringFilter<"LeagueMember"> | string
   leagueId?: Prisma.StringFilter<"LeagueMember"> | string
+  cohortId?: Prisma.StringNullableFilter<"LeagueMember"> | string | null
   season?: Prisma.StringFilter<"LeagueMember"> | string
   points?: Prisma.IntFilter<"LeagueMember"> | number
   rank?: Prisma.IntNullableFilter<"LeagueMember"> | number | null
+  outcome?: Prisma.EnumLeagueOutcomeNullableFilter<"LeagueMember"> | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFilter<"LeagueMember"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   league?: Prisma.XOR<Prisma.LeagueScalarRelationFilter, Prisma.LeagueWhereInput>
+  cohort?: Prisma.XOR<Prisma.LeagueCohortNullableScalarRelationFilter, Prisma.LeagueCohortWhereInput> | null
 }
 
 export type LeagueMemberOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   leagueId?: Prisma.SortOrder
+  cohortId?: Prisma.SortOrderInput | Prisma.SortOrder
   season?: Prisma.SortOrder
   points?: Prisma.SortOrder
   rank?: Prisma.SortOrderInput | Prisma.SortOrder
+  outcome?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
   league?: Prisma.LeagueOrderByWithRelationInput
+  cohort?: Prisma.LeagueCohortOrderByWithRelationInput
 }
 
 export type LeagueMemberWhereUniqueInput = Prisma.AtLeast<{
@@ -260,21 +280,26 @@ export type LeagueMemberWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.LeagueMemberWhereInput | Prisma.LeagueMemberWhereInput[]
   userId?: Prisma.StringFilter<"LeagueMember"> | string
   leagueId?: Prisma.StringFilter<"LeagueMember"> | string
+  cohortId?: Prisma.StringNullableFilter<"LeagueMember"> | string | null
   season?: Prisma.StringFilter<"LeagueMember"> | string
   points?: Prisma.IntFilter<"LeagueMember"> | number
   rank?: Prisma.IntNullableFilter<"LeagueMember"> | number | null
+  outcome?: Prisma.EnumLeagueOutcomeNullableFilter<"LeagueMember"> | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFilter<"LeagueMember"> | Date | string
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   league?: Prisma.XOR<Prisma.LeagueScalarRelationFilter, Prisma.LeagueWhereInput>
+  cohort?: Prisma.XOR<Prisma.LeagueCohortNullableScalarRelationFilter, Prisma.LeagueCohortWhereInput> | null
 }, "id" | "userId_season">
 
 export type LeagueMemberOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   leagueId?: Prisma.SortOrder
+  cohortId?: Prisma.SortOrderInput | Prisma.SortOrder
   season?: Prisma.SortOrder
   points?: Prisma.SortOrder
   rank?: Prisma.SortOrderInput | Prisma.SortOrder
+  outcome?: Prisma.SortOrderInput | Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   _count?: Prisma.LeagueMemberCountOrderByAggregateInput
   _avg?: Prisma.LeagueMemberAvgOrderByAggregateInput
@@ -290,9 +315,11 @@ export type LeagueMemberScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"LeagueMember"> | string
   userId?: Prisma.StringWithAggregatesFilter<"LeagueMember"> | string
   leagueId?: Prisma.StringWithAggregatesFilter<"LeagueMember"> | string
+  cohortId?: Prisma.StringNullableWithAggregatesFilter<"LeagueMember"> | string | null
   season?: Prisma.StringWithAggregatesFilter<"LeagueMember"> | string
   points?: Prisma.IntWithAggregatesFilter<"LeagueMember"> | number
   rank?: Prisma.IntNullableWithAggregatesFilter<"LeagueMember"> | number | null
+  outcome?: Prisma.EnumLeagueOutcomeNullableWithAggregatesFilter<"LeagueMember"> | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"LeagueMember"> | Date | string
 }
 
@@ -301,18 +328,22 @@ export type LeagueMemberCreateInput = {
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutLeagueMembersInput
   league: Prisma.LeagueCreateNestedOneWithoutMembersInput
+  cohort?: Prisma.LeagueCohortCreateNestedOneWithoutMembersInput
 }
 
 export type LeagueMemberUncheckedCreateInput = {
   id?: string
   userId: string
   leagueId: string
+  cohortId?: string | null
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
 }
 
@@ -321,18 +352,22 @@ export type LeagueMemberUpdateInput = {
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutLeagueMembersNestedInput
   league?: Prisma.LeagueUpdateOneRequiredWithoutMembersNestedInput
+  cohort?: Prisma.LeagueCohortUpdateOneWithoutMembersNestedInput
 }
 
 export type LeagueMemberUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   leagueId?: Prisma.StringFieldUpdateOperationsInput | string
+  cohortId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -340,9 +375,11 @@ export type LeagueMemberCreateManyInput = {
   id?: string
   userId: string
   leagueId: string
+  cohortId?: string | null
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
 }
 
@@ -351,6 +388,7 @@ export type LeagueMemberUpdateManyMutationInput = {
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -358,9 +396,11 @@ export type LeagueMemberUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   leagueId?: Prisma.StringFieldUpdateOperationsInput | string
+  cohortId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -383,9 +423,11 @@ export type LeagueMemberCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   leagueId?: Prisma.SortOrder
+  cohortId?: Prisma.SortOrder
   season?: Prisma.SortOrder
   points?: Prisma.SortOrder
   rank?: Prisma.SortOrder
+  outcome?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -398,9 +440,11 @@ export type LeagueMemberMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   leagueId?: Prisma.SortOrder
+  cohortId?: Prisma.SortOrder
   season?: Prisma.SortOrder
   points?: Prisma.SortOrder
   rank?: Prisma.SortOrder
+  outcome?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -408,9 +452,11 @@ export type LeagueMemberMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   leagueId?: Prisma.SortOrder
+  cohortId?: Prisma.SortOrder
   season?: Prisma.SortOrder
   points?: Prisma.SortOrder
   rank?: Prisma.SortOrder
+  outcome?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
 }
 
@@ -503,21 +549,71 @@ export type LeagueMemberUncheckedUpdateManyWithoutLeagueNestedInput = {
   deleteMany?: Prisma.LeagueMemberScalarWhereInput | Prisma.LeagueMemberScalarWhereInput[]
 }
 
+export type LeagueMemberCreateNestedManyWithoutCohortInput = {
+  create?: Prisma.XOR<Prisma.LeagueMemberCreateWithoutCohortInput, Prisma.LeagueMemberUncheckedCreateWithoutCohortInput> | Prisma.LeagueMemberCreateWithoutCohortInput[] | Prisma.LeagueMemberUncheckedCreateWithoutCohortInput[]
+  connectOrCreate?: Prisma.LeagueMemberCreateOrConnectWithoutCohortInput | Prisma.LeagueMemberCreateOrConnectWithoutCohortInput[]
+  createMany?: Prisma.LeagueMemberCreateManyCohortInputEnvelope
+  connect?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+}
+
+export type LeagueMemberUncheckedCreateNestedManyWithoutCohortInput = {
+  create?: Prisma.XOR<Prisma.LeagueMemberCreateWithoutCohortInput, Prisma.LeagueMemberUncheckedCreateWithoutCohortInput> | Prisma.LeagueMemberCreateWithoutCohortInput[] | Prisma.LeagueMemberUncheckedCreateWithoutCohortInput[]
+  connectOrCreate?: Prisma.LeagueMemberCreateOrConnectWithoutCohortInput | Prisma.LeagueMemberCreateOrConnectWithoutCohortInput[]
+  createMany?: Prisma.LeagueMemberCreateManyCohortInputEnvelope
+  connect?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+}
+
+export type LeagueMemberUpdateManyWithoutCohortNestedInput = {
+  create?: Prisma.XOR<Prisma.LeagueMemberCreateWithoutCohortInput, Prisma.LeagueMemberUncheckedCreateWithoutCohortInput> | Prisma.LeagueMemberCreateWithoutCohortInput[] | Prisma.LeagueMemberUncheckedCreateWithoutCohortInput[]
+  connectOrCreate?: Prisma.LeagueMemberCreateOrConnectWithoutCohortInput | Prisma.LeagueMemberCreateOrConnectWithoutCohortInput[]
+  upsert?: Prisma.LeagueMemberUpsertWithWhereUniqueWithoutCohortInput | Prisma.LeagueMemberUpsertWithWhereUniqueWithoutCohortInput[]
+  createMany?: Prisma.LeagueMemberCreateManyCohortInputEnvelope
+  set?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  disconnect?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  delete?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  connect?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  update?: Prisma.LeagueMemberUpdateWithWhereUniqueWithoutCohortInput | Prisma.LeagueMemberUpdateWithWhereUniqueWithoutCohortInput[]
+  updateMany?: Prisma.LeagueMemberUpdateManyWithWhereWithoutCohortInput | Prisma.LeagueMemberUpdateManyWithWhereWithoutCohortInput[]
+  deleteMany?: Prisma.LeagueMemberScalarWhereInput | Prisma.LeagueMemberScalarWhereInput[]
+}
+
+export type LeagueMemberUncheckedUpdateManyWithoutCohortNestedInput = {
+  create?: Prisma.XOR<Prisma.LeagueMemberCreateWithoutCohortInput, Prisma.LeagueMemberUncheckedCreateWithoutCohortInput> | Prisma.LeagueMemberCreateWithoutCohortInput[] | Prisma.LeagueMemberUncheckedCreateWithoutCohortInput[]
+  connectOrCreate?: Prisma.LeagueMemberCreateOrConnectWithoutCohortInput | Prisma.LeagueMemberCreateOrConnectWithoutCohortInput[]
+  upsert?: Prisma.LeagueMemberUpsertWithWhereUniqueWithoutCohortInput | Prisma.LeagueMemberUpsertWithWhereUniqueWithoutCohortInput[]
+  createMany?: Prisma.LeagueMemberCreateManyCohortInputEnvelope
+  set?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  disconnect?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  delete?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  connect?: Prisma.LeagueMemberWhereUniqueInput | Prisma.LeagueMemberWhereUniqueInput[]
+  update?: Prisma.LeagueMemberUpdateWithWhereUniqueWithoutCohortInput | Prisma.LeagueMemberUpdateWithWhereUniqueWithoutCohortInput[]
+  updateMany?: Prisma.LeagueMemberUpdateManyWithWhereWithoutCohortInput | Prisma.LeagueMemberUpdateManyWithWhereWithoutCohortInput[]
+  deleteMany?: Prisma.LeagueMemberScalarWhereInput | Prisma.LeagueMemberScalarWhereInput[]
+}
+
+export type NullableEnumLeagueOutcomeFieldUpdateOperationsInput = {
+  set?: $Enums.LeagueOutcome | null
+}
+
 export type LeagueMemberCreateWithoutUserInput = {
   id?: string
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
   league: Prisma.LeagueCreateNestedOneWithoutMembersInput
+  cohort?: Prisma.LeagueCohortCreateNestedOneWithoutMembersInput
 }
 
 export type LeagueMemberUncheckedCreateWithoutUserInput = {
   id?: string
   leagueId: string
+  cohortId?: string | null
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
 }
 
@@ -554,9 +650,11 @@ export type LeagueMemberScalarWhereInput = {
   id?: Prisma.StringFilter<"LeagueMember"> | string
   userId?: Prisma.StringFilter<"LeagueMember"> | string
   leagueId?: Prisma.StringFilter<"LeagueMember"> | string
+  cohortId?: Prisma.StringNullableFilter<"LeagueMember"> | string | null
   season?: Prisma.StringFilter<"LeagueMember"> | string
   points?: Prisma.IntFilter<"LeagueMember"> | number
   rank?: Prisma.IntNullableFilter<"LeagueMember"> | number | null
+  outcome?: Prisma.EnumLeagueOutcomeNullableFilter<"LeagueMember"> | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFilter<"LeagueMember"> | Date | string
 }
 
@@ -565,16 +663,20 @@ export type LeagueMemberCreateWithoutLeagueInput = {
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
   user: Prisma.UserCreateNestedOneWithoutLeagueMembersInput
+  cohort?: Prisma.LeagueCohortCreateNestedOneWithoutMembersInput
 }
 
 export type LeagueMemberUncheckedCreateWithoutLeagueInput = {
   id?: string
   userId: string
+  cohortId?: string | null
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
 }
 
@@ -604,12 +706,62 @@ export type LeagueMemberUpdateManyWithWhereWithoutLeagueInput = {
   data: Prisma.XOR<Prisma.LeagueMemberUpdateManyMutationInput, Prisma.LeagueMemberUncheckedUpdateManyWithoutLeagueInput>
 }
 
-export type LeagueMemberCreateManyUserInput = {
+export type LeagueMemberCreateWithoutCohortInput = {
   id?: string
+  season: string
+  points?: number
+  rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
+  updatedAt?: Date | string
+  user: Prisma.UserCreateNestedOneWithoutLeagueMembersInput
+  league: Prisma.LeagueCreateNestedOneWithoutMembersInput
+}
+
+export type LeagueMemberUncheckedCreateWithoutCohortInput = {
+  id?: string
+  userId: string
   leagueId: string
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
+  updatedAt?: Date | string
+}
+
+export type LeagueMemberCreateOrConnectWithoutCohortInput = {
+  where: Prisma.LeagueMemberWhereUniqueInput
+  create: Prisma.XOR<Prisma.LeagueMemberCreateWithoutCohortInput, Prisma.LeagueMemberUncheckedCreateWithoutCohortInput>
+}
+
+export type LeagueMemberCreateManyCohortInputEnvelope = {
+  data: Prisma.LeagueMemberCreateManyCohortInput | Prisma.LeagueMemberCreateManyCohortInput[]
+  skipDuplicates?: boolean
+}
+
+export type LeagueMemberUpsertWithWhereUniqueWithoutCohortInput = {
+  where: Prisma.LeagueMemberWhereUniqueInput
+  update: Prisma.XOR<Prisma.LeagueMemberUpdateWithoutCohortInput, Prisma.LeagueMemberUncheckedUpdateWithoutCohortInput>
+  create: Prisma.XOR<Prisma.LeagueMemberCreateWithoutCohortInput, Prisma.LeagueMemberUncheckedCreateWithoutCohortInput>
+}
+
+export type LeagueMemberUpdateWithWhereUniqueWithoutCohortInput = {
+  where: Prisma.LeagueMemberWhereUniqueInput
+  data: Prisma.XOR<Prisma.LeagueMemberUpdateWithoutCohortInput, Prisma.LeagueMemberUncheckedUpdateWithoutCohortInput>
+}
+
+export type LeagueMemberUpdateManyWithWhereWithoutCohortInput = {
+  where: Prisma.LeagueMemberScalarWhereInput
+  data: Prisma.XOR<Prisma.LeagueMemberUpdateManyMutationInput, Prisma.LeagueMemberUncheckedUpdateManyWithoutCohortInput>
+}
+
+export type LeagueMemberCreateManyUserInput = {
+  id?: string
+  leagueId: string
+  cohortId?: string | null
+  season: string
+  points?: number
+  rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
 }
 
@@ -618,34 +770,42 @@ export type LeagueMemberUpdateWithoutUserInput = {
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   league?: Prisma.LeagueUpdateOneRequiredWithoutMembersNestedInput
+  cohort?: Prisma.LeagueCohortUpdateOneWithoutMembersNestedInput
 }
 
 export type LeagueMemberUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   leagueId?: Prisma.StringFieldUpdateOperationsInput | string
+  cohortId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type LeagueMemberUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   leagueId?: Prisma.StringFieldUpdateOperationsInput | string
+  cohortId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type LeagueMemberCreateManyLeagueInput = {
   id?: string
   userId: string
+  cohortId?: string | null
   season: string
   points?: number
   rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
   updatedAt?: Date | string
 }
 
@@ -654,25 +814,75 @@ export type LeagueMemberUpdateWithoutLeagueInput = {
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneRequiredWithoutLeagueMembersNestedInput
+  cohort?: Prisma.LeagueCohortUpdateOneWithoutMembersNestedInput
 }
 
 export type LeagueMemberUncheckedUpdateWithoutLeagueInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  cohortId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type LeagueMemberUncheckedUpdateManyWithoutLeagueInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  cohortId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   season?: Prisma.StringFieldUpdateOperationsInput | string
   points?: Prisma.IntFieldUpdateOperationsInput | number
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type LeagueMemberCreateManyCohortInput = {
+  id?: string
+  userId: string
+  leagueId: string
+  season: string
+  points?: number
+  rank?: number | null
+  outcome?: $Enums.LeagueOutcome | null
+  updatedAt?: Date | string
+}
+
+export type LeagueMemberUpdateWithoutCohortInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  season?: Prisma.StringFieldUpdateOperationsInput | string
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  user?: Prisma.UserUpdateOneRequiredWithoutLeagueMembersNestedInput
+  league?: Prisma.LeagueUpdateOneRequiredWithoutMembersNestedInput
+}
+
+export type LeagueMemberUncheckedUpdateWithoutCohortInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  leagueId?: Prisma.StringFieldUpdateOperationsInput | string
+  season?: Prisma.StringFieldUpdateOperationsInput | string
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type LeagueMemberUncheckedUpdateManyWithoutCohortInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  userId?: Prisma.StringFieldUpdateOperationsInput | string
+  leagueId?: Prisma.StringFieldUpdateOperationsInput | string
+  season?: Prisma.StringFieldUpdateOperationsInput | string
+  points?: Prisma.IntFieldUpdateOperationsInput | number
+  rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  outcome?: Prisma.NullableEnumLeagueOutcomeFieldUpdateOperationsInput | $Enums.LeagueOutcome | null
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
@@ -682,60 +892,74 @@ export type LeagueMemberSelect<ExtArgs extends runtime.Types.Extensions.Internal
   id?: boolean
   userId?: boolean
   leagueId?: boolean
+  cohortId?: boolean
   season?: boolean
   points?: boolean
   rank?: boolean
+  outcome?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   league?: boolean | Prisma.LeagueDefaultArgs<ExtArgs>
+  cohort?: boolean | Prisma.LeagueMember$cohortArgs<ExtArgs>
 }, ExtArgs["result"]["leagueMember"]>
 
 export type LeagueMemberSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
   leagueId?: boolean
+  cohortId?: boolean
   season?: boolean
   points?: boolean
   rank?: boolean
+  outcome?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   league?: boolean | Prisma.LeagueDefaultArgs<ExtArgs>
+  cohort?: boolean | Prisma.LeagueMember$cohortArgs<ExtArgs>
 }, ExtArgs["result"]["leagueMember"]>
 
 export type LeagueMemberSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   userId?: boolean
   leagueId?: boolean
+  cohortId?: boolean
   season?: boolean
   points?: boolean
   rank?: boolean
+  outcome?: boolean
   updatedAt?: boolean
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   league?: boolean | Prisma.LeagueDefaultArgs<ExtArgs>
+  cohort?: boolean | Prisma.LeagueMember$cohortArgs<ExtArgs>
 }, ExtArgs["result"]["leagueMember"]>
 
 export type LeagueMemberSelectScalar = {
   id?: boolean
   userId?: boolean
   leagueId?: boolean
+  cohortId?: boolean
   season?: boolean
   points?: boolean
   rank?: boolean
+  outcome?: boolean
   updatedAt?: boolean
 }
 
-export type LeagueMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "leagueId" | "season" | "points" | "rank" | "updatedAt", ExtArgs["result"]["leagueMember"]>
+export type LeagueMemberOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "leagueId" | "cohortId" | "season" | "points" | "rank" | "outcome" | "updatedAt", ExtArgs["result"]["leagueMember"]>
 export type LeagueMemberInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   league?: boolean | Prisma.LeagueDefaultArgs<ExtArgs>
+  cohort?: boolean | Prisma.LeagueMember$cohortArgs<ExtArgs>
 }
 export type LeagueMemberIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   league?: boolean | Prisma.LeagueDefaultArgs<ExtArgs>
+  cohort?: boolean | Prisma.LeagueMember$cohortArgs<ExtArgs>
 }
 export type LeagueMemberIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   league?: boolean | Prisma.LeagueDefaultArgs<ExtArgs>
+  cohort?: boolean | Prisma.LeagueMember$cohortArgs<ExtArgs>
 }
 
 export type $LeagueMemberPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -743,14 +967,17 @@ export type $LeagueMemberPayload<ExtArgs extends runtime.Types.Extensions.Intern
   objects: {
     user: Prisma.$UserPayload<ExtArgs>
     league: Prisma.$LeaguePayload<ExtArgs>
+    cohort: Prisma.$LeagueCohortPayload<ExtArgs> | null
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     userId: string
     leagueId: string
+    cohortId: string | null
     season: string
     points: number
     rank: number | null
+    outcome: $Enums.LeagueOutcome | null
     updatedAt: Date
   }, ExtArgs["result"]["leagueMember"]>
   composites: {}
@@ -1148,6 +1375,7 @@ export interface Prisma__LeagueMemberClient<T, Null = never, ExtArgs extends run
   readonly [Symbol.toStringTag]: "PrismaPromise"
   user<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   league<T extends Prisma.LeagueDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.LeagueDefaultArgs<ExtArgs>>): Prisma.Prisma__LeagueClient<runtime.Types.Result.GetResult<Prisma.$LeaguePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  cohort<T extends Prisma.LeagueMember$cohortArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.LeagueMember$cohortArgs<ExtArgs>>): Prisma.Prisma__LeagueCohortClient<runtime.Types.Result.GetResult<Prisma.$LeagueCohortPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1180,9 +1408,11 @@ export interface LeagueMemberFieldRefs {
   readonly id: Prisma.FieldRef<"LeagueMember", 'String'>
   readonly userId: Prisma.FieldRef<"LeagueMember", 'String'>
   readonly leagueId: Prisma.FieldRef<"LeagueMember", 'String'>
+  readonly cohortId: Prisma.FieldRef<"LeagueMember", 'String'>
   readonly season: Prisma.FieldRef<"LeagueMember", 'String'>
   readonly points: Prisma.FieldRef<"LeagueMember", 'Int'>
   readonly rank: Prisma.FieldRef<"LeagueMember", 'Int'>
+  readonly outcome: Prisma.FieldRef<"LeagueMember", 'LeagueOutcome'>
   readonly updatedAt: Prisma.FieldRef<"LeagueMember", 'DateTime'>
 }
     
@@ -1577,6 +1807,25 @@ export type LeagueMemberDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.
    * Limit how many LeagueMembers to delete.
    */
   limit?: number
+}
+
+/**
+ * LeagueMember.cohort
+ */
+export type LeagueMember$cohortArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the LeagueCohort
+   */
+  select?: Prisma.LeagueCohortSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the LeagueCohort
+   */
+  omit?: Prisma.LeagueCohortOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.LeagueCohortInclude<ExtArgs> | null
+  where?: Prisma.LeagueCohortWhereInput
 }
 
 /**

@@ -398,7 +398,6 @@ export type GameWhereInput = {
   updatedAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   questions?: Prisma.QuestionListRelationFilter
   entries?: Prisma.GameEntryListRelationFilter
-  chats?: Prisma.ChatListRelationFilter
   pendingPurchases?: Prisma.PendingPurchaseListRelationFilter
 }
 
@@ -431,7 +430,6 @@ export type GameOrderByWithRelationInput = {
   updatedAt?: Prisma.SortOrder
   questions?: Prisma.QuestionOrderByRelationAggregateInput
   entries?: Prisma.GameEntryOrderByRelationAggregateInput
-  chats?: Prisma.ChatOrderByRelationAggregateInput
   pendingPurchases?: Prisma.PendingPurchaseOrderByRelationAggregateInput
 }
 
@@ -469,7 +467,6 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   updatedAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   questions?: Prisma.QuestionListRelationFilter
   entries?: Prisma.GameEntryListRelationFilter
-  chats?: Prisma.ChatListRelationFilter
   pendingPurchases?: Prisma.PendingPurchaseListRelationFilter
 }, "id" | "onchainId" | "launchGroupId_platform" | "network_gameNumber">
 
@@ -568,7 +565,6 @@ export type GameCreateInput = {
   updatedAt?: Date | string
   questions?: Prisma.QuestionCreateNestedManyWithoutGameInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatCreateNestedManyWithoutGameInput
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutGameInput
 }
 
@@ -601,7 +597,6 @@ export type GameUncheckedCreateInput = {
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutGameInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutGameInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutGameInput
 }
 
@@ -634,7 +629,6 @@ export type GameUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUpdateManyWithoutGameNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutGameNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutGameNestedInput
 }
 
@@ -667,7 +661,6 @@ export type GameUncheckedUpdateInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutGameNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutGameNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutGameNestedInput
 }
 
@@ -952,20 +945,6 @@ export type GameUpdateOneRequiredWithoutEntriesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GameUpdateToOneWithWhereWithoutEntriesInput, Prisma.GameUpdateWithoutEntriesInput>, Prisma.GameUncheckedUpdateWithoutEntriesInput>
 }
 
-export type GameCreateNestedOneWithoutChatsInput = {
-  create?: Prisma.XOR<Prisma.GameCreateWithoutChatsInput, Prisma.GameUncheckedCreateWithoutChatsInput>
-  connectOrCreate?: Prisma.GameCreateOrConnectWithoutChatsInput
-  connect?: Prisma.GameWhereUniqueInput
-}
-
-export type GameUpdateOneRequiredWithoutChatsNestedInput = {
-  create?: Prisma.XOR<Prisma.GameCreateWithoutChatsInput, Prisma.GameUncheckedCreateWithoutChatsInput>
-  connectOrCreate?: Prisma.GameCreateOrConnectWithoutChatsInput
-  upsert?: Prisma.GameUpsertWithoutChatsInput
-  connect?: Prisma.GameWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.GameUpdateToOneWithWhereWithoutChatsInput, Prisma.GameUpdateWithoutChatsInput>, Prisma.GameUncheckedUpdateWithoutChatsInput>
-}
-
 export type GameCreateNestedOneWithoutPendingPurchasesInput = {
   create?: Prisma.XOR<Prisma.GameCreateWithoutPendingPurchasesInput, Prisma.GameUncheckedCreateWithoutPendingPurchasesInput>
   connectOrCreate?: Prisma.GameCreateOrConnectWithoutPendingPurchasesInput
@@ -1008,7 +987,6 @@ export type GameCreateWithoutQuestionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   entries?: Prisma.GameEntryCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatCreateNestedManyWithoutGameInput
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutGameInput
 }
 
@@ -1040,7 +1018,6 @@ export type GameUncheckedCreateWithoutQuestionsInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutGameInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutGameInput
 }
 
@@ -1088,7 +1065,6 @@ export type GameUpdateWithoutQuestionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entries?: Prisma.GameEntryUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutGameNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutGameNestedInput
 }
 
@@ -1120,7 +1096,6 @@ export type GameUncheckedUpdateWithoutQuestionsInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutGameNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutGameNestedInput
 }
 
@@ -1152,7 +1127,6 @@ export type GameCreateWithoutEntriesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatCreateNestedManyWithoutGameInput
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutGameInput
 }
 
@@ -1184,7 +1158,6 @@ export type GameUncheckedCreateWithoutEntriesInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutGameInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutGameInput
 }
 
@@ -1232,7 +1205,6 @@ export type GameUpdateWithoutEntriesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutGameNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutGameNestedInput
 }
 
@@ -1264,151 +1236,6 @@ export type GameUncheckedUpdateWithoutEntriesInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutGameNestedInput
-  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutGameNestedInput
-}
-
-export type GameCreateWithoutChatsInput = {
-  id?: string
-  gameNumber: number
-  onchainId?: string | null
-  platform: $Enums.UserPlatform
-  network: $Enums.GameNetwork
-  title: string
-  description?: string | null
-  theme: $Enums.GameTheme
-  coverUrl?: string | null
-  launchGroupId?: string | null
-  startsAt: Date | string
-  endsAt: Date | string
-  ticketsOpenAt?: Date | string | null
-  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
-  tierPrices?: Prisma.GameCreatetierPricesInput | number[]
-  prizePool?: number
-  playerCount?: number
-  roundBreakSec?: number
-  maxPlayers?: number
-  isTestnet?: boolean
-  rankedAt?: Date | string | null
-  onChainAt?: Date | string | null
-  onChainTxHash?: string | null
-  merkleRoot?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  questions?: Prisma.QuestionCreateNestedManyWithoutGameInput
-  entries?: Prisma.GameEntryCreateNestedManyWithoutGameInput
-  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutGameInput
-}
-
-export type GameUncheckedCreateWithoutChatsInput = {
-  id?: string
-  gameNumber: number
-  onchainId?: string | null
-  platform: $Enums.UserPlatform
-  network: $Enums.GameNetwork
-  title: string
-  description?: string | null
-  theme: $Enums.GameTheme
-  coverUrl?: string | null
-  launchGroupId?: string | null
-  startsAt: Date | string
-  endsAt: Date | string
-  ticketsOpenAt?: Date | string | null
-  ticketOpenNotifsSent?: Prisma.GameCreateticketOpenNotifsSentInput | string[]
-  tierPrices?: Prisma.GameCreatetierPricesInput | number[]
-  prizePool?: number
-  playerCount?: number
-  roundBreakSec?: number
-  maxPlayers?: number
-  isTestnet?: boolean
-  rankedAt?: Date | string | null
-  onChainAt?: Date | string | null
-  onChainTxHash?: string | null
-  merkleRoot?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutGameInput
-  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutGameInput
-  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutGameInput
-}
-
-export type GameCreateOrConnectWithoutChatsInput = {
-  where: Prisma.GameWhereUniqueInput
-  create: Prisma.XOR<Prisma.GameCreateWithoutChatsInput, Prisma.GameUncheckedCreateWithoutChatsInput>
-}
-
-export type GameUpsertWithoutChatsInput = {
-  update: Prisma.XOR<Prisma.GameUpdateWithoutChatsInput, Prisma.GameUncheckedUpdateWithoutChatsInput>
-  create: Prisma.XOR<Prisma.GameCreateWithoutChatsInput, Prisma.GameUncheckedCreateWithoutChatsInput>
-  where?: Prisma.GameWhereInput
-}
-
-export type GameUpdateToOneWithWhereWithoutChatsInput = {
-  where?: Prisma.GameWhereInput
-  data: Prisma.XOR<Prisma.GameUpdateWithoutChatsInput, Prisma.GameUncheckedUpdateWithoutChatsInput>
-}
-
-export type GameUpdateWithoutChatsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
-  onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
-  network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
-  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
-  tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
-  prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
-  playerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
-  maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
-  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  questions?: Prisma.QuestionUpdateManyWithoutGameNestedInput
-  entries?: Prisma.GameEntryUpdateManyWithoutGameNestedInput
-  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutGameNestedInput
-}
-
-export type GameUncheckedUpdateWithoutChatsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  gameNumber?: Prisma.IntFieldUpdateOperationsInput | number
-  onchainId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
-  network?: Prisma.EnumGameNetworkFieldUpdateOperationsInput | $Enums.GameNetwork
-  title?: Prisma.StringFieldUpdateOperationsInput | string
-  description?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
-  coverUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  launchGroupId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  startsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  endsAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  ticketsOpenAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  ticketOpenNotifsSent?: Prisma.GameUpdateticketOpenNotifsSentInput | string[]
-  tierPrices?: Prisma.GameUpdatetierPricesInput | number[]
-  prizePool?: Prisma.FloatFieldUpdateOperationsInput | number
-  playerCount?: Prisma.IntFieldUpdateOperationsInput | number
-  roundBreakSec?: Prisma.IntFieldUpdateOperationsInput | number
-  maxPlayers?: Prisma.IntFieldUpdateOperationsInput | number
-  isTestnet?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  questions?: Prisma.QuestionUncheckedUpdateManyWithoutGameNestedInput
-  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutGameNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutGameNestedInput
 }
 
@@ -1441,7 +1268,6 @@ export type GameCreateWithoutPendingPurchasesInput = {
   updatedAt?: Date | string
   questions?: Prisma.QuestionCreateNestedManyWithoutGameInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatCreateNestedManyWithoutGameInput
 }
 
 export type GameUncheckedCreateWithoutPendingPurchasesInput = {
@@ -1473,7 +1299,6 @@ export type GameUncheckedCreateWithoutPendingPurchasesInput = {
   updatedAt?: Date | string
   questions?: Prisma.QuestionUncheckedCreateNestedManyWithoutGameInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutGameInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutGameInput
 }
 
 export type GameCreateOrConnectWithoutPendingPurchasesInput = {
@@ -1521,7 +1346,6 @@ export type GameUpdateWithoutPendingPurchasesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUpdateManyWithoutGameNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutGameNestedInput
 }
 
 export type GameUncheckedUpdateWithoutPendingPurchasesInput = {
@@ -1553,7 +1377,6 @@ export type GameUncheckedUpdateWithoutPendingPurchasesInput = {
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   questions?: Prisma.QuestionUncheckedUpdateManyWithoutGameNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutGameNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutGameNestedInput
 }
 
 
@@ -1564,14 +1387,12 @@ export type GameUncheckedUpdateWithoutPendingPurchasesInput = {
 export type GameCountOutputType = {
   questions: number
   entries: number
-  chats: number
   pendingPurchases: number
 }
 
 export type GameCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | GameCountOutputTypeCountQuestionsArgs
   entries?: boolean | GameCountOutputTypeCountEntriesArgs
-  chats?: boolean | GameCountOutputTypeCountChatsArgs
   pendingPurchases?: boolean | GameCountOutputTypeCountPendingPurchasesArgs
 }
 
@@ -1597,13 +1418,6 @@ export type GameCountOutputTypeCountQuestionsArgs<ExtArgs extends runtime.Types.
  */
 export type GameCountOutputTypeCountEntriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.GameEntryWhereInput
-}
-
-/**
- * GameCountOutputType without action
- */
-export type GameCountOutputTypeCountChatsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ChatWhereInput
 }
 
 /**
@@ -1643,7 +1457,6 @@ export type GameSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   updatedAt?: boolean
   questions?: boolean | Prisma.Game$questionsArgs<ExtArgs>
   entries?: boolean | Prisma.Game$entriesArgs<ExtArgs>
-  chats?: boolean | Prisma.Game$chatsArgs<ExtArgs>
   pendingPurchases?: boolean | Prisma.Game$pendingPurchasesArgs<ExtArgs>
   _count?: boolean | Prisma.GameCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["game"]>
@@ -1739,7 +1552,6 @@ export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = run
 export type GameInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | Prisma.Game$questionsArgs<ExtArgs>
   entries?: boolean | Prisma.Game$entriesArgs<ExtArgs>
-  chats?: boolean | Prisma.Game$chatsArgs<ExtArgs>
   pendingPurchases?: boolean | Prisma.Game$pendingPurchasesArgs<ExtArgs>
   _count?: boolean | Prisma.GameCountOutputTypeDefaultArgs<ExtArgs>
 }
@@ -1751,7 +1563,6 @@ export type $GamePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
   objects: {
     questions: Prisma.$QuestionPayload<ExtArgs>[]
     entries: Prisma.$GameEntryPayload<ExtArgs>[]
-    chats: Prisma.$ChatPayload<ExtArgs>[]
     pendingPurchases: Prisma.$PendingPurchasePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
@@ -2177,7 +1988,6 @@ export interface Prisma__GameClient<T, Null = never, ExtArgs extends runtime.Typ
   readonly [Symbol.toStringTag]: "PrismaPromise"
   questions<T extends Prisma.Game$questionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Game$questionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   entries<T extends Prisma.Game$entriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Game$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GameEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  chats<T extends Prisma.Game$chatsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Game$chatsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   pendingPurchases<T extends Prisma.Game$pendingPurchasesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Game$pendingPurchasesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PendingPurchasePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
@@ -2667,30 +2477,6 @@ export type Game$entriesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.GameEntryScalarFieldEnum | Prisma.GameEntryScalarFieldEnum[]
-}
-
-/**
- * Game.chats
- */
-export type Game$chatsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Chat
-   */
-  select?: Prisma.ChatSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Chat
-   */
-  omit?: Prisma.ChatOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ChatInclude<ExtArgs> | null
-  where?: Prisma.ChatWhereInput
-  orderBy?: Prisma.ChatOrderByWithRelationInput | Prisma.ChatOrderByWithRelationInput[]
-  cursor?: Prisma.ChatWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ChatScalarFieldEnum | Prisma.ChatScalarFieldEnum[]
 }
 
 /**

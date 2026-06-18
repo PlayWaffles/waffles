@@ -442,7 +442,6 @@ export type UserWhereInput = {
   completedQuests?: Prisma.CompletedQuestListRelationFilter
   rewards?: Prisma.ReferralRewardListRelationFilter
   entries?: Prisma.GameEntryListRelationFilter
-  chats?: Prisma.ChatListRelationFilter
   notifs?: Prisma.NotificationTokenListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   wallets?: Prisma.UserWalletListRelationFilter
@@ -501,7 +500,6 @@ export type UserOrderByWithRelationInput = {
   completedQuests?: Prisma.CompletedQuestOrderByRelationAggregateInput
   rewards?: Prisma.ReferralRewardOrderByRelationAggregateInput
   entries?: Prisma.GameEntryOrderByRelationAggregateInput
-  chats?: Prisma.ChatOrderByRelationAggregateInput
   notifs?: Prisma.NotificationTokenOrderByRelationAggregateInput
   auditLogs?: Prisma.AuditLogOrderByRelationAggregateInput
   wallets?: Prisma.UserWalletOrderByRelationAggregateInput
@@ -563,7 +561,6 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   completedQuests?: Prisma.CompletedQuestListRelationFilter
   rewards?: Prisma.ReferralRewardListRelationFilter
   entries?: Prisma.GameEntryListRelationFilter
-  chats?: Prisma.ChatListRelationFilter
   notifs?: Prisma.NotificationTokenListRelationFilter
   auditLogs?: Prisma.AuditLogListRelationFilter
   wallets?: Prisma.UserWalletListRelationFilter
@@ -693,7 +690,6 @@ export type UserCreateInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -751,7 +747,6 @@ export type UserUncheckedCreateInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -809,7 +804,6 @@ export type UserUpdateInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -867,7 +861,6 @@ export type UserUncheckedUpdateInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -1281,20 +1274,6 @@ export type UserUpdateOneRequiredWithoutEntriesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutEntriesInput, Prisma.UserUpdateWithoutEntriesInput>, Prisma.UserUncheckedUpdateWithoutEntriesInput>
 }
 
-export type UserCreateNestedOneWithoutChatsInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutChatsInput, Prisma.UserUncheckedCreateWithoutChatsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChatsInput
-  connect?: Prisma.UserWhereUniqueInput
-}
-
-export type UserUpdateOneRequiredWithoutChatsNestedInput = {
-  create?: Prisma.XOR<Prisma.UserCreateWithoutChatsInput, Prisma.UserUncheckedCreateWithoutChatsInput>
-  connectOrCreate?: Prisma.UserCreateOrConnectWithoutChatsInput
-  upsert?: Prisma.UserUpsertWithoutChatsInput
-  connect?: Prisma.UserWhereUniqueInput
-  update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutChatsInput, Prisma.UserUpdateWithoutChatsInput>, Prisma.UserUncheckedUpdateWithoutChatsInput>
-}
-
 export type UserCreateNestedOneWithoutPendingPurchasesInput = {
   create?: Prisma.XOR<Prisma.UserCreateWithoutPendingPurchasesInput, Prisma.UserUncheckedCreateWithoutPendingPurchasesInput>
   connectOrCreate?: Prisma.UserCreateOrConnectWithoutPendingPurchasesInput
@@ -1613,7 +1592,6 @@ export type UserCreateWithoutReferralsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -1670,7 +1648,6 @@ export type UserUncheckedCreateWithoutReferralsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -1732,7 +1709,6 @@ export type UserCreateWithoutReferredByInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -1789,7 +1765,6 @@ export type UserUncheckedCreateWithoutReferredByInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -1867,7 +1842,6 @@ export type UserUpdateWithoutReferralsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -1924,7 +1898,6 @@ export type UserUncheckedUpdateWithoutReferralsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2033,7 +2006,6 @@ export type UserCreateWithoutWalletsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
@@ -2090,7 +2062,6 @@ export type UserUncheckedCreateWithoutWalletsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
@@ -2163,7 +2134,6 @@ export type UserUpdateWithoutWalletsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
@@ -2220,7 +2190,6 @@ export type UserUncheckedUpdateWithoutWalletsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
@@ -2276,7 +2245,6 @@ export type UserCreateWithoutRewardsInput = {
   redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -2333,7 +2301,6 @@ export type UserUncheckedCreateWithoutRewardsInput = {
   redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2406,7 +2373,6 @@ export type UserUpdateWithoutRewardsInput = {
   redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -2463,7 +2429,6 @@ export type UserUncheckedUpdateWithoutRewardsInput = {
   redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2520,7 +2485,6 @@ export type UserCreateWithoutCompletedQuestsInput = {
   redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -2577,7 +2541,6 @@ export type UserUncheckedCreateWithoutCompletedQuestsInput = {
   redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2650,7 +2613,6 @@ export type UserUpdateWithoutCompletedQuestsInput = {
   redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -2707,7 +2669,6 @@ export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
   redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -2764,7 +2725,6 @@ export type UserCreateWithoutEntriesInput = {
   redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -2821,7 +2781,6 @@ export type UserUncheckedCreateWithoutEntriesInput = {
   redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -2894,7 +2853,6 @@ export type UserUpdateWithoutEntriesInput = {
   redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -2951,251 +2909,6 @@ export type UserUncheckedUpdateWithoutEntriesInput = {
   redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
-  notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
-  wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
-  pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
-  ticketLedger?: Prisma.TicketLedgerUncheckedUpdateManyWithoutUserNestedInput
-  levelProgress?: Prisma.LevelProgressUncheckedUpdateManyWithoutUserNestedInput
-  roundEntries?: Prisma.RoundEntryUncheckedUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUncheckedUpdateManyWithoutUserNestedInput
-  announcementState?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutUserNestedInput
-  questProgress?: Prisma.QuestProgressUncheckedUpdateManyWithoutUserNestedInput
-  leagueMembers?: Prisma.LeagueMemberUncheckedUpdateManyWithoutUserNestedInput
-  purchases?: Prisma.PurchaseUncheckedUpdateManyWithoutUserNestedInput
-  powerUps?: Prisma.PowerUpInventoryUncheckedUpdateManyWithoutUserNestedInput
-  cosmetics?: Prisma.UserCosmeticUncheckedUpdateManyWithoutUserNestedInput
-  boosts?: Prisma.UserBoostUncheckedUpdateManyWithoutUserNestedInput
-  earnedBadges?: Prisma.UserBadgeUncheckedUpdateManyWithoutUserNestedInput
-  dailyClaims?: Prisma.DailyRewardClaimUncheckedUpdateManyWithoutUserNestedInput
-  partnerClaims?: Prisma.PartnerOfferClaimUncheckedUpdateManyWithoutUserNestedInput
-  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedUpdateManyWithoutUserNestedInput
-  analyticsEvents?: Prisma.AnalyticsEventUncheckedUpdateManyWithoutUserNestedInput
-}
-
-export type UserCreateWithoutChatsInput = {
-  id?: string
-  platform: $Enums.UserPlatform
-  fid?: number | null
-  username?: string | null
-  pfpUrl?: string | null
-  wallet?: string | null
-  role?: $Enums.UserRole
-  password?: string | null
-  inviteCode: string
-  inviteQuota?: number
-  hasGameAccess?: boolean
-  accessGrantedAt?: Date | string | null
-  accessGrantedBy?: string | null
-  onboardingCompletedAt?: Date | string | null
-  xp?: number
-  ticketBalance?: number
-  lives?: number
-  nextLifeAt?: Date | string | null
-  streakFreezes?: number
-  avatarId?: string | null
-  currentStreak?: number
-  bestStreak?: number
-  lastLoginAt?: Date | string | null
-  isBanned?: boolean
-  bannedAt?: Date | string | null
-  bannedBy?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  referredBy?: Prisma.UserCreateNestedOneWithoutReferralsInput
-  referrals?: Prisma.UserCreateNestedManyWithoutReferredByInput
-  redeemedCodes?: Prisma.InviteCodeCreateNestedManyWithoutUsedByInput
-  completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
-  rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
-  entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
-  wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
-  pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
-  ticketLedger?: Prisma.TicketLedgerCreateNestedManyWithoutUserInput
-  levelProgress?: Prisma.LevelProgressCreateNestedManyWithoutUserInput
-  roundEntries?: Prisma.RoundEntryCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningCreateNestedManyWithoutUserInput
-  announcementState?: Prisma.AnnouncementStateCreateNestedManyWithoutUserInput
-  questProgress?: Prisma.QuestProgressCreateNestedManyWithoutUserInput
-  leagueMembers?: Prisma.LeagueMemberCreateNestedManyWithoutUserInput
-  purchases?: Prisma.PurchaseCreateNestedManyWithoutUserInput
-  powerUps?: Prisma.PowerUpInventoryCreateNestedManyWithoutUserInput
-  cosmetics?: Prisma.UserCosmeticCreateNestedManyWithoutUserInput
-  boosts?: Prisma.UserBoostCreateNestedManyWithoutUserInput
-  earnedBadges?: Prisma.UserBadgeCreateNestedManyWithoutUserInput
-  dailyClaims?: Prisma.DailyRewardClaimCreateNestedManyWithoutUserInput
-  partnerClaims?: Prisma.PartnerOfferClaimCreateNestedManyWithoutUserInput
-  seasonPassClaims?: Prisma.SeasonPassClaimCreateNestedManyWithoutUserInput
-  analyticsEvents?: Prisma.AnalyticsEventCreateNestedManyWithoutUserInput
-}
-
-export type UserUncheckedCreateWithoutChatsInput = {
-  id?: string
-  platform: $Enums.UserPlatform
-  fid?: number | null
-  username?: string | null
-  pfpUrl?: string | null
-  wallet?: string | null
-  role?: $Enums.UserRole
-  password?: string | null
-  referredById?: string | null
-  inviteCode: string
-  inviteQuota?: number
-  hasGameAccess?: boolean
-  accessGrantedAt?: Date | string | null
-  accessGrantedBy?: string | null
-  onboardingCompletedAt?: Date | string | null
-  xp?: number
-  ticketBalance?: number
-  lives?: number
-  nextLifeAt?: Date | string | null
-  streakFreezes?: number
-  avatarId?: string | null
-  currentStreak?: number
-  bestStreak?: number
-  lastLoginAt?: Date | string | null
-  isBanned?: boolean
-  bannedAt?: Date | string | null
-  bannedBy?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  referrals?: Prisma.UserUncheckedCreateNestedManyWithoutReferredByInput
-  redeemedCodes?: Prisma.InviteCodeUncheckedCreateNestedManyWithoutUsedByInput
-  completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
-  rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
-  entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
-  auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
-  wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
-  pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
-  ticketLedger?: Prisma.TicketLedgerUncheckedCreateNestedManyWithoutUserInput
-  levelProgress?: Prisma.LevelProgressUncheckedCreateNestedManyWithoutUserInput
-  roundEntries?: Prisma.RoundEntryUncheckedCreateNestedManyWithoutUserInput
-  winnings?: Prisma.WinningUncheckedCreateNestedManyWithoutUserInput
-  announcementState?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutUserInput
-  questProgress?: Prisma.QuestProgressUncheckedCreateNestedManyWithoutUserInput
-  leagueMembers?: Prisma.LeagueMemberUncheckedCreateNestedManyWithoutUserInput
-  purchases?: Prisma.PurchaseUncheckedCreateNestedManyWithoutUserInput
-  powerUps?: Prisma.PowerUpInventoryUncheckedCreateNestedManyWithoutUserInput
-  cosmetics?: Prisma.UserCosmeticUncheckedCreateNestedManyWithoutUserInput
-  boosts?: Prisma.UserBoostUncheckedCreateNestedManyWithoutUserInput
-  earnedBadges?: Prisma.UserBadgeUncheckedCreateNestedManyWithoutUserInput
-  dailyClaims?: Prisma.DailyRewardClaimUncheckedCreateNestedManyWithoutUserInput
-  partnerClaims?: Prisma.PartnerOfferClaimUncheckedCreateNestedManyWithoutUserInput
-  seasonPassClaims?: Prisma.SeasonPassClaimUncheckedCreateNestedManyWithoutUserInput
-  analyticsEvents?: Prisma.AnalyticsEventUncheckedCreateNestedManyWithoutUserInput
-}
-
-export type UserCreateOrConnectWithoutChatsInput = {
-  where: Prisma.UserWhereUniqueInput
-  create: Prisma.XOR<Prisma.UserCreateWithoutChatsInput, Prisma.UserUncheckedCreateWithoutChatsInput>
-}
-
-export type UserUpsertWithoutChatsInput = {
-  update: Prisma.XOR<Prisma.UserUpdateWithoutChatsInput, Prisma.UserUncheckedUpdateWithoutChatsInput>
-  create: Prisma.XOR<Prisma.UserCreateWithoutChatsInput, Prisma.UserUncheckedCreateWithoutChatsInput>
-  where?: Prisma.UserWhereInput
-}
-
-export type UserUpdateToOneWithWhereWithoutChatsInput = {
-  where?: Prisma.UserWhereInput
-  data: Prisma.XOR<Prisma.UserUpdateWithoutChatsInput, Prisma.UserUncheckedUpdateWithoutChatsInput>
-}
-
-export type UserUpdateWithoutChatsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
-  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
-  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
-  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
-  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  xp?: Prisma.IntFieldUpdateOperationsInput | number
-  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
-  lives?: Prisma.IntFieldUpdateOperationsInput | number
-  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
-  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  referredBy?: Prisma.UserUpdateOneWithoutReferralsNestedInput
-  referrals?: Prisma.UserUpdateManyWithoutReferredByNestedInput
-  redeemedCodes?: Prisma.InviteCodeUpdateManyWithoutUsedByNestedInput
-  completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
-  rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
-  entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
-  auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
-  wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
-  pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
-  ticketLedger?: Prisma.TicketLedgerUpdateManyWithoutUserNestedInput
-  levelProgress?: Prisma.LevelProgressUpdateManyWithoutUserNestedInput
-  roundEntries?: Prisma.RoundEntryUpdateManyWithoutUserNestedInput
-  winnings?: Prisma.WinningUpdateManyWithoutUserNestedInput
-  announcementState?: Prisma.AnnouncementStateUpdateManyWithoutUserNestedInput
-  questProgress?: Prisma.QuestProgressUpdateManyWithoutUserNestedInput
-  leagueMembers?: Prisma.LeagueMemberUpdateManyWithoutUserNestedInput
-  purchases?: Prisma.PurchaseUpdateManyWithoutUserNestedInput
-  powerUps?: Prisma.PowerUpInventoryUpdateManyWithoutUserNestedInput
-  cosmetics?: Prisma.UserCosmeticUpdateManyWithoutUserNestedInput
-  boosts?: Prisma.UserBoostUpdateManyWithoutUserNestedInput
-  earnedBadges?: Prisma.UserBadgeUpdateManyWithoutUserNestedInput
-  dailyClaims?: Prisma.DailyRewardClaimUpdateManyWithoutUserNestedInput
-  partnerClaims?: Prisma.PartnerOfferClaimUpdateManyWithoutUserNestedInput
-  seasonPassClaims?: Prisma.SeasonPassClaimUpdateManyWithoutUserNestedInput
-  analyticsEvents?: Prisma.AnalyticsEventUpdateManyWithoutUserNestedInput
-}
-
-export type UserUncheckedUpdateWithoutChatsInput = {
-  id?: Prisma.StringFieldUpdateOperationsInput | string
-  platform?: Prisma.EnumUserPlatformFieldUpdateOperationsInput | $Enums.UserPlatform
-  fid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  username?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  pfpUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  wallet?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  role?: Prisma.EnumUserRoleFieldUpdateOperationsInput | $Enums.UserRole
-  password?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  referredById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  inviteCode?: Prisma.StringFieldUpdateOperationsInput | string
-  inviteQuota?: Prisma.IntFieldUpdateOperationsInput | number
-  hasGameAccess?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  accessGrantedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  accessGrantedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  onboardingCompletedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  xp?: Prisma.IntFieldUpdateOperationsInput | number
-  ticketBalance?: Prisma.IntFieldUpdateOperationsInput | number
-  lives?: Prisma.IntFieldUpdateOperationsInput | number
-  nextLifeAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  streakFreezes?: Prisma.IntFieldUpdateOperationsInput | number
-  avatarId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
-  lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  referrals?: Prisma.UserUncheckedUpdateManyWithoutReferredByNestedInput
-  redeemedCodes?: Prisma.InviteCodeUncheckedUpdateManyWithoutUsedByNestedInput
-  completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
-  rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
-  entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3253,7 +2966,6 @@ export type UserCreateWithoutPendingPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -3310,7 +3022,6 @@ export type UserUncheckedCreateWithoutPendingPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -3383,7 +3094,6 @@ export type UserUpdateWithoutPendingPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -3440,7 +3150,6 @@ export type UserUncheckedUpdateWithoutPendingPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -3497,7 +3206,6 @@ export type UserCreateWithoutNotifsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
@@ -3554,7 +3262,6 @@ export type UserUncheckedCreateWithoutNotifsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
@@ -3627,7 +3334,6 @@ export type UserUpdateWithoutNotifsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
@@ -3684,7 +3390,6 @@ export type UserUncheckedUpdateWithoutNotifsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
@@ -3741,7 +3446,6 @@ export type UserCreateWithoutAuditLogsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
   pendingPurchases?: Prisma.PendingPurchaseCreateNestedManyWithoutUserInput
@@ -3798,7 +3502,6 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedCreateNestedManyWithoutUserInput
@@ -3871,7 +3574,6 @@ export type UserUpdateWithoutAuditLogsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUpdateManyWithoutUserNestedInput
@@ -3928,7 +3630,6 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
   pendingPurchases?: Prisma.PendingPurchaseUncheckedUpdateManyWithoutUserNestedInput
@@ -3985,7 +3686,6 @@ export type UserCreateWithoutAnalyticsEventsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -4042,7 +3742,6 @@ export type UserUncheckedCreateWithoutAnalyticsEventsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -4115,7 +3814,6 @@ export type UserUpdateWithoutAnalyticsEventsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -4172,7 +3870,6 @@ export type UserUncheckedUpdateWithoutAnalyticsEventsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -4228,7 +3925,6 @@ export type UserCreateWithoutRedeemedCodesInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -4285,7 +3981,6 @@ export type UserUncheckedCreateWithoutRedeemedCodesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -4358,7 +4053,6 @@ export type UserUpdateWithoutRedeemedCodesInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -4415,7 +4109,6 @@ export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -4473,7 +4166,6 @@ export type UserCreateWithoutTicketLedgerInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -4530,7 +4222,6 @@ export type UserUncheckedCreateWithoutTicketLedgerInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -4603,7 +4294,6 @@ export type UserUpdateWithoutTicketLedgerInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -4660,7 +4350,6 @@ export type UserUncheckedUpdateWithoutTicketLedgerInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -4717,7 +4406,6 @@ export type UserCreateWithoutLevelProgressInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -4774,7 +4462,6 @@ export type UserUncheckedCreateWithoutLevelProgressInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -4847,7 +4534,6 @@ export type UserUpdateWithoutLevelProgressInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -4904,7 +4590,6 @@ export type UserUncheckedUpdateWithoutLevelProgressInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -4961,7 +4646,6 @@ export type UserCreateWithoutRoundEntriesInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -5018,7 +4702,6 @@ export type UserUncheckedCreateWithoutRoundEntriesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5091,7 +4774,6 @@ export type UserUpdateWithoutRoundEntriesInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -5148,7 +4830,6 @@ export type UserUncheckedUpdateWithoutRoundEntriesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5205,7 +4886,6 @@ export type UserCreateWithoutWinningsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -5262,7 +4942,6 @@ export type UserUncheckedCreateWithoutWinningsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5335,7 +5014,6 @@ export type UserUpdateWithoutWinningsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -5392,7 +5070,6 @@ export type UserUncheckedUpdateWithoutWinningsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5449,7 +5126,6 @@ export type UserCreateWithoutAnnouncementStateInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -5506,7 +5182,6 @@ export type UserUncheckedCreateWithoutAnnouncementStateInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5579,7 +5254,6 @@ export type UserUpdateWithoutAnnouncementStateInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -5636,7 +5310,6 @@ export type UserUncheckedUpdateWithoutAnnouncementStateInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5693,7 +5366,6 @@ export type UserCreateWithoutQuestProgressInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -5750,7 +5422,6 @@ export type UserUncheckedCreateWithoutQuestProgressInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -5823,7 +5494,6 @@ export type UserUpdateWithoutQuestProgressInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -5880,7 +5550,6 @@ export type UserUncheckedUpdateWithoutQuestProgressInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -5937,7 +5606,6 @@ export type UserCreateWithoutLeagueMembersInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -5994,7 +5662,6 @@ export type UserUncheckedCreateWithoutLeagueMembersInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -6067,7 +5734,6 @@ export type UserUpdateWithoutLeagueMembersInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -6124,7 +5790,6 @@ export type UserUncheckedUpdateWithoutLeagueMembersInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -6181,7 +5846,6 @@ export type UserCreateWithoutPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -6238,7 +5902,6 @@ export type UserUncheckedCreateWithoutPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -6311,7 +5974,6 @@ export type UserUpdateWithoutPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -6368,7 +6030,6 @@ export type UserUncheckedUpdateWithoutPurchasesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -6425,7 +6086,6 @@ export type UserCreateWithoutPowerUpsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -6482,7 +6142,6 @@ export type UserUncheckedCreateWithoutPowerUpsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -6555,7 +6214,6 @@ export type UserUpdateWithoutPowerUpsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -6612,7 +6270,6 @@ export type UserUncheckedUpdateWithoutPowerUpsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -6669,7 +6326,6 @@ export type UserCreateWithoutCosmeticsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -6726,7 +6382,6 @@ export type UserUncheckedCreateWithoutCosmeticsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -6799,7 +6454,6 @@ export type UserUpdateWithoutCosmeticsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -6856,7 +6510,6 @@ export type UserUncheckedUpdateWithoutCosmeticsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -6913,7 +6566,6 @@ export type UserCreateWithoutBoostsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -6970,7 +6622,6 @@ export type UserUncheckedCreateWithoutBoostsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -7043,7 +6694,6 @@ export type UserUpdateWithoutBoostsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -7100,7 +6750,6 @@ export type UserUncheckedUpdateWithoutBoostsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -7157,7 +6806,6 @@ export type UserCreateWithoutEarnedBadgesInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -7214,7 +6862,6 @@ export type UserUncheckedCreateWithoutEarnedBadgesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -7287,7 +6934,6 @@ export type UserUpdateWithoutEarnedBadgesInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -7344,7 +6990,6 @@ export type UserUncheckedUpdateWithoutEarnedBadgesInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -7401,7 +7046,6 @@ export type UserCreateWithoutPartnerClaimsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -7458,7 +7102,6 @@ export type UserUncheckedCreateWithoutPartnerClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -7531,7 +7174,6 @@ export type UserUpdateWithoutPartnerClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -7588,7 +7230,6 @@ export type UserUncheckedUpdateWithoutPartnerClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -7645,7 +7286,6 @@ export type UserCreateWithoutSeasonPassClaimsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -7702,7 +7342,6 @@ export type UserUncheckedCreateWithoutSeasonPassClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -7775,7 +7414,6 @@ export type UserUpdateWithoutSeasonPassClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -7832,7 +7470,6 @@ export type UserUncheckedUpdateWithoutSeasonPassClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -7889,7 +7526,6 @@ export type UserCreateWithoutDailyClaimsInput = {
   completedQuests?: Prisma.CompletedQuestCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletCreateNestedManyWithoutUserInput
@@ -7946,7 +7582,6 @@ export type UserUncheckedCreateWithoutDailyClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedCreateNestedManyWithoutUserInput
   rewards?: Prisma.ReferralRewardUncheckedCreateNestedManyWithoutInviterInput
   entries?: Prisma.GameEntryUncheckedCreateNestedManyWithoutUserInput
-  chats?: Prisma.ChatUncheckedCreateNestedManyWithoutUserInput
   notifs?: Prisma.NotificationTokenUncheckedCreateNestedManyWithoutUserInput
   auditLogs?: Prisma.AuditLogUncheckedCreateNestedManyWithoutAdminInput
   wallets?: Prisma.UserWalletUncheckedCreateNestedManyWithoutUserInput
@@ -8019,7 +7654,6 @@ export type UserUpdateWithoutDailyClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -8076,7 +7710,6 @@ export type UserUncheckedUpdateWithoutDailyClaimsInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -8163,7 +7796,6 @@ export type UserUpdateWithoutReferredByInput = {
   completedQuests?: Prisma.CompletedQuestUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUpdateManyWithoutUserNestedInput
@@ -8220,7 +7852,6 @@ export type UserUncheckedUpdateWithoutReferredByInput = {
   completedQuests?: Prisma.CompletedQuestUncheckedUpdateManyWithoutUserNestedInput
   rewards?: Prisma.ReferralRewardUncheckedUpdateManyWithoutInviterNestedInput
   entries?: Prisma.GameEntryUncheckedUpdateManyWithoutUserNestedInput
-  chats?: Prisma.ChatUncheckedUpdateManyWithoutUserNestedInput
   notifs?: Prisma.NotificationTokenUncheckedUpdateManyWithoutUserNestedInput
   auditLogs?: Prisma.AuditLogUncheckedUpdateManyWithoutAdminNestedInput
   wallets?: Prisma.UserWalletUncheckedUpdateManyWithoutUserNestedInput
@@ -8285,7 +7916,6 @@ export type UserCountOutputType = {
   completedQuests: number
   rewards: number
   entries: number
-  chats: number
   notifs: number
   auditLogs: number
   wallets: number
@@ -8314,7 +7944,6 @@ export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.I
   completedQuests?: boolean | UserCountOutputTypeCountCompletedQuestsArgs
   rewards?: boolean | UserCountOutputTypeCountRewardsArgs
   entries?: boolean | UserCountOutputTypeCountEntriesArgs
-  chats?: boolean | UserCountOutputTypeCountChatsArgs
   notifs?: boolean | UserCountOutputTypeCountNotifsArgs
   auditLogs?: boolean | UserCountOutputTypeCountAuditLogsArgs
   wallets?: boolean | UserCountOutputTypeCountWalletsArgs
@@ -8380,13 +8009,6 @@ export type UserCountOutputTypeCountRewardsArgs<ExtArgs extends runtime.Types.Ex
  */
 export type UserCountOutputTypeCountEntriesArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.GameEntryWhereInput
-}
-
-/**
- * UserCountOutputType without action
- */
-export type UserCountOutputTypeCountChatsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  where?: Prisma.ChatWhereInput
 }
 
 /**
@@ -8566,7 +8188,6 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   completedQuests?: boolean | Prisma.User$completedQuestsArgs<ExtArgs>
   rewards?: boolean | Prisma.User$rewardsArgs<ExtArgs>
   entries?: boolean | Prisma.User$entriesArgs<ExtArgs>
-  chats?: boolean | Prisma.User$chatsArgs<ExtArgs>
   notifs?: boolean | Prisma.User$notifsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   wallets?: boolean | Prisma.User$walletsArgs<ExtArgs>
@@ -8696,7 +8317,6 @@ export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   completedQuests?: boolean | Prisma.User$completedQuestsArgs<ExtArgs>
   rewards?: boolean | Prisma.User$rewardsArgs<ExtArgs>
   entries?: boolean | Prisma.User$entriesArgs<ExtArgs>
-  chats?: boolean | Prisma.User$chatsArgs<ExtArgs>
   notifs?: boolean | Prisma.User$notifsArgs<ExtArgs>
   auditLogs?: boolean | Prisma.User$auditLogsArgs<ExtArgs>
   wallets?: boolean | Prisma.User$walletsArgs<ExtArgs>
@@ -8735,7 +8355,6 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     completedQuests: Prisma.$CompletedQuestPayload<ExtArgs>[]
     rewards: Prisma.$ReferralRewardPayload<ExtArgs>[]
     entries: Prisma.$GameEntryPayload<ExtArgs>[]
-    chats: Prisma.$ChatPayload<ExtArgs>[]
     notifs: Prisma.$NotificationTokenPayload<ExtArgs>[]
     auditLogs: Prisma.$AuditLogPayload<ExtArgs>[]
     wallets: Prisma.$UserWalletPayload<ExtArgs>[]
@@ -9187,7 +8806,6 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
   completedQuests<T extends Prisma.User$completedQuestsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$completedQuestsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$CompletedQuestPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   rewards<T extends Prisma.User$rewardsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$rewardsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReferralRewardPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   entries<T extends Prisma.User$entriesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$entriesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GameEntryPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
-  chats<T extends Prisma.User$chatsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$chatsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ChatPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   notifs<T extends Prisma.User$notifsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$notifsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$NotificationTokenPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   auditLogs<T extends Prisma.User$auditLogsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$auditLogsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AuditLogPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   wallets<T extends Prisma.User$walletsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$walletsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$UserWalletPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
@@ -9798,30 +9416,6 @@ export type User$entriesArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.GameEntryScalarFieldEnum | Prisma.GameEntryScalarFieldEnum[]
-}
-
-/**
- * User.chats
- */
-export type User$chatsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the Chat
-   */
-  select?: Prisma.ChatSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the Chat
-   */
-  omit?: Prisma.ChatOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.ChatInclude<ExtArgs> | null
-  where?: Prisma.ChatWhereInput
-  orderBy?: Prisma.ChatOrderByWithRelationInput | Prisma.ChatOrderByWithRelationInput[]
-  cursor?: Prisma.ChatWhereUniqueInput
-  take?: number
-  skip?: number
-  distinct?: Prisma.ChatScalarFieldEnum | Prisma.ChatScalarFieldEnum[]
 }
 
 /**
