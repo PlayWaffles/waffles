@@ -1,10 +1,11 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { TOURNAMENT_PRIZES, TOURNAMENT_TOP_PRIZE, useProto } from "../state";
+import { displayFieldSize, FIELD_REVEAL_MIN, TOURNAMENT_PRIZES, TOURNAMENT_TOP_PRIZE, useProto } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, TicketIcon, TopHeader } from "../shared";
 import { useTheme } from "../theme";
 import { playSound } from "../sound";
+import { loadCurrentTournamentBoard } from "@/actions/player";
 
 export const LobbyScreen = () => {
   const proto = useProto();
@@ -21,6 +22,20 @@ export const LobbyScreen = () => {
     const t = setTimeout(() => setEntryFlash(false), 1900);
     return () => clearTimeout(t);
   }, []);
+
+  // Real entrant count, with the same near-empty floor as the Home card: under
+  // FIELD_REVEAL_MIN real players we show the simulated field (and the "+Xk"
+  // overflow chip); at/above it we show the true count and drop the fake chip.
+  const [realEntrants, setRealEntrants] = useState(0);
+  useEffect(() => {
+    let active = true;
+    loadCurrentTournamentBoard()
+      .then((b) => { if (active && b) setRealEntrants(b.fieldSize); })
+      .catch(() => {});
+    return () => { active = false; };
+  }, [proto.tournamentGameId]);
+  const playersJoined = displayFieldSize(realEntrants);
+  const floored = realEntrants < FIELD_REVEAL_MIN;
   const sec = proto.countdownSec;
   const mm = String(Math.floor(sec / 60)).padStart(2, "0");
   const ss = String(sec % 60).padStart(2, "0");
@@ -45,14 +60,16 @@ export const LobbyScreen = () => {
         <div className="card" style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
             <div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "#fff", lineHeight: 1 }}>2,418</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 24, color: "#fff", lineHeight: 1 }}>{playersJoined.toLocaleString()}</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>players joined</div>
             </div>
             <div style={{ display: "flex", alignItems: "center" }}>
               {[ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda, ASSETS.avatarOwl].map((src, i) => (
                 <PixelImg key={i} src={src} size={58} alt="" style={{ marginLeft: i ? -18 : 0 }} />
               ))}
-              <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 99, background: "var(--maple-500)", color: "var(--frame)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, marginLeft: -14, fontFamily: "var(--font-display)" }}>+2k</div>
+              {floored && (
+                <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 99, background: "var(--maple-500)", color: "var(--frame)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, marginLeft: -14, fontFamily: "var(--font-display)" }}>+2k</div>
+              )}
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>
