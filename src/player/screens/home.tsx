@@ -67,7 +67,7 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 // sheet (with both the free earn-by-playing route and a buy route) when they
 // can't. Both share the shop's sheet visual language.
 
-const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null }) => {
+const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, prizeGuaranteed }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null; round: TournamentRound | null; prizeTickets: number; prizeGuaranteed: boolean }) => {
   const usd = (n: number) => `$${n.toFixed(2)}`;
   return (
     <Sheet onClose={onClose} ariaLabel="Enter the Top of the Hour tournament">
@@ -80,9 +80,11 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee }
       </div>
       <div style={{ textAlign: "center", marginBottom: 14 }}>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--ink)" }}>Enter tournament?</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>Top of the Hour · Mixed · 6 Q</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>
+          {round ? `${round.title} · ${round.category} · ${round.questionCount} Q` : "Top of the Hour · Mixed · 6 Q"}
+        </div>
         <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-          Finish Top 100 to win a share of the prize pool
+          <TicketIcon size={14} />Win up to {prizeTickets}{prizeGuaranteed ? " guaranteed" : ""} — top finishers split the pool
         </div>
       </div>
 
@@ -538,6 +540,9 @@ export const HomeScreen = () => {
       {gate === "confirm" && (
         <JoinConfirmSheet
           fee={fee}
+          round={round}
+          prizeTickets={prizeTickets}
+          prizeGuaranteed={prizeGuaranteed}
           pending={entering}
           stepLabel={proto.tournamentStep ? txStepLabel(proto.tournamentStep) : null}
           error={entryError}

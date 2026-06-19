@@ -8,12 +8,13 @@ import {
   LIVES_REFILL_COST,
   TOURNAMENT_FIELD_SIZE,
   TOURNAMENT_TOP_PRIZE,
+  USDT_PER_TICKET,
   tournamentRank,
   syrupLabel,
   useProto,
 } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
-import { getTournament } from "@/actions/player";
+import { getTournament, type TournamentRound } from "@/actions/player";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -58,16 +59,28 @@ const TournamentUpsellSheet = ({
   const pct = Math.max(1, Math.min(99, Math.round((rank / TOURNAMENT_FIELD_SIZE) * 100)));
   const bonus = isDailyBonusAvailable();
 
-  // Flat entry fee + the struck-through "standard" price for the discount framing.
+  // Flat entry fee + the struck-through "standard" price for the discount
+  // framing, plus the live round (real entrant count + prize pool).
   const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
+  const [round, setRound] = useState<TournamentRound | null>(null);
   useEffect(() => {
     let active = true;
     getTournament()
-      .then((t) => { if (active && t) setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry }); })
+      .then((t) => {
+        if (!active || !t) return;
+        setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
+        setRound(t.round);
+      })
       .catch(() => {});
     return () => { active = false; };
   }, []);
   const usd = (n: number) => `$${n.toFixed(2)}`;
+
+  // Live "playing now" headcount and the floored "win up to" prize — the same
+  // model the Home card uses, so the upsell tells the identical story.
+  const playingNow = round?.playerCount ?? TOURNAMENT_FIELD_SIZE;
+  const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
+  const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
 
   const enter = () => {
     trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellAccepted, {
@@ -101,10 +114,10 @@ const TournamentUpsellSheet = ({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 12, fontWeight: 800, margin: "12px 0" }}>
-          <span style={{ color: "var(--ink-soft)" }}>{TOURNAMENT_FIELD_SIZE.toLocaleString()} playing now</span>
+          <span style={{ color: "var(--ink-soft)" }}>{playingNow.toLocaleString()} playing now</span>
           <span style={{ color: "var(--ink-faint)" }}>·</span>
           <span style={{ color: "var(--maple-500)", display: "inline-flex", alignItems: "center", gap: 4 }}>
-            Win up to <TicketIcon size={13} />{TOURNAMENT_TOP_PRIZE}
+            Win up to <TicketIcon size={13} />{prizeTickets}
           </span>
         </div>
 
