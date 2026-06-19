@@ -1,0 +1,736 @@
+/* Scoped for the celo migration: all global element rules (html/body bg, font
+   vars) are folded into `.waffles-v2` so this stylesheet never leaks onto
+   admin/landing pages. The dark page background is owned by `.waffles-v2-stage`
+   below. Font vars (--font-nunito/fredoka/baloo) are injected by next/font on
+   the wrapping div in v2/layout.tsx and inherited here. */
+.waffles-v2 {
+  --font-body: var(--font-nunito), "Nunito", "Arial Rounded MT Bold", ui-rounded, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-fredoka), "Fredoka", ui-rounded, system-ui, "Segoe UI", sans-serif;
+  /* Heavier display reserved for the big celebratory hero moments. */
+  --font-hero: var(--font-baloo), "Baloo 2", var(--font-fredoka), "Fredoka", ui-rounded, system-ui, sans-serif;
+}
+
+.waffles-v2 {
+  --maple-500: #FFC931;
+  --maple-400: #F5BB1B;
+  --maple-300: #ffe07a;
+  --maple-200: rgba(255, 201, 49, 0.15);
+  --maple-100: rgba(255, 201, 49, 0.08);
+
+  --butter-500: #FFC931;
+  --butter-400: #F5BB1B;
+  --butter-300: #ffe07a;
+
+  --berry: #FB72FF;
+  --leaf: #00CFF2;
+  --leaf-dark: #00a3c2;
+  --sky: #00CFF2;
+  --sky-dark: #00a3c2;
+  --live-red: #FC1919;
+  --frame: #1e1e1e;
+
+  --surface-deep: #070705;
+  --surface-1: #0F0F10;
+  --surface-2: #1a1a1c;
+  --surface-3: #2a2a2e;
+  --cream-pure: #fdfbf6;
+
+  --ink: #fdfbf6;
+  --ink-mute: rgba(253, 251, 246, 0.55);
+  --ink-faint: rgba(253, 251, 246, 0.35);
+  --ink-soft: rgba(253, 251, 246, 0.60);
+
+  --shadow-sm: 0 2px 0 rgba(58, 31, 10, 0.18), 0 4px 8px rgba(58, 31, 10, 0.10);
+  --shadow-md: 0 4px 0 rgba(58, 31, 10, 0.20), 0 8px 18px rgba(58, 31, 10, 0.14);
+  --shadow-lg: 0 6px 0 rgba(58, 31, 10, 0.22), 0 14px 30px rgba(58, 31, 10, 0.18);
+
+  --radius-sm: 12px;
+  --radius-md: 18px;
+  --radius-lg: 26px;
+  --radius-xl: 36px;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --press: transform 0.08s var(--ease-out-quart), filter 0.15s ease, box-shadow 0.08s ease;
+
+  font-family: var(--font-body, "Nunito"), system-ui, -apple-system, sans-serif;
+}
+
+/* Display-font headings are set inline as `font-family: var(--font-display)`,
+   which (Fredoka being a variable font) renders at the 400 default and looks
+   thin on chunky, game-y type. Default any such element to 700 — its boldest.
+   Elements that set their own inline font-weight override this automatically,
+   since inline styles outrank any selector. */
+.waffles-v2 [style*="--font-display"] {
+  font-weight: 700;
+}
+
+.waffles-v2-stage {
+  min-height: 100dvh;
+  width: 100%;
+  background: var(--surface-deep);
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+/* Hide scrollbars everywhere in the app — scrolling still works, just no
+   visible track/thumb (Firefox, IE/Edge legacy, and WebKit/Blink). */
+.waffles-v2 * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.waffles-v2 *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* ===== Theme skins =========================================================
+   A theme is a CSS-variable override on the root, toggled by [data-theme]
+   (set in page.tsx from the active Theme). Every screen reskins automatically
+   because they all read these tokens. Add an event by adding a block here. */
+.waffles-v2[data-theme="world-cup"] {
+  /* Pitch-green surfaces; keep the maple gold for CTAs/prizes (trophy gold). */
+  --leaf: #2bbf5b;
+  --leaf-dark: #1f8f44;
+  --sky: #2bbf5b;
+  --sky-dark: #1f8f44;
+  --surface-deep: #05130b;
+  --surface-1: #0b1d12;
+  --surface-2: #112a1b;
+  --surface-3: #1c3a27;
+}
+
+.waffles-v2-frame {
+  position: relative;
+  width: 100%;
+  min-height: 100dvh;
+  overflow: hidden;
+  background: var(--surface-deep);
+}
+
+.waffles-v2-hint {
+  position: absolute;
+  bottom: -34px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.35);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+@keyframes waffles-v2-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+@keyframes waffles-v2-slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes waffles-v2-slideDown {
+  from { transform: translateY(0); }
+  to { transform: translateY(100%); }
+}
+@keyframes waffles-v2-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes waffles-v2-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes waffles-v2-bob {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  50% { transform: translateX(-50%) translateY(-3px); }
+}
+@keyframes waffles-v2-tile-bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes waffles-v2-twinkle {
+  0%, 100% { opacity: 0.3; transform: scale(0.9); }
+  50% { opacity: 1; transform: scale(1.1); }
+}
+@keyframes waffles-v2-firefly {
+  0%, 100% { transform: translate(0, 0); opacity: 0.85; }
+  25% { transform: translate(18px, -14px); opacity: 1; }
+  50% { transform: translate(-6px, -28px); opacity: 0.9; }
+  75% { transform: translate(-22px, -10px); opacity: 0.95; }
+}
+/* Hero moment: each path tile drops into place with a fade + slide on first
+   render. The translate() preserves the tile's existing centering transform
+   (set inline on the wrapper) by using only translate3d on Z and Y here. */
+@keyframes waffles-v2-tile-enter {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Soft attention ring under the current tile — expands and fades, pulling
+   the eye to the playable level without being noisy. */
+@keyframes waffles-v2-attention-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.7); opacity: 0.55; }
+  70%  { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1.45); opacity: 0; }
+}
+/* Level unlock: the newly-unlocked slab pops in with an overshoot, a bright
+   flash, and an expanding burst ring — the "this is now playable" moment. */
+@keyframes waffles-v2-unlock-pop {
+  0%   { transform: scale(0.4) translateY(-6px); }
+  55%  { transform: scale(1.14) translateY(0); }
+  75%  { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+@keyframes waffles-v2-unlock-flash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+  25%  { opacity: 0.95; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(1.5); }
+}
+@keyframes waffles-v2-unlock-ring {
+  0%   { transform: translate(-50%, -50%) scale(0.25); opacity: 0.9; }
+  100% { transform: translate(-50%, -50%) scale(2.1); opacity: 0; }
+}
+/* Wally idle: subtle bob while standing still, paired with a separate slow
+   blink (handled by the eye-overlay element if present). Compound, gentle. */
+@keyframes waffles-v2-wally-idle {
+  0%, 60%, 100% { transform: translateY(0); }
+  20% { transform: translateY(-4px); }
+  40% { transform: translateY(-2px); }
+}
+/* Streak flame: flickers like a real flame — irregular vertical squash and
+   tiny horizontal sway so it feels alive, not on a metronome. */
+@keyframes waffles-v2-flame-flicker {
+  0%, 100% { transform: scale(1, 1) translateX(0); filter: brightness(1); }
+  20% { transform: scale(1.05, 0.95) translateX(0.5px); filter: brightness(1.1); }
+  40% { transform: scale(0.96, 1.04) translateX(-0.5px); filter: brightness(0.95); }
+  60% { transform: scale(1.02, 0.98) translateX(0.3px); filter: brightness(1.08); }
+  80% { transform: scale(0.98, 1.02) translateX(-0.3px); filter: brightness(1); }
+}
+/* Confetti: a piece falls from above the viewport, drifting and rotating
+   on the way down. Each piece varies via inline styles (delay, x-offset,
+   colour, rotation seed) so the burst doesn't look mechanical. */
+@keyframes waffles-v2-confetti-fall {
+  0%   { transform: translate3d(0, -40px, 0) rotate(0deg);    opacity: 0; }
+  10%  { opacity: 1; }
+  100% { transform: translate3d(var(--cf-dx, 0), 110vh, 0) rotate(var(--cf-rot, 720deg)); opacity: 1; }
+}
+/* CTA invitation: a tiny periodic pulse on primary actions when there's
+   nothing else competing for attention. Quiet enough not to nag. */
+@keyframes waffles-v2-cta-invite {
+  0%, 70%, 100% { box-shadow: 0 4px 0 var(--frame); }
+  85% { box-shadow: 0 4px 0 var(--frame), 0 0 0 6px rgba(255, 201, 49, 0.2); }
+}
+/* Cloud drift: slow horizontal sway with a tiny vertical bob so the clouds
+   over locked levels feel alive rather than stamped on. The keyframe uses
+   percentages on translate so each cloud drifts a bit differently if its
+   parent has a different width. */
+@keyframes waffles-v2-cloud-drift {
+  0%, 100% { transform: translate(0, 0); }
+  50%      { transform: translate(8px, -3px); }
+}
+/* Shimmer: a left-to-right gradient sweep used during the bundle "Processing…"
+   state to telegraph that something is happening without spinning a generic
+   loader. Plays inside a clip so the highlight only crosses the button. */
+@keyframes waffles-v2-shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+/* Snackbar progress: a 4-second left-shrinking bar that visualises the undo
+   grace period for power-up purchases. transform: scaleX uses the right edge
+   so it appears to drain toward the UNDO button. */
+@keyframes waffles-v2-snackbar-progress {
+  from { transform: scaleX(1); }
+  to   { transform: scaleX(0); }
+}
+/* Onboarding slide: each intro slide fades up as it becomes active. The
+   content wrapper is re-keyed per step so this re-fires on every advance. */
+@keyframes waffles-v2-onb-in {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* Coach-mark tip: pops in when a step becomes active. */
+@keyframes waffles-v2-coach-in {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+/* Badge unlock: the medal punches in with a slight overshoot for a satisfying
+   "earned it" beat. */
+@keyframes waffles-v2-badge-pop {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-12deg); }
+  60%  { opacity: 1; transform: scale(1.12) rotate(4deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+/* Live-answerers: PFP springs in, with a one-shot pulse ring expanding out. */
+@keyframes waffles-v2-pfp-in {
+  0%   { opacity: 0; transform: scale(0.2); }
+  70%  { transform: scale(1.14); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes waffles-v2-pfp-ring {
+  0%   { transform: scale(1); opacity: 0.7; }
+  100% { transform: scale(1.7); opacity: 0; }
+}
+/* Spotlight ring: a gentle breathing glow around the highlighted element so
+   the eye lands on it. The huge box-shadow (the dimmer) is held constant; only
+   the maple ring + glow pulse. */
+@keyframes waffles-v2-coach-ring {
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,.72), 0 0 0 2px var(--maple-500), 0 0 22px rgba(255,201,49,.35); }
+  50%      { box-shadow: 0 0 0 9999px rgba(0,0,0,.72), 0 0 0 3px var(--maple-500), 0 0 30px rgba(255,201,49,.6); }
+}
+/* ── Level-up celebration sequence ──────────────────────────────────────
+   A staged reveal: the screen flashes gold, a shockwave + rotating light
+   rays bloom behind the trophy, the trophy bursts in and settles into a
+   gentle float, then the headline, level counter, and stat cards cascade
+   up in turn. Each piece keys off animationDelay so the beat order is
+   readable in the JSX. All decorative — disabled under reduced-motion. */
+
+/* Opening gold flash — a quick wash that fades out, punctuating the win. */
+@keyframes waffles-v2-lvl-flash {
+  0%   { opacity: 0.55; }
+  100% { opacity: 0; }
+}
+/* Entry-confirmed splash: fades in fast, holds, fades out — a one-shot beat
+   that acknowledges a tournament payment before the lobby is revealed. */
+@keyframes waffles-v2-enter-splash {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  76%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* Shockwave: a maple ring that expands once and fades, selling the impact. */
+@keyframes waffles-v2-lvl-shock {
+  0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }
+  100% { transform: translate(-50%, -50%) scale(2.6); opacity: 0; }
+}
+/* Light rays fan out behind the trophy and rotate slowly + endlessly. */
+@keyframes waffles-v2-lvl-rays-in {
+  from { opacity: 0; transform: scale(0.4); }
+  to   { opacity: 0.6; transform: scale(1); }
+}
+@keyframes waffles-v2-lvl-rays-spin {
+  to { transform: rotate(360deg); }
+}
+/* Continuous rotation for the loading spinner. */
+@keyframes waffles-v2-spin {
+  to { transform: rotate(360deg); }
+}
+/* Trophy entrance: overshoots big, dips, then settles — a spring-y pop. */
+@keyframes waffles-v2-lvl-trophy-in {
+  0%   { opacity: 0; transform: scale(0.2) translateY(20px); }
+  55%  { opacity: 1; transform: scale(1.18) translateY(-6px); }
+  75%  { transform: scale(0.94) translateY(2px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+/* Trophy idle float — kicks in after the entrance lands. */
+@keyframes waffles-v2-lvl-trophy-float {
+  0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+  50%      { transform: translateY(-7px) rotate(1.5deg); }
+}
+/* Headline pop with an overshoot so "LEVEL UP!" snaps into place. */
+@keyframes waffles-v2-lvl-pop {
+  0%   { opacity: 0; transform: scale(0.5); }
+  60%  { opacity: 1; transform: scale(1.12); }
+  100% { opacity: 1; transform: scale(1); }
+}
+/* Generic cascade: fade + rise used for the counter and stat cards. */
+@keyframes waffles-v2-lvl-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+/* New level number flips up from below with a quick gold flash. */
+@keyframes waffles-v2-lvl-num-flip {
+  0%   { opacity: 0; transform: translateY(14px) rotateX(-90deg); }
+  60%  { opacity: 1; transform: translateY(-3px) rotateX(8deg); }
+  100% { opacity: 1; transform: translateY(0) rotateX(0deg); }
+}
+/* A one-shot glow pulse behind the new number as it lands. */
+@keyframes waffles-v2-lvl-num-glow {
+  0%   { opacity: 0; transform: scale(0.6); }
+  40%  { opacity: 1; transform: scale(1.1); }
+  100% { opacity: 0; transform: scale(1.4); }
+}
+/* Results — the player's own leaderboard row breathes a gold glow so the eye
+   finds it after the rows settle in. Border is held by inline style; only the
+   outer glow pulses here. */
+@keyframes waffles-v2-row-glow {
+  0%, 100% { box-shadow: 0 0 0 rgba(255,201,49,0); }
+  50%      { box-shadow: 0 0 18px rgba(255,201,49,.38); }
+}
+
+/* ── Game loader ─────────────────────────────────────────────────────────
+   Branded fallback shown while a code-split screen chunk loads: a waffle that
+   bounces with squash-and-stretch over a shadow that scales inversely, plus a
+   row of pulsing dots. All CSS, no assets. */
+@keyframes waffles-v2-load-bounce {
+  0%   { transform: translateY(0) scale(1, 1); }
+  12%  { transform: translateY(0) scale(1.18, 0.82); }   /* anticipation squash */
+  40%  { transform: translateY(-46px) scale(0.92, 1.08); } /* stretch in flight */
+  52%  { transform: translateY(-46px) scale(0.96, 1.04); } /* hang at apex */
+  78%  { transform: translateY(0) scale(1.18, 0.82); }   /* impact squash */
+  100% { transform: translateY(0) scale(1, 1); }
+}
+@keyframes waffles-v2-load-shadow {
+  0%, 100% { transform: scale(1); opacity: 0.45; }
+  46%      { transform: scale(0.55); opacity: 0.18; }
+}
+@keyframes waffles-v2-load-dot {
+  0%, 100% { opacity: 0.3; transform: translateY(0); }
+  50%      { opacity: 1; transform: translateY(-5px); }
+}
+
+/* Honour the user's motion preference. Disable decorative animation but
+   keep functional feedback (press, focus) intact. */
+@media (prefers-reduced-motion: reduce) {
+  .waffles-v2 *,
+  .waffles-v2 *::before,
+  .waffles-v2 *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+.waffles-v2 .phone {
+  width: 100%;
+  /* Use 100svh (small viewport) so the tab bar stays visible even when the
+     mobile address bar is showing — `100dvh` shrinks dynamically and can
+     leave the bottom-bar overflowing the visible area. */
+  min-height: 100svh;
+  height: 100svh;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(180deg, var(--frame) 0%, var(--surface-deep) 100%);
+  font-family: var(--font-body, "Nunito"), system-ui, -apple-system, sans-serif;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+}
+.waffles-v2 .phone * { box-sizing: border-box; }
+
+.waffles-v2 .body { flex: 1; position: relative; overflow: hidden; }
+
+.waffles-v2 .top-header {
+  position: absolute; top: 0; left: 0; right: 0;
+  /* Top padding accounts for the iOS status bar / notch via env() so the
+     ticket counter never sits behind it. */
+  padding: max(14px, calc(env(safe-area-inset-top) + 12px)) 18px 14px;
+  display: flex; align-items: center; gap: 6px;
+  z-index: 10;
+  pointer-events: none;
+}
+.waffles-v2 .top-header .ticket-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  /* No pill background — clean icon + count on the screen surface. */
+  color: var(--ink); font-weight: 900; font-size: 16px;
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  font-variant-numeric: tabular-nums;
+  pointer-events: auto;
+}
+.waffles-v2 .top-header .title {
+  color: white;
+  font-family: var(--font-display, "Fredoka"), system-ui;
+  font-size: 22px;
+  letter-spacing: 0.5px;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.25);
+}
+
+/* Bottom nav: ALWAYS just the TabBar at a consistent height across screens.
+   Per-screen primary CTAs (Tournament, Play Level, …) sit in `.cta-row`,
+   which floats above the bottom bar via `.cta-row.sticky` so that the tab
+   bar's vertical position never shifts when navigating between screens.
+   Horizontal padding is 0 here so the tab labels span the full width and
+   don't appear compacted compared to the rest of the screen. */
+.waffles-v2 .bottom-bar {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: var(--surface-1);
+  /* Generous bottom padding so the home indicator on iOS / a system gesture
+     bar on Android can't sit on top of the tab labels. The max() keeps a
+     baseline 12px even on devices that don't expose a safe area inset. */
+  padding: 8px 0 max(12px, env(safe-area-inset-bottom));
+  display: flex; flex-direction: column;
+  border-top: 2px solid rgba(255, 255, 255, 0.08);
+}
+.waffles-v2 .cta-row { display: flex; gap: 10px; }
+.waffles-v2 .cta-row.sticky {
+  position: absolute;
+  /* Sit just above the bottom bar — the bar is 64px PLUS whatever safe-area
+     padding is in play, so the sticky CTA matches that dynamically and
+     doesn't end up overlapping the tab labels on iPhones with a notch. */
+  bottom: calc(64px + max(4px, env(safe-area-inset-bottom)));
+  left: 0; right: 0;
+  padding: 10px 16px;
+  background: var(--surface-1);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  z-index: 5;
+}
+.waffles-v2 .cta {
+  flex: 1; height: 54px; border-radius: 12px;
+  background: var(--cream-pure); color: #191919;
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  /* Fredoka is a variable font; without an explicit weight it renders at 400,
+     which looks thin on a chunky CTA. 700 is its boldest, matching the heavy
+     look the button was designed for. */
+  font-size: 18px; font-weight: 700; letter-spacing: 0.3px;
+  text-transform: uppercase;
+  border: 5px solid var(--leaf);
+  border-top: 0; border-left: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: var(--press);
+  user-select: none;
+}
+.waffles-v2 .cta:active { transform: translateY(2px); filter: brightness(0.96); }
+.waffles-v2 .cta:focus-visible { outline: 3px solid var(--berry); outline-offset: 3px; }
+/* The 3D "lift" comes from the asymmetric bottom/right border. On the maple
+   CTA that edge used --frame (near-black), which vanishes on the dark screens
+   this button lives on (results, level-up). A darker amber — a shade of the
+   button's own colour — reads as depth on any background. */
+.waffles-v2 .cta.maple { background: var(--maple-500); color: #191919; border-color: #9c6608; }
+.waffles-v2 .cta.berry { background: var(--berry); color: var(--frame); border-color: var(--frame); }
+.waffles-v2 .cta.icon-btn { flex: 0 0 54px; background: var(--cream-pure); color: #191919; }
+
+/* Top-of-screen back button — the chunky brand button at header size. Same
+   cream fill + asymmetric --leaf border that gives the CTAs their 3D "lift",
+   just smaller and square. Opaque, so it reads on dark headers and bright
+   hero backgrounds alike. */
+.waffles-v2 .back-btn {
+  width: 44px; height: 44px; flex-shrink: 0; padding: 0;
+  border-radius: 12px;
+  background: var(--cream-pure); color: #191919;
+  /* Bevel is a darker shade of the cream (like the maple CTA's amber edge), not
+     the loud cyan --leaf — reads as depth without screaming. */
+  border: 4px solid #c9b78f; border-top: 0; border-left: 0;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: var(--press);
+  -webkit-tap-highlight-color: transparent;
+}
+.waffles-v2 .back-btn:active { transform: translateY(2px); filter: brightness(0.96); }
+.waffles-v2 .back-btn:focus-visible { outline: 3px solid var(--berry); outline-offset: 3px; }
+
+/* Generic button reset for divs that should be buttons. */
+.waffles-v2 .pressable {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+  transition: var(--press);
+}
+.waffles-v2 .pressable:focus-visible {
+  outline: 3px solid var(--berry);
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+.waffles-v2 .pressable:active { transform: translateY(1px) scale(0.97); }
+.waffles-v2 .pressable:disabled { cursor: default; opacity: 1; }
+
+.waffles-v2 .tab-bar { display: flex; justify-content: space-around; padding: 4px 0 6px; }
+.waffles-v2 .tab {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  font-size: 11px; font-weight: 800;
+  color: rgba(255, 255, 255, 0.7);
+}
+.waffles-v2 .tab.active { color: #FFC931; }
+.waffles-v2 .tab svg { width: 22px; height: 22px; }
+
+.waffles-v2 .card {
+  background: var(--surface-1);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.waffles-v2 .chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-weight: 800; font-size: 12px; letter-spacing: 0.3px;
+}
+
+.waffles-v2 .bubble {
+  background: var(--cream-pure);
+  border-radius: 12px;
+  padding: 10px 14px;
+  border: 4px solid var(--leaf);
+  border-top: 0; border-left: 0;
+  position: relative;
+  font-size: 13px; font-weight: 700; color: #191919;
+  max-width: 240px; line-height: 1.35;
+}
+.waffles-v2 .bubble::before {
+  content: ""; position: absolute;
+  left: -8px; top: 14px;
+  width: 0; height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 10px solid var(--cream-pure);
+}
+
+.waffles-v2 .waffle-node {
+  width: 64px; height: 64px;
+  border-radius: 14px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 12px, rgba(0, 0, 0, 0.35) 12px 14px),
+    repeating-linear-gradient(90deg, transparent 0 12px, rgba(0, 0, 0, 0.35) 12px 14px),
+    linear-gradient(180deg, var(--maple-500) 0%, var(--maple-400) 100%);
+  border: 3px solid var(--frame);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  font-size: 22px; color: var(--frame);
+  box-shadow: 0 5px 0 var(--frame);
+  position: relative;
+  transition: var(--press);
+}
+.waffles-v2 .waffle-node.done {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 12px, rgba(0, 0, 0, 0.4) 12px 14px),
+    repeating-linear-gradient(90deg, transparent 0 12px, rgba(0, 0, 0, 0.4) 12px 14px),
+    linear-gradient(180deg, var(--leaf), var(--leaf-dark));
+  border-color: var(--frame);
+  box-shadow: 0 5px 0 var(--frame);
+  color: var(--frame);
+}
+.waffles-v2 .waffle-node.locked {
+  background: linear-gradient(180deg, var(--surface-3), #141416);
+  border-color: #050505;
+  box-shadow: 0 5px 0 #050505;
+  color: var(--ink-faint);
+}
+.waffles-v2 .waffle-node.current {
+  transform: scale(1.08);
+  box-shadow: 0 5px 0 var(--frame), 0 0 0 4px var(--berry);
+}
+.waffles-v2 .pressable:active .waffle-node.current {
+  transform: scale(1.06) translateY(2px);
+  box-shadow: 0 3px 0 var(--frame), 0 0 0 4px var(--berry);
+}
+
+.waffles-v2 .level-tile-mark {
+  position: absolute;
+  top: 31%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.waffles-v2 .level-tile-mark[data-state="locked"] {
+  opacity: 0.7;
+  filter: grayscale(0.25) brightness(0.85);
+}
+
+/* Per-tile level number. Shown on every done/locked tile so the path reads
+   both ways. Plateless on purpose — a badge on each of ~20 tiles would be
+   heavy, so it's a chunky outlined numeral sitting right on the slab. The thick
+   dark stroke (painted behind the fill) keeps it crisp on the cyan "done" and
+   grey "locked" slabs alike; locked tiles get auto-dimmed by the rule above. */
+.waffles-v2 .level-tile-number {
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  font-size: 27px;
+  line-height: 1;
+  color: var(--cream-pure);
+  letter-spacing: 0.5px;
+  -webkit-text-stroke: 3.5px var(--frame);
+  paint-order: stroke fill;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.waffles-v2 .level-tile-number[data-digits="3"] {
+  font-size: 22px;
+}
+
+/* Current tile's call to action — a bright cream chip that pops off the gold
+   slab and matches the app's CTA styling. Replaces both the old number pill
+   and the separate "YOU" tag. */
+.waffles-v2 .level-tile-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 13px 7px;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #fffefb, #ece4d4);
+  border: 2.5px solid var(--frame);
+  box-shadow: 0 3px 0 var(--frame), 0 6px 12px rgba(0, 0, 0, 0.35);
+  color: #1a1a1a;
+  font-family: var(--font-display, "Archivo Black"), system-ui;
+  font-size: 14px;
+  letter-spacing: 0.6px;
+}
+
+.waffles-v2 .waffle-mark {
+  width: 28px; height: 28px;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 6px, rgba(0, 0, 0, 0.35) 6px 7px),
+    repeating-linear-gradient(90deg, transparent 0 6px, rgba(0, 0, 0, 0.35) 6px 7px),
+    linear-gradient(180deg, var(--maple-500), var(--maple-400));
+  border: 2px solid var(--frame);
+  flex-shrink: 0;
+}
+
+/* Body gradient utility — replaces inline `linear-gradient(180deg, #1e1e1e 0%, #000 100%)`. */
+.waffles-v2 .bg-deep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, var(--frame) 0%, var(--surface-deep) 100%);
+}
+
+/* Header glow — used on home/levels/question/results. Use sparingly. */
+.waffles-v2 .glow-top {
+  position: absolute;
+  top: -60px;
+  left: -40px;
+  right: -40px;
+  height: 280px;
+  background: radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.15), transparent 60%);
+  pointer-events: none;
+}
+
+/* Tab bar */
+.waffles-v2 .tab {
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--press);
+}
+.waffles-v2 .tab:focus-visible {
+  outline: 2px solid var(--berry);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.waffles-v2 .tab:active { transform: translateY(1px); }
+
+@media (prefers-reduced-motion: reduce) {
+  .waffles-v2 *,
+  .waffles-v2 *::before,
+  .waffles-v2 *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* World Cup Format Lab — local helpers. */
+@keyframes wc-eq {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+@keyframes wc-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-7px); }
+  40% { transform: translateX(7px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+@keyframes wc-pop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}

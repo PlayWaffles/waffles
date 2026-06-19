@@ -1,0 +1,246 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useProto } from "../state";
+import { useResilientAction } from "../useResilientAction";
+import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton } from "../shared";
+import { loadTournamentLeaderboard } from "@/actions/player";
+import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+
+// Pre-generated medal art replaces the synthesized SVG medal.
+const BigMedal = ({ size = 78 }: { color?: string; size?: number }) => (
+  <PixelImg src={ASSETS.medalApprentice} size={size} alt="medal" />
+);
+
+const ChestGlyph = ({ rank }: { rank: number }) => {
+  const src = rank <= 5 ? ASSETS.chestRainbow : rank <= 20 ? ASSETS.chestPurple : ASSETS.chestBrown;
+  return <PixelImg src={src} size={24} alt="chest" />;
+};
+
+type Player = { rank: number; name: string; pts: number; color: string; avatar?: string; you?: boolean };
+
+const AVATAR_BY_RANK = [
+  ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda,
+  ASSETS.avatarOwl, ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit,
+];
+
+const LeaderRow = ({ p }: { p: Player }) => {
+  const av = p.you ? (p.avatar ?? ASSETS.wally) : AVATAR_BY_RANK[(p.rank - 1) % AVATAR_BY_RANK.length];
+  // Top-3 ranks get the brand maple gold, everyone else uses the muted-ink ramp.
+  const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
+  const ptsColor = p.you ? "var(--maple-500)" : "var(--ink)";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 16px", color: "var(--ink)" }}>
+      <div style={{ width: 22, fontFamily: "var(--font-display)", fontSize: 13, color: rankColor, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{p.rank}</div>
+      <PixelImg src={av} size={40} alt="" />
+      <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
+        {!p.you && <ChestGlyph rank={p.rank} />}
+        <PixelImg src={ASSETS.trophy} size={24} alt="" />
+        <span style={{ fontFamily: "var(--font-display)", fontSize: 13, color: ptsColor, fontVariantNumeric: "tabular-nums", minWidth: 36, textAlign: "right" }}>{p.pts.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+};
+
+export const LeaderboardScreen = () => {
+  const proto = useProto();
+  const [tab, setTab] = useState<"league" | "friends">("league");
+
+  // Real tournament standings only — no mock fallback. Resilient fetch (retries
+  // through the auth-cookie / between-rounds race); until a real board loads (or
+  // if none has run yet) the league tab shows an empty state, not fake players.
+  const { data: rawBoard } = useResilientAction(() => loadTournamentLeaderboard(), []);
+  const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
+
+  const youAvatar = resolveAvatar(proto.avatarId, proto.username);
+  const leaders: Player[] = board
+    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, color: "#3dd17a", you: s.you, avatar: s.you ? youAvatar : undefined }))
+    : [];
+  const you: Player | null = board?.you
+    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true, avatar: youAvatar }
+    : null;
+  useEffect(() => {
+    trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
+      screen: "leaderboard",
+      leaderboard_tab: tab,
+      field_size: board?.fieldSize ?? leaders.length,
+      rank: you?.rank ?? 0,
+      score_after: you?.pts ?? 0,
+      has_live_board: Boolean(board),
+    });
+  }, [tab, board, leaders.length, you?.rank, you?.pts]);
+
+  return (
+    <Phone statusDark>
+      {/* Match the rest of the v2 app: deep tinted-neutral surface with a
+          warm gold glow at the top that echoes the results / level-up screens
+          rather than the off-brand purple gradient that was here before. */}
+      <div className="bg-deep" />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 280,
+          background: "radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.22), transparent 65%)",
+          pointerEvents: "none",
+        }}
+      />
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 280,
+          backgroundImage:
+            "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)",
+          backgroundSize: "80px 80px, 100px 100px, 70px 70px",
+          backgroundPosition: "0 0, 30px 40px, 50px 20px",
+          opacity: 0.35,
+          pointerEvents: "none",
+        }}
+      />
+
+      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--ink)", zIndex: 2 }}>
+        <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
+        <div style={{ flex: 1 }} />
+        <button
+          type="button"
+          aria-label="About leagues"
+          onClick={() => {
+            trackClientEvent(AnalyticsEvent.AboutLeaguesClicked, {
+              screen: "leaderboard",
+              leaderboard_tab: tab,
+            });
+            proto.goto("leagues");
+          }}
+          style={{ background: "rgba(253, 251, 246, 0.08)", border: "1.5px solid rgba(253, 251, 246, 0.25)", borderRadius: 99, width: 30, height: 30, padding: 0, cursor: "pointer", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}
+        ><InfoIcon size={16} /></button>
+      </div>
+
+      <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 201, 49, 0.35))" }}>
+          <BigMedal color="#cd7f32" size={120} />
+        </div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>APPRENTICE I</div>
+        <div style={{ display: "inline-flex", gap: 5, alignItems: "center", fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4 }}>
+          <span>⏱</span> Ends in 1d 15h
+        </div>
+      </div>
+
+      <div style={{ position: "absolute", top: 280, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 24px" }}>
+          {[
+            { id: "league" as const, label: "Your League" },
+            { id: "friends" as const, label: "Friends" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => {
+                if (tab !== t.id) {
+                  trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, {
+                    screen: "leaderboard",
+                    previous_tab: tab,
+                    leaderboard_tab: t.id,
+                  });
+                }
+                setTab(t.id);
+              }}
+              style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {tab === "league" ? (
+          leaders.length === 0 ? (
+            // No real standings yet (no tournament has run / settled). Show an
+            // empty state instead of fabricated players.
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
+              <PixelImg src={ASSETS.trophy} size={64} alt="" style={{ opacity: 0.85, marginBottom: 16 }} />
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No standings yet</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
+                Play a tournament to claim your spot — the league board fills up once scores are in.
+              </div>
+            </div>
+          ) : (
+          <>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px 10px", color: "var(--ink-soft)" }}>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>Position</span>
+              <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
+                Points
+                <InfoButton title="Points" text="Points are what you score by playing levels and tournaments during this league period. The more points you score, the higher you climb — top finishers get promoted to the next league and win reward chests, while the bottom few drop down." size={18} />
+              </span>
+            </div>
+            <div style={{ flex: 1, overflow: "auto", scrollbarWidth: "none" }}>
+              {leaders.map((p) => <LeaderRow key={p.rank} p={p} />)}
+              {/* "You" row pinned to the bottom — uses the maple-tinted highlight
+                  that the results screen uses for the player's row, so the two
+                  leaderboards in the app share a visual language. Only shown when
+                  the board actually places you. */}
+              {you && (
+                <div data-coach="leaderboard-you" style={{ position: "sticky", bottom: 0, background: "#191507", borderTop: "1.5px solid var(--maple-500)", boxShadow: "0 -10px 18px rgba(0, 0, 0, 0.45)" }}>
+                  <LeaderRow p={you} />
+                </div>
+              )}
+            </div>
+          </>
+          )
+        ) : (
+          // Friends tab — empty state with a clear CTA, instead of mirroring
+          // the league list and leaving the user wondering whether the tab
+          // even switched. Sets up a real product moment (invite friends).
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
+            <div style={{ width: 72, height: 72, borderRadius: 99, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, border: "1px solid rgba(253, 251, 246, 0.08)" }}>
+              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <circle cx="9" cy="8" r="3.5" stroke="var(--ink-soft)" strokeWidth="2" fill="none" />
+                <path d="M3 19c.8-3 3.2-5 6-5s5.2 2 6 5" stroke="var(--ink-soft)" strokeWidth="2" fill="none" strokeLinecap="round" />
+                <circle cx="17" cy="6" r="2.5" stroke="var(--maple-500)" strokeWidth="2" fill="none" />
+                <path d="M14 14c.5-1.8 1.8-3 3-3s2.5 1.2 3 3" stroke="var(--maple-500)" strokeWidth="2" fill="none" strokeLinecap="round" />
+              </svg>
+            </div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No friends yet</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
+              Add friends to see their scores next to yours and compete for bragging rights.
+            </div>
+            <ToastButton
+              ariaLabel="Invite friends"
+              toast="Friend invites are coming soon!"
+              onClick={() => trackClientEvent(AnalyticsEvent.InviteFriendsClicked, {
+                screen: "leaderboard",
+                leaderboard_tab: tab,
+              })}
+              className="pressable"
+              style={{
+                marginTop: 22,
+                background: "var(--maple-500)",
+                color: "var(--frame)",
+                border: "2px solid var(--frame)",
+                fontFamily: "var(--font-body)",
+                fontWeight: 900,
+                fontSize: 13,
+                padding: "10px 20px",
+                borderRadius: 12,
+                letterSpacing: 0.3,
+                boxShadow: "0 3px 0 var(--frame)",
+                cursor: "pointer",
+              }}
+            >
+              INVITE FRIENDS
+            </ToastButton>
+          </div>
+        )}
+      </div>
+
+      <div className="bottom-bar" style={{ paddingTop: 4, paddingBottom: 4, gap: 0 }}>
+        <TabBar active="compete" />
+      </div>
+    </Phone>
+  );
+};

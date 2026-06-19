@@ -3,12 +3,12 @@
 import { useEffect, useState, useRef, useActionState, startTransition, useCallback } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { motion, useAnimation, AnimatePresence } from "framer-motion";
+import { motion, useAnimation } from "framer-motion";
 
 import { useUser } from "@/hooks/useUser";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
 import { redeemInviteCodeAction, type ValidateReferralResult } from "@/actions/invite";
-import posthog from "posthog-js";
+import { trackClientEvent } from "@/lib/analytics";
 import {
   shakeX,
   triggerShake,
@@ -91,7 +91,7 @@ export default function InvitePageClient() {
       setError(null);
       playSound("codeValid");
 
-      posthog.capture("referral_redeemed", {
+      trackClientEvent("referral_redeemed", {
         code: code.trim().toUpperCase(),
         source: initialCode ? "url" : "manual",
       });
@@ -120,7 +120,7 @@ export default function InvitePageClient() {
         transition: { duration: 0.3 },
       });
     }
-  }, [result, refetch, router, inputControls, keyControls]);
+  }, [code, initialCode, result, refetch, router, inputControls, keyControls]);
 
   // ============================================
   // HANDLERS

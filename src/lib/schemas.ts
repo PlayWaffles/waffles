@@ -29,17 +29,6 @@ export const validateReferralSchema = z.object({
   userId: userIdSchema,
 });
 
-// --- Chat Schemas ---
-export const sendMessageSchema = z.object({
-  gameId: z.number().int().positive("Invalid Game ID."),
-  message: z
-    .string()
-    .trim()
-    .min(1, "Message cannot be empty.")
-    .max(500, "Message exceeds 500 characters."),
-  fid: fidSchema,
-});
-
 // --- Onboarding Schemas ---
 export const syncUserSchema = z.object({
   platform: userPlatformSchema,

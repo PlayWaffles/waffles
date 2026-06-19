@@ -5,6 +5,7 @@ export {
   farcasterChain,
   farcasterSepoliaChainConfig,
   miniPayChain,
+  miniPaySepoliaChain,
   PAYMENT_TOKEN_DECIMALS,
   getPaymentTokenAddress,
   getPlatformChain,

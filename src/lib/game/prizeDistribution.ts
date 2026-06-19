@@ -178,6 +178,17 @@ function normalizeShares(shares: number[]): number[] {
   return shares.map((share) => share / total);
 }
 
+/** The fraction of the pool the #1 finisher receives, given the paid-entrant
+ *  count — i.e. `normalizedSchedule[0]` from the live bracket. Lets the lobby
+ *  project the "win up to" headline before a round settles, using the exact
+ *  same bracket math the settlement uses. Empty field → the eventual winner
+ *  would take 100%. */
+export function topWinnerShare(paidEntrants: number): number {
+  if (paidEntrants <= 0) return 1;
+  const schedule = getScheduleForPaidEntrants(paidEntrants).slice(0, paidEntrants);
+  return normalizeShares(schedule)[0] ?? 1;
+}
+
 // ============================================================================
 // Validation & Debug Utilities
 // ============================================================================

@@ -1,13 +1,17 @@
 import cron from "node-cron";
+import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/lifecycle";
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
+import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
+import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
+import { env } from "@/lib/env";
 
 /**
- * Roundup ended games that weren't processed by PartyKit alarm.
- * Finds games where endsAt < now AND rankedAt is null, then ranks + publishes.
+ * Roundup ended games that haven't been settled yet. Finds games where
+ * endsAt < now AND rankedAt is null, then ranks + publishes on-chain.
  */
 async function roundupGames() {
   try {
@@ -39,7 +43,31 @@ async function roundupGames() {
       }
     }
 
-    console.log(`[Cron] Roundup done: ${ranked} ranked, ${published} published`);
+    // Retry publish for games that were ranked but never published on-chain
+    // (e.g. a prior publish threw — settler out of gas, RPC blip). Without this,
+    // a winner's prize is stuck un-claimable forever. Self-heals once fixable.
+    const stuck = await prisma.game.findMany({
+      where: {
+        endsAt: { lt: new Date() },
+        rankedAt: { not: null },
+        onChainAt: null,
+        onchainId: { not: null },
+        entries: { some: { prize: { gt: 0 } } },
+      },
+      select: { id: true },
+    });
+    let republished = 0;
+    for (const game of stuck) {
+      try {
+        await publishResults(game.id);
+        republished++;
+        console.log(`[Cron] Re-published stuck game ${game.id}`);
+      } catch (e) {
+        console.error(`[Cron] Re-publish failed for ${game.id}:`, e);
+      }
+    }
+
+    console.log(`[Cron] Roundup done: ${ranked} ranked, ${published + republished} published`);
 
     const scheduled = await ensureNextAutoScheduledGames();
     const created = scheduled.filter((result) => result.created).length;
@@ -73,9 +101,49 @@ async function ticketOpenNotificationsJob() {
 }
 
 /**
+ * Ensure each platform has a live hourly v2 tournament game (on-chain, with
+ * questions). Idempotent — a no-op when the current hour already has one.
+ * Mirrors POST /api/cron/ensure-tournament-rounds.
+ */
+async function ensureTournamentRoundsJob() {
+  const platforms = [UserPlatform.FARCASTER, UserPlatform.MINIPAY] as const;
+  for (const platform of platforms) {
+    try {
+      const { created, gameId } = await ensureHourlyTournamentGame(platform);
+      if (created) {
+        console.log(`[Cron] Created hourly tournament game ${gameId} (${platform})`);
+      }
+    } catch (e) {
+      console.error(`[Cron] ensure-tournament-rounds failed (${platform}):`, e);
+    }
+  }
+}
+
+/**
+ * Settle finished league seasons: rank each cohort, pay band rewards, and
+ * promote/demote. Idempotent (per-cohort settledAt guard), so a daily run
+ * self-heals — it closes last week's cohorts on the first run after rollover.
+ */
+async function closeLeagueSeasonJob() {
+  try {
+    const { cohorts, rewarded } = await closeLeagueSeason();
+    if (cohorts > 0) {
+      console.log(`[Cron] League settlement: ${cohorts} cohort(s) settled, ${rewarded} rewarded`);
+    }
+  } catch (e) {
+    console.error("[Cron] League settlement failed:", e);
+  }
+}
+
+/**
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
 export function startCronJobs() {
+  if (!env.isProduction) {
+    console.log("[Cron] Skipped: cron jobs only run in production");
+    return;
+  }
+
   // Every 5 minutes: roundup unranked ended games
   cron.schedule("*/5 * * * *", roundupGames);
   console.log("[Cron] Scheduled: roundup-games (every 5 min)");
@@ -87,4 +155,16 @@ export function startCronJobs() {
   // Every minute: send ticket opening countdown notifications
   cron.schedule("* * * * *", ticketOpenNotificationsJob);
   console.log("[Cron] Scheduled: ticket-open-notifications (every min)");
+
+  // Top of every hour: ensure each platform has a live v2 tournament game.
+  // Idempotent, so also run once now to cover mid-hour restarts.
+  cron.schedule("0 * * * *", ensureTournamentRoundsJob);
+  console.log("[Cron] Scheduled: ensure-tournament-rounds (hourly)");
+  ensureTournamentRoundsJob();
+
+  // Daily at 00:10 UTC: settle any finished league season (idempotent). Runs
+  // once now too, to cover a restart on the day a week rolled over.
+  cron.schedule("10 0 * * *", closeLeagueSeasonJob);
+  console.log("[Cron] Scheduled: close-league-season (daily 00:10 UTC)");
+  closeLeagueSeasonJob();
 }

@@ -2,7 +2,6 @@ import { cookies } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify, SignJWT } from "jose";
 import { createClient as createQuickAuthClient } from "@farcaster/quick-auth";
-import { track } from "@vercel/analytics/server";
 
 // Module-level singleton — avoids re-initialization per request
 const farcasterAuthClient = createQuickAuthClient();
@@ -11,6 +10,7 @@ import { Prisma, UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { generateInviteCode } from "@/lib/utils";
+import { randomAvatarId } from "@/lib/avatars";
 import { parseCookieHeader } from "@/lib/platform/server";
 import { getPublicClient } from "@/lib/chain";
 
@@ -43,9 +43,9 @@ function isPreviousUtcDate(previous: Date, current: Date) {
 }
 
 function getAuthSecret() {
-  const secret = env.authSecret || env.partykitSecret;
+  const secret = env.authSecret;
   if (!secret) {
-    throw new Error("AUTH_SECRET or PARTYKIT_SECRET must be configured");
+    throw new Error("AUTH_SECRET must be configured");
   }
   return new TextEncoder().encode(secret);
 }
@@ -147,18 +147,14 @@ async function ensureUser(
     try {
       const user = await prisma.user.create({
         data: {
+          // Random avatar so every new player gets a distinct pfp, not the
+          // default Waffles mascot. `createData` can still override it.
+          avatarId: randomAvatarId(),
           ...createData,
           inviteCode: generateInviteCode(),
         } as Prisma.UserCreateInput,
         select: USER_PROFILE_SELECT,
       });
-
-      void track("signup_completed", {
-        userId: user.id,
-        platform: user.platform,
-        hasWallet: Boolean(user.wallet),
-        hasFid: Boolean(user.fid),
-      }).catch(() => {});
 
       return user;
     } catch (error) {

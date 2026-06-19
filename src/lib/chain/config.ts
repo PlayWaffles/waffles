@@ -30,7 +30,18 @@ const farcasterSepoliaChain: Chain = {
 export const farcasterChain = farcasterMainnetChain;
 export const farcasterSepoliaChainConfig = farcasterSepoliaChain;
 export const miniPayChain = celo;
-export const miniPaySepoliaChain = celoSepolia;
+export const miniPaySepoliaChain: Chain = {
+  ...celoSepolia,
+  rpcUrls: {
+    ...celoSepolia.rpcUrls,
+    default: {
+      http: [env.nextPublicCeloSepoliaRpcUrl],
+    },
+    public: {
+      http: [env.nextPublicCeloSepoliaRpcUrl],
+    },
+  },
+};
 
 export function getPlatformChain(target: ChainTarget): Chain {
   const { network } = resolveChainTarget(target);
@@ -46,7 +57,7 @@ export function getPlatformRpcUrl(target: ChainTarget): string {
   if (network === "CELO_MAINNET") {
     return env.nextPublicCeloMainnetRpcUrl || miniPayChain.rpcUrls.default.http[0];
   }
-  if (network === "CELO_SEPOLIA") return miniPaySepoliaChain.rpcUrls.default.http[0];
+  if (network === "CELO_SEPOLIA") return env.nextPublicCeloSepoliaRpcUrl;
   return env.nextPublicBaseMainnetRpcUrl;
 }
 
