@@ -9,8 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { QUESTION_BANK, type BankQuestion, type Difficulty } from "./data/questions";
-import { FORMATS, type VMedia, type VQuestion, type FormatDef } from "./world-cup/data";
+import { type VMedia } from "./world-cup/data";
 import { THEMES, resolveThemeId } from "./theme";
 import {
   loadState,
@@ -304,35 +303,10 @@ export type RoundAnswer = {
   responseMs: number;
 };
 
-// Format Lab core formats (1–12) graduated into live play. Each VQuestion
-// becomes one single-select segment carrying its presentation extras; "set"
-// formats (mini/big trivia) expand to one segment per question. They join the
-// world-cup pack's special pool via FORMAT_REGISTRY below, so a couple surface
-// per live round. Content stays sourced from world-cup/data.ts (no duplication).
-const vqToSegment = (vq: VQuestion, fmt: FormatDef): Question => ({
-  cat: vq.category ?? "Sports",
-  q: vq.content,
-  answers: vq.options,
-  correct: vq.correctIndex,
-  kind: "single",
-  kicker: vq.kicker,
-  clues: vq.clues,
-  media: vq.media,
-  time: vq.durationSec,
-  minefield: fmt.minefield || undefined,
-});
-
-// Adapt a bank question to the lighter shape the screens consume.
-const toRuntime = (q: BankQuestion): Question => ({
-  cat: q.category,
-  q: q.question,
-  answers: q.answers,
-  correct: q.correctIndex,
-});
-
-// The full bank in runtime shape (kept for any consumer that wants every
-// question). The live quiz, however, draws fresh per-game slices below.
-export const QUESTIONS: Question[] = QUESTION_BANK.map(toRuntime);
+// Neutral type-satisfying placeholder for `currentQuestion` when no quiz is
+// active (roundQuestions empty). NOT trivia content — live quizzes always have
+// server-issued questions before the question screen renders.
+const EMPTY_QUESTION: Question = { cat: "", q: "", answers: ["", "", "", ""], correct: 0 };
 
 // Fisher–Yates draw of up to `n` unique items from a pool.
 function sample<T>(pool: readonly T[], n: number): T[] {
@@ -351,112 +325,11 @@ function sample<T>(pool: readonly T[], n: number): T[] {
 // tab on the levels page and is independent of the global theme override, so
 // switching tracks reskins only the levels page.
 export type LevelTrack = "standard" | "world-cup";
-const TRACK_PACK: Record<LevelTrack, string> = { standard: "", "world-cup": "world-cup" };
 
-// Questions available for a pack: a themed pack scopes play to its tag (e.g.
-// World Cup football), while the empty pack draws only evergreen (untagged)
-// questions. With no argument, uses the active *theme* pack (for tournaments);
-// callers can pass an explicit pack (e.g. a level track's). Falls back to the
-// whole bank if a pack is ever empty.
-function packPool(pack?: string): BankQuestion[] {
-  const resolved = pack !== undefined ? pack : THEMES[resolveThemeId()].questionPack;
-  const pool = QUESTION_BANK.filter((q) => (resolved ? q.pack === resolved : !q.pack));
-  return pool.length ? pool : QUESTION_BANK;
-}
-
-// ─── Format graduation pipeline ─────────────────────────────────────────────
-// A non-single format goes live by adding ONE entry here. `approved: true` is
-// the gate that graduates it from the Format Lab into the live mixed playlist;
-// flip it false to pull a format without deleting it. The live playlist samples
-// the approved segments for the active pack — no engine edits needed to add
-// content of an already-supported kind (multi / order). (A brand-new *kind*
-// still needs a renderer in question.tsx + a scorer in answerMulti/answerOrder.)
-type FormatEntry = {
-  id: string;
-  pack: string;
-  approved: boolean;
-  segment: Question;
-};
-
-const FORMAT_REGISTRY: FormatEntry[] = [
-  // Multi-select — "pick the N correct". (`correct` is unused for these kinds;
-  // kept to satisfy the shared Question shape.)
-  { id: "wc-multi-winners", pack: "world-cup", approved: true, segment: { kind: "multi", cat: "Sports", q: "Pick the 3 nations that have WON the World Cup", answers: ["Brazil", "Germany", "Argentina", "Netherlands", "Mexico", "Croatia"], correct: 0, correctSet: [0, 1, 2], pick: 3 } },
-  { id: "wc-multi-hosts", pack: "world-cup", approved: true, segment: { kind: "multi", cat: "Sports", q: "Pick the 3 host nations of the 2026 World Cup", answers: ["USA", "Canada", "Mexico", "Qatar", "Brazil", "Spain"], correct: 0, correctSet: [0, 1, 2], pick: 3 } },
-  { id: "wc-multi-neverwon", pack: "world-cup", approved: true, segment: { kind: "multi", cat: "Sports", q: "Which 2 of these have NEVER won the World Cup?", answers: ["Spain", "Netherlands", "Italy", "Portugal"], correct: 1, correctSet: [1, 3], pick: 2 } },
-  // Ordered-select — arrange into the correct sequence (answers shown scrambled).
-  { id: "wc-order-winners", pack: "world-cup", approved: true, segment: { kind: "order", cat: "Sports", q: "Order these World Cup winners — oldest to newest", answers: ["France", "Argentina", "Spain", "Germany"], correct: 0, correctOrder: [2, 3, 0, 1] } },
-  { id: "wc-order-hosts", pack: "world-cup", approved: true, segment: { kind: "order", cat: "Sports", q: "Order these World Cup hosts — earliest to latest", answers: ["Russia", "Brazil", "Qatar", "South Africa"], correct: 0, correctOrder: [3, 1, 0, 2] } },
-  // Spatial-select — "tap the target" on a board of flag tiles (single correct).
-  { id: "wc-spatial-host2022", pack: "world-cup", approved: true, segment: { kind: "spatial", cat: "Sports", q: "Tap the country that HOSTED the 2022 World Cup", answers: ["Russia", "Brazil", "Qatar", "Japan", "Mexico", "Germany"], flags: ["🇷🇺", "🇧🇷", "🇶🇦", "🇯🇵", "🇲🇽", "🇩🇪"], correct: 2 } },
-  { id: "wc-spatial-won2018", pack: "world-cup", approved: true, segment: { kind: "spatial", cat: "Sports", q: "Tap the country that WON the 2018 World Cup", answers: ["France", "Croatia", "England", "Belgium", "Brazil", "Argentina"], flags: ["🇫🇷", "🇭🇷", "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "🇧🇪", "🇧🇷", "🇦🇷"], correct: 0 } },
-  // Graduated from the Format Lab. Trivia Bingo runs on the multi scorer as
-  // "tap every TRUE statement" (correctSet = the true cells, pick = its size);
-  // Map Click runs on the spatial board.
-  { id: "wc-bingo-truth1", pack: "world-cup", approved: true, segment: { kind: "multi", cat: "Sports", q: "BINGO — tap every TRUE statement", answers: ["Brazil have 5 World Cup titles", "Messi won the 2022 final", "The World Cup is held every 2 years", "France won in 2018", "Ronaldo has won a World Cup", "Pelé won three World Cups"], correct: 0, correctSet: [0, 1, 3, 5], pick: 4 } },
-  { id: "wc-bingo-truth2", pack: "world-cup", approved: true, segment: { kind: "multi", cat: "Sports", q: "BINGO — tap every TRUE statement", answers: ["Italy have 4 World Cup titles", "Qatar hosted in 2022", "The USA won in 1994", "Germany won in 2014"], correct: 0, correctSet: [0, 1, 3], pick: 3 } },
-  { id: "wc-spatial-first1930", pack: "world-cup", approved: true, segment: { kind: "spatial", cat: "Sports", q: "Tap the country that hosted the FIRST World Cup (1930)", answers: ["Uruguay", "Brazil", "Italy", "France", "Argentina", "England"], flags: ["🇺🇾", "🇧🇷", "🇮🇹", "🇫🇷", "🇦🇷", "🏴󠁧󠁢󠁥󠁮󠁧󠁿"], correct: 0 } },
-  // Core formats 1–12 from the Format Lab (multiple-choice, true/false, quickfire,
-  // mini/big trivia, missing-word, which-of-these, who-am-i, visual-id,
-  // get-the-picture, audio-id, minefield) — generated from world-cup/data.ts.
-  ...FORMATS.filter((f) => f.num <= 12).flatMap((f) =>
-    (f.questions ?? []).map((vq, i) => ({
-      id: `wc-fmt-${f.id}-${i}`,
-      pack: "world-cup",
-      approved: true,
-      segment: vqToSegment(vq, f),
-    })),
-  ),
-];
-
-// Approved non-single segments eligible for a pack's live playlist.
-const approvedSegments = (pack: string): Question[] =>
-  FORMAT_REGISTRY.filter((f) => f.approved && f.pack === pack).map((f) => f.segment);
-
-// Tournament: a fresh set drawn from the active pack. If the pack has approved
-// non-single formats, the round becomes a MIXED-FORMAT playlist — mostly
-// single-select with a couple of registry segments shuffled in. The default app
-// (no pack) stays pure single-select.
-function pickTournamentQuestions(n: number): Question[] {
-  const pack = THEMES[resolveThemeId()].questionPack;
-  const specials = pack ? approvedSegments(pack) : [];
-  if (specials.length) {
-    const kSpecial = Math.min(2, specials.length, Math.max(1, Math.floor(n / 2)));
-    const singles = sample(packPool(), Math.max(0, n - kSpecial)).map(toRuntime);
-    const picked = sample(specials, kSpecial);
-    return sample([...singles, ...picked], singles.length + picked.length); // shuffle order
-  }
-  return sample(packPool(), n).map(toRuntime);
-}
-
-// Difficulty ramp for a level — early levels stay easy, later levels mix in
-// medium and hard so the campaign gets harder as the player climbs.
-function levelDifficulties(level: number, n: number): Difficulty[] {
-  let pool: Difficulty[];
-  if (level < 8) pool = ["easy"];
-  else if (level < 16) pool = ["easy", "medium"];
-  else if (level < 28) pool = ["medium"];
-  else if (level < 40) pool = ["medium", "hard"];
-  else pool = ["hard"];
-  return Array.from({ length: n }, (_, i) => pool[i % pool.length]);
-}
-
-// Level: one question per ramped difficulty slot, no repeats within the level
-// (falls back to any unused question if a difficulty tier runs dry).
-function pickLevelQuestions(level: number, n: number, pack: string): Question[] {
-  const bank = packPool(pack);
-  const used = new Set<string>();
-  const out: BankQuestion[] = [];
-  for (const d of levelDifficulties(level, n)) {
-    let pool = bank.filter((q) => q.difficulty === d && !used.has(q.id));
-    if (pool.length === 0) pool = bank.filter((q) => !used.has(q.id));
-    if (pool.length === 0) break;
-    const pick = pool[Math.floor(Math.random() * pool.length)];
-    used.add(pick.id);
-    out.push(pick);
-  }
-  return out.map(toRuntime);
-}
+// (Live-play questions are now server-only — both the level path and tournament
+// rounds fetch from the DB. The local QUESTION_BANK / FORMATS / FORMAT_REGISTRY
+// machinery that used to seed mock content has been removed; QUESTION_BANK and
+// FORMATS remain only in the Format Lab / showcase, not in the live app.)
 
 // First-tournament-of-the-day 2× XP bonus — an appointment hook that rewards
 // opening the app each day. Tracked in localStorage per calendar day so it
@@ -524,6 +397,16 @@ export const DEFAULT_TWEAKS: Tweaks = {
 };
 
 type State = {
+  // True once durable player state has been loaded from the server at least
+  // once. The app shell holds a loader until this flips, so screens never render
+  // on the pre-load seed values (server-authoritative; no mock fallback).
+  hydrated: boolean;
+  // Transient global toast (auto-clears). Used e.g. when a level's server
+  // questions can't load — we bail rather than play mock content.
+  toast: string | null;
+  // True while a level's questions are being fetched on demand (BEGIN tapped
+  // before the intro prefetch landed), so the intro can show a loading state.
+  levelLoading: boolean;
   screen: ScreenName;
   prevScreen: ScreenName | null;
   direction: 1 | -1;
@@ -607,6 +490,9 @@ type State = {
 };
 
 const initialState = (tweaks: Tweaks): State => ({
+  hydrated: false,
+  toast: null,
+  levelLoading: false,
   screen: "home",
   prevScreen: null,
   direction: 1,
@@ -643,7 +529,7 @@ const initialState = (tweaks: Tweaks): State => ({
   shieldActive: false,
   countdownSec: tweaks.lobbyCountdown,
   timer: tweaks.questionTime,
-  roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
+  roundQuestions: [], // server-issued on tournament entry; never seeded locally
   roundAnswers: [],
   pendingLevelQuestions: null,
   tournamentGameId: null,
@@ -708,7 +594,7 @@ export function ProtoProvider({
 }) {
   const [state, setState] = useState<State>(() => initialState(tweaks));
   // Auth-readiness signal. Server actions authenticate ONLY via the session
-  // cookie, which AuthBootstrap establishes asynchronously (wallet signature →
+  // cookie, which the Stage shell establishes asynchronously (wallet signature →
   // /auth/verify → refetch). `user.id` flips non-null once that session exists,
   // so we key the real-data fetch below on it — otherwise a fetch fired during
   // the sign-in race resolves null and the app stays stuck on mock/default state
@@ -808,11 +694,11 @@ export function ProtoProvider({
     return () => cancelAnimationFrame(id);
   }, [update]);
 
-  // Hydrate real player state from the server after mount, overlaying the mock
-  // seed. Gated on a confirmed session (authedUserId): in the preview /
-  // unauthenticated context it simply never runs and screens demo on local
-  // state, and once sign-in lands it (re)fetches the real account instead of
-  // racing auth and silently keeping mock state.
+  // Hydrate real player state from the server after a confirmed session lands
+  // (authedUserId). The shell gates all screens behind `hydrated`, so this is
+  // the single source of the player's real data — there is no mock fallback.
+  // `hydrated` flips on settle (success OR failure) so the app can never hang on
+  // the loader; a failed load just proceeds on the seed and self-heals on refetch.
   useEffect(() => {
     if (!authedUserId) return;
     let active = true;
@@ -834,11 +720,21 @@ export function ProtoProvider({
           earnedBadges: s.earnedBadges,
         });
       })
-      .catch(() => {});
+      .catch(() => {})
+      .finally(() => {
+        if (active) update({ hydrated: true });
+      });
     return () => {
       active = false;
     };
   }, [authedUserId, update]);
+
+  // Auto-dismiss the transient global toast.
+  useEffect(() => {
+    if (!state.toast) return;
+    const t = setTimeout(() => update({ toast: null }), 2800);
+    return () => clearTimeout(t);
+  }, [state.toast, update]);
 
   // Fetch the live announcement feed (authored DB rows + per-user triggered
   // cards). Runs on mount for authored content and refetches once a session
@@ -1346,24 +1242,39 @@ export function ProtoProvider({
     });
   };
 
-  const beginLevelQuiz = () => {
-    update((s) => {
-      // Prefer the server-issued set (prefetched on the intro); fall back to the
-      // local bank only if the fetch didn't land (offline / error).
-      const rq =
-        s.pendingLevelQuestions && s.pendingLevelQuestions.length > 0
-          ? s.pendingLevelQuestions
-          : pickLevelQuestions(s.levelByTrack[s.levelTrack], tweaks.levelQuestions, TRACK_PACK[s.levelTrack]);
-      return {
-        qIdx: 0,
-        score: 0,
-        qAnswered: null,
-        eliminated: [],
-        shieldActive: false,
-        timer: rq[0]?.time ?? tweaks.questionTime,
-        roundQuestions: rq,
-        pendingLevelQuestions: null,
-      };
+  const beginLevelQuiz = async () => {
+    // Server-authoritative questions only — never mock content. Use the set
+    // prefetched on the intro; if it didn't land, fetch it now. If it still
+    // can't be loaded, bail back to the level path with a notice rather than
+    // start the level on fake questions.
+    let rq = state.pendingLevelQuestions;
+    if (!rq || rq.length === 0) {
+      update({ levelLoading: true });
+      const lvTrack = state.levelTrack;
+      const lvLevel = state.levelByTrack[lvTrack];
+      try {
+        const qs = await getLevelQuestions(lvTrack, lvLevel);
+        rq = qs && qs.length ? qs.map((q) => ({ ...q })) : null;
+      } catch {
+        rq = null;
+      }
+      update({ levelLoading: false });
+    }
+    if (!rq || rq.length === 0) {
+      update({ toast: "Couldn’t load this level — please try again." });
+      goto("levels");
+      return;
+    }
+    const questions = rq;
+    update({
+      qIdx: 0,
+      score: 0,
+      qAnswered: null,
+      eliminated: [],
+      shieldActive: false,
+      timer: questions[0]?.time ?? tweaks.questionTime,
+      roundQuestions: questions,
+      pendingLevelQuestions: null,
     });
     goto("question");
   };
@@ -1434,7 +1345,7 @@ export function ProtoProvider({
       hearts: 3,
       timer: tweaks.questionTime,
       countdownSec: tweaks.lobbyCountdown,
-      roundQuestions: pickTournamentQuestions(tweaks.questionsPerRound),
+      roundQuestions: [], // server-issued on tournament entry; never seeded locally
       tournamentBonus: false,
       tournamentGameId: null,
     });
@@ -1640,7 +1551,7 @@ export function ProtoProvider({
   const value: Proto = {
     ...state,
     tweaks,
-    currentQuestion: state.roundQuestions[state.qIdx] ?? state.roundQuestions[0] ?? QUESTIONS[0],
+    currentQuestion: state.roundQuestions[state.qIdx] ?? state.roundQuestions[0] ?? EMPTY_QUESTION,
     totalQuestions: state.roundQuestions.length,
     level: state.levelByTrack[state.levelTrack],
     setLevelTrack,

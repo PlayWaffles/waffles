@@ -56,7 +56,7 @@ export const LevelIntroScreen = () => {
 
       <div className="bottom-bar" style={{ borderTop: "2px solid rgba(255,201,49,.2)" }}>
         <div className="cta-row" style={{ justifyContent: "center" }}>
-          <button className="cta maple" onClick={() => proto.beginLevelQuiz()} style={{ flex: "0 0 auto", width: "95%", minWidth: 260 }}>BEGIN</button>
+          <button className="cta maple" onClick={() => proto.beginLevelQuiz()} disabled={proto.levelLoading} style={{ flex: "0 0 auto", width: "95%", minWidth: 260, opacity: proto.levelLoading ? 0.6 : 1 }}>{proto.levelLoading ? "LOADING…" : "BEGIN"}</button>
         </div>
       </div>
     </Phone>

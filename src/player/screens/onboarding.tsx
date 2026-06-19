@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { useProto } from "../state";
-import { ASSETS, Phone, PixelImg } from "../shared";
+import { ASSETS, Phone, PixelImg, SyrupIcon } from "../shared";
 import { LegalSheet, type LegalTab } from "../legal";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -189,6 +189,9 @@ export const OnboardingScreen = ({
   }, []);
   const [connecting, setConnecting] = useState(false);
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
+  // Post-signup confirmation + the sign-in failure message (retry inline).
+  const [welcomeOpen, setWelcomeOpen] = useState(false);
+  const [signinError, setSigninError] = useState<string | null>(null);
   const startedRef = useRef(false);
   const trackedUsernameRef = useRef(false);
   const STEPS = SLIDES.length + 1; // intro slides + the combined account step
@@ -233,14 +236,13 @@ export const OnboardingScreen = ({
       cta: accountStep ? "create_account_and_play" : "next",
     });
     if (accountStep) {
-      // The account step does both jobs in one tap: lock in the username, then
-      // connect + authenticate the wallet (real MiniPay/browser session), then
-      // drop straight into the first level. We complete regardless of the
-      // sign-in result so a wallet-less browser preview is never stuck — success
-      // establishes a real session, failure proceeds on local/mock state and the
-      // wallet can be connected later.
+      // The account step authenticates the wallet FIRST (establishing the real
+      // session), THEN persists the chosen username — order matters: the
+      // setUsername server action needs the session cookie, so saving it before
+      // sign-in would silently no-op. On success we show a confirmation moment;
+      // on failure we surface a retry instead of pretending the account exists.
       const name = username.trim();
-      proto.setUsername(name);
+      setSigninError(null);
       setConnecting(true);
       trackClientEvent(AnalyticsEvent.OnboardingSignupClicked, {
         step_index: step,
@@ -248,18 +250,18 @@ export const OnboardingScreen = ({
       });
       void signIn()
         .then((ok) => {
-          // Sign-in failure doesn't block onboarding, but capture it so the
-          // wallet-signup drop-off stays measurable.
+          setConnecting(false);
           if (!ok) {
             trackClientEvent(AnalyticsEvent.OnboardingFailed, {
               step_index: step,
               step_id: stepId,
               reason: "signin_failed",
             });
+            setSigninError("Couldn’t create your account — check your wallet and try again.");
+            return;
           }
-        })
-        .finally(() => {
-          setConnecting(false);
+          // Now authenticated: persist the username, then confirm.
+          proto.setUsername(name);
           trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
             step_index: step,
             step_id: stepId,
@@ -270,8 +272,11 @@ export const OnboardingScreen = ({
             step_id: stepId,
             username_length: name.length,
           });
-          onPlay();
-          proto.startLevel();
+          setWelcomeOpen(true);
+        })
+        .catch(() => {
+          setConnecting(false);
+          setSigninError("Something went wrong — please try again.");
         });
       return;
     }
@@ -384,6 +389,11 @@ export const OnboardingScreen = ({
             />
           ))}
         </div>
+        {signinError && (
+          <div role="alert" style={{ fontSize: 12.5, fontWeight: 700, lineHeight: 1.4, color: "#ff6b6b", textAlign: "center", margin: "0 auto", maxWidth: 320 }}>
+            {signinError}
+          </div>
+        )}
         <div className="cta-row">
           <button
             className={"cta" + (accountStep ? " maple" : "")}
@@ -391,7 +401,13 @@ export const OnboardingScreen = ({
             disabled={!canContinue}
             style={!canContinue ? { opacity: 0.5, cursor: "not-allowed" } : undefined}
           >
-            {accountStep ? (connecting ? "CREATING ACCOUNT…" : "CREATE ACCOUNT & PLAY") : "NEXT"}
+            {accountStep
+              ? connecting
+                ? "CREATING ACCOUNT…"
+                : signinError
+                  ? "TRY AGAIN"
+                  : "CREATE ACCOUNT & PLAY"
+              : "NEXT"}
           </button>
         </div>
         {/* Terms consent — the CTA is the only way into the app, so this
@@ -408,6 +424,52 @@ export const OnboardingScreen = ({
           .
         </div>
       </div>
+
+      {welcomeOpen && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Account created"
+          style={{ position: "absolute", inset: 0, zIndex: 95, display: "flex", flexDirection: "column", background: "linear-gradient(180deg, #1a1410 0%, #0a0805 100%)", animation: "waffles-v2-onb-in .35s var(--ease-out-quart)" }}
+        >
+          <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.24), transparent 65%)", pointerEvents: "none" }} />
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 28px", position: "relative", zIndex: 1 }}>
+            <div style={{ position: "relative", marginBottom: 14 }}>
+              <PixelImg src={ASSETS.wally} size={132} alt="" style={{ filter: "drop-shadow(0 0 28px rgba(255,201,49,.5))", animation: "waffles-v2-wally-idle 4s ease-in-out infinite" }} />
+              <div style={{ position: "absolute", right: 6, bottom: 6, width: 34, height: 34, borderRadius: 99, background: "var(--leaf)", color: "var(--frame)", display: "grid", placeItems: "center", fontSize: 18, fontFamily: "var(--font-display)", border: "3px solid #0a0805" }}>✓</div>
+            </div>
+            <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 8 }}>Account created</div>
+            <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, lineHeight: 1.04, color: "#fff", marginBottom: 8 }}>
+              Welcome, @{username.trim()}!
+            </div>
+            <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,.6)", maxWidth: 300, marginBottom: 22 }}>
+              You’re all set. Here’s a little something to start you off.
+            </div>
+            <div style={{ display: "flex", gap: 10, justifyContent: "center" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, padding: "8px 14px", fontSize: 14, fontWeight: 800, color: "#fff" }}>
+                <SyrupIcon size={16} /> {proto.tickets} syrup
+              </span>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, padding: "8px 14px", fontSize: 14, fontWeight: 800, color: "#fff" }}>
+                ⭐ Level {proto.level}
+              </span>
+            </div>
+          </div>
+          <div style={{ padding: "0 18px max(20px, env(safe-area-inset-bottom))", position: "relative", zIndex: 1 }}>
+            <button
+              type="button"
+              className="cta maple"
+              style={{ width: "100%", flex: "none" }}
+              onClick={() => {
+                trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, { step_index: step, step_id: "welcome_play", cta: "lets_play" });
+                onPlay();
+                proto.startLevel();
+              }}
+            >
+              LET’S PLAY
+            </button>
+          </div>
+        </div>
+      )}
 
       {legalTab && <LegalSheet initialTab={legalTab} onClose={() => setLegalTab(null)} />}
     </Phone>
