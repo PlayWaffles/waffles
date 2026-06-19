@@ -121,7 +121,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       )}
 
       <div style={{ display: "flex", gap: 10 }}>
-        <Button variant="ghost" flex={1} onClick={close}>CANCEL</Button>
+        <Button variant="ghost" flex={1} onClick={pending ? () => {} : close} disabled={pending}>CANCEL</Button>
         <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Confirm tournament entry in your wallet">
           {pending ? (stepLabel ?? "Working…") : fee ? `JOIN · ${usd(fee.entryFee)}` : "JOIN"}
         </Button>
