@@ -204,13 +204,26 @@ export async function currentTournamentGame(
   };
 }
 
-/** Whether this is the player's very first tournament — no prior GameEntry on
- *  record. Drives the personalized entry upsell (first-timer welcome vs the
- *  evergreen World Cup framing). The current round isn't entered yet at upsell
- *  time, so a zero count means a genuine first-timer. */
+/** Whether this is the player's very first tournament — no prior tournament
+ *  GameEntry on record. Drives the personalized entry upsell (first-timer
+ *  welcome vs the evergreen World Cup framing). The current round isn't entered
+ *  yet at upsell time, so a zero count means a genuine first-timer.
+ *
+ *  Scoped to tournament games only: v2 tournaments run a 1-hour window, v1
+ *  games are day-long, and there's no discriminator column — so a migrated v1
+ *  player (who has v1 entries but no tournament entry) still gets the
+ *  first-timer welcome on their first v2 tournament. */
 export async function isFirstTournamentEntry(userId: string): Promise<boolean> {
-  const prior = await prisma.gameEntry.count({ where: { userId } });
-  return prior === 0;
+  // Comfortably above the 1h tournament window, well below a day-long v1 game.
+  const MAX_TOURNAMENT_MS = 2 * TOURNAMENT_ROUND_MS;
+  const rows = await prisma.gameEntry.findMany({
+    where: { userId },
+    select: { game: { select: { startsAt: true, endsAt: true } } },
+  });
+  const priorTournamentEntries = rows.filter(
+    (r) => r.game.endsAt.getTime() - r.game.startsAt.getTime() <= MAX_TOURNAMENT_MS,
+  ).length;
+  return priorTournamentEntries === 0;
 }
 
 /** The round's questions in client shape (answer keys included for instant
