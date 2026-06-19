@@ -444,6 +444,10 @@ type State = {
   // The player's chosen handle (set in onboarding). Empty until set; persisted
   // to localStorage and hydrated post-mount.
   username: string;
+  // Assigned avatar id (random at account creation); resolved to an image via
+  // resolveAvatar(). Null only for accounts predating avatar assignment, which
+  // fall back to a deterministic pick.
+  avatarId: string | null;
   // The level that was just unlocked by completing the previous one — drives the
   // one-shot unlock animation on the level path. Cleared after it plays.
   levelJustUnlocked: number | null;
@@ -518,6 +522,7 @@ const initialState = (tweaks: Tweaks): State => ({
   // Empty until the DB feed loads (loadAnnouncements) — fully server-driven.
   announcements: [],
   username: "",
+  avatarId: null,
   levelJustUnlocked: null,
   mode: "tournament",
   hearts: 3,
@@ -712,6 +717,7 @@ export function ProtoProvider({
           lives: s.lives,
           nextLifeAt: s.nextLifeAt,
           username: s.username,
+          avatarId: s.avatarId,
           levelByTrack: s.levelByTrack,
           winnings: s.winnings,
           lastTournamentRank: s.lastTournamentRank,

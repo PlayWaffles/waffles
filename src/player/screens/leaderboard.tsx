@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, TabBar, ToastButton } from "../shared";
+import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton } from "../shared";
 import { loadTournamentLeaderboard } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -25,7 +25,7 @@ const AVATAR_BY_RANK = [
 ];
 
 const LeaderRow = ({ p }: { p: Player }) => {
-  const av = p.you ? ASSETS.wally : AVATAR_BY_RANK[(p.rank - 1) % AVATAR_BY_RANK.length];
+  const av = p.you ? (p.avatar ?? ASSETS.wally) : AVATAR_BY_RANK[(p.rank - 1) % AVATAR_BY_RANK.length];
   // Top-3 ranks get the brand maple gold, everyone else uses the muted-ink ramp.
   const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
   const ptsColor = p.you ? "var(--maple-500)" : "var(--ink)";
@@ -76,12 +76,13 @@ export const LeaderboardScreen = () => {
     { rank: 11, name: "bk.pixels", pts: 920, color: "#5db8ff" },
     { rank: 12, name: "tim.h", pts: 880, color: "#3dd17a" },
   ];
+  const youAvatar = resolveAvatar(proto.avatarId, proto.username);
   const leaders: Player[] = board
-    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, color: "#3dd17a", you: s.you }))
+    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, color: "#3dd17a", you: s.you, avatar: s.you ? youAvatar : undefined }))
     : mockLeaders;
   const you: Player = board?.you
-    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true }
-    : { rank: 40, name: proto.username || "you", pts: 0, color: "#3dd17a", you: true };
+    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true, avatar: youAvatar }
+    : { rank: 40, name: proto.username || "you", pts: 0, color: "#3dd17a", you: true, avatar: youAvatar };
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
       screen: "leaderboard",
@@ -186,7 +187,7 @@ export const LeaderboardScreen = () => {
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>Position</span>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
                 Points
-                <InfoButton title="Points" text="Points are the trophies you earn from quizzes and missions during this league period. The more points you score, the higher you climb — top finishers get promoted to the next league and win reward chests." size={18} />
+                <InfoButton title="Points" text="Points are what you score by playing levels and tournaments during this league period. The more points you score, the higher you climb — top finishers get promoted to the next league and win reward chests, while the bottom few drop down." size={18} />
               </span>
             </div>
             <div style={{ flex: 1, overflow: "auto", scrollbarWidth: "none" }}>

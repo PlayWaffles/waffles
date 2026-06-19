@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
 import { loadTournamentBoard } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
-import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, TicketIcon } from "../shared";
+import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -177,8 +177,9 @@ export const ResultsScreen = () => {
   const youLabel = proto.username ? `@${proto.username}` : "@you";
   const rowName = (s: { name: string; you: boolean }) => (s.you ? youLabel : `@${s.name}`);
 
+  const youAv = resolveAvatar(proto.avatarId, proto.username);
   const topThree: Row[] = standings
-    ? standings.slice(0, 3).map((s) => ({ r: s.rank, n: rowName(s), s: s.score, av: avatarFor(s.name), you: s.you }))
+    ? standings.slice(0, 3).map((s) => ({ r: s.rank, n: rowName(s), s: s.score, av: s.you ? youAv : avatarFor(s.name), you: s.you }))
     : [
         { r: 1, n: "@quizking", s: 9840, av: ASSETS.avatarFox },
         { r: 2, n: "@trivia.eth", s: 9540, av: ASSETS.avatarBear },
@@ -192,11 +193,11 @@ export const ResultsScreen = () => {
     ? []
     : standings
       ? [
-          { r: rank, n: youLabel, s: score, av: ASSETS.wally, you: true },
+          { r: rank, n: youLabel, s: score, av: youAv, you: true },
           ...(neighbor ? [{ r: neighbor.rank, n: rowName(neighbor), s: neighbor.score, av: avatarFor(neighbor.name) }] : []),
         ]
       : [
-          { r: rank, n: youLabel, s: score, av: ASSETS.wally, you: true },
+          { r: rank, n: youLabel, s: score, av: youAv, you: true },
           { r: rank + 1, n: "@brainpan", s: Math.max(0, score - 60), av: ASSETS.avatarPanda },
         ];
   // Players sitting between the podium and the player's own row — surfaced as a

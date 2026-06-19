@@ -5,7 +5,7 @@ import { syrupLabel, USDT_PER_TICKET, useProto } from "../state";
 import { loadTournamentClaims, deleteMyAccount } from "@/actions/player";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
-import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
+import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, resolveAvatar, SyrupIcon, TabBar, TopHeader } from "../shared";
 import { BADGES, badgeProgress, deriveBadgeStats, isBadgeEarned, type Badge, type BadgeStats } from "../data/badges";
 import { LegalSheet, type LegalTab } from "../legal";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -184,7 +184,7 @@ export const ProfileScreen = () => {
         <div style={{ textAlign: "center", color: "var(--ink)", marginBottom: 14 }}>
           <div style={{ display: "flex", justifyContent: "center", marginBottom: 4 }}>
             <AssetWell size={112} accent="var(--maple-500)" radius={24} style={{ borderRadius: "44% 44% 38% 38%" }}>
-              <PixelImg src={ASSETS.wally} size={100} alt="" />
+              <PixelImg src={resolveAvatar(proto.avatarId, proto.username)} size={100} alt="" />
             </AssetWell>
           </div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 22, lineHeight: 1 }}>@{proto.username || "waffleeater"}</div>
