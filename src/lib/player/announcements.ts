@@ -9,8 +9,8 @@
  *     id, auto-resolve when their condition clears, and are dismissed in-session
  *     only (read/dismiss persistence skips them — see playerState).
  *
- * `kind: "migration"` rows are excluded here; the v2 migration welcome is a
- * separate one-off modal (see migrationNotice.ts).
+ * `kind: "migration"` and `kind: "takeover"` rows are excluded here; they back
+ * one-off modals (migrationNotice.ts, worldCupTakeover.ts), not feed cards.
  */
 import { prisma } from "@/lib/db";
 import { loadTournamentClaims } from "@/lib/player/tournamentGames";
@@ -124,7 +124,8 @@ export async function loadAnnouncements(userId: string | null): Promise<PlayerAn
   const rows = await prisma.announcement.findMany({
     where: {
       isActive: true,
-      kind: { not: "migration" },
+      // "migration" + "takeover" are one-off modal gate rows, not feed cards.
+      kind: { notIn: ["migration", "takeover"] },
       AND: [
         { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
         { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },

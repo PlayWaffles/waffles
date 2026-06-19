@@ -6,25 +6,9 @@ import { ASSETS, PixelImg } from "../shared";
 
 // Season welcome — the *moment* the World Cup goes live. The World Cup is the
 // default season for everyone (not opt-in), so this is a celebratory intro, not
-// a gate: a single "Let's go" dismisses it. Shown once (gated in localStorage);
-// the announcement bell entry reopens it anytime.
-
-const KEY = "waffles.v2.wcTakeoverSeen";
-export const hasSeenWorldCupTakeover = (): boolean => {
-  if (typeof window === "undefined") return true;
-  try {
-    return localStorage.getItem(KEY) === "1";
-  } catch {
-    return true;
-  }
-};
-const markSeen = () => {
-  try {
-    localStorage.setItem(KEY, "1");
-  } catch {
-    /* storage disabled */
-  }
-};
+// a gate: a single "Let's go" dismisses it. "Seen" is DB-backed (see
+// worldCupTakeover.ts) — persisted by the parent's onClose — so it shows once
+// per user across devices; the announcement bell entry reopens it anytime.
 
 const PERKS: { icon: string; text: string }[] = [
   { icon: "⚽", text: "Football trivia, refreshed daily" },
@@ -35,11 +19,9 @@ const PERKS: { icon: string; text: string }[] = [
 
 export const WorldCupTakeover = ({ onClose }: { onClose: () => void }) => {
   // The theme is already the World Cup by default — this just dismisses the
-  // welcome (and records it so it doesn't auto-show again).
-  const dismiss = () => {
-    markSeen();
-    onClose();
-  };
+  // welcome. Persistence ("seen") is DB-backed by the parent's onClose
+  // (page.tsx → dismissWorldCupTakeover), so it won't auto-show again.
+  const dismiss = onClose;
 
   // Live countdown to the next top-of-the-hour kickoff.
   const [now, setNow] = useState(() => Date.now());
