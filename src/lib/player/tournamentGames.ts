@@ -22,6 +22,7 @@ import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
+import { trackServerEvent } from "@/lib/server-analytics";
 import {
   scoreAnswer,
   scoreRound,
@@ -338,6 +339,24 @@ export async function enterTournamentOnChain(input: {
       await tx.game.update({
         where: { id: gameId },
         data: { prizePool: { increment: entryFee }, playerCount: { increment: 1 } },
+      });
+      // Authoritative, DB-backed purchase event — emitted in the same tx as the
+      // entry write so it can't drift from reality (and rolls back with it).
+      // Only fires on a *new* entry, never the already-entered short-circuits,
+      // so revenue isn't double-counted. `revenue` mirrors the client's Umami
+      // figure (entry fee is USDC, ~1:1 USD) for browser-vs-DB reconciliation.
+      await trackServerEvent({
+        name: "ticket_purchase_authoritative",
+        userId,
+        tx,
+        properties: {
+          game_id: gameId,
+          onchain_id: game.onchainId,
+          platform: game.platform,
+          revenue: entryFee,
+          currency: "USD",
+          entry_fee: entryFee,
+        },
       });
       return created;
     });
