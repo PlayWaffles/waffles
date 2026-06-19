@@ -1480,7 +1480,10 @@ export function ProtoProvider({
         track(AnalyticsEvent.TicketPurchaseFailed, { ...entryContext, stage: "server_sync", reason });
         return { ok: false, error: reason };
       }
-      track(AnalyticsEvent.TicketPurchaseSyncSucceeded, entryContext);
+      // Revenue is attached to exactly ONE success event (not both, to avoid
+      // double-counting in Umami's revenue report). `revenue`+`currency` are the
+      // keys Umami reads natively; entry fee is USDC, valued ~1:1 in USD.
+      track(AnalyticsEvent.TicketPurchaseSyncSucceeded, { ...entryContext, revenue: t.game.entryFee, currency: "USD" });
       track(AnalyticsEvent.TournamentEntrySucceeded, entryContext);
       track(AnalyticsEvent.TournamentLobbyEntered, entryContext);
       blog("[buy-ticket] entry confirmed ✓ — entering lobby", { gameId: t.game.id });
