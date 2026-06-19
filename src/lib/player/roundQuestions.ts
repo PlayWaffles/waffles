@@ -52,7 +52,11 @@ function optionPermutation(seed: string, n: number): number[] {
 export function shuffleQuestionOptions<
   T extends { id: string; kind: QuestionKind; options: string[]; correctIndex: number; correctSet: number[]; correctOrder: number[] },
 >(q: T): T {
-  if (q.kind !== QuestionKind.SINGLE && q.kind !== QuestionKind.MULTI) return q;
+  // Shuffle SINGLE/MULTI/ORDER so the answer's position isn't predictable (incl.
+  // ORDER questions authored already-in-sequence, where "tap as shown" would win).
+  // SPATIAL is excluded: its options pair with a parallel `flags[]` (tile coords)
+  // we don't remap here, so reordering them would desync the two.
+  if (q.kind === QuestionKind.SPATIAL) return q;
   const n = q.options.length;
   if (n < 2) return q;
   const order = optionPermutation(q.id, n); // newPos -> oldIdx
