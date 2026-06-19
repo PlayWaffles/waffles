@@ -16,7 +16,8 @@ import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
 import { preloadSounds } from "./sound";
-import { AuthBootstrap } from "./auto-signin";
+import { useUser } from "@/hooks/useUser";
+import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // First-load budget: only the screens needed for the first paint ship in the
@@ -88,9 +89,32 @@ const Stage = () => {
   const proto = useProto();
   const Current = SCREEN_COMPONENTS[proto.screen] ?? HomeScreen;
 
+  // Auth is mandatory — the app runs only on real server data, never a mock
+  // fallback. `user` (from the cookie session) is the gate; first-timers go
+  // through onboarding (which signs in), returning users with a lapsed cookie
+  // are auto-signed-in here, and screens never render until state has hydrated.
+  const { user, isLoading: userLoading } = useUser();
+  const { signIn } = useWalletSignIn();
+  const autoTried = useRef(false);
+  const [autoFailed, setAutoFailed] = useState(false);
+  useEffect(() => {
+    if (user || userLoading || autoTried.current) return;
+    if (!readOnboarded()) return; // first-timer → onboarding handles sign-in
+    autoTried.current = true;
+    void signIn().then((ok) => {
+      if (!ok) setAutoFailed(true);
+    });
+  }, [user, userLoading, signIn]);
+
   const persistedOnboarded = useSyncExternalStore(subscribeNoop, readOnboarded, () => true);
   const [dismissed, setDismissed] = useState(false);
-  const showOnboarding = !persistedOnboarded && !dismissed;
+  // Onboarding shows for first-timers, or a returning user whose silent re-auth
+  // failed — and stays mounted (even after sign-in succeeds) until its own
+  // onPlay dismisses it, so the post-signup welcome card can play.
+  const showOnboarding = (!persistedOnboarded || autoFailed) && !dismissed;
+  // After onboarding, hold a loader until the session + first state load resolve
+  // so no screen ever paints on the pre-load seed.
+  const authPending = !showOnboarding && (userLoading || !user || !proto.hydrated);
 
   // Daily reward auto-opens once per session, on the Home screen, after
   // onboarding — gated to Home so it never stacks on top of the lobby/quiz when
@@ -216,6 +240,8 @@ const Stage = () => {
     <div className="waffles-v2-frame">
       {showOnboarding ? (
         <OnboardingScreen onPlay={dismissOnboarding} />
+      ) : authPending ? (
+        <ScreenFallback />
       ) : (
         <>
           <Current />
@@ -237,6 +263,32 @@ const Stage = () => {
       )}
       {/* Global: celebrates any newly-earned badge wherever the player is. */}
       <BadgeUnlockWatcher />
+      {/* Global transient toast (e.g. a level whose server questions couldn't load). */}
+      {proto.toast && (
+        <div
+          role="status"
+          style={{
+            position: "absolute",
+            left: "50%",
+            bottom: 90,
+            transform: "translateX(-50%)",
+            zIndex: 120,
+            maxWidth: "86%",
+            background: "rgba(20,16,12,.96)",
+            border: "1px solid rgba(255,255,255,.14)",
+            borderRadius: 12,
+            padding: "10px 16px",
+            fontSize: 13,
+            fontWeight: 700,
+            color: "#fff",
+            textAlign: "center",
+            boxShadow: "0 8px 24px rgba(0,0,0,.4)",
+            animation: "waffles-v2-onb-in .25s var(--ease-out-quart)",
+          }}
+        >
+          {proto.toast}
+        </div>
+      )}
     </div>
   );
 };
@@ -284,7 +336,6 @@ export default function Page() {
     <div className="waffles-v2 waffles-v2-stage" data-theme={themeId}>
       <ThemeProvider value={THEMES[themeId]}>
         <ProtoProvider>
-          <AuthBootstrap />
           <CoachmarkProvider>
             <Stage />
           </CoachmarkProvider>
