@@ -133,17 +133,18 @@ const TournamentUpsellSheet = ({
           </span>
         </div>
 
-        {/* Entry shown at half the $0.10 "standard" so it always reads as a
-            deal — display-only; the real, flat charge is fee.entryFee. */}
-        {fee?.firstEntry && (
+        {/* Flat $0.05 for everyone; the struck $0.10 is the season anchor. Card
+            shows for all — copy is personalized: genuine first-timers get the
+            "first tournament" welcome, returning players the World Cup framing. */}
+        {fee && (
           <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <PixelImg src={ASSETS.trophy} size={28} alt="" />
               <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>World Cup special</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>50% off entry, all season</div>
+              <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>{fee.firstEntry ? "First tournament" : "World Cup special"}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{fee.firstEntry ? "Your first tournament, half price" : "50% off entry, all season"}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>

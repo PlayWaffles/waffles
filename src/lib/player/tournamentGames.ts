@@ -204,6 +204,15 @@ export async function currentTournamentGame(
   };
 }
 
+/** Whether this is the player's very first tournament — no prior GameEntry on
+ *  record. Drives the personalized entry upsell (first-timer welcome vs the
+ *  evergreen World Cup framing). The current round isn't entered yet at upsell
+ *  time, so a zero count means a genuine first-timer. */
+export async function isFirstTournamentEntry(userId: string): Promise<boolean> {
+  const prior = await prisma.gameEntry.count({ where: { userId } });
+  return prior === 0;
+}
+
 /** The round's questions in client shape (answer keys included for instant
  *  feedback), drawn from the game's own assigned questions. */
 export async function getTournamentClientQuestions(gameId: string) {
