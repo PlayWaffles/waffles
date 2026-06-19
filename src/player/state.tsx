@@ -227,6 +227,9 @@ export type Winning = {
 
 // Derive a finishing rank out of the simulated field from the player's score.
 export function tournamentRank(score: number, totalQuestions: number): number {
+  // No questions answered yet (just entered, haven't played) → bottom of the
+  // field rather than NaN from a 0/0 divide.
+  if (!totalQuestions || totalQuestions <= 0) return TOURNAMENT_FIELD_SIZE;
   return Math.max(1, Math.round(TOURNAMENT_FIELD_SIZE * (1 - Math.min(1, score / (totalQuestions * 250)))) + 1);
 }
 

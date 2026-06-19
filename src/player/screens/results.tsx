@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
-import { loadTournamentBoard } from "@/actions/player";
+import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, TicketIcon } from "../shared";
 import { playSound } from "../sound";
@@ -87,9 +87,14 @@ export const ResultsScreen = () => {
   // (live position by score, or final rank once settled).
   const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
-    if (!proto.tournamentGameId) return;
     let active = true;
-    loadTournamentBoard(proto.tournamentGameId)
+    // Re-opening standings in a fresh session (e.g. the Home "view standing"
+    // card) has no `tournamentGameId` in local state — fall back to the current
+    // round so the server hands back the real entry instead of empty defaults.
+    const load = proto.tournamentGameId
+      ? loadTournamentBoard(proto.tournamentGameId)
+      : loadCurrentTournamentBoard();
+    load
       .then((b) => {
         if (active && b && b.fieldSize > 0) setBoard(b);
       })
@@ -101,12 +106,19 @@ export const ResultsScreen = () => {
   const settled = board?.settled ?? false;
   const provisional = !settled;
   const fieldSize = board?.fieldSize ?? FIELD_SIZE;
-  const rank = board?.you?.rank ?? liveRank;
+  // `??` doesn't catch NaN, and a freshly-entered player can have no scored row
+  // yet — clamp to a real position within the field so nothing renders as NaN.
+  const rawRank = board?.you?.rank ?? liveRank;
+  const rank = Number.isFinite(rawRank) ? Math.min(Math.max(1, rawRank), fieldSize) : fieldSize;
+
+  // Prefer the server's recorded score — on a fresh-session re-visit the local
+  // `proto.score` is 0, but the board carries the real entry.
+  const youScore = board?.you?.score ?? score;
 
   // XP actually credited — doubled by the first-tournament-of-the-day bonus.
   const xpMult = proto.tournamentBonus ? 2 : 1;
-  const xpEarned = score * xpMult;
-  const pct = Math.max(1, Math.round((rank / fieldSize) * 100));
+  const xpEarned = youScore * xpMult;
+  const pct = Math.min(100, Math.max(1, Math.round((rank / fieldSize) * 100)));
   // Prize: settled = the locked on-chain reward; provisional = "if it holds"
   // before rankGame/publishResults locks the GameEntry prize.
   const won = board?.you ? board.you.prize : settled ? 0 : tournamentReward(rank);
@@ -150,7 +162,7 @@ export const ResultsScreen = () => {
       rank,
       field_size: fieldSize,
       percentile: pct,
-      score,
+      score: youScore,
       prize: won,
       won: wonTicket,
       settled,
@@ -168,11 +180,12 @@ export const ResultsScreen = () => {
         missed_tier_tickets: missedTier?.tickets,
       });
     }
-  }, [settled, rank, fieldSize, pct, score, won, wonTicket, showNearMiss, missGap, missedTier, proto.tournamentGameId]);
+  }, [settled, rank, fieldSize, pct, youScore, won, wonTicket, showNearMiss, missGap, missedTier, proto.tournamentGameId]);
 
-  // Real leaderboard rows from the round board. The podium is the real top 3;
-  // your row + the entrant just behind you come from the same standings. Falls
-  // back to a sample board only in the preview / before any real entrants.
+  // Real leaderboard rows from the round board only — no mock fallback. The
+  // podium is the real top 3; your row + the entrant just behind you come from
+  // the same standings. Before any real entrants (preview), we show only your
+  // own row rather than fabricated players.
   const standings = board?.standings ?? null;
   const youLabel = proto.username ? `@${proto.username}` : "@you";
   const rowName = (s: { name: string; you: boolean }) => (s.you ? youLabel : `@${s.name}`);
@@ -180,29 +193,24 @@ export const ResultsScreen = () => {
   const youAv = resolveAvatar(proto.avatarId, proto.username);
   const topThree: Row[] = standings
     ? standings.slice(0, 3).map((s) => ({ r: s.rank, n: rowName(s), s: s.score, av: s.you ? youAv : avatarFor(s.name), you: s.you }))
-    : [
-        { r: 1, n: "@quizking", s: 9840, av: ASSETS.avatarFox },
-        { r: 2, n: "@trivia.eth", s: 9540, av: ASSETS.avatarBear },
-        { r: 3, n: "@waffleboss", s: 9210, av: ASSETS.avatarFrog },
-      ];
+    : [];
 
   const youInTop = topThree.some((r) => r.you);
   const youIdx = standings ? standings.findIndex((s) => s.you) : -1;
   const neighbor = youIdx >= 0 ? standings![youIdx + 1] : undefined;
   const nearYou: Row[] = youInTop
     ? []
-    : standings
-      ? [
-          { r: rank, n: youLabel, s: score, av: youAv, you: true },
-          ...(neighbor ? [{ r: neighbor.rank, n: rowName(neighbor), s: neighbor.score, av: avatarFor(neighbor.name) }] : []),
-        ]
-      : [
-          { r: rank, n: youLabel, s: score, av: youAv, you: true },
-          { r: rank + 1, n: "@brainpan", s: Math.max(0, score - 60), av: ASSETS.avatarPanda },
-        ];
+    : [
+        { r: rank, n: youLabel, s: youScore, av: youAv, you: true },
+        // The entrant right behind you, when the board actually places you.
+        ...(standings && neighbor
+          ? [{ r: neighbor.rank, n: rowName(neighbor), s: neighbor.score, av: avatarFor(neighbor.name) }]
+          : []),
+      ];
   // Players sitting between the podium and the player's own row — surfaced as a
   // divider so the jump from #3 to #516 reads instead of looking like a glitch.
-  const playersBetween = youInTop ? 0 : rank - 4;
+  // Only meaningful when there's a real podium above.
+  const playersBetween = youInTop || topThree.length === 0 ? 0 : rank - 4;
 
   return (
     <Phone statusDark>
