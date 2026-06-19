@@ -1031,6 +1031,22 @@ export function ProtoProvider({
             xp_after: state.xp + state.score,
             xp_delta: state.score,
           });
+          if (state.levelByTrack[track] === 1) {
+            trackClientEvent(AnalyticsEvent.FirstLevelCompleted, {
+              screen: state.screen,
+              mode: "level",
+              level_track: track,
+              level_number: 1,
+              score: state.score,
+              question_count: totalQs,
+              tickets_before: state.tickets,
+              tickets_after: state.tickets + milestoneTicket,
+              ticket_delta: milestoneTicket,
+              xp_before: state.xp,
+              xp_after: state.xp + state.score,
+              xp_delta: state.score,
+            });
+          }
           update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
           // Persist: advanceLevel credits the same milestone ticket + xp server-side.
           void advanceLevel(track, state.score);
@@ -1272,6 +1288,14 @@ export function ProtoProvider({
       lives: r.lives,
       question_count: tweaks.levelQuestions,
     });
+    if (state.levelByTrack[state.levelTrack] === 1) {
+      track(AnalyticsEvent.FirstLevelStarted, {
+        level_track: state.levelTrack,
+        level_number: 1,
+        lives: r.lives,
+        question_count: tweaks.levelQuestions,
+      });
+    }
     update({ ...r, mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, pendingLevelQuestions: null });
     goto("levelIntro");
     // Prefetch the level's questions from the server during the intro screen so
