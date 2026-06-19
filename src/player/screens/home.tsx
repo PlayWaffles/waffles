@@ -88,10 +88,12 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         </div>
       </div>
 
-      {/* Entry = 1 ticket, paid in USDC. Shown at half the $0.10 "standard" so
-          entry always reads as a deal — the real, flat charge is entryFee. The
-          first-entry case mirrors the post-level upsell's prominent half-price
-          card (badge + struck-through price) instead of a muted row + chip. */}
+      {/* Entry is a flat $0.05 for everyone, every round — the struck-through
+          standardFee ($0.10) is a season anchor, NOT a per-user/first-time deal.
+          So we sell it as an evergreen "World Cup special," not "first entry."
+          (When the season flips off FOOTBALL — see DEFAULT_GAME_THEME in
+          lib/game/auto-create — update this copy too.) `firstEntry` is the
+          always-on flag that gates whether the discount anchor is shown. */}
       {fee?.firstEntry ? (
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: error ? 8 : 14 }}>
           <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -99,8 +101,8 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
             <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>Half-price entry</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first tournament, half price</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>World Cup special</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>50% off entry, all season</div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>
