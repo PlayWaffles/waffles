@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { syrupLabel, useProto } from "../state";
+import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
 import { loadMissions, loadPartnerOffers, claimPartnerOffer, claimMission } from "@/actions/player";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -29,20 +30,15 @@ export const MissionsScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"daily" | "partner">("daily");
 
-  // Load real daily missions (Quest + per-user progress). Falls back to the
-  // static list in the preview / unauthenticated context.
+  // Load real daily missions (Quest + per-user progress) via a resilient fetch
+  // (retries through the auth-cookie race), then mirror into local state so the
+  // optimistic claim flip below can mutate it. Falls back to the static list in
+  // the preview / unauthenticated context.
+  const { data: fetchedMissions } = useResilientAction(() => loadMissions(), []);
   const [loaded, setLoaded] = useState<Mission[] | null>(null);
   useEffect(() => {
-    let active = true;
-    loadMissions()
-      .then((m) => {
-        if (active && m && m.length) setLoaded(m);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
+    if (fetchedMissions && fetchedMissions.length) setLoaded(fetchedMissions);
+  }, [fetchedMissions]);
 
   type DailyRow = { slug: string | null; t: string; p: number; tot: number; xp: number; icon: string; done: boolean; claimable: boolean; featured: boolean };
   // Preview rows for the unauth/loading context: the 3 featured dailies + a few

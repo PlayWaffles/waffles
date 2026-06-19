@@ -88,6 +88,23 @@ type SpendIntent =
 
 type Snackbar = { id: string; label: string; slug?: string; refundedAt?: number; onUndo: () => void };
 
+// Shop isn't live yet — the full UI is kept intact behind a "coming soon" scrim
+// (content dimmed + made inert), so it ships by flipping this to false. No rebuild.
+const SHOP_COMING_SOON: boolean = true;
+
+// Centered "coming soon" badge + note, shown over the dimmed shop (and in place
+// of the loader/error while the catalog is still resolving).
+const ShopComingSoonScrim = () => (
+  <div style={{ position: "absolute", top: 60, left: 0, right: 0, bottom: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 12, padding: "0 28px", textAlign: "center", zIndex: 5, pointerEvents: "none" }}>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "var(--maple-500)", color: "var(--frame)", border: "2px solid var(--frame)", borderRadius: 99, padding: "9px 18px", fontFamily: "var(--font-display)", fontSize: 15, letterSpacing: 1, boxShadow: "0 4px 0 var(--frame)" }}>
+      <span aria-hidden="true">🔒</span> COMING SOON
+    </div>
+    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink-soft)", maxWidth: 250, lineHeight: 1.4 }}>
+      The shop is almost ready — spend your Syrup here soon.
+    </div>
+  </div>
+);
+
 // ===== Component ==============================================================
 
 export const ShopScreen = () => {
@@ -445,7 +462,9 @@ export const ShopScreen = () => {
       <Phone statusDark>
         <div className="bg-deep" />
         <TopHeader tickets={tickets} title="SHOP" />
-        {loadError ? (
+        {SHOP_COMING_SOON ? (
+          <ShopComingSoonScrim />
+        ) : loadError ? (
           <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, padding: "0 32px", textAlign: "center" }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)" }}>Couldn’t load the shop</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", maxWidth: 260 }}>Check your connection and try again.</div>
@@ -468,7 +487,11 @@ export const ShopScreen = () => {
 
       <TopHeader tickets={tickets} title="SHOP" />
 
-      <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "4px 14px 14px", overflow: "auto" }}>
+      <div
+        aria-hidden={SHOP_COMING_SOON || undefined}
+        inert={SHOP_COMING_SOON || undefined}
+        style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, padding: "4px 14px 14px", overflow: SHOP_COMING_SOON ? "hidden" : "auto", ...(SHOP_COMING_SOON ? { opacity: 0.4, filter: "saturate(.55) blur(2px)", pointerEvents: "none" as const, userSelect: "none" as const } : null) }}
+      >
         {/* Balance — one compact row (the count, a label, and the help button). */}
         <Card accent="var(--maple-500)" radius={14} pad="10px 14px" style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
           <SyrupIcon size={24} />
@@ -559,6 +582,8 @@ export const ShopScreen = () => {
           </div>
         </ComingSoonVeil>
       </div>
+
+      {SHOP_COMING_SOON && <ShopComingSoonScrim />}
 
       <div className="bottom-bar">
         <TabBar active="shop" />
