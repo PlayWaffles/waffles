@@ -41,6 +41,8 @@ const blog = (msg: string, data?: unknown) => {
 // Approve a buffer (not the exact fee) so the allowance covers several entries
 // before the player has to approve again — mirrors v1's MAX_TICKET_APPROVAL.
 const MAX_ENTRY_APPROVAL_USDC = "10";
+const BUY_TICKET_GAS_LIMIT = BigInt(245_574);
+const NETWORK_FEE_BUFFER_USDC = "0.002";
 
 /**
  * Progress steps for the on-chain entry/claim flow (mirrors v1's PurchaseStep).
@@ -75,10 +77,16 @@ export function txStepLabel(step: TournamentTxStep | null): string {
 function walletErrorMessage(error: unknown, platform: ChainPlatform): string {
   const msg = error instanceof Error ? error.message : String(error);
   if (/user rejected|denied|rejected the request/i.test(msg)) return "Cancelled.";
-  if (/insufficient/i.test(msg)) {
+  if (/insufficient|not enough|balance|transfer amount exceeds balance/i.test(msg)) {
     return platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Not enough balance to enter.";
   }
   return "Something went wrong. Please try again.";
+}
+
+function tokenUnitsForGas(gasLimit: bigint, gasPrice: bigint) {
+  const tokenScale = BigInt(10) ** BigInt(PAYMENT_TOKEN_DECIMALS);
+  const nativeScale = BigInt(10) ** BigInt(18);
+  return (gasLimit * gasPrice * tokenScale + nativeScale - BigInt(1)) / nativeScale;
 }
 
 export function useTournamentWallet() {
@@ -119,13 +127,40 @@ export function useTournamentWallet() {
           await switchChainAsync({ chainId });
         }
 
-        const allowance = (await publicClient.readContract({
-          address: tokenAddress,
-          abi: ERC20_ABI,
-          functionName: "allowance",
-          args: [address, contractAddress],
-        })) as bigint;
-        blog("[buy-ticket] allowance read", { allowance: allowance.toString(), needed: amount.toString() });
+        const [allowance, balance, gasPrice] = await Promise.all([
+          publicClient.readContract({
+            address: tokenAddress,
+            abi: ERC20_ABI,
+            functionName: "allowance",
+            args: [address, contractAddress],
+          }) as Promise<bigint>,
+          publicClient.readContract({
+            address: tokenAddress,
+            abi: ERC20_ABI,
+            functionName: "balanceOf",
+            args: [address],
+          }) as Promise<bigint>,
+          publicClient.getGasPrice(),
+        ]);
+        const estimatedFee = platform === "MINIPAY"
+          ? tokenUnitsForGas(BUY_TICKET_GAS_LIMIT, gasPrice)
+          : BigInt(0);
+        const feeBuffer = platform === "MINIPAY"
+          ? parseUnits(NETWORK_FEE_BUFFER_USDC, PAYMENT_TOKEN_DECIMALS)
+          : BigInt(0);
+        const neededBalance = amount + estimatedFee + feeBuffer;
+        blog("[buy-ticket] preflight read", {
+          allowance: allowance.toString(),
+          balance: balance.toString(),
+          neededAllowance: amount.toString(),
+          neededBalance: neededBalance.toString(),
+          estimatedFee: estimatedFee.toString(),
+          feeBuffer: feeBuffer.toString(),
+        });
+
+        if (balance < neededBalance) {
+          throw new Error(platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Not enough balance to enter.");
+        }
 
         // Approve only when the standing allowance can't cover this entry; then
         // approve a buffer (≥ a few entries) so it's not a per-entry pop-up.
