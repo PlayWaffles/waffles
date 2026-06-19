@@ -89,19 +89,30 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       </div>
 
       {/* Entry = 1 ticket, paid in USDC. Shown at half the $0.10 "standard" so
-          entry always reads as a deal — the real, flat charge is entryFee. */}
-      <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: fee?.firstEntry ? 8 : error ? 8 : 14 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 5 }}>
-          Entry · 1 <TicketIcon size={14} />
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 7 }}>
-          {fee?.firstEntry && <span style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</span>}
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: fee?.firstEntry ? "var(--leaf)" : "var(--maple-500)" }}>{fee ? usd(fee.entryFee) : "—"}</span>
-        </span>
-      </div>
-      {fee?.firstEntry && (
-        <div style={{ textAlign: "center", marginBottom: error ? 8 : 14 }}>
-          <span className="chip" style={{ background: "rgba(255,201,49,.12)", color: "var(--maple-500)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(255,201,49,.32)" }}>🎟 Half-price entry</span>
+          entry always reads as a deal — the real, flat charge is entryFee. The
+          first-entry case mirrors the post-level upsell's prominent half-price
+          card (badge + struck-through price) instead of a muted row + chip. */}
+      {fee?.firstEntry ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: error ? 8 : 14 }}>
+          <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <TicketIcon size={28} />
+            <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>Half-price entry</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first tournament, half price</div>
+          </div>
+          <div style={{ textAlign: "right", flexShrink: 0 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--leaf)" }}>{usd(fee.entryFee)}</div>
+          </div>
+        </div>
+      ) : (
+        <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: error ? 8 : 14 }}>
+          <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 5 }}>
+            Entry · 1 <TicketIcon size={14} />
+          </span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--maple-500)" }}>{fee ? usd(fee.entryFee) : "—"}</span>
         </div>
       )}
 
@@ -304,15 +315,31 @@ export const HomeScreen = () => {
   const now = useNow();
   useEffect(() => {
     let active = true;
-    getTournament()
-      .then((t) => {
-        if (!active || !t) return;
-        setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
-        setCloseAt(new Date(t.game.endsAt).getTime());
-        setRound(t.round);
-      })
-      .catch(() => {});
-    return () => { active = false; };
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let attempts = 0;
+    // `getTournament` is a server action whose auth is the session cookie set
+    // async by AuthBootstrap — which can lag the client `useUser` gate that lets
+    // Home mount. It also returns null in the brief gap between hourly rounds.
+    // A one-shot mount fetch left the hero card empty whenever it hit either
+    // case, so retry a few times before falling back to the themed defaults.
+    const load = () => {
+      getTournament()
+        .then((t) => {
+          if (!active) return;
+          if (t) {
+            setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
+            setCloseAt(new Date(t.game.endsAt).getTime());
+            setRound(t.round);
+            return;
+          }
+          if (attempts++ < 5) timer = setTimeout(load, 1200);
+        })
+        .catch(() => {
+          if (active && attempts++ < 5) timer = setTimeout(load, 1200);
+        });
+    };
+    load();
+    return () => { active = false; if (timer) clearTimeout(timer); };
   }, []);
   // Time left until the round closes, broken into HH:MM:SS.
   const remainMs = closeAt ? Math.max(0, closeAt - now) : 0;
