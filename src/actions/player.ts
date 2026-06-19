@@ -18,6 +18,7 @@ import { topWinnerShare } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
 import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentGame } from "@/lib/player/tournamentGames";
 import * as migrationSvc from "@/lib/player/migrationNotice";
+import * as wcTakeoverSvc from "@/lib/player/worldCupTakeover";
 import type { RoundAnswer } from "@/lib/player/scoring";
 import * as economySvc from "@/lib/player/economy";
 import type { DailyClaimResult, PurchaseResult, ShopCatalog } from "@/lib/player/economy";
@@ -360,6 +361,20 @@ export async function dismissMigrationNotice(): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
   await migrationSvc.dismissMigrationNotice(user.id);
+}
+
+/** One-time World Cup takeover modal: whether to auto-show it (not yet seen),
+ *  and marking it seen. DB-backed (AnnouncementState) so it's cross-device. */
+export async function getWorldCupTakeover(): Promise<{ show: boolean }> {
+  const user = await getCurrentUser();
+  if (!user) return { show: false };
+  return wcTakeoverSvc.getWorldCupTakeoverNotice(user.id);
+}
+
+export async function dismissWorldCupTakeover(): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  await wcTakeoverSvc.dismissWorldCupTakeover(user.id);
 }
 
 export async function dismissAnnouncement(id: string): Promise<void> {

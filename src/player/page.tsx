@@ -7,10 +7,10 @@ import { CoachmarkProvider, TOURS, useCoachTour } from "./coachmarks";
 import { BadgeUnlockWatcher } from "./badge-unlock";
 import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
-import { WorldCupTakeover, hasSeenWorldCupTakeover } from "./screens/world-cup-takeover";
+import { WorldCupTakeover } from "./screens/world-cup-takeover";
 import { MigrationTakeover } from "./screens/migration-takeover";
 import { LeagueResultTakeover, hasSeenLeagueResult } from "./screens/league-result";
-import { getMigrationNotice, dismissMigrationNotice, loadLeagueResult, logClient } from "@/actions/player";
+import { getMigrationNotice, dismissMigrationNotice, getWorldCupTakeover, dismissWorldCupTakeover, loadLeagueResult, logClient } from "@/actions/player";
 import type { LeagueResult } from "@/lib/player/leagues";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
@@ -141,12 +141,23 @@ const Stage = () => {
 
   // precedence over the daily reward so the two never stack.
   const [showWcTakeover, setShowWcTakeover] = useState(false);
+  // "Seen" is now DB-backed (worldCupTakeover.ts), so it's cross-device — resolve
+  // it server-side once, on Home, like the migration notice.
+  const [wcCanShow, setWcCanShow] = useState(false);
+  const wcChecked = useRef(false);
+  useEffect(() => {
+    if (showOnboarding || proto.screen !== "home" || wcChecked.current) return;
+    wcChecked.current = true;
+    getWorldCupTakeover()
+      .then((r) => setWcCanShow(r.show))
+      .catch(() => {});
+  }, [showOnboarding, proto.screen]);
   useEffect(() => {
     // Gated to Home so it never lands on the onboarding→first-level funnel. For a
     // first-timer this means it waits until they finish that level and return to
     // Home (their first Home visit); a returning user opens to Home and sees it
     // right away. No "first run" flag needed — the Home gate does the waiting.
-    if (!showOnboarding && proto.screen === "home" && migrationResolved && !showMigration && !hasSeenWorldCupTakeover()) {
+    if (!showOnboarding && proto.screen === "home" && migrationResolved && !showMigration && wcCanShow) {
       // rAF so the flip isn't a synchronous setState in the effect body.
       const id = requestAnimationFrame(() => {
         trackClientEvent(AnalyticsEvent.WorldCupTakeoverAutoOpened, {
@@ -158,7 +169,7 @@ const Stage = () => {
       });
       return () => cancelAnimationFrame(id);
     }
-  }, [showOnboarding, proto.screen, migrationResolved, showMigration]);
+  }, [showOnboarding, proto.screen, migrationResolved, showMigration, wcCanShow]);
 
   useEffect(() => {
     if (showOnboarding || proto.screen !== "home" || migrationChecked.current) return;
@@ -251,7 +262,10 @@ const Stage = () => {
             <WorldCupTakeover
               onClose={() => {
                 setShowWcTakeover(false);
+                setWcCanShow(false);
                 proto.update({ wcTakeoverOpen: false });
+                // Persist "seen" DB-side (cross-device); idempotent on reopen.
+                void dismissWorldCupTakeover();
               }}
             />
           ) : leagueResult ? (
