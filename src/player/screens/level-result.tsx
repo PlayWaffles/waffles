@@ -6,6 +6,7 @@ import {
   levelTicketMilestoneInfo,
   LIVES_MAX,
   LIVES_REFILL_COST,
+  displayFieldSize,
   TOURNAMENT_FIELD_SIZE,
   TOURNAMENT_TOP_PRIZE,
   USDT_PER_TICKET,
@@ -78,8 +79,9 @@ const TournamentUpsellSheet = ({
   const usd = (n: number) => `$${n.toFixed(2)}`;
 
   // Live "playing now" headcount and the floored "win up to" prize — the same
-  // model the Home card uses, so the upsell tells the identical story.
-  const playingNow = round?.playerCount ?? TOURNAMENT_FIELD_SIZE;
+  // model the Home card uses, so the upsell tells the identical story. A
+  // near-empty round shows the simulated field rather than a lonely real count.
+  const playingNow = displayFieldSize(round?.playerCount ?? 0);
   const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
   const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
 

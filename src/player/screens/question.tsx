@@ -240,7 +240,10 @@ export const QuestionScreen = () => {
           <div className="chip" style={{ background: q.minefield ? "var(--live-red)" : catCol.fg, color: q.minefield ? "#fff" : "var(--frame)", position: "absolute", top: -12, left: 14, border: "2px solid var(--frame)" }}>
             <CategoryIcon name={cat} size={14} /> {cat.toUpperCase()}
           </div>
-          {q.kicker && (
+          {/* Only show the kicker when it adds something the category pill above
+              doesn't already say — many newer formats set the kicker to the same
+              string as the category (e.g. "TAP ALL TRUE"), which printed twice. */}
+          {q.kicker && q.kicker.trim().toUpperCase() !== cat.toUpperCase() && (
             <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: q.minefield ? "var(--live-red)" : catCol.fg, marginBottom: 8, textTransform: "uppercase" }}>{q.kicker}</div>
           )}
           {q.media && (

@@ -48,10 +48,10 @@ export async function loadMissions(): Promise<Mission[] | null> {
   return missionsSvc.loadMissions(user.id);
 }
 
-export async function recordMissionProgress(slug: string, n = 1): Promise<void> {
+export async function recordMissionEvent(eventType: string, n = 1): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await missionsSvc.recordMissionProgress(user.id, slug, n);
+  await missionsSvc.recordMissionEvent(user.id, eventType, n);
 }
 
 export async function claimMission(slug: string): Promise<ClaimMissionResult | null> {

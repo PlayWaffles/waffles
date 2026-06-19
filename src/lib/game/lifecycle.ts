@@ -24,6 +24,7 @@ import {
   type PlayerEntry,
 } from "./prizeDistribution";
 import { PAYMENT_TOKEN_DECIMALS, getWaffleContractAddress } from "../chain";
+import { recordMissionEvent } from "@/lib/player/missions";
 
 // ============================================================================
 // Types
@@ -190,6 +191,19 @@ export async function rankGame(gameId: string): Promise<RankResult> {
   console.log(
     `[Lifecycle] Ranked ${entries.length} entries, ${winners.length} winners`,
   );
+
+  // Daily "Win 1 tournament" mission — credited to the 1st-place finisher. Only
+  // on the fresh ranking path (the already-ranked early return above never
+  // reaches here), so it fires exactly once per game. Best-effort: a mission
+  // hiccup must never fail settlement.
+  const champion = winners.find((w) => w.rank === 1);
+  if (champion) {
+    try {
+      await recordMissionEvent(champion.userId, "tournaments_won", 1);
+    } catch (e) {
+      console.error(`[Lifecycle] win-tournament mission accrual failed for ${champion.userId}:`, e);
+    }
+  }
 
   return {
     success: true,

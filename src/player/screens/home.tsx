@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
+import { displayFieldSize, isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
@@ -136,8 +136,23 @@ const STATIC_HOME_MISSIONS = [
   { label: "Play 2 games", cur: 1, tgt: 2, reward: "+25 XP", icon: "play" },
 ];
 
+// "Hh Mm" until the next UTC midnight — the boundary the server resets daily
+// missions on (see lib/player/missions.ts).
+const timeToUtcMidnight = (): string => {
+  const now = new Date();
+  const next = new Date(now);
+  next.setUTCHours(24, 0, 0, 0);
+  const mins = Math.max(0, Math.round((next.getTime() - now.getTime()) / 60_000));
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
+
 const HomeMissions = () => {
   const proto = useProto();
+  const [resetIn, setResetIn] = useState(timeToUtcMidnight);
+  useEffect(() => {
+    const id = setInterval(() => setResetIn(timeToUtcMidnight()), 60_000);
+    return () => clearInterval(id);
+  }, []);
   // Real daily-mission progress (top 3). Falls back to the static preview list
   // before the server responds / in the unauthenticated context.
   const [loaded, setLoaded] = useState<typeof STATIC_HOME_MISSIONS | null>(null);
@@ -147,7 +162,9 @@ const HomeMissions = () => {
       .then((m) => {
         if (!active || !m || !m.length) return;
         setLoaded(
-          m.slice(0, 3).map((x) => ({
+          // The fixed home set = the featured missions (loadMissions returns them
+          // first; the generated set lives only on the Missions page).
+          m.filter((x) => x.featured).map((x) => ({
             label: x.title,
             cur: x.count,
             tgt: x.total,
@@ -172,7 +189,7 @@ const HomeMissions = () => {
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", letterSpacing: 0.5 }}>DAILY MISSIONS</div>
-        <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.8 }}>RESETS IN 6h 17m</div>
+        <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.8 }}>RESETS IN {resetIn}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         {missions.map((m, i) => {
@@ -367,8 +384,10 @@ export const HomeScreen = () => {
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
   // Real entrant count — board standings first, then the game's stored
-  // playerCount; no simulated field.
-  const fieldSize = board && board.fieldSize > 0 ? board.fieldSize : (round?.playerCount ?? 0);
+  // playerCount — but a near-empty round shows the simulated field instead of a
+  // lonely "1 in" (see displayFieldSize).
+  const realEntrants = board && board.fieldSize > 0 ? board.fieldSize : (round?.playerCount ?? 0);
+  const fieldSize = displayFieldSize(realEntrants);
 
   // Headline prize: the #1 finisher's projected cut of the *live* pool (server
   // computes it with the real bracket math), floored at the advertised

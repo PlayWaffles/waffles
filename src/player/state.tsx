@@ -26,7 +26,7 @@ import {
   reconcileTournamentClaim,
   loseLife,
   consumePowerUp,
-  recordMissionProgress,
+  recordMissionEvent,
   refillLives as refillLivesAction,
   setAnnouncementsRead,
   loadAnnouncements,
@@ -102,6 +102,14 @@ export const TOURNAMENT_TICKET_COST = 1;
 // Simulated size of the live field. Drives the displayed finishing rank and the
 // "of N players" copy across the lobby, results, and Home card.
 export const TOURNAMENT_FIELD_SIZE = 2418;
+
+// Below this many *real* entrants a round is too empty to show its true
+// headcount (a lone "1 playing" kills the live feel), so the simulated field is
+// shown instead. At/above it, the genuine count is surfaced.
+export const FIELD_REVEAL_MIN = 10;
+export function displayFieldSize(realCount: number): number {
+  return realCount >= FIELD_REVEAL_MIN ? realCount : TOURNAMENT_FIELD_SIZE;
+}
 
 // Prize ladder: finishing rank → tickets won. Risking 1 ticket to enter for a
 // shot at 25 is the stakes hook we sell on the Home card. Ordered best tier
@@ -955,6 +963,11 @@ export function ProtoProvider({
           update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
           // Persist: advanceLevel credits the same milestone ticket + xp server-side.
           void advanceLevel(track, state.score);
+          // Daily mission accrual — a completed solo level counts as a played
+          // game plus its answered questions / points toward event-keyed missions.
+          void recordMissionEvent("games_played", 1);
+          void recordMissionEvent("questions_answered", totalQs);
+          void recordMissionEvent("points_scored", state.score);
           goto("levelWin");
           return;
         }
@@ -1004,13 +1017,17 @@ export function ProtoProvider({
           provisional_rank: provisionalRank,
           on_chain: Boolean(state.tournamentGameId),
         });
-        // Daily mission accrual — questions answered this round.
+        // Daily mission accrual — emit the gameplay events this tournament round
+        // produced; the mission service advances whatever missions are keyed to
+        // each event today (server-side).
         track(AnalyticsEvent.MissionProgressRecorded, {
-          reason: "tournament_questions_answered",
+          reason: "tournament_round_complete",
           question_count: totalQs,
+          score: state.score,
         });
-        void recordMissionProgress("daily-answer-5", totalQs);
-        void recordMissionProgress("daily-answer-3", totalQs);
+        void recordMissionEvent("questions_answered", totalQs);
+        void recordMissionEvent("points_scored", state.score);
+        void recordMissionEvent("tournaments_played", 1);
         goto("results");
         update((s) => ({
           xp: s.xp + s.score * xpMult,

@@ -18,7 +18,7 @@ import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
 import { Prisma, QuestionKind, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
-import { displayCategory } from "./roundQuestions";
+import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
@@ -71,11 +71,17 @@ const toScorable = (q: GameQuestionRow): ScorableQuestion => ({
 });
 
 async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
-  return prisma.question.findMany({
+  const rows = await prisma.question.findMany({
     where: { gameId },
     orderBy: [{ roundIndex: "asc" }, { orderInRound: "asc" }],
     select: GAME_QUESTION_SELECT,
   });
+  // Shuffle each question's options (deterministically, by question id) so the
+  // correct answer isn't pinned to one slot. Applied here — the single seam both
+  // the client read (getTournamentClientQuestions) and the server re-score
+  // (submitTournamentAnswers) flow through — so the rendered order and the
+  // scored order can never drift apart.
+  return rows.map(shuffleQuestionOptions);
 }
 
 // ---------------------------------------------------------------------------

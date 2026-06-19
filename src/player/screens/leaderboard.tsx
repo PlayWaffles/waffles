@@ -47,8 +47,9 @@ export const LeaderboardScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"league" | "friends">("league");
 
-  // Real tournament standings. Falls back to the sample board below in the
-  // preview / unauthenticated context or before any tournament runs.
+  // Real tournament standings only — no mock fallback. Until a real board loads
+  // (or if none has run yet) the league tab shows an empty state rather than
+  // fabricated players.
   const [board, setBoard] = useState<TournamentBoard | null>(null);
   useEffect(() => {
     let active = true;
@@ -62,37 +63,23 @@ export const LeaderboardScreen = () => {
     };
   }, []);
 
-  const mockLeaders: Player[] = [
-    { rank: 1, name: "wendy.maria.589", pts: 6543, color: "#FFC931", avatar: "photo" },
-    { rank: 2, name: "alesandra.s.rodrigue", pts: 5150, color: "#a266ff" },
-    { rank: 3, name: "spikeelmejor2026", pts: 5050, color: "#5db8ff" },
-    { rank: 4, name: "mkt.design83", pts: 3000, color: "#7a4525" },
-    { rank: 5, name: "lorennabarboza319", pts: 3000, color: "#1f9b8e" },
-    { rank: 6, name: "edumh2103", pts: 1500, color: "#7a6147" },
-    { rank: 7, name: "niharadd", pts: 1360, color: "#3dd17a" },
-    { rank: 8, name: "nazlbr", pts: 1320, color: "#3dd17a" },
-    { rank: 9, name: "zone.simple34", pts: 1050, color: "#e8d046" },
-    { rank: 10, name: "mark.rivera", pts: 980, color: "#a266ff" },
-    { rank: 11, name: "bk.pixels", pts: 920, color: "#5db8ff" },
-    { rank: 12, name: "tim.h", pts: 880, color: "#3dd17a" },
-  ];
   const youAvatar = resolveAvatar(proto.avatarId, proto.username);
   const leaders: Player[] = board
     ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, color: "#3dd17a", you: s.you, avatar: s.you ? youAvatar : undefined }))
-    : mockLeaders;
-  const you: Player = board?.you
+    : [];
+  const you: Player | null = board?.you
     ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true, avatar: youAvatar }
-    : { rank: 40, name: proto.username || "you", pts: 0, color: "#3dd17a", you: true, avatar: youAvatar };
+    : null;
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
       screen: "leaderboard",
       leaderboard_tab: tab,
       field_size: board?.fieldSize ?? leaders.length,
-      rank: you.rank,
-      score_after: you.pts,
+      rank: you?.rank ?? 0,
+      score_after: you?.pts ?? 0,
       has_live_board: Boolean(board),
     });
-  }, [tab, board, leaders.length, you.rank, you.pts]);
+  }, [tab, board, leaders.length, you?.rank, you?.pts]);
 
   return (
     <Phone statusDark>
@@ -182,6 +169,17 @@ export const LeaderboardScreen = () => {
         </div>
 
         {tab === "league" ? (
+          leaders.length === 0 ? (
+            // No real standings yet (no tournament has run / settled). Show an
+            // empty state instead of fabricated players.
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
+              <PixelImg src={ASSETS.trophy} size={64} alt="" style={{ opacity: 0.85, marginBottom: 16 }} />
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No standings yet</div>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
+                Play a tournament to claim your spot — the league board fills up once scores are in.
+              </div>
+            </div>
+          ) : (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px 10px", color: "var(--ink-soft)" }}>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>Position</span>
@@ -194,12 +192,16 @@ export const LeaderboardScreen = () => {
               {leaders.map((p) => <LeaderRow key={p.rank} p={p} />)}
               {/* "You" row pinned to the bottom — uses the maple-tinted highlight
                   that the results screen uses for the player's row, so the two
-                  leaderboards in the app share a visual language. */}
-              <div data-coach="leaderboard-you" style={{ position: "sticky", bottom: 0, background: "#191507", borderTop: "1.5px solid var(--maple-500)", boxShadow: "0 -10px 18px rgba(0, 0, 0, 0.45)" }}>
-                <LeaderRow p={you} />
-              </div>
+                  leaderboards in the app share a visual language. Only shown when
+                  the board actually places you. */}
+              {you && (
+                <div data-coach="leaderboard-you" style={{ position: "sticky", bottom: 0, background: "#191507", borderTop: "1.5px solid var(--maple-500)", boxShadow: "0 -10px 18px rgba(0, 0, 0, 0.45)" }}>
+                  <LeaderRow p={you} />
+                </div>
+              )}
             </div>
           </>
+          )
         ) : (
           // Friends tab — empty state with a clear CTA, instead of mirroring
           // the league list and leaving the user wondering whether the tab

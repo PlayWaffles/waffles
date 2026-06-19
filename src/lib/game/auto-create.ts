@@ -46,6 +46,8 @@ interface AutoQuestionTemplate {
   minefield: boolean;
   kicker: string | null;
   clues: string[];
+  // Authoring category (topic) — carried so the play UI shows the subject.
+  category: string | null;
 }
 
 export interface AutoCreateGameInput {
@@ -136,6 +138,8 @@ async function assignAutoQuestionsToGame(
         minefield: template.minefield,
         kicker: template.kicker,
         clues: template.clues,
+        // Carry the topic so the play UI can show the subject, not the format.
+        category: template.category,
         roundIndex: 1,
         orderInRound: index,
         templateId: template.id,

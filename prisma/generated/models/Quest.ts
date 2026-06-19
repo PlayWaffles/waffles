@@ -54,6 +54,8 @@ export type QuestMinAggregateOutputType = {
   castHash: string | null
   targetFid: number | null
   requiredCount: number | null
+  eventType: string | null
+  featured: boolean | null
   isActive: boolean | null
   startsAt: Date | null
   endsAt: Date | null
@@ -76,6 +78,8 @@ export type QuestMaxAggregateOutputType = {
   castHash: string | null
   targetFid: number | null
   requiredCount: number | null
+  eventType: string | null
+  featured: boolean | null
   isActive: boolean | null
   startsAt: Date | null
   endsAt: Date | null
@@ -98,6 +102,8 @@ export type QuestCountAggregateOutputType = {
   castHash: number
   targetFid: number
   requiredCount: number
+  eventType: number
+  featured: number
   isActive: number
   startsAt: number
   endsAt: number
@@ -136,6 +142,8 @@ export type QuestMinAggregateInputType = {
   castHash?: true
   targetFid?: true
   requiredCount?: true
+  eventType?: true
+  featured?: true
   isActive?: true
   startsAt?: true
   endsAt?: true
@@ -158,6 +166,8 @@ export type QuestMaxAggregateInputType = {
   castHash?: true
   targetFid?: true
   requiredCount?: true
+  eventType?: true
+  featured?: true
   isActive?: true
   startsAt?: true
   endsAt?: true
@@ -180,6 +190,8 @@ export type QuestCountAggregateInputType = {
   castHash?: true
   targetFid?: true
   requiredCount?: true
+  eventType?: true
+  featured?: true
   isActive?: true
   startsAt?: true
   endsAt?: true
@@ -289,6 +301,8 @@ export type QuestGroupByOutputType = {
   castHash: string | null
   targetFid: number | null
   requiredCount: number
+  eventType: string | null
+  featured: boolean
   isActive: boolean
   startsAt: Date | null
   endsAt: Date | null
@@ -334,6 +348,8 @@ export type QuestWhereInput = {
   castHash?: Prisma.StringNullableFilter<"Quest"> | string | null
   targetFid?: Prisma.IntNullableFilter<"Quest"> | number | null
   requiredCount?: Prisma.IntFilter<"Quest"> | number
+  eventType?: Prisma.StringNullableFilter<"Quest"> | string | null
+  featured?: Prisma.BoolFilter<"Quest"> | boolean
   isActive?: Prisma.BoolFilter<"Quest"> | boolean
   startsAt?: Prisma.DateTimeNullableFilter<"Quest"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Quest"> | Date | string | null
@@ -358,6 +374,8 @@ export type QuestOrderByWithRelationInput = {
   castHash?: Prisma.SortOrderInput | Prisma.SortOrder
   targetFid?: Prisma.SortOrderInput | Prisma.SortOrder
   requiredCount?: Prisma.SortOrder
+  eventType?: Prisma.SortOrderInput | Prisma.SortOrder
+  featured?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -385,6 +403,8 @@ export type QuestWhereUniqueInput = Prisma.AtLeast<{
   castHash?: Prisma.StringNullableFilter<"Quest"> | string | null
   targetFid?: Prisma.IntNullableFilter<"Quest"> | number | null
   requiredCount?: Prisma.IntFilter<"Quest"> | number
+  eventType?: Prisma.StringNullableFilter<"Quest"> | string | null
+  featured?: Prisma.BoolFilter<"Quest"> | boolean
   isActive?: Prisma.BoolFilter<"Quest"> | boolean
   startsAt?: Prisma.DateTimeNullableFilter<"Quest"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableFilter<"Quest"> | Date | string | null
@@ -409,6 +429,8 @@ export type QuestOrderByWithAggregationInput = {
   castHash?: Prisma.SortOrderInput | Prisma.SortOrder
   targetFid?: Prisma.SortOrderInput | Prisma.SortOrder
   requiredCount?: Prisma.SortOrder
+  eventType?: Prisma.SortOrderInput | Prisma.SortOrder
+  featured?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   endsAt?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -439,6 +461,8 @@ export type QuestScalarWhereWithAggregatesInput = {
   castHash?: Prisma.StringNullableWithAggregatesFilter<"Quest"> | string | null
   targetFid?: Prisma.IntNullableWithAggregatesFilter<"Quest"> | number | null
   requiredCount?: Prisma.IntWithAggregatesFilter<"Quest"> | number
+  eventType?: Prisma.StringNullableWithAggregatesFilter<"Quest"> | string | null
+  featured?: Prisma.BoolWithAggregatesFilter<"Quest"> | boolean
   isActive?: Prisma.BoolWithAggregatesFilter<"Quest"> | boolean
   startsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Quest"> | Date | string | null
   endsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Quest"> | Date | string | null
@@ -461,6 +485,8 @@ export type QuestCreateInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -485,6 +511,8 @@ export type QuestUncheckedCreateInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -509,6 +537,8 @@ export type QuestUpdateInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -533,6 +563,8 @@ export type QuestUncheckedUpdateInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -557,6 +589,8 @@ export type QuestCreateManyInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -579,6 +613,8 @@ export type QuestUpdateManyMutationInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -601,6 +637,8 @@ export type QuestUncheckedUpdateManyInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -623,6 +661,8 @@ export type QuestCountOrderByAggregateInput = {
   castHash?: Prisma.SortOrder
   targetFid?: Prisma.SortOrder
   requiredCount?: Prisma.SortOrder
+  eventType?: Prisma.SortOrder
+  featured?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
@@ -652,6 +692,8 @@ export type QuestMaxOrderByAggregateInput = {
   castHash?: Prisma.SortOrder
   targetFid?: Prisma.SortOrder
   requiredCount?: Prisma.SortOrder
+  eventType?: Prisma.SortOrder
+  featured?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
@@ -674,6 +716,8 @@ export type QuestMinOrderByAggregateInput = {
   castHash?: Prisma.SortOrder
   targetFid?: Prisma.SortOrder
   requiredCount?: Prisma.SortOrder
+  eventType?: Prisma.SortOrder
+  featured?: Prisma.SortOrder
   isActive?: Prisma.SortOrder
   startsAt?: Prisma.SortOrder
   endsAt?: Prisma.SortOrder
@@ -748,6 +792,8 @@ export type QuestCreateWithoutCompletionsInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -771,6 +817,8 @@ export type QuestUncheckedCreateWithoutCompletionsInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -810,6 +858,8 @@ export type QuestUpdateWithoutCompletionsInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -833,6 +883,8 @@ export type QuestUncheckedUpdateWithoutCompletionsInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -856,6 +908,8 @@ export type QuestCreateWithoutProgressInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -879,6 +933,8 @@ export type QuestUncheckedCreateWithoutProgressInput = {
   castHash?: string | null
   targetFid?: number | null
   requiredCount?: number
+  eventType?: string | null
+  featured?: boolean
   isActive?: boolean
   startsAt?: Date | string | null
   endsAt?: Date | string | null
@@ -918,6 +974,8 @@ export type QuestUpdateWithoutProgressInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -941,6 +999,8 @@ export type QuestUncheckedUpdateWithoutProgressInput = {
   castHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   targetFid?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   requiredCount?: Prisma.IntFieldUpdateOperationsInput | number
+  eventType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  featured?: Prisma.BoolFieldUpdateOperationsInput | boolean
   isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
   startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
@@ -1004,6 +1064,8 @@ export type QuestSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   castHash?: boolean
   targetFid?: boolean
   requiredCount?: boolean
+  eventType?: boolean
+  featured?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -1029,6 +1091,8 @@ export type QuestSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   castHash?: boolean
   targetFid?: boolean
   requiredCount?: boolean
+  eventType?: boolean
+  featured?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -1051,6 +1115,8 @@ export type QuestSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   castHash?: boolean
   targetFid?: boolean
   requiredCount?: boolean
+  eventType?: boolean
+  featured?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -1073,6 +1139,8 @@ export type QuestSelectScalar = {
   castHash?: boolean
   targetFid?: boolean
   requiredCount?: boolean
+  eventType?: boolean
+  featured?: boolean
   isActive?: boolean
   startsAt?: boolean
   endsAt?: boolean
@@ -1081,7 +1149,7 @@ export type QuestSelectScalar = {
   updatedAt?: boolean
 }
 
-export type QuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "description" | "iconUrl" | "category" | "sortOrder" | "points" | "type" | "actionUrl" | "castHash" | "targetFid" | "requiredCount" | "isActive" | "startsAt" | "endsAt" | "repeatFrequency" | "createdAt" | "updatedAt", ExtArgs["result"]["quest"]>
+export type QuestOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "description" | "iconUrl" | "category" | "sortOrder" | "points" | "type" | "actionUrl" | "castHash" | "targetFid" | "requiredCount" | "eventType" | "featured" | "isActive" | "startsAt" | "endsAt" | "repeatFrequency" | "createdAt" | "updatedAt", ExtArgs["result"]["quest"]>
 export type QuestInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   completions?: boolean | Prisma.Quest$completionsArgs<ExtArgs>
   progress?: boolean | Prisma.Quest$progressArgs<ExtArgs>
@@ -1110,6 +1178,8 @@ export type $QuestPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     castHash: string | null
     targetFid: number | null
     requiredCount: number
+    eventType: string | null
+    featured: boolean
     isActive: boolean
     startsAt: Date | null
     endsAt: Date | null
@@ -1554,6 +1624,8 @@ export interface QuestFieldRefs {
   readonly castHash: Prisma.FieldRef<"Quest", 'String'>
   readonly targetFid: Prisma.FieldRef<"Quest", 'Int'>
   readonly requiredCount: Prisma.FieldRef<"Quest", 'Int'>
+  readonly eventType: Prisma.FieldRef<"Quest", 'String'>
+  readonly featured: Prisma.FieldRef<"Quest", 'Boolean'>
   readonly isActive: Prisma.FieldRef<"Quest", 'Boolean'>
   readonly startsAt: Prisma.FieldRef<"Quest", 'DateTime'>
   readonly endsAt: Prisma.FieldRef<"Quest", 'DateTime'>
