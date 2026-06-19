@@ -456,6 +456,9 @@ export type TournamentStanding = {
   /** Prize won in payment-token units (set at settlement); 0 if none. */
   prize: number;
   you: boolean;
+  /** Whether this entrant has completed a round submission (answered > 0). Used
+   *  to decide if an entered player can still "Play" (resume) vs only view standing. */
+  played: boolean;
 };
 
 export type TournamentBoard = {
@@ -480,7 +483,7 @@ export async function tournamentStandings(
     prisma.gameEntry.findMany({
       where: { gameId, paidAt: { not: null } },
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],
-      select: { userId: true, score: true, rank: true, prize: true, user: { select: { username: true } } },
+      select: { userId: true, score: true, answered: true, rank: true, prize: true, user: { select: { username: true } } },
     }),
   ]);
   if (!game) return EMPTY_BOARD;
@@ -492,6 +495,7 @@ export async function tournamentStandings(
     score: e.score,
     prize: e.prize ?? 0,
     you: !!opts.userId && opts.userId === e.userId,
+    played: (e.answered ?? 0) > 0,
   }));
   const limit = opts.limit ?? 20;
   return {

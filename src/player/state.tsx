@@ -572,6 +572,7 @@ export type Proto = State & {
   // On-chain tournament: deposit via wallet (buyTicket) + start the round; claim
   // a settled prize via the merkle proof. Resolve with ok/error for the UI.
   enterTournamentOnChain: () => Promise<{ ok: boolean; error?: string }>;
+  playEnteredTournament: () => Promise<{ ok: boolean; error?: string }>;
   claimTournamentPrize: (gameId: string) => Promise<{ ok: boolean; error?: string }>;
   markResultRead: (id: string) => void;
   dismissAnnouncement: (id: string) => void;
@@ -1516,6 +1517,42 @@ export function ProtoProvider({
     }
   };
 
+  // Resume an entry the player ALREADY paid for — drop into the round without a
+  // second on-chain charge. For entered-but-not-yet-played users (the post-purchase
+  // auto-route didn't fire, or they chose to play later). Gameplay integrity is
+  // preserved by gating the CTA on `board.you.played === false`; the round must
+  // also still be live (submit is a no-op past endsAt) and the server keeps the
+  // best score, so this can never lower an existing result.
+  const playEnteredTournament = async (): Promise<{ ok: boolean; error?: string }> => {
+    const t = await getTournament();
+    if (!t || !t.game.onchainId) {
+      track(AnalyticsEvent.TournamentEntryBlocked, { reason: "no_tournament" });
+      return { ok: false, error: "no_tournament" };
+    }
+    track(AnalyticsEvent.TournamentLobbyEntered, {
+      game_id: t.game.id,
+      game_number: t.game.gameNumber,
+      platform: t.game.platform,
+      resumed: true,
+    });
+    const mapped: Question[] = t.questions.map((q) => ({ ...q }));
+    update({
+      mode: "tournament",
+      tournamentGameId: t.game.id,
+      roundQuestions: mapped,
+      roundAnswers: [],
+      qIdx: 0,
+      score: 0,
+      qAnswered: null,
+      hearts: 3,
+      timer: mapped[0]?.time ?? tweaks.questionTime,
+      countdownSec: tweaks.lobbyCountdown,
+      tournamentStep: null,
+    });
+    goto("lobby");
+    return { ok: true };
+  };
+
   // Claim a settled on-chain prize: send `claimPrize` with the merkle proof, then
   // confirm server-side (reused `verifyClaim`).
   const claimTournamentPrize = async (gameId: string): Promise<{ ok: boolean; error?: string }> => {
@@ -1600,6 +1637,7 @@ export function ProtoProvider({
     playAgain,
     usePowerUp,
     enterTournamentOnChain,
+    playEnteredTournament,
     claimTournamentPrize,
   };
 

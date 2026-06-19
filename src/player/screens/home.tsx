@@ -335,9 +335,15 @@ export const HomeScreen = () => {
     else setEntryError(res.error ?? "Entry failed");
   };
   const openJoin = () => {
-    // Already entered this round and it hasn't settled — view your standing
-    // instead of paying again (one paid entry per round).
+    // Already entered this round (one paid entry per round). If they haven't
+    // played yet, resume into the quiz for the entry they already paid for — no
+    // second charge. Otherwise just show their standing.
     if (entered) {
+      if (!board?.you?.played) {
+        trackClientEvent(AnalyticsEvent.TicketCtaClicked, { screen: "home", source: "resume_cta", entry_fee: fee?.entryFee ?? null, first_entry: fee?.firstEntry ?? null });
+        void proto.playEnteredTournament();
+        return;
+      }
       proto.goto("results");
       return;
     }
@@ -352,6 +358,12 @@ export const HomeScreen = () => {
   };
   const onCardTap = () => {
     if (entered) {
+      // Paid but not played → resume into the round; played → view standing.
+      if (!board?.you?.played) {
+        trackClientEvent(AnalyticsEvent.TicketCtaClicked, { screen: "home", source: "resume_card", entry_fee: fee?.entryFee ?? null, first_entry: fee?.firstEntry ?? null });
+        void proto.playEnteredTournament();
+        return;
+      }
       trackClientEvent(AnalyticsEvent.ViewStandingClicked, {
         screen: "home",
         source: "tournament_card",
@@ -379,6 +391,9 @@ export const HomeScreen = () => {
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
+  // Paid this round but hasn't played yet → can resume into the quiz (no second
+  // charge). Once they've played (or it's settled), it's view-standing only.
+  const canResume = entered && !(board?.you?.played ?? false);
   // Real entrant count — board standings first, then the game's stored
   // playerCount — but a near-empty round shows the simulated field instead of a
   // lonely "1 in" (see displayFieldSize).
@@ -435,7 +450,7 @@ export const HomeScreen = () => {
         <div
           role="button"
           tabIndex={0}
-          aria-label={entered ? "View your tournament standing" : `Join the Top of the Hour tournament — costs ${TOURNAMENT_TICKET_COST} ticket`}
+          aria-label={entered ? (canResume ? "Play your tournament round" : "View your tournament standing") : `Join the Top of the Hour tournament — costs ${TOURNAMENT_TICKET_COST} ticket`}
           onClick={onCardTap}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -465,6 +480,11 @@ export const HomeScreen = () => {
               ? `${round.category} trivia · ${round.questionCount} question${round.questionCount === 1 ? "" : "s"} · ${round.roundSeconds}s`
               : theme.copy.liveTagline}
           </div>
+          {round?.legacyV1 && (
+            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 5, lineHeight: 1.35 }}>
+              This is a game from v1 — games after this one run hourly.
+            </div>
+          )}
 
           {/* Accent lines: the personal "beat your last finish" hook, plus the
               conditional 2× XP first-game bonus (relocated off the chip row). */}
@@ -472,7 +492,7 @@ export const HomeScreen = () => {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--leaf)", fontVariantNumeric: "tabular-nums" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M4 12a8 8 0 1 1 2.3 5.6M4 12V7m0 5h5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {entered
-                ? `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}tap to view`
+                ? (canResume ? "You're in — tap to play your round" : `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}tap to view`)
                 : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : "Your first tournament — Top 100 win tickets"}
             </div>
             {bonusAvailable && (
@@ -539,7 +559,7 @@ export const HomeScreen = () => {
       <div className="cta-row sticky">
         <button className="cta" data-coach="home-join" onClick={openJoin} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
           {entered ? (
-            "VIEW YOUR STANDING"
+            canResume ? "PLAY YOUR ROUND" : "VIEW YOUR STANDING"
           ) : (
             <>
               JOIN NEXT TOURNAMENT

@@ -336,20 +336,32 @@ export const ResultsScreen = () => {
       </div>
 
       {provisional ? (
-        // Round still live — you're already in, so the only action is to leave
-        // and check back. No replay (one entry per round).
-        <BottomCTA
-          label="DONE — CHECK BACK AT CLOSE"
-          onClick={() => {
-            trackClientEvent(AnalyticsEvent.ResultsDoneClicked, {
-              screen: "results",
-              settled: false,
-              game_id: proto.tournamentGameId,
-              rank,
-            });
-            proto.goto("home");
-          }}
-        />
+        board?.you && !board.you.played ? (
+          // Entered but hasn't played this round yet (e.g. the post-purchase
+          // auto-route didn't fire, or they chose to play later) — let them
+          // resume into the quiz they already paid for; no second charge.
+          <BottomCTA
+            label="PLAY YOUR ROUND"
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.TicketCtaClicked, { screen: "results", source: "resume_cta", game_id: proto.tournamentGameId });
+              void proto.playEnteredTournament();
+            }}
+          />
+        ) : (
+          // Round still live and already played — leave and check back at close.
+          <BottomCTA
+            label="DONE — CHECK BACK AT CLOSE"
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.ResultsDoneClicked, {
+                screen: "results",
+                settled: false,
+                game_id: proto.tournamentGameId,
+                rank,
+              });
+              proto.goto("home");
+            }}
+          />
+        )
       ) : (
         <div className="bottom-bar">
           <div className="cta-row">

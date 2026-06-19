@@ -143,6 +143,8 @@ export type TournamentRound = {
   playerCount: number;
   prizePoolUsdc: number;
   topPrizeUsdc: number;
+  /** True for the migrated v1 24h game; false once hourly v2 rounds take over. */
+  legacyV1: boolean;
 };
 
 export async function getTournament(): Promise<
@@ -178,7 +180,11 @@ export async function getTournament(): Promise<
     game,
     questions,
     entryFee: game.entryFee,
-    standardFee: tournamentSvc.TOURNAMENT_STANDARD_FEE_USDC,
+    // Anchor = 2× the real price, so the struck-through "was" always reads as a
+    // clean 50% off for ANY game price. A fixed $0.10 constant broke when the
+    // live game itself costs $0.10 (anchor == price → no visible discount); this
+    // adapts: $0.10 game → "$0.20 → $0.10", $0.05 v2 game → "$0.10 → $0.05".
+    standardFee: game.entryFee * 2,
     firstEntry,
     round: {
       title: game.title,
@@ -188,6 +194,8 @@ export async function getTournament(): Promise<
       playerCount: game.playerCount,
       prizePoolUsdc: game.prizePool,
       topPrizeUsdc: game.prizePool * topWinnerShare(game.playerCount),
+      // v2 tournaments run a 1-hour window; the migrated v1 game runs ~24h.
+      legacyV1: game.endsAt.getTime() - game.startsAt.getTime() > 2 * 60 * 60 * 1000,
     },
   };
 }
