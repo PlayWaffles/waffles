@@ -15,6 +15,7 @@ import {
 } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
 import { getTournament, type TournamentRound } from "@/actions/player";
+import { txStepLabel } from "../useTournamentWallet";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -82,7 +83,14 @@ const TournamentUpsellSheet = ({
   const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
   const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
 
-  const enter = () => {
+  // Keep the sheet open through the on-chain flow so the player sees live
+  // progress (approve → pay → verify) on the button instead of the sheet
+  // vanishing on tap and dumping them into the lobby with no feedback. Only
+  // closes on success (the provider then navigates to the lobby); failures /
+  // cancels surface inline so the player can retry or back out.
+  const [entering, setEntering] = useState(false);
+  const [entryError, setEntryError] = useState<string | null>(null);
+  const enter = async () => {
     trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellAccepted, {
       offer: "live_tournament",
       level_number: levelNumber,
@@ -93,10 +101,12 @@ const TournamentUpsellSheet = ({
       first_entry: fee?.firstEntry ?? null,
       entry_fee: fee?.entryFee ?? null,
     });
-    onAccept();
-    // On-chain entry: the deposit is paid via the wallet; the provider starts
-    // the round on success (or stays put if the player cancels / it fails).
-    void proto.enterTournamentOnChain();
+    setEntryError(null);
+    setEntering(true);
+    const res = await proto.enterTournamentOnChain();
+    setEntering(false);
+    if (res.ok) onAccept();
+    else setEntryError(res.error ?? "Entry failed — try again");
   };
 
   return (
@@ -146,10 +156,18 @@ const TournamentUpsellSheet = ({
           </div>
         )}
 
-        <button type="button" className="cta maple" onClick={enter} style={{ width: "100%", marginBottom: 6 }}>
-          {fee ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "ENTER LIVE TOURNAMENT"}
+        {entryError && (
+          <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 10 }}>{entryError}</div>
+        )}
+
+        <button type="button" className="cta maple" onClick={entering ? undefined : () => void enter()} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...(entering ? { opacity: 0.85, cursor: "default" } : null) }}>
+          {entering
+            ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Working…")
+            : entryError
+              ? `RETRY · ${fee ? usd(fee.entryFee) : ""}`.trim()
+              : fee ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "ENTER LIVE TOURNAMENT"}
         </button>
-        <button type="button" onClick={close} style={{ width: "100%", background: "transparent", border: "none", color: "var(--ink-faint)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 12, cursor: "pointer", padding: 6 }}>
+        <button type="button" onClick={entering ? undefined : close} disabled={entering} style={{ width: "100%", background: "transparent", border: "none", color: "var(--ink-faint)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 12, cursor: entering ? "default" : "pointer", padding: 6, opacity: entering ? 0.5 : 1 }}>
           Keep practicing
         </button>
       </>
