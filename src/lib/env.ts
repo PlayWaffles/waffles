@@ -2,6 +2,11 @@ import { z } from "zod";
 
 const isServer = typeof window === "undefined";
 
+function isProductionRuntime() {
+  if (process.env.NODE_ENV !== "production") return false;
+  return !process.env.VERCEL_ENV || process.env.VERCEL_ENV === "production";
+}
+
 function cleanEnvString(value: unknown) {
   if (typeof value !== "string") return value;
 
@@ -31,21 +36,16 @@ const envSchema = z.object({
   DATABASE_URL: isServer
     ? z.string().min(1, "DATABASE_URL is required")
     : z.string().optional(),
-  AUTH_SECRET: z.string().optional(),
+  // Signs wallet session cookies and authorizes internal/cron endpoints.
+  AUTH_SECRET: isServer
+    ? z.string().min(1, "AUTH_SECRET is required")
+    : z.string().optional(),
 
   // Chain role keys (server-only, optional - only needed for admin operations)
   DEFAULT_ADMIN_PRIVATE_KEY: z.string().optional(),
   SUPER_ADMIN_PRIVATE_KEY: z.string().optional(),
   OPERATOR_PRIVATE_KEY: z.string().optional(),
   SETTLER_PRIVATE_KEY: z.string().optional(),
-
-  // PartyKit
-  PARTYKIT_SECRET: isServer
-    ? z.string().min(1, "PARTYKIT_SECRET is required")
-    : z.string().optional(),
-  NEXT_PUBLIC_PARTYKIT_HOST: z
-    .string()
-    .min(1, "NEXT_PUBLIC_PARTYKIT_HOST is required"),
 
   // Cloudinary (media storage with public URLs)
   CLOUDINARY_CLOUD_NAME: isServer
@@ -62,12 +62,11 @@ const envSchema = z.object({
   NEXT_PUBLIC_ONCHAINKIT_API_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_ONCHAINKIT_API_KEY is required"),
-  NEXT_PUBLIC_POSTHOG_TOKEN: z.string().optional(),
-  NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: z.string().optional(),
-  NEXT_PUBLIC_POSTHOG_HOST: z.string().url().optional(),
   NEXT_PUBLIC_BASE_MAINNET_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string().url().optional(),
   NEXT_PUBLIC_CELO_MAINNET_RPC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_CHAIN_NETWORK: z.enum(["mainnet", "testnet"]).optional(),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: addressSchema,
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER: addressSchema,
@@ -119,22 +118,19 @@ const getEnv = () => {
     SUPER_ADMIN_PRIVATE_KEY: process.env.SUPER_ADMIN_PRIVATE_KEY,
     OPERATOR_PRIVATE_KEY: process.env.OPERATOR_PRIVATE_KEY,
     SETTLER_PRIVATE_KEY: process.env.SETTLER_PRIVATE_KEY,
-    PARTYKIT_SECRET: process.env.PARTYKIT_SECRET,
-    NEXT_PUBLIC_PARTYKIT_HOST: process.env.NEXT_PUBLIC_PARTYKIT_HOST,
     CLOUDINARY_CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
     CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
     CLOUDINARY_API_SECRET: process.env.CLOUDINARY_API_SECRET,
     NEXT_PUBLIC_ONCHAINKIT_API_KEY: process.env.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
-    NEXT_PUBLIC_POSTHOG_TOKEN: process.env.NEXT_PUBLIC_POSTHOG_TOKEN,
-    NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN:
-      process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
-    NEXT_PUBLIC_POSTHOG_HOST: process.env.NEXT_PUBLIC_POSTHOG_HOST,
     NEXT_PUBLIC_BASE_MAINNET_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_MAINNET_RPC_URL,
     NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL:
       process.env.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL,
     NEXT_PUBLIC_CELO_MAINNET_RPC_URL:
       process.env.NEXT_PUBLIC_CELO_MAINNET_RPC_URL,
+    NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL:
+      process.env.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL,
+    NEXT_PUBLIC_CHAIN_NETWORK: process.env.NEXT_PUBLIC_CHAIN_NETWORK,
     NEXT_PUBLIC_BASE_BUILDER_CODE: process.env.NEXT_PUBLIC_BASE_BUILDER_CODE,
     NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS:
       process.env.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
@@ -200,17 +196,16 @@ const getEnv = () => {
         defaultAdminPrivateKey: undefined,
         operatorPrivateKey: undefined,
         settlerPrivateKey: undefined,
-        partykitSecret: "",
-        partykitHost: "",
         cloudinaryCloudName: "",
         cloudinaryApiKey: "",
         cloudinaryApiSecret: "",
         nextPublicOnchainkitApiKey: "",
-        nextPublicPosthogToken: undefined,
-        nextPublicPosthogHost: undefined,
         nextPublicBaseMainnetRpcUrl: "https://mainnet.base.org",
         nextPublicBaseSepoliaRpcUrl: "https://sepolia.base.org",
         nextPublicCeloMainnetRpcUrl: "https://forno.celo.org",
+        nextPublicCeloSepoliaRpcUrl:
+          "https://forno.celo-sepolia.celo-testnet.org",
+        nextPublicChainNetwork: "mainnet" as const,
         nextPublicBaseBuilderCode: undefined,
         nextPublicWaffleContractAddress:
           "0x0000000000000000000000000000000000000000" as `0x${string}`,
@@ -265,6 +260,7 @@ const getEnv = () => {
 
   return {
     rootUrl: resolveRootUrl().replace(/\/$/, ""),
+    isProduction: isProductionRuntime(),
     neynarApiKey: data.NEYNAR_API_KEY!,
     // Database
     databaseUrl: data.DATABASE_URL,
@@ -274,24 +270,22 @@ const getEnv = () => {
       data.DEFAULT_ADMIN_PRIVATE_KEY || data.SUPER_ADMIN_PRIVATE_KEY,
     operatorPrivateKey: data.OPERATOR_PRIVATE_KEY,
     settlerPrivateKey: data.SETTLER_PRIVATE_KEY,
-    // PartyKit
-    partykitSecret: data.PARTYKIT_SECRET,
-    partykitHost: data.NEXT_PUBLIC_PARTYKIT_HOST,
     // Cloudinary (media storage with public URLs)
     cloudinaryCloudName: data.CLOUDINARY_CLOUD_NAME,
     cloudinaryApiKey: data.CLOUDINARY_API_KEY,
     cloudinaryApiSecret: data.CLOUDINARY_API_SECRET,
     // Client-side
     nextPublicOnchainkitApiKey: data.NEXT_PUBLIC_ONCHAINKIT_API_KEY,
-    nextPublicPosthogToken:
-      data.NEXT_PUBLIC_POSTHOG_TOKEN || data.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN,
-    nextPublicPosthogHost: data.NEXT_PUBLIC_POSTHOG_HOST,
     nextPublicBaseMainnetRpcUrl:
       data.NEXT_PUBLIC_BASE_MAINNET_RPC_URL || "https://mainnet.base.org",
     nextPublicBaseSepoliaRpcUrl:
       data.NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org",
     nextPublicCeloMainnetRpcUrl:
       data.NEXT_PUBLIC_CELO_MAINNET_RPC_URL || "https://forno.celo.org",
+    nextPublicCeloSepoliaRpcUrl:
+      data.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL ||
+      "https://forno.celo-sepolia.celo-testnet.org",
+    nextPublicChainNetwork: data.NEXT_PUBLIC_CHAIN_NETWORK || "mainnet",
     nextPublicBaseBuilderCode: data.NEXT_PUBLIC_BASE_BUILDER_CODE,
     nextPublicWaffleContractAddress: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
       "0x0000000000000000000000000000000000000000") as `0x${string}`,
@@ -341,6 +335,16 @@ const getEnv = () => {
 };
 
 export const env = getEnv();
+
+export function assertProductionCron() {
+  if (env.isProduction) return null;
+
+  return {
+    error: "Cron jobs only run in production",
+    nodeEnv: process.env.NODE_ENV ?? null,
+    vercelEnv: process.env.VERCEL_ENV ?? null,
+  };
+}
 
 export function getTreasuryWalletForPlatform(platform: string): `0x${string}` {
   if (platform === "MINIPAY") {

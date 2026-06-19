@@ -60,12 +60,31 @@ export const ModelName = {
   QuestionTemplate: 'QuestionTemplate',
   Question: 'Question',
   GameEntry: 'GameEntry',
-  Chat: 'Chat',
   PendingPurchase: 'PendingPurchase',
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
   AuditLog: 'AuditLog',
-  InviteCode: 'InviteCode'
+  AnalyticsEvent: 'AnalyticsEvent',
+  InviteCode: 'InviteCode',
+  TicketLedger: 'TicketLedger',
+  LevelProgress: 'LevelProgress',
+  RoundEntry: 'RoundEntry',
+  Announcement: 'Announcement',
+  AnnouncementState: 'AnnouncementState',
+  QuestProgress: 'QuestProgress',
+  League: 'League',
+  LeagueCohort: 'LeagueCohort',
+  LeagueMember: 'LeagueMember',
+  ShopItem: 'ShopItem',
+  Purchase: 'Purchase',
+  PowerUpInventory: 'PowerUpInventory',
+  UserCosmetic: 'UserCosmetic',
+  UserBoost: 'UserBoost',
+  UserBadge: 'UserBadge',
+  PartnerOffer: 'PartnerOffer',
+  PartnerOfferClaim: 'PartnerOfferClaim',
+  SeasonPassClaim: 'SeasonPassClaim',
+  DailyRewardClaim: 'DailyRewardClaim'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -100,6 +119,12 @@ export const UserScalarFieldEnum = {
   accessGrantedAt: 'accessGrantedAt',
   accessGrantedBy: 'accessGrantedBy',
   onboardingCompletedAt: 'onboardingCompletedAt',
+  xp: 'xp',
+  ticketBalance: 'ticketBalance',
+  lives: 'lives',
+  nextLifeAt: 'nextLifeAt',
+  streakFreezes: 'streakFreezes',
+  avatarId: 'avatarId',
   currentStreak: 'currentStreak',
   bestStreak: 'bestStreak',
   lastLoginAt: 'lastLoginAt',
@@ -152,6 +177,8 @@ export const QuestScalarFieldEnum = {
   castHash: 'castHash',
   targetFid: 'targetFid',
   requiredCount: 'requiredCount',
+  eventType: 'eventType',
+  featured: 'featured',
   isActive: 'isActive',
   startsAt: 'startsAt',
   endsAt: 'endsAt',
@@ -215,9 +242,18 @@ export const QuestionTemplateScalarFieldEnum = {
   options: 'options',
   correctIndex: 'correctIndex',
   durationSec: 'durationSec',
+  kind: 'kind',
+  correctSet: 'correctSet',
+  pick: 'pick',
+  correctOrder: 'correctOrder',
+  flags: 'flags',
+  minefield: 'minefield',
+  kicker: 'kicker',
+  clues: 'clues',
   mediaUrl: 'mediaUrl',
   soundUrl: 'soundUrl',
   theme: 'theme',
+  category: 'category',
   difficulty: 'difficulty',
   usageCount: 'usageCount',
   createdAt: 'createdAt',
@@ -237,6 +273,15 @@ export const QuestionScalarFieldEnum = {
   soundUrl: 'soundUrl',
   options: 'options',
   correctIndex: 'correctIndex',
+  kind: 'kind',
+  correctSet: 'correctSet',
+  pick: 'pick',
+  correctOrder: 'correctOrder',
+  flags: 'flags',
+  minefield: 'minefield',
+  kicker: 'kicker',
+  clues: 'clues',
+  category: 'category',
   durationSec: 'durationSec',
   points: 'points',
   templateId: 'templateId',
@@ -272,17 +317,6 @@ export const GameEntryScalarFieldEnum = {
 } as const
 
 export type GameEntryScalarFieldEnum = (typeof GameEntryScalarFieldEnum)[keyof typeof GameEntryScalarFieldEnum]
-
-
-export const ChatScalarFieldEnum = {
-  id: 'id',
-  gameId: 'gameId',
-  userId: 'userId',
-  text: 'text',
-  createdAt: 'createdAt'
-} as const
-
-export type ChatScalarFieldEnum = (typeof ChatScalarFieldEnum)[keyof typeof ChatScalarFieldEnum]
 
 
 export const PendingPurchaseScalarFieldEnum = {
@@ -351,6 +385,18 @@ export const AuditLogScalarFieldEnum = {
 export type AuditLogScalarFieldEnum = (typeof AuditLogScalarFieldEnum)[keyof typeof AuditLogScalarFieldEnum]
 
 
+export const AnalyticsEventScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  userId: 'userId',
+  source: 'source',
+  properties: 'properties',
+  createdAt: 'createdAt'
+} as const
+
+export type AnalyticsEventScalarFieldEnum = (typeof AnalyticsEventScalarFieldEnum)[keyof typeof AnalyticsEventScalarFieldEnum]
+
+
 export const InviteCodeScalarFieldEnum = {
   id: 'id',
   code: 'code',
@@ -361,6 +407,259 @@ export const InviteCodeScalarFieldEnum = {
 } as const
 
 export type InviteCodeScalarFieldEnum = (typeof InviteCodeScalarFieldEnum)[keyof typeof InviteCodeScalarFieldEnum]
+
+
+export const TicketLedgerScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  delta: 'delta',
+  balanceAfter: 'balanceAfter',
+  reason: 'reason',
+  refId: 'refId',
+  note: 'note',
+  createdAt: 'createdAt'
+} as const
+
+export type TicketLedgerScalarFieldEnum = (typeof TicketLedgerScalarFieldEnum)[keyof typeof TicketLedgerScalarFieldEnum]
+
+
+export const LevelProgressScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  track: 'track',
+  level: 'level',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LevelProgressScalarFieldEnum = (typeof LevelProgressScalarFieldEnum)[keyof typeof LevelProgressScalarFieldEnum]
+
+
+export const RoundEntryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  roundId: 'roundId',
+  score: 'score',
+  bonus: 'bonus',
+  settled: 'settled',
+  finalRank: 'finalRank',
+  reward: 'reward',
+  resultReadAt: 'resultReadAt',
+  createdAt: 'createdAt',
+  settledAt: 'settledAt'
+} as const
+
+export type RoundEntryScalarFieldEnum = (typeof RoundEntryScalarFieldEnum)[keyof typeof RoundEntryScalarFieldEnum]
+
+
+export const AnnouncementScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  title: 'title',
+  body: 'body',
+  ctaLabel: 'ctaLabel',
+  ctaAction: 'ctaAction',
+  kind: 'kind',
+  tone: 'tone',
+  emoji: 'emoji',
+  isActive: 'isActive',
+  startsAt: 'startsAt',
+  endsAt: 'endsAt',
+  sortOrder: 'sortOrder',
+  createdAt: 'createdAt'
+} as const
+
+export type AnnouncementScalarFieldEnum = (typeof AnnouncementScalarFieldEnum)[keyof typeof AnnouncementScalarFieldEnum]
+
+
+export const AnnouncementStateScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  announcementId: 'announcementId',
+  readAt: 'readAt',
+  dismissedAt: 'dismissedAt'
+} as const
+
+export type AnnouncementStateScalarFieldEnum = (typeof AnnouncementStateScalarFieldEnum)[keyof typeof AnnouncementStateScalarFieldEnum]
+
+
+export const QuestProgressScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  questId: 'questId',
+  count: 'count',
+  updatedAt: 'updatedAt'
+} as const
+
+export type QuestProgressScalarFieldEnum = (typeof QuestProgressScalarFieldEnum)[keyof typeof QuestProgressScalarFieldEnum]
+
+
+export const LeagueScalarFieldEnum = {
+  id: 'id',
+  tier: 'tier',
+  label: 'label',
+  color: 'color',
+  sortOrder: 'sortOrder',
+  rewards: 'rewards'
+} as const
+
+export type LeagueScalarFieldEnum = (typeof LeagueScalarFieldEnum)[keyof typeof LeagueScalarFieldEnum]
+
+
+export const LeagueCohortScalarFieldEnum = {
+  id: 'id',
+  leagueId: 'leagueId',
+  season: 'season',
+  index: 'index',
+  settledAt: 'settledAt'
+} as const
+
+export type LeagueCohortScalarFieldEnum = (typeof LeagueCohortScalarFieldEnum)[keyof typeof LeagueCohortScalarFieldEnum]
+
+
+export const LeagueMemberScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  leagueId: 'leagueId',
+  cohortId: 'cohortId',
+  season: 'season',
+  points: 'points',
+  rank: 'rank',
+  outcome: 'outcome',
+  updatedAt: 'updatedAt'
+} as const
+
+export type LeagueMemberScalarFieldEnum = (typeof LeagueMemberScalarFieldEnum)[keyof typeof LeagueMemberScalarFieldEnum]
+
+
+export const ShopItemScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  kind: 'kind',
+  label: 'label',
+  sub: 'sub',
+  priceTickets: 'priceTickets',
+  priceFiat: 'priceFiat',
+  payload: 'payload',
+  color: 'color',
+  iconUrl: 'iconUrl',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder'
+} as const
+
+export type ShopItemScalarFieldEnum = (typeof ShopItemScalarFieldEnum)[keyof typeof ShopItemScalarFieldEnum]
+
+
+export const PurchaseScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  itemId: 'itemId',
+  qty: 'qty',
+  spentTickets: 'spentTickets',
+  spentFiat: 'spentFiat',
+  txHash: 'txHash',
+  createdAt: 'createdAt'
+} as const
+
+export type PurchaseScalarFieldEnum = (typeof PurchaseScalarFieldEnum)[keyof typeof PurchaseScalarFieldEnum]
+
+
+export const PowerUpInventoryScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  count: 'count'
+} as const
+
+export type PowerUpInventoryScalarFieldEnum = (typeof PowerUpInventoryScalarFieldEnum)[keyof typeof PowerUpInventoryScalarFieldEnum]
+
+
+export const UserCosmeticScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  slug: 'slug',
+  kind: 'kind',
+  equipped: 'equipped',
+  acquiredAt: 'acquiredAt'
+} as const
+
+export type UserCosmeticScalarFieldEnum = (typeof UserCosmeticScalarFieldEnum)[keyof typeof UserCosmeticScalarFieldEnum]
+
+
+export const UserBoostScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  kind: 'kind',
+  remainingCharges: 'remainingCharges',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt'
+} as const
+
+export type UserBoostScalarFieldEnum = (typeof UserBoostScalarFieldEnum)[keyof typeof UserBoostScalarFieldEnum]
+
+
+export const UserBadgeScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  badgeId: 'badgeId',
+  earnedAt: 'earnedAt'
+} as const
+
+export type UserBadgeScalarFieldEnum = (typeof UserBadgeScalarFieldEnum)[keyof typeof UserBadgeScalarFieldEnum]
+
+
+export const PartnerOfferScalarFieldEnum = {
+  id: 'id',
+  slug: 'slug',
+  brand: 'brand',
+  brandColor: 'brandColor',
+  glyph: 'glyph',
+  title: 'title',
+  cta: 'cta',
+  tickets: 'tickets',
+  estTime: 'estTime',
+  verified: 'verified',
+  hot: 'hot',
+  isActive: 'isActive',
+  sortOrder: 'sortOrder'
+} as const
+
+export type PartnerOfferScalarFieldEnum = (typeof PartnerOfferScalarFieldEnum)[keyof typeof PartnerOfferScalarFieldEnum]
+
+
+export const PartnerOfferClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  offerId: 'offerId',
+  tickets: 'tickets',
+  createdAt: 'createdAt'
+} as const
+
+export type PartnerOfferClaimScalarFieldEnum = (typeof PartnerOfferClaimScalarFieldEnum)[keyof typeof PartnerOfferClaimScalarFieldEnum]
+
+
+export const SeasonPassClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  season: 'season',
+  tier: 'tier',
+  premium: 'premium',
+  createdAt: 'createdAt'
+} as const
+
+export type SeasonPassClaimScalarFieldEnum = (typeof SeasonPassClaimScalarFieldEnum)[keyof typeof SeasonPassClaimScalarFieldEnum]
+
+
+export const DailyRewardClaimScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  dayKey: 'dayKey',
+  streak: 'streak',
+  reward: 'reward',
+  usedFreeze: 'usedFreeze',
+  createdAt: 'createdAt'
+} as const
+
+export type DailyRewardClaimScalarFieldEnum = (typeof DailyRewardClaimScalarFieldEnum)[keyof typeof DailyRewardClaimScalarFieldEnum]
 
 
 export const SortOrder = {

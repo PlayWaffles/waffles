@@ -5,7 +5,6 @@ import { revalidatePath } from "next/cache";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { prisma } from "@/lib/db";
 import { TicketPurchaseSource } from "@prisma";
-import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser } from "@/lib/notifications";
 import { formatGameTime } from "@/lib/utils";
 import { inspectTicketPurchase } from "@/lib/chain";
@@ -399,15 +398,6 @@ export async function reconcilePaidTicketAction(
   revalidatePath("/game");
   revalidatePath("/(app)/(game)", "layout");
 
-  notifyTicketPurchased(game.id, {
-    username: user.username || "Player",
-    pfpUrl: user.pfpUrl || null,
-    prizePool: result.prizePool,
-    playerCount: result.playerCount,
-  }).catch((error) =>
-    console.error("[admin-tickets] reconcile_paid_ticket_partykit_failed", error),
-  );
-
   if (user.hasGameAccess && !user.isBanned) {
     void import("@/lib/notifications/templates").then(
       ({ transactional, buildPayload }) => {
@@ -608,15 +598,6 @@ export async function reconcilePaidTicketToUserAction(
   revalidatePath(`/admin/games/${game.id}`);
   revalidatePath("/game");
   revalidatePath("/(app)/(game)", "layout");
-
-  notifyTicketPurchased(game.id, {
-    username: user.username || "Player",
-    pfpUrl: user.pfpUrl || null,
-    prizePool: result.prizePool,
-    playerCount: result.playerCount,
-  }).catch((error) =>
-    console.error("[admin-tickets] reconcile_paid_ticket_to_user_partykit_failed", error),
-  );
 
   if (user.hasGameAccess && !user.isBanned) {
     void import("@/lib/notifications/templates").then(

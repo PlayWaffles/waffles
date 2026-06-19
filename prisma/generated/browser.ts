@@ -63,11 +63,6 @@ export type Question = Prisma.QuestionModel
  */
 export type GameEntry = Prisma.GameEntryModel
 /**
- * Model Chat
- * 
- */
-export type Chat = Prisma.ChatModel
-/**
  * Model PendingPurchase
  * 
  */
@@ -88,7 +83,107 @@ export type NotificationLog = Prisma.NotificationLogModel
  */
 export type AuditLog = Prisma.AuditLogModel
 /**
+ * Model AnalyticsEvent
+ * 
+ */
+export type AnalyticsEvent = Prisma.AnalyticsEventModel
+/**
  * Model InviteCode
  * 
  */
 export type InviteCode = Prisma.InviteCodeModel
+/**
+ * Model TicketLedger
+ * 
+ */
+export type TicketLedger = Prisma.TicketLedgerModel
+/**
+ * Model LevelProgress
+ * 
+ */
+export type LevelProgress = Prisma.LevelProgressModel
+/**
+ * Model RoundEntry
+ * 
+ */
+export type RoundEntry = Prisma.RoundEntryModel
+/**
+ * Model Announcement
+ * 
+ */
+export type Announcement = Prisma.AnnouncementModel
+/**
+ * Model AnnouncementState
+ * 
+ */
+export type AnnouncementState = Prisma.AnnouncementStateModel
+/**
+ * Model QuestProgress
+ * 
+ */
+export type QuestProgress = Prisma.QuestProgressModel
+/**
+ * Model League
+ * 
+ */
+export type League = Prisma.LeagueModel
+/**
+ * Model LeagueCohort
+ * 
+ */
+export type LeagueCohort = Prisma.LeagueCohortModel
+/**
+ * Model LeagueMember
+ * 
+ */
+export type LeagueMember = Prisma.LeagueMemberModel
+/**
+ * Model ShopItem
+ * 
+ */
+export type ShopItem = Prisma.ShopItemModel
+/**
+ * Model Purchase
+ * 
+ */
+export type Purchase = Prisma.PurchaseModel
+/**
+ * Model PowerUpInventory
+ * 
+ */
+export type PowerUpInventory = Prisma.PowerUpInventoryModel
+/**
+ * Model UserCosmetic
+ * 
+ */
+export type UserCosmetic = Prisma.UserCosmeticModel
+/**
+ * Model UserBoost
+ * 
+ */
+export type UserBoost = Prisma.UserBoostModel
+/**
+ * Model UserBadge
+ * 
+ */
+export type UserBadge = Prisma.UserBadgeModel
+/**
+ * Model PartnerOffer
+ * 
+ */
+export type PartnerOffer = Prisma.PartnerOfferModel
+/**
+ * Model PartnerOfferClaim
+ * 
+ */
+export type PartnerOfferClaim = Prisma.PartnerOfferClaimModel
+/**
+ * Model SeasonPassClaim
+ * 
+ */
+export type SeasonPassClaim = Prisma.SeasonPassClaimModel
+/**
+ * Model DailyRewardClaim
+ * 
+ */
+export type DailyRewardClaim = Prisma.DailyRewardClaimModel

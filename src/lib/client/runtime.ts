@@ -11,6 +11,12 @@ import type { UserPlatform } from "@prisma";
 
 export type AppRuntime = "farcaster" | "minipay" | "browser";
 
+// Self-reported mini-app host FID for the Base App (docs.base.org). Used only to
+// ROUTE auth flow — never for authentication (context is spoofable). Base App now
+// runs mini apps in a standard in-app browser + wagmi/SIWE (wallet signature),
+// so we treat it as a browser → BASE_APP → wallet/cookie auth (Farcaster dropped).
+const BASE_APP_CLIENT_FID = 309857;
+
 let runtimePromise: Promise<AppRuntime> | null = null;
 let resolvedRuntime: AppRuntime | null = null;
 
@@ -32,7 +38,19 @@ export async function detectAppRuntime(): Promise<AppRuntime> {
   }
 
   try {
-    return (await sdk.isInMiniApp()) ? "farcaster" : "browser";
+    if (await sdk.isInMiniApp()) {
+      // Base App (clientFid 309857) → treat as a browser so it uses wagmi/SIWE
+      // wallet auth → session cookie (what the v2 server actions read), rather
+      // than the Farcaster bearer path. Other mini-app hosts = Farcaster (dropped).
+      try {
+        const ctx = await sdk.context;
+        if (Number(ctx?.client?.clientFid) === BASE_APP_CLIENT_FID) return "browser";
+      } catch {
+        /* context unavailable — fall through */
+      }
+      return "farcaster";
+    }
+    return "browser";
   } catch {
     return "browser";
   }

@@ -27,26 +27,15 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  rewrites: async () => {
-    const partykitHost =
-      process.env.NEXT_PUBLIC_PARTYKIT_HOST || "http://127.0.0.1:1999";
-    return [
-      {
-        source: "/parties/:path*",
-        destination: `${partykitHost}/parties/:path*`,
-      },
-      {
-        source: "/ingest/static/:path*",
-        destination: "https://eu-assets.i.posthog.com/static/:path*",
-      },
-      {
-        source: "/ingest/:path*",
-        destination: "https://eu.i.posthog.com/:path*",
-      },
-    ];
-  },
-  // Required to support PostHog trailing slash API requests
-  skipTrailingSlashRedirect: true,
+  // v2 migration cutover: the player experience is the ported v2 SPA at /play
+  // (the old (game) routes are superseded — the SPA handles home/levels/compete/
+  // leaderboard/profile internally). Temporary (307) so it's trivially reversible.
+  redirects: async () => [
+    { source: "/", destination: "/play", permanent: false },
+    { source: "/game", destination: "/play", permanent: false },
+    { source: "/leaderboard", destination: "/play", permanent: false },
+    { source: "/profile", destination: "/play", permanent: false },
+  ],
 };
 
 export default withOutray(nextConfig);

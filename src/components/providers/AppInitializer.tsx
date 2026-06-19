@@ -3,18 +3,14 @@
 import {
   useState,
   useEffect,
-  useCallback,
-  useMemo,
   useRef,
   type ReactNode,
 } from "react";
-import dynamic from "next/dynamic";
 import sdk from "@farcaster/miniapp-sdk";
 import { useRouter } from "next/navigation";
-import { useAccount, useConnect, useDisconnect, useSignMessage } from "wagmi";
+import { usePathname } from "next/navigation";
+import { useConnect } from "wagmi";
 
-import { WaffleButton } from "../buttons/WaffleButton";
-import { getDemoQuestion, type DemoQuestion } from "@/actions/onboarding";
 import { useUser } from "@/hooks/useUser";
 import { useSplash } from "./SplashProvider";
 import {
@@ -28,83 +24,29 @@ import {
 import {
   AnalyticsEvent,
   captureFirstTouchAttribution,
+  hashAnalyticsId,
   trackClientEvent,
 } from "@/lib/analytics";
 
-const OnboardingOverlay = dynamic(
-  () => import("../OnboardingOverlay").then((mod) => mod.OnboardingOverlay),
-  { ssr: false },
-);
-
-function preloadOnboardingOverlay() {
-  void import("../OnboardingOverlay");
-}
-
-function getOnboardingKey(runtime: AppRuntime, userId?: string | null) {
-  return userId
-    ? `waffles:onboarded:${runtime}:${userId}`
-    : `waffles:onboarded:${runtime}`;
-}
-
 export function AppInitializer({ children }: { children: ReactNode }) {
   const router = useRouter();
-  const { address, isConnected } = useAccount();
-  const { connectAsync, connectors, isPending: isConnecting } = useConnect();
-  const { disconnect } = useDisconnect();
-  const { signMessageAsync } = useSignMessage();
+  const pathname = usePathname();
+  const { connectors } = useConnect();
   const { hideSplash } = useSplash();
-  const { user, isLoading, isUnauthenticated, refetch } = useUser();
+  const { user, refetch } = useUser();
 
-  const [authState, setAuthState] = useState<"idle" | "authenticating" | "error">("idle");
-  const [authError, setAuthError] = useState<string | null>(null);
-  const [showOnboarding, setShowOnboarding] = useState(false);
-  const [demoQuestion, setDemoQuestion] = useState<DemoQuestion | null>(null);
-  const [demoQuestionLoaded, setDemoQuestionLoaded] = useState(false);
+  const [showOnboarding] = useState(false);
   const [runtime, setRuntime] = useState<AppRuntime | null>(null);
   const [isSyncingFarcasterWallet, setIsSyncingFarcasterWallet] = useState(false);
   const [isSyncingFarcasterProfile, setIsSyncingFarcasterProfile] = useState(false);
-  const [notificationNudgeDismissed, setNotificationNudgeDismissed] = useState(false);
-  const [notificationNudgeError, setNotificationNudgeError] = useState<string | null>(null);
-  const [isEnablingNotifications, setIsEnablingNotifications] = useState(false);
   const farcasterRecoveryAttemptRef = useRef<string | null>(null);
   const farcasterProfileSyncRef = useRef<string | null>(null);
-  const onboardingAuthInProgressRef = useRef(false);
   const appOpenedRef = useRef(false);
-  const onboardingStartedRef = useRef<string | null>(null);
-  const onboardingKey = useMemo(() => {
-    if (!runtime) return null;
-    if (runtime === "farcaster") {
-      return getOnboardingKey(runtime, user?.id);
-    }
-    // Scope MiniPay/browser onboarding to wallet so different users on
-    // the same device each see onboarding once.
-    const walletScope = address?.toLowerCase();
-    return getOnboardingKey(runtime, walletScope);
-  }, [runtime, user?.id, address]);
+  const userRef = useRef(user);
 
-  // Identify user in PostHog once user data is available
   useEffect(() => {
-    if (!user?.id) {
-      console.info("[posthog]", "client_reset");
-      import("posthog-js").then(({ default: posthog }) => posthog.reset());
-      return;
-    }
-    console.info("[posthog]", "client_identify", {
-      distinctId: user.id,
-      platform: user.platform,
-      username: user.username ?? null,
-      fid: user.fid ?? null,
-      wallet: user.wallet ?? null,
-    });
-    import("posthog-js").then(({ default: posthog }) => {
-      posthog.identify(user.id, {
-        platform: user.platform,
-        username: user.username ?? undefined,
-        fid: user.fid ?? undefined,
-        wallet: user.wallet ?? undefined,
-      });
-    });
-  }, [user?.id, user?.platform, user?.username, user?.fid, user?.wallet]);
+    userRef.current = user;
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
@@ -116,10 +58,15 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       setRuntime(nextRuntime);
       const attribution = captureFirstTouchAttribution();
       if (!appOpenedRef.current) {
+        const currentUser = userRef.current;
         appOpenedRef.current = true;
         trackClientEvent(AnalyticsEvent.AppOpened, {
           runtime: nextRuntime,
           path: window.location.pathname,
+          screen: window.location.pathname.startsWith("/v2") ? "v2" : "legacy",
+          is_authenticated: Boolean(currentUser),
+          wallet_connected: Boolean(currentUser?.wallet),
+          user_id_hash: hashAnalyticsId(currentUser?.id),
           ...attribution,
         });
       }
@@ -145,6 +92,18 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       mounted = false;
     };
   }, [hideSplash]);
+
+  useEffect(() => {
+    if (!runtime || !pathname) return;
+    trackClientEvent(AnalyticsEvent.PageViewed, {
+      runtime,
+      path: pathname,
+      screen: pathname.startsWith("/v2") ? "v2" : "legacy",
+      is_authenticated: Boolean(user),
+      wallet_connected: Boolean(user?.wallet),
+      user_id_hash: hashAnalyticsId(user?.id),
+    });
+  }, [pathname, runtime, user]);
 
   useEffect(() => {
     if (!runtime) return;
@@ -186,6 +145,13 @@ export function AppInitializer({ children }: { children: ReactNode }) {
       isMiniPayRuntime: runtime === "minipay",
     });
 
+    trackClientEvent(AnalyticsEvent.MiniappContextDetected, {
+      runtime,
+      platform: runtime === "minipay" ? "minipay" : runtime,
+      wallet_connected: Boolean(injectedEthereum?.selectedAddress),
+      chain_id: injectedEthereum?.chainId ?? null,
+    });
+
     console.log("[runtime-debug]", {
       stage: "ethereum-minipay-flag",
       runtime,
@@ -223,237 +189,6 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         })) ?? [],
     });
   }, [connectors, runtime]);
-
-  useEffect(() => {
-    if (!runtime || typeof window === "undefined") {
-      return;
-    }
-
-    const hasSeen = onboardingKey
-      ? localStorage.getItem(onboardingKey) === "1"
-      : false;
-
-    if (runtime === "farcaster") {
-      const shouldShow = Boolean(user) && !hasSeen;
-      if (shouldShow) preloadOnboardingOverlay();
-      setShowOnboarding(shouldShow);
-      if (shouldShow && onboardingKey && onboardingStartedRef.current !== onboardingKey) {
-        onboardingStartedRef.current = onboardingKey;
-        trackClientEvent(AnalyticsEvent.OnboardingStarted, {
-          runtime,
-          platform: user?.platform ?? null,
-        });
-      }
-      return;
-    }
-
-    if (!hasSeen) preloadOnboardingOverlay();
-    setShowOnboarding(!hasSeen);
-    if (!hasSeen && onboardingKey && onboardingStartedRef.current !== onboardingKey) {
-      onboardingStartedRef.current = onboardingKey;
-      trackClientEvent(AnalyticsEvent.OnboardingStarted, {
-        runtime,
-        platform: runtimeToPlatform(runtime),
-      });
-    }
-  }, [onboardingKey, runtime, user]);
-
-  useEffect(() => {
-    if (runtime !== "farcaster" || !user?.id) {
-      setNotificationNudgeDismissed(false);
-      setNotificationNudgeError(null);
-      return;
-    }
-
-    if (user.notificationsEnabled) {
-      setNotificationNudgeDismissed(false);
-      setNotificationNudgeError(null);
-      return;
-    }
-
-    setNotificationNudgeDismissed(false);
-  }, [runtime, user?.id, user?.notificationsEnabled]);
-
-  // Fetch the demo question in the background. The first onboarding slide does
-  // not need it, so keep the pitch render path independent of this request.
-  useEffect(() => {
-    if (!showOnboarding || demoQuestionLoaded) return;
-    getDemoQuestion()
-      .then(setDemoQuestion)
-      .catch(() => setDemoQuestion(null))
-      .finally(() => setDemoQuestionLoaded(true));
-  }, [showOnboarding, demoQuestionLoaded]);
-
-  const authenticateWallet = useCallback(async (walletAddress: string) => {
-    if (!walletAddress) return;
-
-    setAuthState("authenticating");
-    setAuthError(null);
-    trackClientEvent(AnalyticsEvent.AuthStarted, {
-      runtime,
-      wallet: walletAddress.toLowerCase(),
-    });
-
-    try {
-      const nonceRes = await authenticatedFetch(
-        `/api/v1/auth/nonce?address=${encodeURIComponent(walletAddress)}`,
-      );
-      if (!nonceRes.ok) {
-        throw new Error("Failed to start wallet authentication");
-      }
-
-      const { message } = await nonceRes.json();
-      const signature = await signMessageAsync({ message });
-      const verifyRes = await authenticatedFetch("/api/v1/auth/verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address: walletAddress, signature }),
-      });
-
-      if (!verifyRes.ok) {
-        throw new Error("Wallet signature verification failed");
-      }
-
-      await refetch();
-      setAuthState("idle");
-      trackClientEvent(AnalyticsEvent.AuthCompleted, {
-        runtime,
-        wallet: walletAddress.toLowerCase(),
-      });
-    } catch (error) {
-      console.error("Wallet auth failed:", error);
-      setAuthState("error");
-      setAuthError(
-        error instanceof Error ? error.message : "Wallet authentication failed",
-      );
-      trackClientEvent(AnalyticsEvent.AuthFailed, {
-        runtime,
-        wallet: walletAddress.toLowerCase(),
-        reason: error instanceof Error ? error.message : "Wallet authentication failed",
-      });
-      throw error;
-    }
-  }, [refetch, runtime, signMessageAsync]);
-
-  const connectWallet = useCallback(async () => {
-    if (address && isConnected) {
-      return address;
-    }
-
-    const connector =
-      connectors.find((item) => item.id === "injected") || connectors[0];
-    if (!connector) {
-      throw new Error("No wallet connector available");
-    }
-
-    setAuthError(null);
-    const connection = await connectAsync({ connector });
-    const nextAddress = connection.accounts[0];
-
-    if (!nextAddress) {
-      throw new Error("Wallet address unavailable");
-    }
-
-    return nextAddress;
-  }, [address, connectAsync, connectors, isConnected]);
-
-  const markOnboardingCompleted = useCallback(async () => {
-    const response = await authenticatedFetch("/api/v1/users/me/onboarding", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completedAt: new Date().toISOString() }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      throw new Error(
-        body?.error ?? "Failed to record onboarding completion",
-      );
-    }
-  }, []);
-
-  useEffect(() => {
-    if (runtime !== "minipay" && runtime !== "browser") {
-      return;
-    }
-
-    if (showOnboarding) {
-      return;
-    }
-
-    // Prevent racing with handleOnboardingComplete which already
-    // calls authenticateWallet right before flipping showOnboarding off.
-    if (onboardingAuthInProgressRef.current) {
-      return;
-    }
-
-    if (!isConnected || !address || !isUnauthenticated || authState !== "idle") {
-      return;
-    }
-
-    authenticateWallet(address).catch(console.error);
-  }, [
-    address,
-    authState,
-    authenticateWallet,
-    isConnected,
-    isUnauthenticated,
-    runtime,
-    showOnboarding,
-  ]);
-
-  const handleOnboardingComplete = useCallback(async () => {
-    if (!runtime) {
-      throw new Error("Runtime unavailable");
-    }
-
-    if (runtime === "farcaster") {
-      try {
-        console.log("[onboarding] Calling sdk.actions.addMiniApp()");
-        await sdk.actions.addMiniApp();
-        console.log("[onboarding] addMiniApp() resolved (user accepted)");
-      } catch (err) {
-        console.log("[onboarding] addMiniApp() rejected:", err instanceof Error ? err.message : err);
-      }
-      setNotificationNudgeDismissed(true);
-      await markOnboardingCompleted();
-      trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
-        runtime,
-        platform: user?.platform ?? null,
-      });
-    } else {
-      onboardingAuthInProgressRef.current = true;
-      try {
-        const walletAddress = await connectWallet();
-        await authenticateWallet(walletAddress);
-        await markOnboardingCompleted();
-        await refetch();
-        trackClientEvent(AnalyticsEvent.OnboardingCompleted, {
-          runtime,
-          platform: runtimeToPlatform(runtime),
-          wallet: walletAddress.toLowerCase(),
-        });
-      } catch (error) {
-        console.error("Wallet auth during onboarding failed:", error);
-        setAuthError(
-          error instanceof Error ? error.message : "Wallet connection failed",
-        );
-        trackClientEvent(AnalyticsEvent.OnboardingFailed, {
-          runtime,
-          platform: runtimeToPlatform(runtime),
-          reason: error instanceof Error ? error.message : "Wallet connection failed",
-        });
-        throw error;
-      } finally {
-        onboardingAuthInProgressRef.current = false;
-      }
-    }
-
-    if (typeof window !== "undefined" && onboardingKey) {
-      localStorage.setItem(onboardingKey, "1");
-    }
-    setShowOnboarding(false);
-  }, [authenticateWallet, connectWallet, markOnboardingCompleted, onboardingKey, refetch, runtime, user?.platform]);
 
   useEffect(() => {
     if (
@@ -601,206 +336,10 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     user,
   ]);
 
-  useEffect(() => {
-    if (runtime !== "farcaster" || !user?.id) {
-      return;
-    }
-
-    const handleNotificationsEnabled = () => {
-      console.log("[sdk-event] notificationsEnabled");
-      setNotificationNudgeDismissed(true);
-      setNotificationNudgeError(null);
-      setIsEnablingNotifications(false);
-      refetch().catch(console.error);
-    };
-
-    const handleMiniAppAdded = ({
-      notificationDetails,
-    }: {
-      notificationDetails?: { token?: string; url?: string };
-    }) => {
-      console.log("[sdk-event] miniAppAdded", {
-        hasNotificationDetails: Boolean(notificationDetails),
-        hasToken: Boolean(notificationDetails?.token),
-        hasUrl: Boolean(notificationDetails?.url),
-      });
-      if (!notificationDetails) {
-        return;
-      }
-      handleNotificationsEnabled();
-    };
-
-    const handleMiniAppAddRejected = () => {
-      console.log("[sdk-event] miniAppAddRejected");
-      setNotificationNudgeDismissed(true);
-      setNotificationNudgeError(null);
-      setIsEnablingNotifications(false);
-    };
-
-    sdk.on("notificationsEnabled", handleNotificationsEnabled);
-    sdk.on("miniAppAdded", handleMiniAppAdded);
-    sdk.on("miniAppAddRejected", handleMiniAppAddRejected);
-
-    return () => {
-      sdk.off("notificationsEnabled", handleNotificationsEnabled);
-      sdk.off("miniAppAdded", handleMiniAppAdded);
-      sdk.off("miniAppAddRejected", handleMiniAppAddRejected);
-    };
-  }, [refetch, runtime, user?.id]);
-
-  const dismissNotificationNudge = useCallback(() => {
-    setNotificationNudgeDismissed(true);
-    setNotificationNudgeError(null);
-  }, []);
-
-  const enableNotifications = useCallback(async () => {
-    try {
-      setIsEnablingNotifications(true);
-      setNotificationNudgeError(null);
-      await sdk.actions.addMiniApp();
-      refetch().catch(console.error);
-    } catch (error) {
-      setIsEnablingNotifications(false);
-      setNotificationNudgeError(
-        error instanceof Error
-          ? error.message
-          : "Could not open the notifications prompt.",
-      );
-    }
-  }, [refetch]);
-
-  const shouldShowNotificationNudge =
-    runtime === "farcaster" &&
-    Boolean(user) &&
-    !showOnboarding &&
-    user?.notificationsEnabled === false &&
-    !notificationNudgeDismissed;
-
-  if (!runtime) {
-    return null;
-  }
-
-  if (runtime === "farcaster") {
-    if (isLoading) {
-      return null;
-    }
-
-    if (!user) {
-      return (
-        <div className="fixed inset-0 z-80 flex items-center justify-center app-background px-4">
-          <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/70 p-6 text-center">
-            <h2 className="font-body text-3xl text-white">Authentication needed</h2>
-            <p className="mt-3 font-display text-sm text-white/60">
-              Open Waffles inside Farcaster to continue with your Farcaster profile.
-            </p>
-            <WaffleButton
-              className="mt-6 w-full"
-              onClick={() => refetch().catch(console.error)}
-            >
-              Retry
-            </WaffleButton>
-          </div>
-        </div>
-      );
-    }
-
-    if (showOnboarding) {
-      return (
-        <OnboardingOverlay
-          onComplete={handleOnboardingComplete}
-          errorMessage={authError}
-          demoQuestion={demoQuestion}
-        />
-      );
-    }
-
-    return (
-      <>
-        {children}
-        {shouldShowNotificationNudge ? (
-          <div className="pointer-events-none fixed inset-x-0 bottom-4 z-70 flex justify-center px-4">
-            <div className="pointer-events-auto w-full max-w-md rounded-[28px] border border-white/10 bg-black/80 p-4 shadow-2xl backdrop-blur">
-              <div className="space-y-2">
-                <p className="font-body text-2xl text-white">Turn on alerts</p>
-                <p className="text-sm text-white/65">
-                  Get nudges for tickets, almost sold out games, live updates, and results in Farcaster.
-                </p>
-              </div>
-              <div className="mt-4 flex flex-col gap-3">
-                <WaffleButton
-                  className="h-12 max-w-none border-(--brand-cyan) px-4 text-base"
-                  onClick={() => enableNotifications().catch(console.error)}
-                  disabled={isEnablingNotifications}
-                >
-                  {isEnablingNotifications ? "Opening..." : "Enable Notifications"}
-                </WaffleButton>
-                <button
-                  type="button"
-                  className="text-sm text-white/60 underline"
-                  onClick={dismissNotificationNudge}
-                >
-                  Not now
-                </button>
-                {notificationNudgeError ? (
-                  <p className="text-sm text-red-300">{notificationNudgeError}</p>
-                ) : null}
-              </div>
-            </div>
-          </div>
-        ) : null}
-      </>
-    );
-  }
-
-  if (showOnboarding) {
-    return (
-      <OnboardingOverlay
-        onComplete={handleOnboardingComplete}
-        errorMessage={authError}
-        demoQuestion={demoQuestion}
-      />
-    );
-  }
-
-  if (authState === "authenticating" || isLoading) {
-    return null;
-  }
-
-  if (!user) {
-    return (
-      <div className="fixed inset-0 z-80 flex items-center justify-center app-background px-4">
-        <div className="w-full max-w-sm rounded-3xl border border-white/10 bg-black/70 p-6 text-center">
-          <h2 className="font-body text-3xl text-white">Authentication needed</h2>
-          <p className="mt-3 font-display text-sm text-white/60">
-            Sign the wallet message to continue into the MiniPay app.
-          </p>
-          <WaffleButton
-            className="mt-6 w-full"
-            onClick={async () => {
-              try {
-                const walletAddress = await connectWallet();
-                await authenticateWallet(walletAddress);
-              } catch (error) {
-                console.error(error);
-              }
-            }}
-            disabled={isConnecting}
-          >
-            {isConnecting ? "Connecting..." : "Retry Sign-In"}
-          </WaffleButton>
-          <button
-            className="mt-3 text-sm text-white/60 underline"
-            onClick={() => disconnect()}
-          >
-            Disconnect wallet
-          </button>
-          {authError ? (
-            <p className="mt-3 text-sm text-red-300">{authError}</p>
-          ) : null}
-        </div>
-      </div>
-    );
-  }
-
+  // Auth + runtime initialization runs entirely in the effects above. Rendering
+  // is now unconditional — no legacy onboarding/auth-gate UI. The player
+  // experience is the ported v2 app (its own onboarding + the useWalletSignIn
+  // hook handle sign-in); other (app) routes just render their content. Keeps
+  // the wallet/Farcaster auth machinery, drops the legacy OnboardingOverlay.
   return <>{children}</>;
 }

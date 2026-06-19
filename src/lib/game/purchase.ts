@@ -3,7 +3,6 @@ import { formatUnits, parseUnits } from "viem";
 
 import { prisma } from "@/lib/db";
 import { PAYMENT_TOKEN_DECIMALS, verifyTicketPurchase } from "@/lib/chain";
-import { notifyTicketPurchased } from "@/lib/partykit";
 import { sendToUser, sendBatch } from "@/lib/notifications";
 import { transactional, preGame, buildPayload } from "@/lib/notifications/templates";
 import { formatGameTime } from "@/lib/utils";
@@ -17,7 +16,6 @@ import {
 } from "@/lib/user-wallets";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
-import { captureServerEvent } from "@/lib/posthog-server";
 import { unlockReferralRewards } from "./shared";
 import { areTicketsClosedForGame } from "./ticket-window";
 
@@ -324,7 +322,6 @@ export async function finalizeTicketPurchase(
         }
       | null = null;
     let entryWasCreated = false;
-    let updatedPrizePool = game.prizePool;
     let updatedPlayerCount = game.playerCount;
 
     const transactionResult = await prisma.$transaction(async (tx) => {
@@ -375,7 +372,6 @@ export async function finalizeTicketPurchase(
     });
 
     entry = transactionResult.entry;
-    updatedPrizePool = transactionResult.prizePool;
     updatedPlayerCount = transactionResult.playerCount;
     entryWasCreated = transactionResult.wasCreated;
 
@@ -411,18 +407,6 @@ export async function finalizeTicketPurchase(
       }),
     );
 
-    void notifyTicketPurchased(gameId, {
-      username: purchaseUser.username || "Player",
-      pfpUrl: purchaseUser.pfpUrl || null,
-      prizePool: updatedPrizePool,
-      playerCount: updatedPlayerCount,
-    }).catch((err) =>
-      console.error("[game-actions]", "partykit_notify_error", {
-        gameId,
-        error: err instanceof Error ? err.message : String(err),
-      }),
-    );
-
     const playerThreshold = Math.floor(game.maxPlayers * 0.9);
     const newCount = updatedPlayerCount;
 
@@ -452,26 +436,6 @@ export async function finalizeTicketPurchase(
       paidAmount: entry.paidAmount,
       purchaseSource: entry.purchaseSource,
     });
-
-    await captureServerEvent({
-      distinctId: purchaseUser.id,
-      event: "ticket_purchase_completed",
-      properties: {
-        game_id: gameId,
-        entry_id: entry.id,
-        paid_amount: entry.paidAmount,
-        prize_pool_contribution: prizePoolContribution,
-        platform: purchaseUser.platform,
-        tx_hash: txHash,
-      },
-    }).catch((err) =>
-      console.error("[game-actions]", "posthog_capture_error", {
-        event: "ticket_purchase_completed",
-        gameId,
-        userId: purchaseUser.id,
-        error: err instanceof Error ? err.message : String(err),
-      }),
-    );
 
     return { success: true, entryId: entry.id };
   } catch (error) {

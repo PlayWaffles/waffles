@@ -3,7 +3,6 @@ import { withAuth, type AuthResult, type ApiError } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { sendToUser } from "@/lib/notifications";
 import { env } from "@/lib/env";
-import { WINNERS_COUNT } from "@/lib/game/prizeDistribution";
 import { verifyClaim } from "@/lib/chain";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { resolvePlatformGameVisibility } from "@/lib/platform/server";

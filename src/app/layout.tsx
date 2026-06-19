@@ -2,9 +2,22 @@ import "./globals.css";
 import { fontBody, fontDisplay, fontInput } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { env } from "@/lib/env";
-import { DeferredVercelMetrics } from "@/components/providers/DeferredVercelMetrics";
-import { AnalyticsTracker } from "@/components/providers/AnalyticsTracker";
+
+// These are PUBLIC values (they ship in the client tracker), so they're hardcoded
+// as defaults rather than relying on build-time env. The deploy platform (Dokploy)
+// injects env at RUNTIME, not into the Nixpacks build — and NEXT_PUBLIC_* must
+// exist at BUILD time to inline, so runtime env never reaches them. Env still
+// overrides the default if it's ever present at build.
+const UMAMI_HOST = process.env.NEXT_PUBLIC_UMAMI_HOST ?? "https://analytics.cyberverse.cloud";
+const UMAMI_WEBSITE_ID =
+  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "c93b9fef-6a59-4006-adb3-48d2bb001e8d";
+// Optional comma-separated allowlist of hostnames Umami should track on. Leave
+// UNSET to track on every host (incl. the in-app webview, localhost, previews).
+// If set, Umami silently ignores any host not in the list — so it must include
+// EVERY real runtime host (e.g. the MiniPay/Farcaster webview host).
+const UMAMI_DOMAINS = process.env.NEXT_PUBLIC_UMAMI_DOMAINS;
 
 export const metadata: Metadata = {
   title: "Waffles",
@@ -66,9 +79,19 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
-        <AnalyticsTracker />
         {children}
-        <DeferredVercelMetrics />
+        {UMAMI_HOST && UMAMI_WEBSITE_ID ? (
+          <Script
+            defer
+            // data-cfasync="false" stops Cloudflare Rocket Loader from rewriting
+            // this tag (Rocket Loader breaks Umami's attribute/`window.umami` init).
+            data-cfasync="false"
+            src={`${UMAMI_HOST.replace(/\/$/, "")}/script.js`}
+            data-website-id={UMAMI_WEBSITE_ID}
+            {...(UMAMI_DOMAINS ? { "data-domains": UMAMI_DOMAINS } : {})}
+            strategy="afterInteractive"
+          />
+        ) : null}
       </body>
     </html>
   );

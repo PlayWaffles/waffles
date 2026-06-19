@@ -1,40 +1,8 @@
-import { BottomNav } from "@/components/BottomNav";
-import { Providers } from "@/components/providers";
-import { RealtimeProvider } from "@/components/providers/RealtimeProvider";
-import { getCurrentOrNextGame, getLastGameWinners } from "@/lib/game";
-import { formatGameLabel } from "@/lib/game/labels";
-import { resolveRuntimePlatform } from "@/lib/platform/server";
+import { redirect } from "next/navigation";
 
-import { GameHeader } from "./(app)/(game)/game/_components/GameHeader";
-import { GameHub } from "./(app)/(game)/game/client";
-
-export default async function Home() {
-  const platform = await resolveRuntimePlatform();
-  const [{ game }, lastGameResult] = await Promise.all([
-    getCurrentOrNextGame(platform),
-    getLastGameWinners(platform),
-  ]);
-  const headerTitle = game ? formatGameLabel(game.gameNumber) : null;
-  const isCurrentGameLive = game
-    ? Date.now() >= game.startsAt.getTime() && Date.now() < game.endsAt.getTime()
-    : false;
-
-  return (
-    <Providers>
-      <main className="h-dvh flex flex-col overflow-hidden app-background">
-        <GameHeader
-          title={headerTitle}
-          isCurrentGameLive={isCurrentGameLive}
-        />
-        <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <RealtimeProvider gameId={game?.id ?? null}>
-            <GameHub game={game} lastGameResult={lastGameResult} />
-            <BottomNav />
-          </RealtimeProvider>
-        </div>
-      </main>
-    </Providers>
-  );
+// The player experience is the ported v2 app at /play (see docs/v2-migration.md).
+// next.config also 307-redirects "/" → "/play"; this keeps the route compiling
+// without depending on the retired (game) experience.
+export default function Home() {
+  redirect("/play");
 }
-
-export const dynamic = "force-dynamic";
