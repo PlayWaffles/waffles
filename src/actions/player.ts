@@ -13,7 +13,8 @@ import { getCurrentUser } from "@/lib/auth";
 // share the service's name (e.g. action `loseLife` delegates to `playerSvc.loseLife`).
 import * as playerSvc from "@/lib/player/playerState";
 import type { PlayerState, Track } from "@/lib/player/playerState";
-import { getRoundClientQuestions, getLevelClientQuestions, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
+import { getRoundClientQuestions, getLevelClientQuestions, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
+import { topWinnerShare } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
 import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentGame } from "@/lib/player/tournamentGames";
 import * as migrationSvc from "@/lib/player/migrationNotice";
@@ -136,6 +137,20 @@ export async function getLevelQuestions(
 
 /** The current on-chain tournament round for the player's platform, plus its
  *  questions. Null when unauthenticated or no game is scheduled. */
+/** Live, DB-backed summary for the Home hero card — replaces the hardcoded
+ *  title/format/prize copy. `topPrizeUsdc` is the #1 finisher's projected cut
+ *  of the *current* pool (same bracket math settlement uses); the client floors
+ *  the headline against the advertised guarantee. */
+export type TournamentRound = {
+  title: string;
+  category: string;
+  questionCount: number;
+  roundSeconds: number;
+  playerCount: number;
+  prizePoolUsdc: number;
+  topPrizeUsdc: number;
+};
+
 export async function getTournament(): Promise<
   {
     game: TournamentGame;
@@ -147,6 +162,7 @@ export async function getTournament(): Promise<
     entryFee: number;
     standardFee: number;
     firstEntry: boolean;
+    round: TournamentRound;
   } | null
 > {
   const user = await getCurrentUser();
@@ -157,12 +173,22 @@ export async function getTournament(): Promise<
   // Everyone pays the game's flat on-chain floor — the contract requires the
   // exact price, so there's no per-user amount. The discount framing
   // (standardFee struck through) is shown to all; nobody is charged standardFee.
+  const roundSeconds = questions.reduce((sum, q) => sum + (q.time ?? 0), 0);
   return {
     game,
     questions,
     entryFee: game.entryFee,
     standardFee: tournamentSvc.TOURNAMENT_STANDARD_FEE_USDC,
     firstEntry: true,
+    round: {
+      title: game.title,
+      category: themeLabel(game.theme),
+      questionCount: questions.length,
+      roundSeconds,
+      playerCount: game.playerCount,
+      prizePoolUsdc: game.prizePool,
+      topPrizeUsdc: game.prizePool * topWinnerShare(game.playerCount),
+    },
   };
 }
 
