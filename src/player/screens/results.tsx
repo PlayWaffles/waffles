@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
 import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/actions/player";
-import type { TournamentBoard } from "@/lib/player/tournamentGames";
+import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -84,25 +84,16 @@ export const ResultsScreen = () => {
   const liveRank = tournamentRank(score, total);
 
   // Real tournament read-back: real entrant count + your real rank among them
-  // (live position by score, or final rank once settled).
-  const [board, setBoard] = useState<TournamentBoard | null>(null);
-  useEffect(() => {
-    let active = true;
-    // Re-opening standings in a fresh session (e.g. the Home "view standing"
-    // card) has no `tournamentGameId` in local state — fall back to the current
-    // round so the server hands back the real entry instead of empty defaults.
-    const load = proto.tournamentGameId
-      ? loadTournamentBoard(proto.tournamentGameId)
-      : loadCurrentTournamentBoard();
-    load
-      .then((b) => {
-        if (active && b && b.fieldSize > 0) setBoard(b);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [proto.tournamentGameId]);
+  // (live position by score, or final rank once settled). Resilient fetch so the
+  // auth-cookie / between-rounds race doesn't leave the board empty.
+  // Re-opening standings in a fresh session (e.g. the Home "view standing" card)
+  // has no `tournamentGameId` in local state — fall back to the current round so
+  // the server hands back the real entry instead of empty defaults.
+  const { data: rawBoard } = useResilientAction(
+    () => (proto.tournamentGameId ? loadTournamentBoard(proto.tournamentGameId) : loadCurrentTournamentBoard()),
+    [proto.tournamentGameId],
+  );
+  const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const settled = board?.settled ?? false;
   const provisional = !settled;
   const fieldSize = board?.fieldSize ?? FIELD_SIZE;

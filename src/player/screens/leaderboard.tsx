@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
+import { useResilientAction } from "../useResilientAction";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton } from "../shared";
 import { loadTournamentLeaderboard } from "@/actions/player";
-import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Pre-generated medal art replaces the synthesized SVG medal.
@@ -47,21 +47,11 @@ export const LeaderboardScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"league" | "friends">("league");
 
-  // Real tournament standings only — no mock fallback. Until a real board loads
-  // (or if none has run yet) the league tab shows an empty state rather than
-  // fabricated players.
-  const [board, setBoard] = useState<TournamentBoard | null>(null);
-  useEffect(() => {
-    let active = true;
-    loadTournamentLeaderboard()
-      .then((b) => {
-        if (active && b && b.fieldSize > 0) setBoard(b);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
+  // Real tournament standings only — no mock fallback. Resilient fetch (retries
+  // through the auth-cookie / between-rounds race); until a real board loads (or
+  // if none has run yet) the league tab shows an empty state, not fake players.
+  const { data: rawBoard } = useResilientAction(() => loadTournamentLeaderboard(), []);
+  const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
 
   const youAvatar = resolveAvatar(proto.avatarId, proto.username);
   const leaders: Player[] = board
