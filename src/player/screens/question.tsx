@@ -105,6 +105,24 @@ export const QuestionScreen = () => {
     proto.usePowerUp(kind);
   };
 
+  // Per-question impression for solo levels — fires once each time a new level
+  // question is presented (keyed on question id), so question-level drop-off in
+  // a level (esp. the first) is measurable. Tournaments aren't instrumented per
+  // question; filter on `level_number` for the first-level view.
+  useEffect(() => {
+    if (!isLevel || !q) return;
+    trackClientEvent(AnalyticsEvent.LevelQuestionStarted, {
+      level_track: proto.levelTrack,
+      level_number: proto.level,
+      question_index: idx + 1,
+      question_count: total,
+      question_id: q.id,
+      category: q.cat ?? null,
+      kind: q.kind,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLevel, q?.id, idx]);
+
   const isMulti = q.kind === "multi";
   const isOrder = q.kind === "order";
   const isSpatial = q.kind === "spatial";
