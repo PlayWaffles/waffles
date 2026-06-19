@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, useProto } from "../state";
+import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, tournamentSyrupReward, useProto } from "../state";
 import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/actions/player";
 import { useResilientAction } from "../useResilientAction";
-import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, TicketIcon } from "../shared";
+import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, SyrupIcon, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -105,6 +105,10 @@ export const ResultsScreen = () => {
   // Prefer the server's recorded score — on a fresh-session re-visit the local
   // `proto.score` is 0, but the board carries the real entry.
   const youScore = board?.you?.score ?? score;
+  // Syrup earned for playing (everyone, on top of any cash prize) — mirrors the
+  // server grant in submitTournamentAnswers. Shown to non-winners so they don't
+  // see a dead "—" where the cash prize would be.
+  const syrupEarned = tournamentSyrupReward(youScore);
 
   // XP actually credited — doubled by the first-tournament-of-the-day bonus.
   const xpMult = proto.tournamentBonus ? 2 : 1;
@@ -264,12 +268,12 @@ export const ResultsScreen = () => {
             <div style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "#1e1e1e", lineHeight: 1, marginTop: 2 }}>+{xpEarned}</div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75, marginTop: 3 }}>{proto.tournamentBonus ? "XP (2× BONUS)" : "XP EARNED"}</div>
           </div>
-          <div style={{ flex: 1, background: wonTicket ? "linear-gradient(180deg, #00CFF2, #00a3c2)" : "linear-gradient(180deg, #2a2a2e, #1a1a1c)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .65s both" }}>
-            <AssetWell size={58} accent="var(--frame)" radius={14} style={{ margin: "0 auto 6px", background: "rgba(30, 30, 30, 0.16)", opacity: wonTicket ? 1 : 0.5 }}>
-              <TicketIcon size={38} />
+          <div style={{ flex: 1, background: wonTicket ? "linear-gradient(180deg, #00CFF2, #00a3c2)" : "linear-gradient(180deg, #FFB347, #E8902B)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .65s both" }}>
+            <AssetWell size={58} accent="var(--frame)" radius={14} style={{ margin: "0 auto 6px", background: "rgba(30, 30, 30, 0.16)" }}>
+              {wonTicket ? <TicketIcon size={38} /> : <SyrupIcon size={38} />}
             </AssetWell>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, color: wonTicket ? "#1e1e1e" : "rgba(255,255,255,.7)", lineHeight: 1, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{wonTicket ? (settled ? <>+<CountUp from={0} to={won} delayMs={900} durationMs={750} /></> : `+${won}`) : "—"}</div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: wonTicket ? "#1e1e1e" : "rgba(255,255,255,.5)", opacity: wonTicket ? 0.75 : 1, marginTop: 3 }}>{wonTicket ? (settled ? "PRIZE WON" : "IF IT HOLDS") : "TOP 100 ONLY"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "#1e1e1e", lineHeight: 1, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{wonTicket ? (settled ? <>+<CountUp from={0} to={won} delayMs={900} durationMs={750} /></> : `+${won}`) : `+${syrupEarned}`}</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75, marginTop: 3 }}>{wonTicket ? (settled ? "PRIZE WON" : "IF IT HOLDS") : "SYRUP EARNED"}</div>
           </div>
           <div style={{ flex: 1, background: "linear-gradient(180deg, #FB72FF, #a83fb8)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", color: "#fff", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .75s both" }}>
             <AssetWell size={58} accent="var(--frame)" radius={14} style={{ margin: "0 auto 6px", background: "rgba(30, 30, 30, 0.16)" }}>

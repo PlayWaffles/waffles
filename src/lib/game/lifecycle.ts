@@ -25,6 +25,12 @@ import {
 } from "./prizeDistribution";
 import { PAYMENT_TOKEN_DECIMALS, getWaffleContractAddress } from "../chain";
 import { recordMissionEvent } from "@/lib/player/missions";
+import { adjustTickets } from "@/lib/player/playerState";
+import { TicketLedgerReason } from "@prisma";
+
+// Boosted Syrup granted to cash winners (prize > 0) at settlement — on top of
+// the base Syrup everyone earns for playing (see submitTournamentAnswers).
+const TOURNAMENT_WINNER_SYRUP_BONUS = 50;
 
 // ============================================================================
 // Types
@@ -202,6 +208,17 @@ export async function rankGame(gameId: string): Promise<RankResult> {
       await recordMissionEvent(champion.userId, "tournaments_won", 1);
     } catch (e) {
       console.error(`[Lifecycle] win-tournament mission accrual failed for ${champion.userId}:`, e);
+    }
+  }
+
+  // Boosted Syrup for the cash winners — extra reward on top of their prize and
+  // the base Syrup they already earned for playing. Once-per-game (fresh-ranking
+  // path only). Best-effort: a Syrup hiccup must never fail settlement.
+  for (const w of winners) {
+    try {
+      await adjustTickets(w.userId, TOURNAMENT_WINNER_SYRUP_BONUS, TicketLedgerReason.TOURNAMENT_REWARD, { refId: gameId, note: "tournament winner bonus" });
+    } catch (e) {
+      console.error(`[Lifecycle] winner syrup bonus failed for ${w.userId}:`, e);
     }
   }
 

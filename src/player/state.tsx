@@ -241,6 +241,16 @@ export function tournamentRank(score: number, totalQuestions: number): number {
   return Math.max(1, Math.round(TOURNAMENT_FIELD_SIZE * (1 - Math.min(1, score / (totalQuestions * 250)))) + 1);
 }
 
+// Syrup (off-chain reward) everyone earns for PLAYING a tournament round — extra
+// on top of the cash prize, so non-winners still walk away with something. A
+// small flat participation base + a score bonus. Winners get an additional
+// boost at settlement (see TOURNAMENT_WINNER_SYRUP_BONUS in lifecycle.ts).
+// NOTE: keep this in sync with the same formula in submitTournamentAnswers
+// (tournamentGames.ts) — that server path is the authoritative grant.
+export function tournamentSyrupReward(score: number): number {
+  return 10 + Math.round(Math.max(0, score) / 100);
+}
+
 // Bucket a wallet error into a coarse, PII-free reason for the purchase funnel.
 // The wallet hook surfaces friendly copy ("Cancelled." / low-balance), so match
 // on those plus the raw on-chain phrases as a fallback.

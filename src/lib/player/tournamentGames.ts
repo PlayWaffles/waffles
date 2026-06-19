@@ -16,8 +16,9 @@
  */
 import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
-import { Prisma, QuestionKind, TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
+import { adjustTickets } from "./playerState";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
@@ -423,7 +424,7 @@ export async function submitTournamentAnswers(
   // improvement (the tournament keeps the best of repeated submissions).
   const prev = await prisma.gameEntry.findUnique({
     where: { gameId_userId: { gameId, userId } },
-    select: { score: true },
+    select: { score: true, answered: true },
   });
 
   const result = await prisma.gameEntry.updateMany({
@@ -438,6 +439,19 @@ export async function submitTournamentAnswers(
   if (result.count > 0) {
     const gained = Math.max(0, score - (prev?.score ?? 0));
     await accrueLeaguePoints(userId, gained);
+    // Base Syrup for PLAYING — an extra reward on top of any cash prize, so even
+    // non-winners walk away with something. Granted once, on the first completed
+    // round only (prev.answered === 0), so a re-submit can't farm it. Winners
+    // get an additional boost at settlement (rankGame). Keep this formula in sync
+    // with tournamentSyrupReward() in player/state.tsx (the client display).
+    if ((prev?.answered ?? 0) === 0) {
+      const syrup = 10 + Math.round(Math.max(0, score) / 100);
+      try {
+        await adjustTickets(userId, syrup, TicketLedgerReason.TOURNAMENT_REWARD, { refId: gameId, note: "tournament play reward" });
+      } catch (e) {
+        console.error("[tournament] base syrup grant failed:", e);
+      }
+    }
   }
 
   return { score, updated: result.count > 0 };
