@@ -58,6 +58,7 @@ export const ModelName = {
   CompletedQuest: 'CompletedQuest',
   Game: 'Game',
   QuestionTemplate: 'QuestionTemplate',
+  QuestionStat: 'QuestionStat',
   Question: 'Question',
   GameEntry: 'GameEntry',
   PendingPurchase: 'PendingPurchase',
@@ -261,6 +262,20 @@ export const QuestionTemplateScalarFieldEnum = {
 } as const
 
 export type QuestionTemplateScalarFieldEnum = (typeof QuestionTemplateScalarFieldEnum)[keyof typeof QuestionTemplateScalarFieldEnum]
+
+
+export const QuestionStatScalarFieldEnum = {
+  id: 'id',
+  templateId: 'templateId',
+  mode: 'mode',
+  playCount: 'playCount',
+  correctCount: 'correctCount',
+  totalResponseMs: 'totalResponseMs',
+  lastPlayedAt: 'lastPlayedAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type QuestionStatScalarFieldEnum = (typeof QuestionStatScalarFieldEnum)[keyof typeof QuestionStatScalarFieldEnum]
 
 
 export const QuestionScalarFieldEnum = {

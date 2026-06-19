@@ -18,6 +18,7 @@ import {
   // bodies call the server action (e.g. local `refillLives` → `refillLivesAction`).
   dismissAnnouncement as dismissAnnouncementAction,
   getLevelQuestions,
+  recordLevelPlay,
   getTournament,
   enterTournament,
   submitTournamentAnswers,
@@ -908,6 +909,10 @@ export function ProtoProvider({
           : state.roundAnswers;
 
       if (state.mode === "level") {
+        // Per-question LEVEL stats — record this answer (server re-scores from
+        // the selection). Fire-and-forget; captures every answered level
+        // question, whether the level is ultimately completed or failed.
+        if (q.id) void recordLevelPlay([{ id: q.id, selection, responseMs }]);
         // Shield absorbs one wrong answer instead of costing a heart.
         const shielded = wrong && state.shieldActive;
         const newHearts = wrong && !state.shieldActive ? state.hearts - 1 : state.hearts;

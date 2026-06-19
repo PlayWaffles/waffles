@@ -376,17 +376,41 @@ model QuestionTemplate {
   difficulty Difficulty @default(MEDIUM)
 
   // -- TRACKING (denormalized for fast display) --
-  usageCount Int @default(0)
+  usageCount Int @default(0) // games this template has been ASSIGNED to
 
   // -- TIMESTAMPS --
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Per-mode play/answer stats (tournament vs level), one row per (template,mode).
+  stats QuestionStat[]
 
   // -- INDEXES --
   @@index([theme, difficulty])
   @@index([category])
   @@index([createdAt(sort: Desc)])
   @@index([usageCount(sort: Desc)])
+}
+
+// Real per-question play stats, kept SEPARATELY per mode ("tournament" | "level")
+// so difficulty/correct-rate can be read per surface. Counters are incremented
+// once per completed play (not per impression); correct-rate = correctCount /
+// playCount, avg answer time = totalResponseMs / playCount.
+model QuestionStat {
+  id         String           @id @default(cuid())
+  template   QuestionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  mode       String           @db.VarChar(16) // "tournament" | "level"
+
+  playCount       Int      @default(0)
+  correctCount    Int      @default(0)
+  totalResponseMs BigInt   @default(0)
+  lastPlayedAt    DateTime?
+
+  updatedAt DateTime @updatedAt
+
+  @@unique([templateId, mode])
+  @@index([mode])
 }
 
 model Question {

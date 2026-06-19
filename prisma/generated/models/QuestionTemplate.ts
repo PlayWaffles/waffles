@@ -344,6 +344,7 @@ export type QuestionTemplateWhereInput = {
   usageCount?: Prisma.IntFilter<"QuestionTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
+  stats?: Prisma.QuestionStatListRelationFilter
 }
 
 export type QuestionTemplateOrderByWithRelationInput = {
@@ -368,6 +369,7 @@ export type QuestionTemplateOrderByWithRelationInput = {
   usageCount?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
+  stats?: Prisma.QuestionStatOrderByRelationAggregateInput
 }
 
 export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
@@ -395,6 +397,7 @@ export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
   usageCount?: Prisma.IntFilter<"QuestionTemplate"> | number
   createdAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
+  stats?: Prisma.QuestionStatListRelationFilter
 }, "id">
 
 export type QuestionTemplateOrderByWithAggregationInput = {
@@ -475,6 +478,7 @@ export type QuestionTemplateCreateInput = {
   usageCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  stats?: Prisma.QuestionStatCreateNestedManyWithoutTemplateInput
 }
 
 export type QuestionTemplateUncheckedCreateInput = {
@@ -499,6 +503,7 @@ export type QuestionTemplateUncheckedCreateInput = {
   usageCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  stats?: Prisma.QuestionStatUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type QuestionTemplateUpdateInput = {
@@ -523,6 +528,7 @@ export type QuestionTemplateUpdateInput = {
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  stats?: Prisma.QuestionStatUpdateManyWithoutTemplateNestedInput
 }
 
 export type QuestionTemplateUncheckedUpdateInput = {
@@ -547,6 +553,7 @@ export type QuestionTemplateUncheckedUpdateInput = {
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  stats?: Prisma.QuestionStatUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type QuestionTemplateCreateManyInput = {
@@ -709,6 +716,11 @@ export type QuestionTemplateSumOrderByAggregateInput = {
   usageCount?: Prisma.SortOrder
 }
 
+export type QuestionTemplateScalarRelationFilter = {
+  is?: Prisma.QuestionTemplateWhereInput
+  isNot?: Prisma.QuestionTemplateWhereInput
+}
+
 export type QuestionTemplateCreateoptionsInput = {
   set: string[]
 }
@@ -762,6 +774,161 @@ export type EnumDifficultyFieldUpdateOperationsInput = {
   set?: $Enums.Difficulty
 }
 
+export type QuestionTemplateCreateNestedOneWithoutStatsInput = {
+  create?: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutStatsInput, Prisma.QuestionTemplateUncheckedCreateWithoutStatsInput>
+  connectOrCreate?: Prisma.QuestionTemplateCreateOrConnectWithoutStatsInput
+  connect?: Prisma.QuestionTemplateWhereUniqueInput
+}
+
+export type QuestionTemplateUpdateOneRequiredWithoutStatsNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutStatsInput, Prisma.QuestionTemplateUncheckedCreateWithoutStatsInput>
+  connectOrCreate?: Prisma.QuestionTemplateCreateOrConnectWithoutStatsInput
+  upsert?: Prisma.QuestionTemplateUpsertWithoutStatsInput
+  connect?: Prisma.QuestionTemplateWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionTemplateUpdateToOneWithWhereWithoutStatsInput, Prisma.QuestionTemplateUpdateWithoutStatsInput>, Prisma.QuestionTemplateUncheckedUpdateWithoutStatsInput>
+}
+
+export type QuestionTemplateCreateWithoutStatsInput = {
+  id?: string
+  content: string
+  options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
+  correctIndex: number
+  durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
+  mediaUrl?: string | null
+  soundUrl?: string | null
+  theme?: $Enums.GameTheme
+  category?: string | null
+  difficulty?: $Enums.Difficulty
+  usageCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type QuestionTemplateUncheckedCreateWithoutStatsInput = {
+  id?: string
+  content: string
+  options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
+  correctIndex: number
+  durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
+  mediaUrl?: string | null
+  soundUrl?: string | null
+  theme?: $Enums.GameTheme
+  category?: string | null
+  difficulty?: $Enums.Difficulty
+  usageCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+}
+
+export type QuestionTemplateCreateOrConnectWithoutStatsInput = {
+  where: Prisma.QuestionTemplateWhereUniqueInput
+  create: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutStatsInput, Prisma.QuestionTemplateUncheckedCreateWithoutStatsInput>
+}
+
+export type QuestionTemplateUpsertWithoutStatsInput = {
+  update: Prisma.XOR<Prisma.QuestionTemplateUpdateWithoutStatsInput, Prisma.QuestionTemplateUncheckedUpdateWithoutStatsInput>
+  create: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutStatsInput, Prisma.QuestionTemplateUncheckedCreateWithoutStatsInput>
+  where?: Prisma.QuestionTemplateWhereInput
+}
+
+export type QuestionTemplateUpdateToOneWithWhereWithoutStatsInput = {
+  where?: Prisma.QuestionTemplateWhereInput
+  data: Prisma.XOR<Prisma.QuestionTemplateUpdateWithoutStatsInput, Prisma.QuestionTemplateUncheckedUpdateWithoutStatsInput>
+}
+
+export type QuestionTemplateUpdateWithoutStatsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
+  correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
+  mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
+  usageCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+export type QuestionTemplateUncheckedUpdateWithoutStatsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
+  correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
+  mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
+  usageCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+}
+
+
+/**
+ * Count Type QuestionTemplateCountOutputType
+ */
+
+export type QuestionTemplateCountOutputType = {
+  stats: number
+}
+
+export type QuestionTemplateCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  stats?: boolean | QuestionTemplateCountOutputTypeCountStatsArgs
+}
+
+/**
+ * QuestionTemplateCountOutputType without action
+ */
+export type QuestionTemplateCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the QuestionTemplateCountOutputType
+   */
+  select?: Prisma.QuestionTemplateCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * QuestionTemplateCountOutputType without action
+ */
+export type QuestionTemplateCountOutputTypeCountStatsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.QuestionStatWhereInput
+}
 
 
 export type QuestionTemplateSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -786,6 +953,8 @@ export type QuestionTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   usageCount?: boolean
   createdAt?: boolean
   updatedAt?: boolean
+  stats?: boolean | Prisma.QuestionTemplate$statsArgs<ExtArgs>
+  _count?: boolean | Prisma.QuestionTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["questionTemplate"]>
 
 export type QuestionTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -861,10 +1030,18 @@ export type QuestionTemplateSelectScalar = {
 }
 
 export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "category" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
+export type QuestionTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  stats?: boolean | Prisma.QuestionTemplate$statsArgs<ExtArgs>
+  _count?: boolean | Prisma.QuestionTemplateCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type QuestionTemplateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type QuestionTemplateIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "QuestionTemplate"
-  objects: {}
+  objects: {
+    stats: Prisma.$QuestionStatPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     content: string
@@ -1281,6 +1458,7 @@ readonly fields: QuestionTemplateFieldRefs;
  */
 export interface Prisma__QuestionTemplateClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  stats<T extends Prisma.QuestionTemplate$statsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.QuestionTemplate$statsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionStatPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1348,6 +1526,10 @@ export type QuestionTemplateFindUniqueArgs<ExtArgs extends runtime.Types.Extensi
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
+  /**
    * Filter, which QuestionTemplate to fetch.
    */
   where: Prisma.QuestionTemplateWhereUniqueInput
@@ -1366,6 +1548,10 @@ export type QuestionTemplateFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
+  /**
    * Filter, which QuestionTemplate to fetch.
    */
   where: Prisma.QuestionTemplateWhereUniqueInput
@@ -1383,6 +1569,10 @@ export type QuestionTemplateFindFirstArgs<ExtArgs extends runtime.Types.Extensio
    * Omit specific fields from the QuestionTemplate
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
   /**
    * Filter, which QuestionTemplate to fetch.
    */
@@ -1432,6 +1622,10 @@ export type QuestionTemplateFindFirstOrThrowArgs<ExtArgs extends runtime.Types.E
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
+  /**
    * Filter, which QuestionTemplate to fetch.
    */
   where?: Prisma.QuestionTemplateWhereInput
@@ -1480,6 +1674,10 @@ export type QuestionTemplateFindManyArgs<ExtArgs extends runtime.Types.Extension
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
+  /**
    * Filter, which QuestionTemplates to fetch.
    */
   where?: Prisma.QuestionTemplateWhereInput
@@ -1522,6 +1720,10 @@ export type QuestionTemplateCreateArgs<ExtArgs extends runtime.Types.Extensions.
    * Omit specific fields from the QuestionTemplate
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
   /**
    * The data needed to create a QuestionTemplate.
    */
@@ -1570,6 +1772,10 @@ export type QuestionTemplateUpdateArgs<ExtArgs extends runtime.Types.Extensions.
    * Omit specific fields from the QuestionTemplate
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
   /**
    * The data needed to update a QuestionTemplate.
    */
@@ -1637,6 +1843,10 @@ export type QuestionTemplateUpsertArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
+  /**
    * The filter to search for the QuestionTemplate to update in case it exists.
    */
   where: Prisma.QuestionTemplateWhereUniqueInput
@@ -1663,6 +1873,10 @@ export type QuestionTemplateDeleteArgs<ExtArgs extends runtime.Types.Extensions.
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
+  /**
    * Filter which QuestionTemplate to delete.
    */
   where: Prisma.QuestionTemplateWhereUniqueInput
@@ -1683,6 +1897,30 @@ export type QuestionTemplateDeleteManyArgs<ExtArgs extends runtime.Types.Extensi
 }
 
 /**
+ * QuestionTemplate.stats
+ */
+export type QuestionTemplate$statsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the QuestionStat
+   */
+  select?: Prisma.QuestionStatSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the QuestionStat
+   */
+  omit?: Prisma.QuestionStatOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionStatInclude<ExtArgs> | null
+  where?: Prisma.QuestionStatWhereInput
+  orderBy?: Prisma.QuestionStatOrderByWithRelationInput | Prisma.QuestionStatOrderByWithRelationInput[]
+  cursor?: Prisma.QuestionStatWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.QuestionStatScalarFieldEnum | Prisma.QuestionStatScalarFieldEnum[]
+}
+
+/**
  * QuestionTemplate without action
  */
 export type QuestionTemplateDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1694,4 +1932,8 @@ export type QuestionTemplateDefaultArgs<ExtArgs extends runtime.Types.Extensions
    * Omit specific fields from the QuestionTemplate
    */
   omit?: Prisma.QuestionTemplateOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.QuestionTemplateInclude<ExtArgs> | null
 }

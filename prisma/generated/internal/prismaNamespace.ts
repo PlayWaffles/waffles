@@ -391,6 +391,7 @@ export const ModelName = {
   CompletedQuest: 'CompletedQuest',
   Game: 'Game',
   QuestionTemplate: 'QuestionTemplate',
+  QuestionStat: 'QuestionStat',
   Question: 'Question',
   GameEntry: 'GameEntry',
   PendingPurchase: 'PendingPurchase',
@@ -433,7 +434,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -952,6 +953,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.QuestionTemplateCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.QuestionTemplateCountAggregateOutputType> | number
+        }
+      }
+    }
+    QuestionStat: {
+      payload: Prisma.$QuestionStatPayload<ExtArgs>
+      fields: Prisma.QuestionStatFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.QuestionStatFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.QuestionStatFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>
+        }
+        findFirst: {
+          args: Prisma.QuestionStatFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.QuestionStatFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>
+        }
+        findMany: {
+          args: Prisma.QuestionStatFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>[]
+        }
+        create: {
+          args: Prisma.QuestionStatCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>
+        }
+        createMany: {
+          args: Prisma.QuestionStatCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.QuestionStatCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>[]
+        }
+        delete: {
+          args: Prisma.QuestionStatDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>
+        }
+        update: {
+          args: Prisma.QuestionStatUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>
+        }
+        deleteMany: {
+          args: Prisma.QuestionStatDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.QuestionStatUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.QuestionStatUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>[]
+        }
+        upsert: {
+          args: Prisma.QuestionStatUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$QuestionStatPayload>
+        }
+        aggregate: {
+          args: Prisma.QuestionStatAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateQuestionStat>
+        }
+        groupBy: {
+          args: Prisma.QuestionStatGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionStatGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.QuestionStatCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.QuestionStatCountAggregateOutputType> | number
         }
       }
     }
@@ -3152,6 +3227,20 @@ export const QuestionTemplateScalarFieldEnum = {
 export type QuestionTemplateScalarFieldEnum = (typeof QuestionTemplateScalarFieldEnum)[keyof typeof QuestionTemplateScalarFieldEnum]
 
 
+export const QuestionStatScalarFieldEnum = {
+  id: 'id',
+  templateId: 'templateId',
+  mode: 'mode',
+  playCount: 'playCount',
+  correctCount: 'correctCount',
+  totalResponseMs: 'totalResponseMs',
+  lastPlayedAt: 'lastPlayedAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type QuestionStatScalarFieldEnum = (typeof QuestionStatScalarFieldEnum)[keyof typeof QuestionStatScalarFieldEnum]
+
+
 export const QuestionScalarFieldEnum = {
   id: 'id',
   gameId: 'gameId',
@@ -3809,6 +3898,20 @@ export type ListEnumDifficultyFieldRefInput<$PrismaModel> = FieldRefInputType<$P
 
 
 /**
+ * Reference to a field of type 'BigInt'
+ */
+export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
+    
+
+
+/**
+ * Reference to a field of type 'BigInt[]'
+ */
+export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
+    
+
+
+/**
  * Reference to a field of type 'TicketPurchaseSource'
  */
 export type EnumTicketPurchaseSourceFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'TicketPurchaseSource'>
@@ -3875,20 +3978,6 @@ export type EnumLevelTrackFieldRefInput<$PrismaModel> = FieldRefInputType<$Prism
  * Reference to a field of type 'LevelTrack[]'
  */
 export type ListEnumLevelTrackFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'LevelTrack[]'>
-    
-
-
-/**
- * Reference to a field of type 'BigInt'
- */
-export type BigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt'>
-    
-
-
-/**
- * Reference to a field of type 'BigInt[]'
- */
-export type ListBigIntFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'BigInt[]'>
     
 
 
@@ -4077,6 +4166,7 @@ export type GlobalOmitConfig = {
   completedQuest?: Prisma.CompletedQuestOmit
   game?: Prisma.GameOmit
   questionTemplate?: Prisma.QuestionTemplateOmit
+  questionStat?: Prisma.QuestionStatOmit
   question?: Prisma.QuestionOmit
   gameEntry?: Prisma.GameEntryOmit
   pendingPurchase?: Prisma.PendingPurchaseOmit

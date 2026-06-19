@@ -13,7 +13,7 @@ import { getCurrentUser } from "@/lib/auth";
 // share the service's name (e.g. action `loseLife` delegates to `playerSvc.loseLife`).
 import * as playerSvc from "@/lib/player/playerState";
 import type { PlayerState, Track } from "@/lib/player/playerState";
-import { getLevelClientQuestions, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
+import { getLevelClientQuestions, recordLevelQuestionStats, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
 import { topWinnerShare } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
 import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentGame } from "@/lib/player/tournamentGames";
@@ -123,6 +123,21 @@ export async function getLevelQuestions(
   level: number,
 ): Promise<ClientRoundQuestion[]> {
   return getLevelClientQuestions(track, level);
+}
+
+/** Record per-question stats for a solo level answer (mode "level"). The server
+ *  re-scores from the selection, so client-reported correctness can't skew it.
+ *  Auth-gated to limit spam; best-effort (never throws to the caller). */
+export async function recordLevelPlay(
+  answers: { id: string; selection: number[]; responseMs: number }[],
+): Promise<void> {
+  const user = await getCurrentUser();
+  if (!user) return;
+  try {
+    await recordLevelQuestionStats(answers);
+  } catch (e) {
+    console.error("[recordLevelPlay] failed:", e);
+  }
 }
 
 // ---------------------------------------------------------------------------

@@ -53,6 +53,11 @@ export type Game = Prisma.GameModel
  */
 export type QuestionTemplate = Prisma.QuestionTemplateModel
 /**
+ * Model QuestionStat
+ * 
+ */
+export type QuestionStat = Prisma.QuestionStatModel
+/**
  * Model Question
  * 
  */

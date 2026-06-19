@@ -559,14 +559,6 @@ export type RoundEntryUncheckedUpdateManyWithoutUserNestedInput = {
   deleteMany?: Prisma.RoundEntryScalarWhereInput | Prisma.RoundEntryScalarWhereInput[]
 }
 
-export type BigIntFieldUpdateOperationsInput = {
-  set?: bigint | number
-  increment?: bigint | number
-  decrement?: bigint | number
-  multiply?: bigint | number
-  divide?: bigint | number
-}
-
 export type RoundEntryCreateWithoutUserInput = {
   id?: string
   roundId: bigint | number

@@ -19,6 +19,7 @@ import { prisma } from "@/lib/db";
 import { Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
 import { adjustTickets } from "./playerState";
+import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
@@ -41,6 +42,7 @@ const KIND_MAP: Record<QuestionKind, ScorableKind> = {
 
 const GAME_QUESTION_SELECT = {
   id: true,
+  templateId: true,
   orderInRound: true,
   roundIndex: true,
   content: true,
@@ -402,7 +404,8 @@ export async function submitTournamentAnswers(
   if (!game) return null;
   if (new Date() >= game.endsAt) return { score: 0, updated: false };
 
-  const issued = (await gameQuestions(gameId)).map(toScorable);
+  const rows = await gameQuestions(gameId);
+  const issued = rows.map(toScorable);
   const score = scoreRound(issued, answers);
 
   // Per-question breakdown in the GameEntry.answers JSON shape v1 uses.
@@ -451,6 +454,14 @@ export async function submitTournamentAnswers(
       } catch (e) {
         console.error("[tournament] base syrup grant failed:", e);
       }
+      // Per-question play stats (tournament mode) — once per completed round.
+      const idToTemplate = new Map(rows.map((r) => [r.id, r.templateId]));
+      const statItems = (answers ?? []).flatMap((a) => {
+        const templateId = idToTemplate.get(a.id);
+        const aj = answersJson[a.id];
+        return templateId && aj ? [{ templateId, correct: aj.correct, responseMs: a.responseMs }] : [];
+      });
+      void recordQuestionStats("tournament", statItems);
     }
   }
 

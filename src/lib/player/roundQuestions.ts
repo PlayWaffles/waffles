@@ -9,7 +9,8 @@
  */
 import { prisma } from "@/lib/db";
 import { Difficulty, GameTheme, QuestionKind } from "@prisma";
-import type { ScorableKind } from "./scoring";
+import { scoreAnswer, type RoundAnswer, type ScorableKind, type ScorableQuestion } from "./scoring";
+import { recordQuestionStats } from "./questionStats";
 
 const KIND_MAP: Record<QuestionKind, ScorableKind> = {
   [QuestionKind.SINGLE]: "single",
@@ -246,4 +247,37 @@ export async function getLevelClientQuestions(
     .map((id) => byId.get(id))
     .filter((r): r is TemplateRow => Boolean(r))
     .map(rowToClient);
+}
+
+/**
+ * Record per-question play stats for a solo LEVEL answer set (mode "level").
+ * Levels are scored client-side, so the client sends its selections and the
+ * server RE-SCORES against the template's answer keys (anti-skew) before
+ * incrementing QuestionStat. For levels the question id IS the template id
+ * (getLevelClientQuestions returns id = template.id). Best-effort.
+ */
+export async function recordLevelQuestionStats(answers: RoundAnswer[]): Promise<void> {
+  const ids = answers.map((a) => a.id).filter(Boolean);
+  if (ids.length === 0) return;
+  const tpls = await prisma.questionTemplate.findMany({
+    where: { id: { in: ids } },
+    select: { id: true, kind: true, correctIndex: true, correctSet: true, pick: true, correctOrder: true, minefield: true, durationSec: true },
+  });
+  const byId = new Map(tpls.map((t) => [t.id, t]));
+  const items = answers.flatMap((a) => {
+    const t = byId.get(a.id);
+    if (!t) return [];
+    const q: ScorableQuestion = {
+      id: t.id,
+      kind: KIND_MAP[t.kind],
+      correct: t.correctIndex,
+      correctSet: t.correctSet,
+      pick: t.pick,
+      correctOrder: t.correctOrder,
+      minefield: t.minefield,
+      durationSec: t.durationSec,
+    };
+    return [{ templateId: t.id, correct: scoreAnswer(q, a) > 0, responseMs: a.responseMs }];
+  });
+  await recordQuestionStats("level", items);
 }
