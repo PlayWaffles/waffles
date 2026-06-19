@@ -84,7 +84,7 @@ const SupportDoc = ({
     </p>
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       <a
-        href="https://t.me/+QTFub8AHqQRmMDlk"
+        href="https://t.me/+xOEEFweSHGIzOTY0"
         target="_blank"
         rel="noopener noreferrer"
         onClick={onTelegramClick}

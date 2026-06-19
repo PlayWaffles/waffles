@@ -19,8 +19,7 @@ import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 // the shared proto state so tickets/XP/streak stay in sync with the rest of
 // the app.
 
-// TODO: replace with the real Waffles Telegram group invite link.
-export const TELEGRAM_GROUP_URL = "https://t.me/playwaffles";
+export const TELEGRAM_GROUP_URL = "https://t.me/+xOEEFweSHGIzOTY0";
 
 const STORAGE_KEY = "waffles.v2.daily";
 const STREAK_FREEZE_COST = 2;

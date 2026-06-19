@@ -30,7 +30,7 @@ export default function SupportPage() {
 
         <div className="grid gap-3">
           <a
-            href="https://t.me/+QTFub8AHqQRmMDlk"
+            href="https://t.me/+xOEEFweSHGIzOTY0"
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 font-display text-sm text-white"
