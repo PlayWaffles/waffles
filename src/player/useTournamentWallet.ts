@@ -77,6 +77,7 @@ export function txStepLabel(step: TournamentTxStep | null): string {
 function walletErrorMessage(error: unknown, platform: ChainPlatform): string {
   const msg = error instanceof Error ? error.message : String(error);
   if (/user rejected|denied|rejected the request/i.test(msg)) return "Cancelled.";
+  if (/reverted|failed on-chain|transaction failed/i.test(msg)) return "Transaction failed on-chain. Your ticket was not purchased.";
   if (/insufficient|not enough|balance|transfer amount exceeds balance/i.test(msg)) {
     return platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Not enough balance to enter.";
   }
@@ -87,6 +88,12 @@ function tokenUnitsForGas(gasLimit: bigint, gasPrice: bigint) {
   const tokenScale = BigInt(10) ** BigInt(PAYMENT_TOKEN_DECIMALS);
   const nativeScale = BigInt(10) ** BigInt(18);
   return (gasLimit * gasPrice * tokenScale + nativeScale - BigInt(1)) / nativeScale;
+}
+
+function assertSuccessfulReceipt(receipt: { status: "success" | "reverted" }, label: string) {
+  if (receipt.status !== "success") {
+    throw new Error(`${label} transaction failed on-chain`);
+  }
 }
 
 export function useTournamentWallet() {
@@ -180,7 +187,8 @@ export function useTournamentWallet() {
           );
           onStep?.("approveConfirm");
           blog("[buy-ticket] approve tx sent, waiting", { approveHash });
-          await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          const approveReceipt = await publicClient.waitForTransactionReceipt({ hash: approveHash });
+          assertSuccessfulReceipt(approveReceipt, "Approval");
           blog("[buy-ticket] approve confirmed");
         }
 
@@ -197,7 +205,8 @@ export function useTournamentWallet() {
         );
         onStep?.("confirming");
         blog("[buy-ticket] buyTicket tx sent, waiting", { buyHash });
-        await publicClient.waitForTransactionReceipt({ hash: buyHash });
+        const buyReceipt = await publicClient.waitForTransactionReceipt({ hash: buyHash });
+        assertSuccessfulReceipt(buyReceipt, "Ticket purchase");
         blog("[buy-ticket] buyTicket confirmed ✓", { buyHash });
         return buyHash;
       } catch (error) {
