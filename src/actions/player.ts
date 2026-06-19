@@ -13,7 +13,7 @@ import { getCurrentUser } from "@/lib/auth";
 // share the service's name (e.g. action `loseLife` delegates to `playerSvc.loseLife`).
 import * as playerSvc from "@/lib/player/playerState";
 import type { PlayerState, Track } from "@/lib/player/playerState";
-import { getRoundClientQuestions, getLevelClientQuestions, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
+import { getLevelClientQuestions, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
 import { topWinnerShare } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
 import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentGame } from "@/lib/player/tournamentGames";
@@ -113,13 +113,6 @@ export async function deleteMyAccount(): Promise<{ ok: boolean }> {
   if (!user) return { ok: false };
   await playerSvc.deleteOwnAccount(user.id);
   return { ok: true };
-}
-
-/** The round's authoritative question set (same for every entrant, seeded by
- *  roundId). The client renders these instead of drawing its own, so the answers
- *  it submits can be re-scored server-side. */
-export async function getRoundQuestions(roundId: number): Promise<ClientRoundQuestion[]> {
-  return getRoundClientQuestions(roundId);
 }
 
 /** The solo level's questions, served from the DB (no local bank). Drawn by the

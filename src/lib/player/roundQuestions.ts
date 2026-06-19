@@ -1,42 +1,15 @@
 /**
- * Server-authoritative tournament question set.
+ * Solo level-campaign question sourcing (served from the DB, no local bank) plus
+ * the shared template→client mappers reused by the tournament read path.
  *
- * Each hourly round draws the SAME deterministic slice of `QuestionTemplate`s
- * for every entrant, seeded by `roundId`. The client renders this set (it still
- * gets the answer keys, for instant feedback), but the server keeps the same set
- * to (a) re-score the submitted answers and (b) reject answers for questions
- * that weren't in the round. Determinism means entry-time issuance and
- * settlement-time scoring resolve to the identical set without persisting it.
+ * NB: tournament rounds are NOT issued here. Each hourly tournament `Game` has
+ * its own `Question` rows, assigned at game-creation time from theme-matched
+ * `QuestionTemplate`s (see `getAutoQuestionTemplates` in `lib/game/auto-create`),
+ * and read back via `getTournamentClientQuestions` in `lib/player/tournamentGames`.
  */
 import { prisma } from "@/lib/db";
 import { Difficulty, GameTheme, QuestionKind } from "@prisma";
-import type { ScorableKind, ScorableQuestion } from "./scoring";
-
-/** Questions per tournament round — server-authoritative (was client `tweaks`). */
-export const QUESTIONS_PER_ROUND = 6;
-
-/** Deterministic 32-bit PRNG (mulberry32). */
-function mulberry32(seed: number) {
-  let a = seed >>> 0;
-  return () => {
-    a |= 0;
-    a = (a + 0x6d2b79f5) | 0;
-    let t = Math.imul(a ^ (a >>> 15), 1 | a);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Seeded Fisher–Yates — stable for a given (array, seed). */
-function seededShuffle<T>(arr: readonly T[], seed: number): T[] {
-  const rnd = mulberry32(seed);
-  const a = arr.slice();
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
+import type { ScorableKind } from "./scoring";
 
 const KIND_MAP: Record<QuestionKind, ScorableKind> = {
   [QuestionKind.SINGLE]: "single",
@@ -45,29 +18,59 @@ const KIND_MAP: Record<QuestionKind, ScorableKind> = {
   [QuestionKind.SPATIAL]: "spatial",
 };
 
-// The candidate pool (template ids) is stable within a round window; cache it
-// briefly so per-entry/settlement calls don't re-scan the whole table.
-let poolCache: { ids: string[]; at: number } | null = null;
+/** Deterministic permutation of `[0..n)` seeded by a string (xfnv1a → mulberry32
+ *  → Fisher–Yates). Same seed ⇒ same order every call, so a question's options
+ *  land in the same slots whether they're being rendered or re-scored. */
+function optionPermutation(seed: string, n: number): number[] {
+  let h = 2166136261;
+  for (let i = 0; i < seed.length; i++) {
+    h ^= seed.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  let a = h >>> 0;
+  const rand = () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const idx = Array.from({ length: n }, (_, i) => i);
+  for (let i = n - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [idx[i], idx[j]] = [idx[j], idx[i]];
+  }
+  return idx;
+}
+
+/** Shuffle a question's answer options so the correct one isn't pinned to a
+ *  fixed slot, remapping every index-aligned field to match. Deterministic
+ *  (seeded by question id) so the client's rendered order and the server's
+ *  re-scoring order are always identical. Only pick-one / pick-many kinds are
+ *  shuffled — SPATIAL (the position IS the answer) and ORDER (the scramble is
+ *  the puzzle) are left untouched. */
+export function shuffleQuestionOptions<
+  T extends { id: string; kind: QuestionKind; options: string[]; correctIndex: number; correctSet: number[]; correctOrder: number[] },
+>(q: T): T {
+  if (q.kind !== QuestionKind.SINGLE && q.kind !== QuestionKind.MULTI) return q;
+  const n = q.options.length;
+  if (n < 2) return q;
+  const order = optionPermutation(q.id, n); // newPos -> oldIdx
+  if (order.every((o, i) => o === i)) return q; // identity — nothing to do
+  const pos = new Array<number>(n); // oldIdx -> newPos
+  order.forEach((oldIdx, newPos) => { pos[oldIdx] = newPos; });
+  return {
+    ...q,
+    options: order.map((oldIdx) => q.options[oldIdx]),
+    correctIndex: q.correctIndex >= 0 && q.correctIndex < n ? pos[q.correctIndex] : q.correctIndex,
+    correctSet: q.correctSet.map((i) => pos[i] ?? i),
+    correctOrder: q.correctOrder.map((i) => pos[i] ?? i),
+  };
+}
+
+// Candidate pools are stable within a short window; cache them briefly so
+// per-level calls don't re-scan the whole table.
 const POOL_TTL_MS = 60_000;
-
-async function poolIds(): Promise<string[]> {
-  if (poolCache && Date.now() - poolCache.at < POOL_TTL_MS) return poolCache.ids;
-  const rows = await prisma.questionTemplate.findMany({
-    orderBy: [{ createdAt: "asc" }, { id: "asc" }],
-    select: { id: true },
-  });
-  poolCache = { ids: rows.map((r) => r.id), at: Date.now() };
-  return poolCache.ids;
-}
-
-/** The ids issued for a round, in play order (deterministic by roundId). */
-async function issuedIds(roundId: number, n: number): Promise<string[]> {
-  const ids = await poolIds();
-  if (ids.length === 0) return [];
-  // roundId is an ms epoch aligned to the hour; reduce to a 32-bit seed.
-  const seed = Math.floor(roundId / 1000) >>> 0;
-  return seededShuffle(ids, seed).slice(0, Math.min(n, ids.length));
-}
 
 type TemplateRow = {
   id: string;
@@ -107,36 +110,6 @@ const TEMPLATE_SELECT = {
   mediaUrl: true,
 } as const;
 
-/** Load the round's issued templates, preserving play order. */
-async function issuedRows(roundId: number, n: number): Promise<TemplateRow[]> {
-  const ids = await issuedIds(roundId, n);
-  if (ids.length === 0) return [];
-  const rows = await prisma.questionTemplate.findMany({
-    where: { id: { in: ids } },
-    select: TEMPLATE_SELECT,
-  });
-  const byId = new Map(rows.map((r) => [r.id, r as TemplateRow]));
-  return ids.map((id) => byId.get(id)).filter((r): r is TemplateRow => Boolean(r));
-}
-
-/** The round's questions WITH answer keys — for server-side scoring. */
-export async function getRoundScorableSet(
-  roundId: number,
-  n = QUESTIONS_PER_ROUND,
-): Promise<ScorableQuestion[]> {
-  const rows = await issuedRows(roundId, n);
-  return rows.map((r) => ({
-    id: r.id,
-    kind: KIND_MAP[r.kind],
-    correct: r.correctIndex,
-    correctSet: r.correctSet,
-    pick: r.pick,
-    correctOrder: r.correctOrder,
-    minefield: r.minefield,
-    durationSec: r.durationSec,
-  }));
-}
-
 /** The shape the v2 client consumes for a live question (matches `Question`). */
 export type ClientRoundQuestion = {
   id: string;
@@ -156,14 +129,25 @@ export type ClientRoundQuestion = {
   minefield?: boolean;
 };
 
-const themeLabel = (theme: string) =>
+export const themeLabel = (theme: string) =>
   theme.charAt(0).toUpperCase() + theme.slice(1).toLowerCase();
 
-/** Map a template row to the client question shape (answer keys included). */
-function rowToClient(r: TemplateRow): ClientRoundQuestion {
+/** The subject shown in the question pill. Prefers the authoring category (the
+ *  topic, e.g. "History"), but the World-Cup format packs tag their category as
+ *  "WC: <format>" (a format, not a topic) — for those we fall back to the game's
+ *  theme label so the pill shows the subject and the format stays in the kicker. */
+export const displayCategory = (category: string | null | undefined, theme: string): string =>
+  category && !category.startsWith("WC: ") ? category : themeLabel(theme);
+
+/** Map a template row to the client question shape (answer keys included). The
+ *  options are shuffled (deterministically, per question) so the correct answer
+ *  isn't always in the same slot; levels score on the client against this same
+ *  `correct`, so display and grading stay in lock-step. */
+function rowToClient(row: TemplateRow): ClientRoundQuestion {
+  const r = shuffleQuestionOptions(row);
   return {
     id: r.id,
-    cat: r.category ?? themeLabel(r.theme),
+    cat: displayCategory(r.category, r.theme),
     q: r.content,
     answers: r.options,
     correct: r.correctIndex,
@@ -178,15 +162,6 @@ function rowToClient(r: TemplateRow): ClientRoundQuestion {
     time: r.durationSec,
     minefield: r.minefield || undefined,
   };
-}
-
-/** The round's questions in client shape (keys included for instant feedback). */
-export async function getRoundClientQuestions(
-  roundId: number,
-  n = QUESTIONS_PER_ROUND,
-): Promise<ClientRoundQuestion[]> {
-  const rows = await issuedRows(roundId, n);
-  return rows.map(rowToClient);
 }
 
 // ---------------------------------------------------------------------------

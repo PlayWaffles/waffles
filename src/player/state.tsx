@@ -262,8 +262,8 @@ export type ResultNotif = {
 };
 
 export type Question = {
-  // Server-issued question id (tournament rounds only). Present when the set
-  // came from `getRoundQuestions`; absent for locally-drawn level questions.
+  // Server-issued question id, present for DB-served sets (tournament rounds via
+  // `getTournamentClientQuestions`, solo levels via `getLevelClientQuestions`).
   // The answers a player gives are submitted keyed by this id so the server can
   // re-score them authoritatively.
   id?: string;

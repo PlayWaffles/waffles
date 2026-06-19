@@ -60,11 +60,22 @@ try {
   const daily2 = await econ.claimDailyReward(uid);
   check("claimDaily idempotent (same day)", daily2.claimed === false);
 
-  // Server-authoritative scoring: the issued question set is deterministic, and
-  // scores are recomputed from submitted answers (never client-posted).
-  const rid = Math.floor(Date.now() / (60 * 60 * 1000)) * 60 * 60 * 1000;
-  const issued = await roundQ.getRoundScorableSet(rid);
-  check("round issues an authoritative question set", issued.length > 0, `issued=${issued.length}`);
+  // Server-authoritative scoring: scores are recomputed from submitted answers
+  // (never client-posted). Tournament games copy template rows into per-game
+  // Question rows, so a sample straight from the bank is a representative set.
+  const KIND_TO_SCORABLE = { SINGLE: "single", MULTI: "multi", ORDER: "order", SPATIAL: "spatial" } as const;
+  const tpl = await prisma.questionTemplate.findMany({ take: 6, orderBy: { createdAt: "asc" } });
+  const issued = tpl.map((q) => ({
+    id: q.id,
+    kind: KIND_TO_SCORABLE[q.kind],
+    correct: q.correctIndex,
+    correctSet: q.correctSet,
+    pick: q.pick,
+    correctOrder: q.correctOrder,
+    minefield: q.minefield,
+    durationSec: q.durationSec,
+  }));
+  check("template bank yields a scorable question set", issued.length > 0, `issued=${issued.length}`);
   const perfectMax = issued.reduce((s, q) => s + scoring.maxScoreForQuestion(q), 0);
 
   // Answer every question correctly, instantly (responseMs 0) → theoretical max.
@@ -107,11 +118,14 @@ try {
   const bundle = await econ.purchaseShopItem(uid, "bundle-5");
   check("bundle purchase blocked (fiat-only)", bundle.ok === false && bundle.reason === "fiat-only");
 
-  // 9. missions (requires seeded quests: scripts/seed-v2-missions-leagues.ts)
-  await missions.recordMissionProgress(uid, "daily-answer-3", 3);
+  // 9. missions (requires seeded quests: scripts/seed-v2-missions-leagues.ts).
+  // Use a FEATURED mission so it's always active regardless of the day's pick.
+  await missions.recordMissionEvent(uid, "questions_answered", 5);
   const ms = await missions.loadMissions(uid);
-  const m3 = ms.find((m) => m.slug === "daily-answer-3");
-  check("mission progress accrues + completes", m3?.done === true && m3?.count === 3, `count=${m3?.count} done=${m3?.done}`);
+  const m5 = ms.find((m) => m.slug === "daily-answer-5");
+  check("mission progress accrues + becomes claimable", m5?.claimable === true && m5?.count === 5, `count=${m5?.count} claimable=${m5?.claimable}`);
+  const claim = await missions.claimMission(uid, "daily-answer-5");
+  check("mission claim awards xp", claim.ok === true);
 
   // 10. leagues
   const lg = await leagues.loadLeague(uid);
