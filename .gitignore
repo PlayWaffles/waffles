@@ -48,3 +48,7 @@ llm-context.txt
 
 backups
 .env.local
+
+# Never commit DB/user data exports
+user-backup*.json
+*.dump
