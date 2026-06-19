@@ -15,6 +15,16 @@ const ICON_ASSETS: Record<string, string> = {
   iconCalendar: ASSETS.iconCalendar,
 };
 
+// "Hh Mm" until the next UTC midnight — the boundary the server resets daily
+// mission progress on (see lib/player/missions.ts).
+const timeToUtcMidnight = (): string => {
+  const now = new Date();
+  const next = new Date(now);
+  next.setUTCHours(24, 0, 0, 0);
+  const mins = Math.max(0, Math.round((next.getTime() - now.getTime()) / 60_000));
+  return `${Math.floor(mins / 60)}h ${mins % 60}m`;
+};
+
 export const MissionsScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"daily" | "partner">("daily");
@@ -34,17 +44,23 @@ export const MissionsScreen = () => {
     };
   }, []);
 
-  type DailyRow = { slug: string | null; t: string; p: number; tot: number; xp: number; icon: string; done: boolean; claimable: boolean };
+  type DailyRow = { slug: string | null; t: string; p: number; tot: number; xp: number; icon: string; done: boolean; claimable: boolean; featured: boolean };
+  // Preview rows for the unauth/loading context: the 3 featured dailies + a few
+  // sample generated missions, mirroring the real two-section layout.
   const staticDaily: DailyRow[] = [
-    { slug: null, t: "Answer 5 questions in Survival", p: 0, tot: 5, xp: 300, icon: ASSETS.iconTarget, done: false, claimable: false },
-    { slug: null, t: "Topics: streak of 10 in 1 category", p: 0, tot: 1, xp: 225, icon: ASSETS.flame, done: false, claimable: false },
-    { slug: null, t: "Answer 3 questions in Survival", p: 2, tot: 3, xp: 150, icon: ASSETS.iconTarget, done: false, claimable: false },
-    { slug: null, t: "Win 1 tournament", p: 0, tot: 1, xp: 500, icon: ASSETS.trophy, done: false, claimable: false },
-    { slug: null, t: "Play 5 days in a row", p: 3, tot: 5, xp: 400, icon: ASSETS.iconCalendar, done: false, claimable: false },
+    { slug: null, t: "Answer 5 questions", p: 0, tot: 5, xp: 300, icon: ASSETS.iconTarget, done: false, claimable: false, featured: true },
+    { slug: null, t: "Win a tournament", p: 0, tot: 1, xp: 500, icon: ASSETS.trophy, done: false, claimable: false, featured: true },
+    { slug: null, t: "Keep a 5-day streak", p: 3, tot: 5, xp: 400, icon: ASSETS.iconCalendar, done: false, claimable: false, featured: true },
+    { slug: null, t: "Score 1,000 points", p: 0, tot: 1000, xp: 250, icon: ASSETS.flame, done: false, claimable: false, featured: false },
+    { slug: null, t: "Play 3 games", p: 1, tot: 3, xp: 180, icon: ASSETS.iconCalendar, done: false, claimable: false, featured: false },
+    { slug: null, t: "Enter 3 tournaments", p: 0, tot: 3, xp: 300, icon: ASSETS.trophy, done: false, claimable: false, featured: false },
+    { slug: null, t: "Answer 10 questions", p: 0, tot: 10, xp: 200, icon: ASSETS.iconTarget, done: false, claimable: false, featured: false },
   ];
   const dailyMissions: DailyRow[] = loaded
-    ? loaded.map((m) => ({ slug: m.slug, t: m.title, p: m.count, tot: m.total, xp: m.xp, icon: ICON_ASSETS[m.icon] ?? ASSETS.iconTarget, done: m.done, claimable: m.claimable }))
+    ? loaded.map((m) => ({ slug: m.slug, t: m.title, p: m.count, tot: m.total, xp: m.xp, icon: ICON_ASSETS[m.icon] ?? ASSETS.iconTarget, done: m.done, claimable: m.claimable, featured: m.featured }))
     : staticDaily;
+  const featuredMissions = dailyMissions.filter((m) => m.featured);
+  const generatedMissions = dailyMissions.filter((m) => !m.featured);
 
   // Claim a completed daily mission — awards XP server-side, with an optimistic
   // local flip + XP credit so the tile updates instantly.
@@ -65,6 +81,46 @@ export const MissionsScreen = () => {
     } finally {
       setClaimingSlug(null);
     }
+  };
+
+  // One mission tile — shared by the Daily (featured) and generated sections.
+  const renderRow = (m: DailyRow, key: string | number) => {
+    const pct = Math.min(100, Math.round((m.p / m.tot) * 100));
+    return (
+      <div key={key} style={{ background: "var(--surface-1)", border: m.claimable ? "1px solid rgba(255,201,49,.35)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: m.done ? 0.55 : 1 }}>
+        <AssetWell size={60} accent={m.icon === ASSETS.flame ? "var(--berry)" : m.icon === ASSETS.trophy ? "var(--maple-500)" : "var(--leaf)"} radius={14}>
+          <PixelImg src={m.icon} size={46} alt="" />
+        </AssetWell>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
+            <div style={{ flex: 1, height: 5, borderRadius: 99, background: "rgba(255,255,255,.06)", overflow: "hidden" }}>
+              <div style={{ width: `${pct}%`, height: "100%", background: "#FFC931" }} />
+            </div>
+            <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", whiteSpace: "nowrap" }}>{m.p}/{m.tot}</span>
+          </div>
+        </div>
+        {m.done ? (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.15)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", padding: "5px 9px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.3, flexShrink: 0, whiteSpace: "nowrap" }}>
+            ✓ Claimed
+          </div>
+        ) : m.claimable ? (
+          <button
+            type="button"
+            onClick={() => claimDailyMission(m.slug, m.xp)}
+            disabled={claimingSlug === m.slug}
+            aria-label={`Claim ${m.xp} XP for ${m.t}`}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--maple-500)", border: "1.5px solid var(--frame)", color: "var(--frame)", padding: "6px 11px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.3, flexShrink: 0, whiteSpace: "nowrap", cursor: claimingSlug === m.slug ? "default" : "pointer", boxShadow: "0 3px 0 var(--frame)", opacity: claimingSlug === m.slug ? 0.6 : 1 }}
+          >
+            {claimingSlug === m.slug ? "…" : `CLAIM +${m.xp}`}
+          </button>
+        ) : (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.15)", border: "1px solid rgba(255,201,49,.3)", color: "var(--maple-500)", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, flexShrink: 0 }}>
+            +{m.xp} XP
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Real sponsored partner offers (+ per-user claim state). Falls back to the
@@ -111,6 +167,15 @@ export const MissionsScreen = () => {
   const totalDailyXP = dailyMissions.reduce((s, m) => s + m.xp, 0);
   const totalPartnerTickets = partnerMissions.reduce((s, m) => s + m.tickets, 0);
 
+  // Real time left until missions reset — the server scopes daily progress to
+  // the UTC day, so the countdown targets the next UTC midnight. Ticks each
+  // minute so it stays accurate while the screen is open.
+  const [resetLabel, setResetLabel] = useState(() => timeToUtcMidnight());
+  useEffect(() => {
+    const id = setInterval(() => setResetLabel(timeToUtcMidnight()), 60_000);
+    return () => clearInterval(id);
+  }, []);
+
   // Screen impression (the daily tab is live; partner offers are coming-soon).
   const viewedRef = useRef(false);
   useEffect(() => {
@@ -153,50 +218,30 @@ export const MissionsScreen = () => {
               </AssetWell>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", letterSpacing: 0.3 }}>Earn up to {totalDailyXP} XP today</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginTop: 2 }}>Resets in 17h 42m</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginTop: 2 }}>Resets in {resetLabel}</div>
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-              {dailyMissions.map((m, i) => {
-                const pct = Math.min(100, Math.round((m.p / m.tot) * 100));
-                return (
-                  <div key={m.slug ?? i} style={{ background: "var(--surface-1)", border: m.claimable ? "1px solid rgba(255,201,49,.35)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: m.done ? 0.55 : 1 }}>
-                    <AssetWell size={60} accent={m.icon === ASSETS.flame ? "var(--berry)" : m.icon === ASSETS.trophy ? "var(--maple-500)" : "var(--leaf)"} radius={14}>
-                      <PixelImg src={m.icon} size={46} alt="" />
-                    </AssetWell>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
-                        <div style={{ flex: 1, height: 5, borderRadius: 99, background: "rgba(255,255,255,.06)", overflow: "hidden" }}>
-                          <div style={{ width: `${pct}%`, height: "100%", background: "#FFC931" }} />
-                        </div>
-                        <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", whiteSpace: "nowrap" }}>{m.p}/{m.tot}</span>
-                      </div>
-                    </div>
-                    {m.done ? (
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.15)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", padding: "5px 9px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.3, flexShrink: 0, whiteSpace: "nowrap" }}>
-                        ✓ Claimed
-                      </div>
-                    ) : m.claimable ? (
-                      <button
-                        type="button"
-                        onClick={() => claimDailyMission(m.slug, m.xp)}
-                        disabled={claimingSlug === m.slug}
-                        aria-label={`Claim ${m.xp} XP for ${m.t}`}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "var(--maple-500)", border: "1.5px solid var(--frame)", color: "var(--frame)", padding: "6px 11px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.3, flexShrink: 0, whiteSpace: "nowrap", cursor: claimingSlug === m.slug ? "default" : "pointer", boxShadow: "0 3px 0 var(--frame)", opacity: claimingSlug === m.slug ? 0.6 : 1 }}
-                      >
-                        {claimingSlug === m.slug ? "…" : `CLAIM +${m.xp}`}
-                      </button>
-                    ) : (
-                      <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.15)", border: "1px solid rgba(255,201,49,.3)", color: "var(--maple-500)", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, flexShrink: 0 }}>
-                        +{m.xp} XP
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "2px 2px 10px" }}>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "rgba(255,255,255,.85)", letterSpacing: 0.8 }}>DAILY</span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.07)" }} />
             </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              {featuredMissions.map((m, i) => renderRow(m, m.slug ?? `f${i}`))}
+            </div>
+
+            {generatedMissions.length > 0 && (
+              <>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, margin: "18px 2px 10px" }}>
+                  <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "rgba(255,255,255,.85)", letterSpacing: 0.8 }}>MISSIONS</span>
+                  <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.45)", letterSpacing: 0.4 }}>FRESH DAILY</span>
+                  <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,.07)" }} />
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {generatedMissions.map((m, i) => renderRow(m, m.slug ?? `g${i}`))}
+                </div>
+              </>
+            )}
           </>
         )}
 

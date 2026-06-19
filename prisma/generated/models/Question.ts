@@ -61,6 +61,7 @@ export type QuestionMinAggregateOutputType = {
   pick: number | null
   minefield: boolean | null
   kicker: string | null
+  category: string | null
   durationSec: number | null
   points: number | null
   templateId: string | null
@@ -81,6 +82,7 @@ export type QuestionMaxAggregateOutputType = {
   pick: number | null
   minefield: boolean | null
   kicker: string | null
+  category: string | null
   durationSec: number | null
   points: number | null
   templateId: string | null
@@ -106,6 +108,7 @@ export type QuestionCountAggregateOutputType = {
   minefield: number
   kicker: number
   clues: number
+  category: number
   durationSec: number
   points: number
   templateId: number
@@ -150,6 +153,7 @@ export type QuestionMinAggregateInputType = {
   pick?: true
   minefield?: true
   kicker?: true
+  category?: true
   durationSec?: true
   points?: true
   templateId?: true
@@ -170,6 +174,7 @@ export type QuestionMaxAggregateInputType = {
   pick?: true
   minefield?: true
   kicker?: true
+  category?: true
   durationSec?: true
   points?: true
   templateId?: true
@@ -195,6 +200,7 @@ export type QuestionCountAggregateInputType = {
   minefield?: true
   kicker?: true
   clues?: true
+  category?: true
   durationSec?: true
   points?: true
   templateId?: true
@@ -307,6 +313,7 @@ export type QuestionGroupByOutputType = {
   minefield: boolean
   kicker: string | null
   clues: string[]
+  category: string | null
   durationSec: number
   points: number
   templateId: string | null
@@ -355,6 +362,7 @@ export type QuestionWhereInput = {
   minefield?: Prisma.BoolFilter<"Question"> | boolean
   kicker?: Prisma.StringNullableFilter<"Question"> | string | null
   clues?: Prisma.StringNullableListFilter<"Question">
+  category?: Prisma.StringNullableFilter<"Question"> | string | null
   durationSec?: Prisma.IntFilter<"Question"> | number
   points?: Prisma.IntFilter<"Question"> | number
   templateId?: Prisma.StringNullableFilter<"Question"> | string | null
@@ -381,6 +389,7 @@ export type QuestionOrderByWithRelationInput = {
   minefield?: Prisma.SortOrder
   kicker?: Prisma.SortOrderInput | Prisma.SortOrder
   clues?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
   durationSec?: Prisma.SortOrder
   points?: Prisma.SortOrder
   templateId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -410,6 +419,7 @@ export type QuestionWhereUniqueInput = Prisma.AtLeast<{
   minefield?: Prisma.BoolFilter<"Question"> | boolean
   kicker?: Prisma.StringNullableFilter<"Question"> | string | null
   clues?: Prisma.StringNullableListFilter<"Question">
+  category?: Prisma.StringNullableFilter<"Question"> | string | null
   durationSec?: Prisma.IntFilter<"Question"> | number
   points?: Prisma.IntFilter<"Question"> | number
   templateId?: Prisma.StringNullableFilter<"Question"> | string | null
@@ -436,6 +446,7 @@ export type QuestionOrderByWithAggregationInput = {
   minefield?: Prisma.SortOrder
   kicker?: Prisma.SortOrderInput | Prisma.SortOrder
   clues?: Prisma.SortOrder
+  category?: Prisma.SortOrderInput | Prisma.SortOrder
   durationSec?: Prisma.SortOrder
   points?: Prisma.SortOrder
   templateId?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -469,6 +480,7 @@ export type QuestionScalarWhereWithAggregatesInput = {
   minefield?: Prisma.BoolWithAggregatesFilter<"Question"> | boolean
   kicker?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
   clues?: Prisma.StringNullableListFilter<"Question">
+  category?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
   durationSec?: Prisma.IntWithAggregatesFilter<"Question"> | number
   points?: Prisma.IntWithAggregatesFilter<"Question"> | number
   templateId?: Prisma.StringNullableWithAggregatesFilter<"Question"> | string | null
@@ -493,6 +505,7 @@ export type QuestionCreateInput = {
   minefield?: boolean
   kicker?: string | null
   clues?: Prisma.QuestionCreatecluesInput | string[]
+  category?: string | null
   durationSec?: number
   points?: number
   templateId?: string | null
@@ -519,6 +532,7 @@ export type QuestionUncheckedCreateInput = {
   minefield?: boolean
   kicker?: string | null
   clues?: Prisma.QuestionCreatecluesInput | string[]
+  category?: string | null
   durationSec?: number
   points?: number
   templateId?: string | null
@@ -543,6 +557,7 @@ export type QuestionUpdateInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -569,6 +584,7 @@ export type QuestionUncheckedUpdateInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -594,6 +610,7 @@ export type QuestionCreateManyInput = {
   minefield?: boolean
   kicker?: string | null
   clues?: Prisma.QuestionCreatecluesInput | string[]
+  category?: string | null
   durationSec?: number
   points?: number
   templateId?: string | null
@@ -618,6 +635,7 @@ export type QuestionUpdateManyMutationInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -643,6 +661,7 @@ export type QuestionUncheckedUpdateManyInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -678,6 +697,7 @@ export type QuestionCountOrderByAggregateInput = {
   minefield?: Prisma.SortOrder
   kicker?: Prisma.SortOrder
   clues?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
   points?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
@@ -709,6 +729,7 @@ export type QuestionMaxOrderByAggregateInput = {
   pick?: Prisma.SortOrder
   minefield?: Prisma.SortOrder
   kicker?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
   points?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
@@ -729,6 +750,7 @@ export type QuestionMinOrderByAggregateInput = {
   pick?: Prisma.SortOrder
   minefield?: Prisma.SortOrder
   kicker?: Prisma.SortOrder
+  category?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
   points?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
@@ -851,6 +873,7 @@ export type QuestionCreateWithoutGameInput = {
   minefield?: boolean
   kicker?: string | null
   clues?: Prisma.QuestionCreatecluesInput | string[]
+  category?: string | null
   durationSec?: number
   points?: number
   templateId?: string | null
@@ -875,6 +898,7 @@ export type QuestionUncheckedCreateWithoutGameInput = {
   minefield?: boolean
   kicker?: string | null
   clues?: Prisma.QuestionCreatecluesInput | string[]
+  category?: string | null
   durationSec?: number
   points?: number
   templateId?: string | null
@@ -929,6 +953,7 @@ export type QuestionScalarWhereInput = {
   minefield?: Prisma.BoolFilter<"Question"> | boolean
   kicker?: Prisma.StringNullableFilter<"Question"> | string | null
   clues?: Prisma.StringNullableListFilter<"Question">
+  category?: Prisma.StringNullableFilter<"Question"> | string | null
   durationSec?: Prisma.IntFilter<"Question"> | number
   points?: Prisma.IntFilter<"Question"> | number
   templateId?: Prisma.StringNullableFilter<"Question"> | string | null
@@ -953,6 +978,7 @@ export type QuestionCreateManyGameInput = {
   minefield?: boolean
   kicker?: string | null
   clues?: Prisma.QuestionCreatecluesInput | string[]
+  category?: string | null
   durationSec?: number
   points?: number
   templateId?: string | null
@@ -977,6 +1003,7 @@ export type QuestionUpdateWithoutGameInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1001,6 +1028,7 @@ export type QuestionUncheckedUpdateWithoutGameInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1025,6 +1053,7 @@ export type QuestionUncheckedUpdateManyWithoutGameInput = {
   minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
   kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   clues?: Prisma.QuestionUpdatecluesInput | string[]
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
   points?: Prisma.IntFieldUpdateOperationsInput | number
   templateId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1052,6 +1081,7 @@ export type QuestionSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs
   minefield?: boolean
   kicker?: boolean
   clues?: boolean
+  category?: boolean
   durationSec?: boolean
   points?: boolean
   templateId?: boolean
@@ -1078,6 +1108,7 @@ export type QuestionSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exte
   minefield?: boolean
   kicker?: boolean
   clues?: boolean
+  category?: boolean
   durationSec?: boolean
   points?: boolean
   templateId?: boolean
@@ -1104,6 +1135,7 @@ export type QuestionSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exte
   minefield?: boolean
   kicker?: boolean
   clues?: boolean
+  category?: boolean
   durationSec?: boolean
   points?: boolean
   templateId?: boolean
@@ -1130,6 +1162,7 @@ export type QuestionSelectScalar = {
   minefield?: boolean
   kicker?: boolean
   clues?: boolean
+  category?: boolean
   durationSec?: boolean
   points?: boolean
   templateId?: boolean
@@ -1137,7 +1170,7 @@ export type QuestionSelectScalar = {
   updatedAt?: boolean
 }
 
-export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameId" | "roundIndex" | "orderInRound" | "content" | "mediaUrl" | "soundUrl" | "options" | "correctIndex" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "durationSec" | "points" | "templateId" | "createdAt" | "updatedAt", ExtArgs["result"]["question"]>
+export type QuestionOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameId" | "roundIndex" | "orderInRound" | "content" | "mediaUrl" | "soundUrl" | "options" | "correctIndex" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "category" | "durationSec" | "points" | "templateId" | "createdAt" | "updatedAt", ExtArgs["result"]["question"]>
 export type QuestionInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   game?: boolean | Prisma.GameDefaultArgs<ExtArgs>
 }
@@ -1171,6 +1204,7 @@ export type $QuestionPayload<ExtArgs extends runtime.Types.Extensions.InternalAr
     minefield: boolean
     kicker: string | null
     clues: string[]
+    category: string | null
     durationSec: number
     points: number
     templateId: string | null
@@ -1617,6 +1651,7 @@ export interface QuestionFieldRefs {
   readonly minefield: Prisma.FieldRef<"Question", 'Boolean'>
   readonly kicker: Prisma.FieldRef<"Question", 'String'>
   readonly clues: Prisma.FieldRef<"Question", 'String[]'>
+  readonly category: Prisma.FieldRef<"Question", 'String'>
   readonly durationSec: Prisma.FieldRef<"Question", 'Int'>
   readonly points: Prisma.FieldRef<"Question", 'Int'>
   readonly templateId: Prisma.FieldRef<"Question", 'String'>

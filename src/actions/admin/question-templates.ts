@@ -397,6 +397,7 @@ export async function assignToGameAction(
           durationSec: t.durationSec,
           mediaUrl: t.mediaUrl,
           soundUrl: t.soundUrl,
+          category: t.category,
           roundIndex: 1, // Placeholder, will be recalculated
           orderInRound: game.questions.length + idx,
           templateId: t.id,

@@ -204,6 +204,15 @@ model Quest {
   // -- REQUIREMENTS --
   requiredCount Int @default(1) @db.SmallInt
 
+  // -- MISSIONS (v2 daily) --
+  // `eventType` is the gameplay signal that advances this mission (e.g.
+  // "questions_answered", "tournaments_won"); progress is recorded by event, so
+  // every mission keyed to the same signal advances from one hook. `featured`
+  // pins a mission to the fixed home set (the 3 dailies); unfeatured active
+  // ENGAGEMENT/DAILY quests form the rotating generated pool for the page.
+  eventType String?  @db.VarChar(40)
+  featured  Boolean  @default(false)
+
   // -- SCHEDULING --
   isActive Boolean   @default(true)
   startsAt DateTime?
@@ -405,6 +414,13 @@ model Question {
   minefield    Boolean      @default(false)
   kicker       String?      @db.VarChar(120)
   clues        String[]     @default([])
+
+  // Authoring category (the topic, e.g. "History"/"Science") copied verbatim
+  // from the source QuestionTemplate when the question is assigned to the game,
+  // so the play UI can show the subject in the pill rather than the format. Null
+  // on questions created before this column existed — callers fall back to the
+  // game's theme label.
+  category     String?      @db.VarChar(40)
 
   // -- TIMING & SCORING --
   durationSec Int @default(10) @db.SmallInt

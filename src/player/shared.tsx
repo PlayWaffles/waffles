@@ -744,10 +744,21 @@ export const CategoryIcon = ({ name, size = 28 }: { name: string; size?: number 
         <circle cx="17" cy="16" r="2.5" fill="currentColor" />
       </>
     ),
+    Football: (
+      <>
+        <circle cx="12" cy="12" r="9" fill="currentColor" />
+        <path d="M12 7l2.6 1.9-1 3.1h-3.2l-1-3.1L12 7z" fill="white" />
+        <path d="M12 7V4M14.6 8.9l2.6-1M15.6 12l2.9.9M8.4 12l-2.9.9M9.4 8.9l-2.6-1" stroke="white" strokeWidth="1.2" />
+      </>
+    ),
   };
+  // Many newer categories/formats (e.g. "Tap All True") have no dedicated glyph
+  // yet. Render a neutral sparkle instead of an empty <svg> so the pill always
+  // carries a logo rather than a blank gap before the label.
+  const fallback = <path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z" fill="currentColor" />;
   return (
     <svg width={size} height={size} viewBox="0 0 24 24">
-      {map[name]}
+      {map[name] ?? fallback}
     </svg>
   );
 };
@@ -760,6 +771,7 @@ export const CATEGORY_COLORS: Record<string, { bg: string; fg: string }> = {
   Geography: { bg: "#1e1e1e", fg: "#00CFF2" },
   Science: { bg: "#1e1e1e", fg: "#FB72FF" },
   Music: { bg: "#1e1e1e", fg: "#FFC931" },
+  Football: { bg: "#1e1e1e", fg: "#3dd17a" },
 };
 
 export const SectionLabel = ({ children }: { children: ReactNode }) => (
