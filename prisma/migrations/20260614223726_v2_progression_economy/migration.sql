@@ -1,5 +1,11 @@
 -- CreateEnum
-CREATE TYPE "Difficulty" AS ENUM ('EASY', 'MEDIUM', 'HARD');
+-- The live v1 baseline already has "Difficulty" (its QuestionTemplate.difficulty
+-- uses it) created outside the recorded migration prefix, so a plain CREATE TYPE
+-- fails on v1→v2 deploy with "type already exists". Guard it: fresh DBs still get
+-- it created; an existing identical enum is left as-is. (Values match v1 exactly.)
+DO $$ BEGIN
+  CREATE TYPE "Difficulty" AS ENUM ('EASY', 'MEDIUM', 'HARD');
+EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 -- CreateEnum
 CREATE TYPE "QuestionKind" AS ENUM ('SINGLE', 'MULTI', 'ORDER', 'SPATIAL');
