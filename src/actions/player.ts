@@ -149,9 +149,10 @@ export async function getTournament(): Promise<
     game: TournamentGame;
     questions: ClientRoundQuestion[];
     /** The flat price everyone pays (the game's on-chain floor), + the higher
-     *  `standardFee` for the struck-through "was" price, and `firstEntry` which
-     *  drives the discount visuals. The discount is display-only — the real
-     *  charge is always `entryFee` — but it always shows so entry reads as a deal. */
+     *  `standardFee` for the struck-through "was" price, and `firstEntry` =
+     *  whether this is the player's first-ever tournament. The discount card
+     *  shows for everyone (display-only; the real charge is always `entryFee`);
+     *  `firstEntry` only personalizes the copy (first-timer vs World Cup). */
     entryFee: number;
     standardFee: number;
     firstEntry: boolean;
@@ -162,17 +163,22 @@ export async function getTournament(): Promise<
   if (!user) return null;
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
-  const questions = await tournamentSvc.getTournamentClientQuestions(game.id);
+  const [questions, firstEntry] = await Promise.all([
+    tournamentSvc.getTournamentClientQuestions(game.id),
+    tournamentSvc.isFirstTournamentEntry(user.id),
+  ]);
   // Everyone pays the game's flat on-chain floor — the contract requires the
   // exact price, so there's no per-user amount. The discount framing
   // (standardFee struck through) is shown to all; nobody is charged standardFee.
+  // `firstEntry` only personalizes the upsell copy (first-timer welcome vs the
+  // evergreen World Cup framing) — it does NOT change the price.
   const roundSeconds = questions.reduce((sum, q) => sum + (q.time ?? 0), 0);
   return {
     game,
     questions,
     entryFee: game.entryFee,
     standardFee: tournamentSvc.TOURNAMENT_STANDARD_FEE_USDC,
-    firstEntry: true,
+    firstEntry,
     round: {
       title: game.title,
       category: themeLabel(game.theme),

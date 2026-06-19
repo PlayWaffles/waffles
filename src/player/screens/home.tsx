@@ -4,7 +4,7 @@ import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "rea
 import { displayFieldSize, isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/actions/player";
-import type { TournamentBoard } from "@/lib/player/tournamentGames";
+import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
@@ -89,20 +89,21 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       </div>
 
       {/* Entry is a flat $0.05 for everyone, every round — the struck-through
-          standardFee ($0.10) is a season anchor, NOT a per-user/first-time deal.
-          So we sell it as an evergreen "World Cup special," not "first entry."
-          (When the season flips off FOOTBALL — see DEFAULT_GAME_THEME in
-          lib/game/auto-create — update this copy too.) `firstEntry` is the
-          always-on flag that gates whether the discount anchor is shown. */}
-      {fee?.firstEntry ? (
+          standardFee ($0.10) is the season anchor (never charged). The discount
+          card shows for ALL players; only the framing is personalized: genuine
+          first-timers (no prior GameEntry) get a one-time "first tournament"
+          welcome, returning players get the evergreen "World Cup special." (When
+          the season flips off FOOTBALL — see DEFAULT_GAME_THEME in
+          lib/game/auto-create — update the returning-player copy too.) */}
+      {fee ? (
         <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: error ? 8 : 14 }}>
           <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <TicketIcon size={28} />
             <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>World Cup special</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>50% off entry, all season</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>{fee.firstEntry ? "First tournament" : "World Cup special"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{fee.firstEntry ? "Your first tournament, half price" : "50% off entry, all season"}</div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>
@@ -114,7 +115,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
           <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 5 }}>
             Entry · 1 <TicketIcon size={14} />
           </span>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--maple-500)" }}>{fee ? usd(fee.entryFee) : "—"}</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--maple-500)" }}>—</span>
         </div>
       )}
 
@@ -307,42 +308,17 @@ export const HomeScreen = () => {
   // ticket gate — the wallet reports an insufficient balance on confirm.
   const [entering, setEntering] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
-  // This user's entry fee + whether their first ticket is half price, plus the
-  // current round's close time (for the live countdown).
-  const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
-  const [closeAt, setCloseAt] = useState<number | null>(null);
-  // Live, DB-backed details for the hero card (title, format, prize pool). Null
-  // until the round loads — copy falls back to the themed defaults meanwhile.
-  const [round, setRound] = useState<TournamentRound | null>(null);
+  // Live, DB-backed details for the hero card (entry fee, close time, title /
+  // format / prize). Resilient fetch: `getTournament` is a server action whose
+  // auth is the session cookie set async by AuthBootstrap (which can lag the
+  // client mount), and it returns null in the brief gap between hourly rounds —
+  // so retry rather than leave the card empty on a one-shot miss. Until it lands,
+  // the derived values are null and the copy falls back to the themed defaults.
+  const { data: tourney } = useResilientAction(() => getTournament(), []);
+  const fee = tourney ? { entryFee: tourney.entryFee, standardFee: tourney.standardFee, firstEntry: tourney.firstEntry } : null;
+  const closeAt = tourney ? new Date(tourney.game.endsAt).getTime() : null;
+  const round: TournamentRound | null = tourney?.round ?? null;
   const now = useNow();
-  useEffect(() => {
-    let active = true;
-    let timer: ReturnType<typeof setTimeout> | undefined;
-    let attempts = 0;
-    // `getTournament` is a server action whose auth is the session cookie set
-    // async by AuthBootstrap — which can lag the client `useUser` gate that lets
-    // Home mount. It also returns null in the brief gap between hourly rounds.
-    // A one-shot mount fetch left the hero card empty whenever it hit either
-    // case, so retry a few times before falling back to the themed defaults.
-    const load = () => {
-      getTournament()
-        .then((t) => {
-          if (!active) return;
-          if (t) {
-            setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
-            setCloseAt(new Date(t.game.endsAt).getTime());
-            setRound(t.round);
-            return;
-          }
-          if (attempts++ < 5) timer = setTimeout(load, 1200);
-        })
-        .catch(() => {
-          if (active && attempts++ < 5) timer = setTimeout(load, 1200);
-        });
-    };
-    load();
-    return () => { active = false; if (timer) clearTimeout(timer); };
-  }, []);
   // Time left until the round closes, broken into HH:MM:SS.
   const remainMs = closeAt ? Math.max(0, closeAt - now) : 0;
   const cd = {
@@ -397,19 +373,10 @@ export const HomeScreen = () => {
   const lastRank = proto.lastTournamentRank;
 
   // Real entrant count for the current tournament (falls back to the simulated
-  // field in preview / before any real entrants).
-  const [board, setBoard] = useState<TournamentBoard | null>(null);
-  useEffect(() => {
-    let active = true;
-    loadCurrentTournamentBoard()
-      .then((b) => {
-        if (active && b && b.fieldSize > 0) setBoard(b);
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [proto.tournamentGameId]);
+  // field in preview / before any real entrants). Resilient fetch so the
+  // auth-cookie / between-rounds race doesn't drop it.
+  const { data: rawBoard } = useResilientAction(() => loadCurrentTournamentBoard(), [proto.tournamentGameId]);
+  const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
   // Real entrant count — board standings first, then the game's stored
