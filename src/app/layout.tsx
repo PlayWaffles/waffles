@@ -12,7 +12,7 @@ import { env } from "@/lib/env";
 // overrides the default if it's ever present at build.
 const UMAMI_HOST = process.env.NEXT_PUBLIC_UMAMI_HOST ?? "https://analytics.cyberverse.cloud";
 const UMAMI_WEBSITE_ID =
-  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "5545940d-b344-48ca-8bf9-1d33aa026c83";
+  process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID ?? "c93b9fef-6a59-4006-adb3-48d2bb001e8d";
 // Optional comma-separated allowlist of hostnames Umami should track on. Leave
 // UNSET to track on every host (incl. the in-app webview, localhost, previews).
 // If set, Umami silently ignores any host not in the list — so it must include
