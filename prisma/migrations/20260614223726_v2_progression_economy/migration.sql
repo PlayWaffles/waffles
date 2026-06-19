@@ -35,10 +35,12 @@ CREATE TYPE "CosmeticKind" AS ENUM ('AVATAR_FRAME', 'NAME_COLOR', 'EMOTE');
 CREATE TYPE "LeagueTier" AS ENUM ('APPRENTICE_1', 'APPRENTICE_2', 'SILVER_1', 'SILVER_2', 'SILVER_3', 'ADVANCED_1', 'ADVANCED_2', 'GENIUS', 'MASTER_3', 'MASTER_2', 'MASTER_1');
 
 -- DropIndex
-DROP INDEX "Game_platform_network_startsAt_idx";
+-- IF EXISTS: the real v1 baseline doesn't have these (its index set differs from
+-- the fresh-DB baseline this migration was generated against); fresh DBs still drop them.
+DROP INDEX IF EXISTS "Game_platform_network_startsAt_idx";
 
 -- DropIndex
-DROP INDEX "User_onboardingCompletedAt_idx";
+DROP INDEX IF EXISTS "User_onboardingCompletedAt_idx";
 
 -- AlterTable
 ALTER TABLE "Game" ADD COLUMN     "isTestnet" BOOLEAN NOT NULL DEFAULT false,
