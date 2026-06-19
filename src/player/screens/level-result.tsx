@@ -37,7 +37,21 @@ const markTournamentUpsellSeen = (): void => {
   }
 };
 
-const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total: number; onClose: () => void }) => {
+const TournamentUpsellSheet = ({
+  score,
+  total,
+  levelNumber,
+  levelTrack,
+  onAccept,
+  onDismiss,
+}: {
+  score: number;
+  total: number;
+  levelNumber: number;
+  levelTrack: string;
+  onAccept: () => void;
+  onDismiss: () => void;
+}) => {
   const proto = useProto();
   // Flatter-but-fair "you'd have placed Top X%" hook from the level score.
   const rank = tournamentRank(score, total);
@@ -56,14 +70,24 @@ const TournamentUpsellSheet = ({ score, total, onClose }: { score: number; total
   const usd = (n: number) => `$${n.toFixed(2)}`;
 
   const enter = () => {
-    onClose();
+    trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellAccepted, {
+      offer: "live_tournament",
+      level_number: levelNumber,
+      level_track: levelTrack,
+      score,
+      question_count: total,
+      projected_rank_percentile: pct,
+      first_entry: fee?.firstEntry ?? null,
+      entry_fee: fee?.entryFee ?? null,
+    });
+    onAccept();
     // On-chain entry: the deposit is paid via the wallet; the provider starts
     // the round on success (or stays put if the player cancels / it fails).
     void proto.enterTournamentOnChain();
   };
 
   return (
-    <Sheet onClose={onClose} ariaLabel="Enter a live tournament" zIndex={70}>
+    <Sheet onClose={onDismiss} ariaLabel="Enter a live tournament" zIndex={70}>
       {(close) => (
       <>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 10 }}>
@@ -126,6 +150,8 @@ export const LevelWinScreen = () => {
   const score = proto.score;
   const total = proto.totalQuestions;
   const heartsLeft = proto.hearts;
+  const next = proto.levelJustUnlocked ?? proto.level;
+  const justCompleted = Math.max(1, next - 1);
 
   // Victory fanfare on arrival.
   useEffect(() => {
@@ -135,18 +161,32 @@ export const LevelWinScreen = () => {
   // After the win celebration plays, slide up the one-time tournament upsell.
   const [showUpsell, setShowUpsell] = useState(false);
   useEffect(() => {
+    if (justCompleted !== 1) return;
     if (hasSeenTournamentUpsell()) return;
     const t = setTimeout(() => {
       markTournamentUpsellSeen();
+      trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellShown, {
+        offer: "live_tournament",
+        level_number: justCompleted,
+        level_track: proto.levelTrack,
+        score,
+        question_count: total,
+      });
       setShowUpsell(true);
     }, 1600);
     return () => clearTimeout(t);
-  }, []);
-  // Bind progress copy to the actual current level instead of a hard-coded
-  // "Level 18 → 19". `proto.level` represents the level the player JUST
-  // completed (and is about to advance from on this success screen).
-  const justCompleted = proto.level;
-  const next = justCompleted + 1;
+  }, [justCompleted, proto.levelTrack, score, total]);
+
+  const dismissUpsell = () => {
+    trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellDismissed, {
+      offer: "live_tournament",
+      level_number: justCompleted,
+      level_track: proto.levelTrack,
+      score,
+      question_count: total,
+    });
+    setShowUpsell(false);
+  };
 
   return (
     <Phone statusDark>
@@ -247,7 +287,14 @@ export const LevelWinScreen = () => {
       </div>
 
       {showUpsell && (
-        <TournamentUpsellSheet score={score} total={total} onClose={() => setShowUpsell(false)} />
+        <TournamentUpsellSheet
+          score={score}
+          total={total}
+          levelNumber={justCompleted}
+          levelTrack={proto.levelTrack}
+          onAccept={() => setShowUpsell(false)}
+          onDismiss={dismissUpsell}
+        />
       )}
     </Phone>
   );

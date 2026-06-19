@@ -265,6 +265,11 @@ export const OnboardingScreen = ({
             step_id: stepId,
             username_length: name.length,
           });
+          trackClientEvent(AnalyticsEvent.UserOnboarded, {
+            step_index: step,
+            step_id: stepId,
+            username_length: name.length,
+          });
           onPlay();
           proto.startLevel();
         });
