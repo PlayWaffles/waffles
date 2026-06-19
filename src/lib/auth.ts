@@ -10,6 +10,7 @@ import { Prisma, UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { generateInviteCode } from "@/lib/utils";
+import { randomAvatarId } from "@/lib/avatars";
 import { parseCookieHeader } from "@/lib/platform/server";
 import { getPublicClient } from "@/lib/chain";
 
@@ -146,6 +147,9 @@ async function ensureUser(
     try {
       const user = await prisma.user.create({
         data: {
+          // Random avatar so every new player gets a distinct pfp, not the
+          // default Waffles mascot. `createData` can still override it.
+          avatarId: randomAvatarId(),
           ...createData,
           inviteCode: generateInviteCode(),
         } as Prisma.UserCreateInput,

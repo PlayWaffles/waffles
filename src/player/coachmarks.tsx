@@ -74,21 +74,21 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "compete-ladder",
       title: "Climb the leagues",
-      body: "Win tournaments to earn trophies and rise through the tiers. Finish each season high to move up.",
+      body: "Earn points by playing levels and tournaments to climb the league tiers. Finish each season high to move up — bottom finishers drop down.",
       placement: "bottom",
     },
   ],
   shop: [
     {
       title: "Power up your game",
-      body: "Spend tickets on power-ups and cosmetics — or top up your ticket balance right here.",
+      body: "Spend Syrup on lives, power-ups and cosmetics — earn more by playing every day.",
     },
   ],
   profile: [
     {
       target: "profile-tickets",
-      title: "These are your tickets",
-      body: "Tickets get you into tournaments. Earn them from levels and top finishes, or grab more in the Shop.",
+      title: "This is your Syrup",
+      body: "Syrup is your in-app currency. Earn it from daily rewards, levels and missions, then spend it on lives, power-ups and cosmetics.",
       placement: "bottom",
     },
   ],
@@ -96,7 +96,7 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "leaderboard-you",
       title: "That's you",
-      body: "Score points in tournaments and missions to climb your league's leaderboard before the season ends.",
+      body: "Score points by playing levels and tournaments to climb your league's leaderboard before the season ends.",
       placement: "top",
     },
   ],
@@ -112,7 +112,7 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "missions-daily",
       title: "Daily missions",
-      body: "Complete these for big XP — they reset every 24 hours. The Partners tab has offers that pay out bonus tickets.",
+      body: "Complete these for big XP — they reset every 24 hours. The Partners tab has offers that pay out bonus Syrup.",
       placement: "bottom",
     },
   ],

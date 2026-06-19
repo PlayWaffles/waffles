@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { useProto } from "./state";
 import { playSound, soundManager } from "./sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+import { avatarIdForSeed, isAvatarId, type AvatarId } from "@/lib/avatars";
 
 const ASSETS_BASE = "/images/player";
 const OPTIMIZED_ASSETS_BASE = `${ASSETS_BASE}/optimized`;
@@ -202,6 +203,26 @@ export const TicketIcon = ({ size = 18 }: { size?: number; color?: string }) => 
     />
   );
 };
+
+// Avatar id → image. Pairs with AVATAR_IDS in src/lib/avatars.ts (the server
+// assigns a random id at account creation). `resolveAvatar` falls back to a
+// deterministic pick from a stable seed (username/id) for any user without an
+// assigned avatar, so nobody is left on the default mascot.
+const AVATAR_ASSET: Record<AvatarId, string> = {
+  fox: ASSETS.avatarFox,
+  bear: ASSETS.avatarBear,
+  frog: ASSETS.avatarFrog,
+  panda: ASSETS.avatarPanda,
+  owl: ASSETS.avatarOwl,
+  cat: ASSETS.avatarCat,
+  dog: ASSETS.avatarDog,
+  rabbit: ASSETS.avatarRabbit,
+};
+
+export function resolveAvatar(avatarId: string | null | undefined, seed: string): string {
+  const id = isAvatarId(avatarId) ? avatarId : avatarIdForSeed(seed || "waffles");
+  return AVATAR_ASSET[id];
+}
 
 export const FlameIcon = ({ size = 16 }: { size?: number }) => (
   <PixelImg
