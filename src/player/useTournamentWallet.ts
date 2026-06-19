@@ -41,6 +41,7 @@ const blog = (msg: string, data?: unknown) => {
 // Approve a buffer (not the exact fee) so the allowance covers several entries
 // before the player has to approve again — mirrors v1's MAX_TICKET_APPROVAL.
 const MAX_ENTRY_APPROVAL_USDC = "10";
+const APPROVE_GAS_LIMIT = BigInt(100_000);
 const BUY_TICKET_GAS_LIMIT = BigInt(245_574);
 const NETWORK_FEE_BUFFER_USDC = "0.002";
 
@@ -149,8 +150,12 @@ export function useTournamentWallet() {
           }) as Promise<bigint>,
           publicClient.getGasPrice(),
         ]);
+        const needsApproval = allowance < amount;
+        const gasLimit = needsApproval
+          ? APPROVE_GAS_LIMIT + BUY_TICKET_GAS_LIMIT
+          : BUY_TICKET_GAS_LIMIT;
         const estimatedFee = platform === "MINIPAY"
-          ? tokenUnitsForGas(BUY_TICKET_GAS_LIMIT, gasPrice)
+          ? tokenUnitsForGas(gasLimit, gasPrice)
           : BigInt(0);
         const feeBuffer = platform === "MINIPAY"
           ? parseUnits(NETWORK_FEE_BUFFER_USDC, PAYMENT_TOKEN_DECIMALS)
@@ -161,6 +166,8 @@ export function useTournamentWallet() {
           balance: balance.toString(),
           neededAllowance: amount.toString(),
           neededBalance: neededBalance.toString(),
+          needsApproval,
+          gasLimit: gasLimit.toString(),
           estimatedFee: estimatedFee.toString(),
           feeBuffer: feeBuffer.toString(),
         });
@@ -171,7 +178,7 @@ export function useTournamentWallet() {
 
         // Approve only when the standing allowance can't cover this entry; then
         // approve a buffer (≥ a few entries) so it's not a per-entry pop-up.
-        if (allowance < amount) {
+        if (needsApproval) {
           onStep?.("approving");
           const approvalAmount = parseUnits(MAX_ENTRY_APPROVAL_USDC, PAYMENT_TOKEN_DECIMALS);
           const approveAmount = approvalAmount > amount ? approvalAmount : amount;
