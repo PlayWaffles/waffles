@@ -289,6 +289,14 @@
   0%   { opacity: 0.55; }
   100% { opacity: 0; }
 }
+/* Entry-confirmed splash: fades in fast, holds, fades out — a one-shot beat
+   that acknowledges a tournament payment before the lobby is revealed. */
+@keyframes waffles-v2-enter-splash {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  76%  { opacity: 1; }
+  100% { opacity: 0; }
+}
 /* Shockwave: a maple ring that expands once and fades, selling the impact. */
 @keyframes waffles-v2-lvl-shock {
   0%   { transform: translate(-50%, -50%) scale(0.2); opacity: 0.8; }

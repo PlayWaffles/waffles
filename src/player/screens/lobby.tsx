@@ -1,14 +1,26 @@
 "use client";
 
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { TOURNAMENT_PRIZES, TOURNAMENT_TOP_PRIZE, useProto } from "../state";
-import { ASSETS, Phone, PixelImg, TicketIcon, TopHeader } from "../shared";
+import { ASSETS, Confetti, Phone, PixelImg, TicketIcon, TopHeader } from "../shared";
 import { useTheme } from "../theme";
+import { playSound } from "../sound";
 
 export const LobbyScreen = () => {
   const proto = useProto();
   const theme = useTheme();
   const tickets = proto.tickets;
+
+  // "You're in!" confirmation beat — the lobby is only reached straight after a
+  // successful on-chain entry, so on mount we acknowledge the payment with a
+  // one-shot splash before revealing the lobby. Stops the flow feeling like the
+  // wallet signature silently teleported the player into a countdown.
+  const [entryFlash, setEntryFlash] = useState(true);
+  useEffect(() => {
+    playSound("purchase");
+    const t = setTimeout(() => setEntryFlash(false), 1900);
+    return () => clearTimeout(t);
+  }, []);
   const sec = proto.countdownSec;
   const mm = String(Math.floor(sec / 60)).padStart(2, "0");
   const ss = String(sec % 60).padStart(2, "0");
@@ -92,6 +104,20 @@ export const LobbyScreen = () => {
           <div className="cta" style={{ cursor: "default" }} aria-live="polite">YOU&apos;RE IN — GOOD LUCK</div>
         </div>
       </div>
+
+      {entryFlash && (
+        <div aria-live="assertive" style={{ position: "absolute", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(10,10,12,.84)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", animation: "waffles-v2-enter-splash 1.9s ease forwards", pointerEvents: "none" }}>
+          <Confetti pieces={40} />
+          <div aria-hidden style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 260, height: 260, background: "radial-gradient(circle, rgba(255,201,49,.4), transparent 65%)" }} />
+          <div style={{ animation: "waffles-v2-lvl-trophy-in .6s cubic-bezier(0.34,1.56,0.64,1) both" }}>
+            <div style={{ width: 96, height: 96, borderRadius: 28, background: "rgba(255,201,49,.16)", border: "2px solid rgba(255,201,49,.5)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 40px rgba(255,201,49,.4)" }}>
+              <TicketIcon size={52} />
+            </div>
+          </div>
+          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, color: "#FFC931", marginTop: 18, textShadow: "0 0 24px rgba(255,201,49,.45)", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .25s both" }}>YOU&apos;RE IN!</div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 6, animation: "waffles-v2-lvl-rise .4s ease-out .4s both" }}>Entry confirmed — get ready</div>
+        </div>
+      )}
     </Phone>
   );
 };
