@@ -1,9 +1,9 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { isDailyBonusAvailable, TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, usdtLabel, useProto } from "../state";
+import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { getTournament, loadCurrentTournamentBoard, loadMissions } from "@/actions/player";
+import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/actions/player";
 import type { TournamentBoard } from "@/lib/player/tournamentGames";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
@@ -279,6 +279,9 @@ export const HomeScreen = () => {
   // current round's close time (for the live countdown).
   const [fee, setFee] = useState<{ entryFee: number; standardFee: number; firstEntry: boolean } | null>(null);
   const [closeAt, setCloseAt] = useState<number | null>(null);
+  // Live, DB-backed details for the hero card (title, format, prize pool). Null
+  // until the round loads — copy falls back to the themed defaults meanwhile.
+  const [round, setRound] = useState<TournamentRound | null>(null);
   const now = useNow();
   useEffect(() => {
     let active = true;
@@ -287,6 +290,7 @@ export const HomeScreen = () => {
         if (!active || !t) return;
         setFee({ entryFee: t.entryFee, standardFee: t.standardFee, firstEntry: t.firstEntry });
         setCloseAt(new Date(t.game.endsAt).getTime());
+        setRound(t.round);
       })
       .catch(() => {});
     return () => { active = false; };
@@ -360,9 +364,20 @@ export const HomeScreen = () => {
   }, [proto.tournamentGameId]);
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
-  const fieldSize = board && board.fieldSize > 0 ? board.fieldSize : TOURNAMENT_FIELD_SIZE;
+  // Real entrant count — board standings first, then the game's stored
+  // playerCount; no simulated field.
+  const fieldSize = board && board.fieldSize > 0 ? board.fieldSize : (round?.playerCount ?? 0);
 
-  const lastPct = lastRank ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
+  // Headline prize: the #1 finisher's projected cut of the *live* pool (server
+  // computes it with the real bracket math), floored at the advertised
+  // guarantee so a near-empty round still reads as a deal. Once the live cut
+  // overtakes the floor, the number tracks the pool exactly. Falls back to the
+  // advertised top prize until the round loads.
+  const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
+  const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
+  const prizeGuaranteed = round != null && prizeTickets > liveTopTickets;
+
+  const lastPct = lastRank && fieldSize > 0 ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
 
   // Game-card impression — the Top-of-the-Hour tournament is the home hero, so
   // log that the player saw it (one per mount) with the entry state that drives
@@ -427,8 +442,12 @@ export const HomeScreen = () => {
               </div>
             )}
           </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 25, lineHeight: 1.05, color: "#fff" }}>{theme.copy.liveTitle}</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,.55)", fontWeight: 600, marginTop: 2 }}>{theme.copy.liveTagline}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 25, lineHeight: 1.05, color: "#fff" }}>{round?.title || theme.copy.liveTitle}</div>
+          <div style={{ fontSize: 13, color: "rgba(255,255,255,.55)", fontWeight: 600, marginTop: 2 }}>
+            {round
+              ? `${round.category} trivia · ${round.questionCount} question${round.questionCount === 1 ? "" : "s"} · ${round.roundSeconds}s`
+              : theme.copy.liveTagline}
+          </div>
 
           {/* Accent lines: the personal "beat your last finish" hook, plus the
               conditional 2× XP first-game bonus (relocated off the chip row). */}
@@ -462,9 +481,9 @@ export const HomeScreen = () => {
             <div style={{ textAlign: "right" }}>
               <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>WIN UP TO</div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 23, color: "#fff", display: "inline-flex", alignItems: "center", gap: 4, lineHeight: 1.1 }}>
-                <TicketIcon size={18} />{TOURNAMENT_TOP_PRIZE}
+                <TicketIcon size={18} />{prizeTickets}
               </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(TOURNAMENT_TOP_PRIZE)} · {fieldSize.toLocaleString()} in</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(prizeTickets)}{prizeGuaranteed ? " guaranteed" : ""} · {fieldSize.toLocaleString()} in</div>
             </div>
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>

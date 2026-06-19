@@ -18,6 +18,7 @@ import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
 import { Prisma, QuestionKind, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
+import { displayCategory } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
@@ -51,6 +52,7 @@ const GAME_QUESTION_SELECT = {
   minefield: true,
   kicker: true,
   clues: true,
+  category: true,
   durationSec: true,
   mediaUrl: true,
 } as const;
@@ -145,6 +147,8 @@ export type TournamentGame = {
   onchainId: string | null;
   gameNumber: number;
   platform: UserPlatform;
+  title: string;
+  theme: string;
   startsAt: Date;
   endsAt: Date;
   ticketsOpenAt: Date | null;
@@ -167,6 +171,8 @@ export async function currentTournamentGame(
       onchainId: true,
       gameNumber: true,
       platform: true,
+      title: true,
+      theme: true,
       startsAt: true,
       endsAt: true,
       ticketsOpenAt: true,
@@ -181,6 +187,8 @@ export async function currentTournamentGame(
     onchainId: game.onchainId,
     gameNumber: game.gameNumber,
     platform: game.platform,
+    title: game.title,
+    theme: game.theme,
     startsAt: game.startsAt,
     endsAt: game.endsAt,
     ticketsOpenAt: game.ticketsOpenAt,
@@ -193,10 +201,15 @@ export async function currentTournamentGame(
 /** The round's questions in client shape (answer keys included for instant
  *  feedback), drawn from the game's own assigned questions. */
 export async function getTournamentClientQuestions(gameId: string) {
-  const rows = await gameQuestions(gameId);
+  const [rows, game] = await Promise.all([
+    gameQuestions(gameId),
+    prisma.game.findUnique({ where: { id: gameId }, select: { theme: true } }),
+  ]);
+  const theme = game?.theme ?? "GENERAL";
   return rows.map((q) => ({
     id: q.id,
-    cat: q.kicker ?? "Trivia",
+    // The subject (topic) — not the format. Format stays in `kicker`.
+    cat: displayCategory(q.category, theme),
     q: q.content,
     answers: q.options,
     correct: q.correctIndex,
