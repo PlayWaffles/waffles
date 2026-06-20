@@ -363,7 +363,7 @@ export async function sendResultNotifications(gameId: string) {
   // Get game info for templates
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    select: { gameNumber: true, title: true, theme: true, prizePool: true },
+    select: { gameNumber: true, title: true, theme: true, prizePool: true, platform: true },
   });
 
   if (!game) {
@@ -416,7 +416,30 @@ export async function sendResultNotifications(gameId: string) {
     await sendBatch(payload, nonWinners.map((e) => e.userId));
   }
 
+  // Warm non-buyers: a FOMO recap to pull them into the next round. Scoped to
+  // players who actually opened the app and played a free level in the last 24h
+  // (LevelProgress activity) but skipped THIS round — not a blast to the whole
+  // base. Entrants are excluded so nobody gets both a result and a "wrapped".
+  const entrantIds = allEntries.map((e) => e.userId);
+  const WARM_WINDOW_MS = 24 * 60 * 60 * 1000;
+  const warmProgress = await prisma.levelProgress.findMany({
+    where: {
+      updatedAt: { gte: new Date(Date.now() - WARM_WINDOW_MS) },
+      userId: { notIn: entrantIds.length > 0 ? entrantIds : ["__none__"] },
+      user: { isBanned: false, platform: game.platform },
+    },
+    select: { userId: true },
+    distinct: ["userId"],
+    take: 5000,
+  });
+  const warmNonBuyers = Array.from(new Set(warmProgress.map((p) => p.userId)));
+  if (warmNonBuyers.length > 0) {
+    const template = postGame.roundWrap(game.gameNumber, meta);
+    const payload = buildPayload(template, gameId, "pregame");
+    await sendBatch(payload, warmNonBuyers);
+  }
+
   console.log(
-    `[Lifecycle] Sent notifications: ${winners.length} winners, ${nonWinners.length} non-winners`,
+    `[Lifecycle] Sent notifications: ${winners.length} winners, ${nonWinners.length} non-winners, ${warmNonBuyers.length} warm non-buyers`,
   );
 }

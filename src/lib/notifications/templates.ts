@@ -236,6 +236,17 @@ export const postGame = {
       : "See who won and where you placed.",
   }),
 
+  /** FOMO recap for warm players who SKIPPED this round — drives them into the
+   *  next one. Leads with the pool that just paid out, since real money is the
+   *  hook. */
+  roundWrap: (gameNumber: number, meta?: GameMeta): NotificationTemplate => ({
+    title: `${gameLabel(gameNumber, meta)} wrapped`,
+    body:
+      meta?.prizePool != null && meta.prizePool > 0
+        ? `$${meta.prizePool.toFixed(2)} just went to the top 15. The next round's live — don't sit this one out.`
+        : "The top 15 just split the pool. A new round's live — get in this time.",
+  }),
+
   /** Reminder for unclaimed prizes */
   unclaimed: (gameNumber: number, amount: string): NotificationTemplate => ({
     title: `$${amount} waiting for you`,
