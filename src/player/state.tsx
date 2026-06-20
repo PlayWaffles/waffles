@@ -913,9 +913,15 @@ export function ProtoProvider({
         // the selection). Fire-and-forget; captures every answered level
         // question, whether the level is ultimately completed or failed.
         if (q.id) void recordLevelPlay([{ id: q.id, selection, responseMs }]);
+        // The very first level (level 1) is a GUARANTEED WIN — hearts never run
+        // out, so a brand-new user can't fail their first experience and carries
+        // that momentum straight into the post-level tournament upsell.
+        const unfailable = state.levelByTrack[state.levelTrack] === 1;
         // Shield absorbs one wrong answer instead of costing a heart.
         const shielded = wrong && state.shieldActive;
-        const newHearts = wrong && !state.shieldActive ? state.hearts - 1 : state.hearts;
+        const newHearts = wrong && !state.shieldActive
+          ? Math.max(unfailable ? 1 : 0, state.hearts - 1)
+          : state.hearts;
         if (newHearts <= 0) {
           track(AnalyticsEvent.LifeLost, {
             reason: "level_failed",
