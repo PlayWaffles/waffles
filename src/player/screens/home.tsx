@@ -8,6 +8,7 @@ import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
+import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const XP_PER_LEVEL = 500;
@@ -69,6 +70,9 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 
 const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, prizeGuaranteed }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null; round: TournamentRound | null; prizeTickets: number; prizeGuaranteed: boolean }) => {
   const usd = (n: number) => `$${n.toFixed(2)}`;
+  // MiniPay: if the wallet can't cover the entry, swap JOIN for a one-tap
+  // "Add Cash" deeplink instead of dead-ending at an insufficient-balance error.
+  const { needsTopUp, openAddCash, isMiniPay } = useMiniPayTopUp(fee?.entryFee);
   return (
     <Sheet onClose={onClose} ariaLabel="Enter the Top of the Hour tournament">
       {(close) => (
@@ -120,14 +124,30 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       )}
 
       {error && (
-        <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 12 }}>{error}</div>
+        <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 12 }}>
+          {error}
+          {isMiniPay && (
+            <button type="button" onClick={openAddCash} style={{ display: "block", margin: "6px auto 0", background: "none", border: "none", color: "var(--maple-500)", fontWeight: 800, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Add Cash in MiniPay →</button>
+          )}
+        </div>
+      )}
+
+      {/* Proactive: detected the wallet can't cover entry — top up before tapping. */}
+      {needsTopUp && !error && (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,201,49,.10)", border: "1px solid rgba(255,201,49,.3)", borderRadius: 12, padding: "9px 12px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+          <TicketIcon size={14} /> Not enough USDT to enter — add cash and you&apos;re in.
+        </div>
       )}
 
       <div style={{ display: "flex", gap: 10 }}>
         <Button variant="ghost" flex={1} onClick={pending ? () => {} : close} disabled={pending}>CANCEL</Button>
-        <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Confirm tournament entry in your wallet">
-          {pending ? (stepLabel ?? "Working…") : fee ? `JOIN · ${usd(fee.entryFee)}` : "JOIN"}
-        </Button>
+        {needsTopUp ? (
+          <Button flex={1.4} onClick={openAddCash} ariaLabel="Add cash in MiniPay to play">ADD CASH TO PLAY</Button>
+        ) : (
+          <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Confirm tournament entry in your wallet">
+            {pending ? (stepLabel ?? "Working…") : fee ? `JOIN · ${usd(fee.entryFee)}` : "JOIN"}
+          </Button>
+        )}
       </div>
       </>
       )}

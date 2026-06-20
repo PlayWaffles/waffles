@@ -17,6 +17,7 @@ import {
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
 import { getTournament, type TournamentRound } from "@/actions/player";
 import { txStepLabel } from "../useTournamentWallet";
+import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
@@ -92,6 +93,8 @@ const TournamentUpsellSheet = ({
   // cancels surface inline so the player can retry or back out.
   const [entering, setEntering] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
+  // MiniPay: offer a one-tap Add Cash deeplink when the wallet can't cover entry.
+  const { needsTopUp, openAddCash, isMiniPay } = useMiniPayTopUp(fee?.entryFee);
   const enter = async () => {
     trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellAccepted, {
       offer: "live_tournament",
@@ -160,16 +163,33 @@ const TournamentUpsellSheet = ({
         )}
 
         {entryError && (
-          <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 10 }}>{entryError}</div>
+          <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 10 }}>
+            {entryError}
+            {isMiniPay && (
+              <button type="button" onClick={openAddCash} style={{ display: "block", margin: "6px auto 0", background: "none", border: "none", color: "var(--maple-500)", fontWeight: 800, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Add Cash in MiniPay →</button>
+            )}
+          </div>
         )}
 
-        <button type="button" className="cta maple" onClick={entering ? undefined : () => void enter()} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...(entering ? { opacity: 0.85, cursor: "default" } : null) }}>
-          {entering
-            ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Working…")
-            : entryError
-              ? `RETRY · ${fee ? usd(fee.entryFee) : ""}`.trim()
-              : fee ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "ENTER LIVE TOURNAMENT"}
-        </button>
+        {needsTopUp && !entryError && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "rgba(255,201,49,.10)", border: "1px solid rgba(255,201,49,.3)", borderRadius: 12, padding: "9px 12px", marginBottom: 10, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+            <TicketIcon size={14} /> Not enough USDT — add cash and you&apos;re in.
+          </div>
+        )}
+
+        {needsTopUp && !entering ? (
+          <button type="button" className="cta maple" onClick={openAddCash} style={{ width: "100%", marginBottom: 6 }}>
+            ADD CASH TO PLAY
+          </button>
+        ) : (
+          <button type="button" className="cta maple" onClick={entering ? undefined : () => void enter()} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...(entering ? { opacity: 0.85, cursor: "default" } : null) }}>
+            {entering
+              ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Working…")
+              : entryError
+                ? `RETRY · ${fee ? usd(fee.entryFee) : ""}`.trim()
+                : fee ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "ENTER LIVE TOURNAMENT"}
+          </button>
+        )}
         <button type="button" onClick={entering ? undefined : close} disabled={entering} style={{ width: "100%", background: "transparent", border: "none", color: "var(--ink-faint)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 12, cursor: entering ? "default" : "pointer", padding: 6, opacity: entering ? 0.5 : 1 }}>
           Keep practicing
         </button>
