@@ -5,7 +5,51 @@ import { fileURLToPath } from "node:url";
 
 const workspaceRoot = path.dirname(fileURLToPath(import.meta.url));
 
+const deploymentIdEnvNames = [
+  "NEXT_DEPLOYMENT_ID",
+  "DEPLOYMENT_VERSION",
+  "GIT_SHA",
+  "GIT_COMMIT_SHA",
+  "COMMIT_SHA",
+  "SOURCE_COMMIT",
+  "VERCEL_GIT_COMMIT_SHA",
+  "RAILWAY_GIT_COMMIT_SHA",
+  "CF_PAGES_COMMIT_SHA",
+  "HEROKU_SLUG_COMMIT",
+] as const;
+
+function getDeploymentId() {
+  for (const name of deploymentIdEnvNames) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "Missing deployment identifier. Set NEXT_DEPLOYMENT_ID, DEPLOYMENT_VERSION, or GIT_SHA to enable Next.js rolling-deploy version skew protection.",
+    );
+  }
+
+  return "development";
+}
+
+const deploymentId = getDeploymentId();
+
+function assertServerActionsEncryptionKey() {
+  if (process.env.NODE_ENV !== "production") return;
+
+  if (!process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY?.trim()) {
+    throw new Error(
+      "Missing NEXT_SERVER_ACTIONS_ENCRYPTION_KEY. Set the same value for every Dokploy build and runtime pod so Server Actions remain valid across rolling deploys.",
+    );
+  }
+}
+
+assertServerActionsEncryptionKey();
+
 const nextConfig: NextConfig = {
+  deploymentId,
+  generateBuildId: async () => deploymentId,
   allowedDevOrigins: ["*.outray.app"],
   turbopack: {
     root: workspaceRoot,
