@@ -125,6 +125,15 @@ export async function getLevelQuestions(
   return getLevelClientQuestions(track, level);
 }
 
+/** The player's recent settled tournament results — drives the return-pop result
+ *  modal + announcement cards (the only way MiniPay users learn they placed/won,
+ *  since there's no push channel). */
+export async function loadResults(): Promise<tournamentSvc.PlayerResult[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  return tournamentSvc.loadRecentResults(user.id);
+}
+
 /** Record per-question stats for a solo level answer (mode "level"). The server
  *  re-scores from the selection, so client-reported correctness can't skew it.
  *  Auth-gated to limit spam; best-effort (never throws to the caller). */

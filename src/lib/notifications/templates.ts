@@ -36,10 +36,11 @@ export interface GameMeta {
 /** Helper to format game number with leading zeros */
 const formatGameNum = (n: number) => String(n).padStart(3, "0");
 
-/** The game's display name, e.g. "World Cup Bowl" — defaults to "Waffles". */
-const gameName = (meta?: GameMeta) => meta?.title?.trim() || "Waffles";
-/** Full labelled game, e.g. "World Cup Bowl #010". */
-const gameLabel = (n: number, meta?: GameMeta) => `${gameName(meta)} #${formatGameNum(n)}`;
+/** Full labelled game, e.g. "World Cup Bowl #010". The stored title already
+ *  carries the number (generateGameTitle bakes it in), so use it verbatim and
+ *  only synthesize "Waffles #NNN" when no title is supplied. */
+const gameLabel = (n: number, meta?: GameMeta) =>
+  meta?.title?.trim() || `Waffles #${formatGameNum(n)}`;
 
 /** Helper to format spots left */
 const spotsText = (left: number) =>
