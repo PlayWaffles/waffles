@@ -26,6 +26,7 @@ import {
 import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { getGamePhase } from "@/lib/types";
+import { getDisplayName } from "@/lib/address";
 import {
     buildPlatformWhere,
     buildPaidProductionEntryWhere,
@@ -93,6 +94,18 @@ type EntrySourceSegment = {
     startRate: number;
     noShows: number;
     noShowRate: number;
+};
+
+type LevelTrackKey = "STANDARD" | "WORLD_CUP";
+
+type LevelProgressionPlayer = {
+    userId: string;
+    name: string;
+    platform: string;
+    highestLevel: number;
+    standardLevel: number | null;
+    worldCupLevel: number | null;
+    updatedAt: Date;
 };
 
 type GameplayGameFilterOption = {
@@ -1640,6 +1653,110 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
     };
 }
 
+async function getLevelProgressionData(start: Date, end: Date, platform?: string) {
+    const userWhere = {
+        ...buildPlatformWhere(platform),
+        isBanned: false,
+    };
+
+    const [progressRows, activeLevelers] = await Promise.all([
+        prisma.levelProgress.findMany({
+            where: { user: userWhere },
+            orderBy: [{ level: "desc" }, { updatedAt: "desc" }],
+            select: {
+                userId: true,
+                track: true,
+                level: true,
+                updatedAt: true,
+                user: {
+                    select: {
+                        username: true,
+                        wallet: true,
+                        platform: true,
+                    },
+                },
+            },
+            take: 10000,
+        }),
+        prisma.levelProgress.findMany({
+            where: {
+                updatedAt: { gte: start, lte: end },
+                user: userWhere,
+            },
+            select: { userId: true },
+            distinct: ["userId"],
+        }),
+    ]);
+
+    const playerMap = new Map<string, LevelProgressionPlayer>();
+    const trackLeaders = new Map<LevelTrackKey, LevelProgressionPlayer>();
+
+    for (const row of progressRows) {
+        const existing = playerMap.get(row.userId);
+        const updatedAt = existing && existing.updatedAt > row.updatedAt
+            ? existing.updatedAt
+            : row.updatedAt;
+        const standardLevel = row.track === "STANDARD"
+            ? row.level
+            : existing?.standardLevel ?? null;
+        const worldCupLevel = row.track === "WORLD_CUP"
+            ? row.level
+            : existing?.worldCupLevel ?? null;
+        const highestLevel = Math.max(
+            existing?.highestLevel ?? 0,
+            row.level,
+        );
+        const player: LevelProgressionPlayer = {
+            userId: row.userId,
+            name: getDisplayName(row.user),
+            platform: row.user.platform,
+            highestLevel,
+            standardLevel,
+            worldCupLevel,
+            updatedAt,
+        };
+
+        playerMap.set(row.userId, player);
+
+        const track = row.track as LevelTrackKey;
+        const currentLeader = trackLeaders.get(track);
+        if (!currentLeader || row.level > (track === "STANDARD"
+            ? currentLeader.standardLevel ?? 0
+            : currentLeader.worldCupLevel ?? 0)) {
+            trackLeaders.set(track, player);
+        }
+    }
+
+    const players = Array.from(playerMap.values()).sort((a, b) =>
+        b.highestLevel - a.highestLevel || b.updatedAt.getTime() - a.updatedAt.getTime()
+    );
+    const levelBuckets = [
+        { range: "1-5", min: 1, max: 5 },
+        { range: "6-10", min: 6, max: 10 },
+        { range: "11-20", min: 11, max: 20 },
+        { range: "21-30", min: 21, max: 30 },
+        { range: "31-50", min: 31, max: 50 },
+        { range: "51+", min: 51, max: Infinity },
+    ].map(({ range, min, max }) => ({
+        range,
+        count: players.filter((player) => player.highestLevel >= min && player.highestLevel <= max).length,
+    }));
+    const totalHighestLevels = players.reduce((sum, player) => sum + player.highestLevel, 0);
+
+    return {
+        highestPlayer: players[0] ?? null,
+        activeLevelers: activeLevelers.length,
+        trackedPlayers: players.length,
+        avgHighestLevel: players.length > 0 ? totalHighestLevels / players.length : 0,
+        trackLeaders: {
+            standard: trackLeaders.get("STANDARD") ?? null,
+            worldCup: trackLeaders.get("WORLD_CUP") ?? null,
+        },
+        levelBuckets,
+        topPlayers: players.slice(0, 10),
+    };
+}
+
 // ============================================================
 // PAGE COMPONENT
 // ============================================================
@@ -1715,11 +1832,12 @@ async function AnalyticsContent({
         return <GameplayTab data={gameplay} range={range} platform={platform} />;
     }
     if (activeTab === "players") {
-        const [revenue, retention] = await Promise.all([
+        const [revenue, retention, levels] = await Promise.all([
             getRevenueData(start, end, platform),
             getRetentionData(start, end, platform, range),
+            getLevelProgressionData(start, end, platform),
         ]);
-        return <RevenueRetentionTab revenue={revenue} retention={retention} />;
+        return <RevenueRetentionTab revenue={revenue} retention={retention} levels={levels} />;
     }
     return null;
 }
@@ -2502,9 +2620,11 @@ function GameplayTab({
 function RevenueRetentionTab({
     revenue,
     retention,
+    levels,
 }: {
     revenue: Awaited<ReturnType<typeof getRevenueData>>;
     retention: Awaited<ReturnType<typeof getRetentionData>>;
+    levels: Awaited<ReturnType<typeof getLevelProgressionData>>;
 }) {
     return (
         <div className="space-y-6">
@@ -2558,6 +2678,8 @@ function RevenueRetentionTab({
             {/* Top games by revenue */}
             <GamePerformanceTable games={revenue.topGames} />
 
+            <LevelProgressionPanel data={levels} />
+
             {/* Retention deep-dive */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Streak distribution */}
@@ -2604,6 +2726,132 @@ function RevenueRetentionTab({
                             );
                         })}
                     </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function formatLevelTrack(track: LevelTrackKey) {
+    return track === "WORLD_CUP" ? "World Cup" : "Standard";
+}
+
+function LevelLeaderCard({
+    title,
+    player,
+    level,
+    color,
+}: {
+    title: string;
+    player: LevelProgressionPlayer | null;
+    level: number | null;
+    color: string;
+}) {
+    return (
+        <div className="rounded-xl bg-white/[0.03] border border-white/8 p-4">
+            <div className="text-xs uppercase tracking-wider text-white/40">{title}</div>
+            <div className="mt-3 text-2xl font-bold font-body" style={{ color }}>
+                {level ? `Level ${level}` : "No data"}
+            </div>
+            <div className="mt-1 truncate text-sm text-white/65">
+                {player ? `${player.name} · ${player.platform}` : "No player yet"}
+            </div>
+        </div>
+    );
+}
+
+function LevelProgressionPanel({
+    data,
+}: {
+    data: Awaited<ReturnType<typeof getLevelProgressionData>>;
+}) {
+    const maxBucketCount = Math.max(...data.levelBuckets.map((bucket) => bucket.count), 1);
+
+    return (
+        <div className="rounded-2xl border border-white/10 p-6 space-y-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h3 className="text-lg font-semibold text-white font-display">Level Progression</h3>
+                    <p className="text-sm text-white/50">
+                        Current level leaders and progression depth across solo tracks
+                    </p>
+                </div>
+                {data.highestPlayer ? (
+                    <div className="text-right">
+                        <div className="text-xs uppercase tracking-wider text-white/40">Highest current level</div>
+                        <div className="mt-1 text-2xl font-bold text-[#FFC931] font-body">
+                            {data.highestPlayer.name} · Level {data.highestPlayer.highestLevel}
+                        </div>
+                    </div>
+                ) : null}
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <MiniStat label="Highest Level" value={(data.highestPlayer?.highestLevel ?? 0).toLocaleString()} color="#FFC931" tooltip="Highest current level on any solo progression track." />
+                <MiniStat label="Tracked Players" value={data.trackedPlayers.toLocaleString()} color="#00CFF2" tooltip="Non-banned players with at least one LevelProgress row." />
+                <MiniStat label="Leveled In Range" value={data.activeLevelers.toLocaleString()} color="#14B985" tooltip="Unique players whose level progress changed inside the selected date range." />
+                <MiniStat label="Avg High Level" value={data.avgHighestLevel.toFixed(1)} color="#FB72FF" tooltip="Average of each tracked player's highest current level across tracks." />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                    <LevelLeaderCard
+                        title={`${formatLevelTrack("STANDARD")} leader`}
+                        player={data.trackLeaders.standard}
+                        level={data.trackLeaders.standard?.standardLevel ?? null}
+                        color="#FFC931"
+                    />
+                    <LevelLeaderCard
+                        title={`${formatLevelTrack("WORLD_CUP")} leader`}
+                        player={data.trackLeaders.worldCup}
+                        level={data.trackLeaders.worldCup?.worldCupLevel ?? null}
+                        color="#00CFF2"
+                    />
+                </div>
+
+                <div className="rounded-xl bg-white/[0.03] border border-white/8 p-4">
+                    <h4 className="text-sm font-semibold text-white font-display mb-4">Highest Level Distribution</h4>
+                    <div className="space-y-3">
+                        {data.levelBuckets.map((bucket) => {
+                            const widthPct = (bucket.count / maxBucketCount) * 100;
+                            return (
+                                <div key={bucket.range} className="flex items-center gap-3">
+                                    <span className="w-12 text-right text-sm text-white/55 font-display">{bucket.range}</span>
+                                    <div className="h-6 flex-1 overflow-hidden rounded-lg bg-white/5">
+                                        <div
+                                            className="h-full rounded-lg bg-[#14B985]/30"
+                                            style={{ width: `${Math.max(widthPct, bucket.count > 0 ? 3 : 0)}%` }}
+                                        />
+                                    </div>
+                                    <span className="w-10 text-sm text-white/80 font-body">{bucket.count}</span>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            </div>
+
+            <div className="overflow-x-auto rounded-xl border border-white/8">
+                <div className="grid min-w-[560px] grid-cols-[minmax(140px,1fr)_90px_80px_80px_110px] gap-3 border-b border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-white/40">
+                    <span>Player</span>
+                    <span>Platform</span>
+                    <span className="text-right">Standard</span>
+                    <span className="text-right">World Cup</span>
+                    <span className="text-right">Highest</span>
+                </div>
+                <div className="divide-y divide-white/8">
+                    {data.topPlayers.map((player) => (
+                        <div key={player.userId} className="grid min-w-[560px] grid-cols-[minmax(140px,1fr)_90px_80px_80px_110px] items-center gap-3 px-3 py-3 text-xs">
+                            <span className="truncate font-medium text-white/75">{player.name}</span>
+                            <span className="text-white/50">{player.platform}</span>
+                            <span className="text-right font-body text-[#FFC931]">{player.standardLevel ?? "-"}</span>
+                            <span className="text-right font-body text-[#00CFF2]">{player.worldCupLevel ?? "-"}</span>
+                            <span className="text-right font-body text-[#14B985]">Level {player.highestLevel}</span>
+                        </div>
+                    ))}
+                    {data.topPlayers.length === 0 ? (
+                        <div className="px-3 py-5 text-sm text-white/50">No level progress recorded yet.</div>
+                    ) : null}
                 </div>
             </div>
         </div>
