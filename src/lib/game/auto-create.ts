@@ -61,12 +61,36 @@ export interface AutoCreateGameInput {
 }
 
 type QT = Awaited<ReturnType<typeof prisma.questionTemplate.findMany>>[number];
+type AutoQuestionCandidate = {
+  id: string;
+  category: string | null;
+  usageCount: number;
+};
 
-// Build a kind-VARIED question set so a round isn't all multiple-choice: take the
-// least-used of each available non-single format (MULTI/ORDER/SPATIAL) first,
-// then fill the rest with the least-used SINGLE questions, and shuffle so the
-// varied formats don't always land in the same slots. (Least-used-first rotates
-// the bank over time; usageCount is bumped when a template is assigned.)
+function pickDiverseQuestionIds(candidates: AutoQuestionCandidate[]) {
+  const pickedIds: string[] = [];
+  const seenCat = new Set<string>();
+
+  for (const candidate of candidates) {
+    if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
+    const category = candidate.category ?? "_general";
+    if (!seenCat.has(category)) {
+      seenCat.add(category);
+      pickedIds.push(candidate.id);
+    }
+  }
+
+  for (const candidate of candidates) {
+    if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
+    if (!pickedIds.includes(candidate.id)) pickedIds.push(candidate.id);
+  }
+
+  return pickedIds;
+}
+
+// Build a category-varied question set while protecting players from seeing the
+// same templates over and over. Templates that have already appeared in more
+// than one game are held back unless the fresher pool cannot fill the game.
 async function getAutoQuestionTemplates() {
   const orderBy: Prisma.QuestionTemplateOrderByWithRelationInput[] = [
     { usageCount: "asc" },
@@ -81,21 +105,18 @@ async function getAutoQuestionTemplates() {
   const candidates = await prisma.questionTemplate.findMany({
     where: { theme: DEFAULT_GAME_THEME },
     orderBy,
-    select: { id: true, category: true },
+    select: { id: true, category: true, usageCount: true },
   });
-  const seenCat = new Set<string>();
-  const pickedIds: string[] = [];
-  for (const c of candidates) {
-    if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
-    const cat = c.category ?? "_general";
-    if (!seenCat.has(cat)) {
-      seenCat.add(cat);
-      pickedIds.push(c.id);
+  const fresherCandidates = candidates.filter((candidate) => candidate.usageCount <= 1);
+  const repeatedCandidates = candidates.filter((candidate) => candidate.usageCount > 1);
+  const pickedIds = pickDiverseQuestionIds(fresherCandidates);
+
+  if (pickedIds.length < AUTO_QUESTION_COUNT) {
+    const repeatedIds = pickDiverseQuestionIds(repeatedCandidates);
+    for (const id of repeatedIds) {
+      if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
+      if (!pickedIds.includes(id)) pickedIds.push(id);
     }
-  }
-  for (const c of candidates) {
-    if (pickedIds.length >= AUTO_QUESTION_COUNT) break;
-    if (!pickedIds.includes(c.id)) pickedIds.push(c.id);
   }
 
   if (pickedIds.length < AUTO_QUESTION_COUNT) {
