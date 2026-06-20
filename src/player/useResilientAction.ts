@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import {
+  isDeploymentSkewError,
+  reloadForDeploymentSkew,
+} from "@/components/DeploymentSkewReloader";
 
 type Options = { retries?: number; delayMs?: number };
 
@@ -47,7 +51,11 @@ export function useResilientAction<T>(
           if (attempts++ < retries) timer = setTimeout(run, delayMs);
           else setLoading(false);
         })
-        .catch(() => {
+        .catch((error) => {
+          if (isDeploymentSkewError(error)) {
+            reloadForDeploymentSkew();
+            return;
+          }
           if (!active) return;
           if (attempts++ < retries) timer = setTimeout(run, delayMs);
           else setLoading(false);
