@@ -19,8 +19,27 @@ export interface NotificationTemplate {
   body: string;
 }
 
+/**
+ * The live game's details, so a card reads "World Cup Bowl #010" with its real
+ * subject/pool instead of a generic "Waffles #010". All optional — callers that
+ * don't have the row fall back to the plain "Waffles" framing.
+ */
+export interface GameMeta {
+  /** The game's name, e.g. "World Cup Bowl". Falls back to "Waffles". */
+  title?: string;
+  /** Display subject, e.g. "Football" (themeLabel of the game's theme). */
+  category?: string;
+  /** Current prize pool in USDC, for the scarcity/stakes line. */
+  prizePool?: number;
+}
+
 /** Helper to format game number with leading zeros */
 const formatGameNum = (n: number) => String(n).padStart(3, "0");
+
+/** The game's display name, e.g. "World Cup Bowl" — defaults to "Waffles". */
+const gameName = (meta?: GameMeta) => meta?.title?.trim() || "Waffles";
+/** Full labelled game, e.g. "World Cup Bowl #010". */
+const gameLabel = (n: number, meta?: GameMeta) => `${gameName(meta)} #${formatGameNum(n)}`;
 
 /** Helper to format spots left */
 const spotsText = (left: number) =>
@@ -32,17 +51,21 @@ const spotsText = (left: number) =>
 
 export const preGame = {
   /** When a new game is created and open for ticket purchases */
-  gameOpen: (gameNumber: number, spotsLeft?: number, prizePool?: number): NotificationTemplate => ({
-    title: `Waffles #${formatGameNum(gameNumber)} is LIVE`,
+  gameOpen: (gameNumber: number, spotsLeft?: number, prizePool?: number, meta?: GameMeta): NotificationTemplate => ({
+    title: `${gameLabel(gameNumber, meta)} is LIVE`,
     body: spotsLeft != null && prizePool != null
       ? `${spotsLeft} spots. $${prizePool} pot. Go.`
-      : "Tickets are available. Grab yours before they're gone.",
+      : meta?.category
+        ? `${meta.category} trivia is live. Grab your ticket before they're gone.`
+        : "Tickets are available. Grab yours before they're gone.",
   }),
 
   /** When a new game is announced but tickets open later */
-  gameScheduled: (gameNumber: number): NotificationTemplate => ({
-    title: `Waffles #${formatGameNum(gameNumber)} announced`,
-    body: "New game incoming. Tickets drop soon.",
+  gameScheduled: (gameNumber: number, meta?: GameMeta): NotificationTemplate => ({
+    title: `${gameLabel(gameNumber, meta)} announced`,
+    body: meta?.category
+      ? `${meta.category} trivia incoming. Tickets drop soon.`
+      : "New game incoming. Tickets drop soon.",
   }),
 
   /** 24 hours before game starts */
@@ -185,13 +208,13 @@ export const liveGame = {
 
 export const postGame = {
   /** Sent to top 3 winners */
-  winner: (gameNumber: number, rank: number, prize?: string): NotificationTemplate => {
+  winner: (gameNumber: number, rank: number, prize?: string, meta?: GameMeta): NotificationTemplate => {
     const emoji = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
     return {
       title: `#${rank} ${emoji} — You won`,
       body: prize
-        ? `$${prize} is yours from Waffles #${formatGameNum(gameNumber)}. Tap to claim.`
-        : `You placed #${rank} in Waffles #${formatGameNum(gameNumber)}. Tap to see your prize.`,
+        ? `$${prize} is yours from ${gameLabel(gameNumber, meta)}. Tap to claim.`
+        : `You placed #${rank} in ${gameLabel(gameNumber, meta)}. Tap to see your prize.`,
     };
   },
 
@@ -205,9 +228,11 @@ export const postGame = {
   },
 
   /** Sent to all non-winners */
-  results: (gameNumber: number): NotificationTemplate => ({
-    title: `Waffles #${formatGameNum(gameNumber)} results`,
-    body: "See who won and where you placed.",
+  results: (gameNumber: number, meta?: GameMeta): NotificationTemplate => ({
+    title: `${gameLabel(gameNumber, meta)} results`,
+    body: meta?.category
+      ? `${meta.category} trivia is settled. See who won and where you placed.`
+      : "See who won and where you placed.",
   }),
 
   /** Reminder for unclaimed prizes */

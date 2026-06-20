@@ -220,9 +220,12 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
       ticketPrice,
     );
 
+    // Real game details so the card reads "World Cup Bowl #010 announced".
+    const { themeLabel } = await import("@/lib/player/roundQuestions");
+    const meta = { title: game.title, category: themeLabel(game.theme) };
     const notifTemplate = input.ticketsOpenAt
-      ? preGame.gameScheduled(gameNumber)
-      : preGame.gameOpen(gameNumber);
+      ? preGame.gameScheduled(gameNumber, meta)
+      : preGame.gameOpen(gameNumber, undefined, undefined, meta);
 
     const usersToNotify = await prisma.user.findMany({
       where: {

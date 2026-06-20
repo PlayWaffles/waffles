@@ -363,13 +363,22 @@ export async function sendResultNotifications(gameId: string) {
   // Get game info for templates
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    select: { gameNumber: true },
+    select: { gameNumber: true, title: true, theme: true, prizePool: true },
   });
 
   if (!game) {
     console.error("[Lifecycle] Game not found for notifications:", gameId);
     return;
   }
+
+  // Real game details so the card reads "World Cup Bowl #009 results" with its
+  // subject, not a generic "Waffles #009".
+  const { themeLabel } = await import("@/lib/player/roundQuestions");
+  const meta = {
+    title: game.title,
+    category: themeLabel(game.theme),
+    prizePool: game.prizePool ?? undefined,
+  };
 
   const allEntries = await prisma.gameEntry.findMany({
     where: { gameId, user: { isBanned: false } },
@@ -394,7 +403,7 @@ export async function sendResultNotifications(gameId: string) {
   // Winners: personalized with rank
   await Promise.allSettled(
     winners.map((entry) => {
-      const template = postGame.winner(game.gameNumber, entry.rank!);
+      const template = postGame.winner(game.gameNumber, entry.rank!, undefined, meta);
       const payload = buildPayload(template, gameId, "result");
       return sendToUser(entry.userId, payload);
     }),
@@ -402,7 +411,7 @@ export async function sendResultNotifications(gameId: string) {
 
   // Non-winners: batch notification
   if (nonWinners.length > 0) {
-    const template = postGame.results(game.gameNumber);
+    const template = postGame.results(game.gameNumber, meta);
     const payload = buildPayload(template, gameId, "result");
     await sendBatch(payload, nonWinners.map((e) => e.userId));
   }
