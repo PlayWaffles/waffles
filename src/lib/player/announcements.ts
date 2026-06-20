@@ -116,16 +116,17 @@ async function computeTriggeredAnnouncements(userId: string): Promise<PlayerAnno
 
 /**
  * The active announcement feed for a player: triggered cards first, then
- * authored rows, all sorted by priority (highest first). Pass `null` for the
- * unauthenticated/preview context to get authored rows only.
+ * targeted notification rows and authored rows, all sorted by priority (highest
+ * first). Pass `null` for the unauthenticated/preview context to get authored
+ * rows only.
  */
 export async function loadAnnouncements(userId: string | null): Promise<PlayerAnnouncement[]> {
   const now = new Date();
   const rows = await prisma.announcement.findMany({
     where: {
       isActive: true,
-      // "migration" + "takeover" are one-off modal gate rows, not feed cards.
-      kind: { notIn: ["migration", "takeover"] },
+      // One-off modal gates and targeted notification rows are not global feed cards.
+      kind: { notIn: ["migration", "takeover", "notification"] },
       AND: [
         { OR: [{ startsAt: null }, { startsAt: { lte: now } }] },
         { OR: [{ endsAt: null }, { endsAt: { gte: now } }] },
@@ -148,6 +149,33 @@ export async function loadAnnouncements(userId: string | null): Promise<PlayerAn
   });
 
   const authored = rows.map(mapDbAnnouncement);
+  const notifications = userId
+    ? await prisma.$queryRaw<DbAnnouncement[]>`
+        SELECT
+          a."id",
+          a."title",
+          a."body",
+          a."ctaLabel",
+          a."ctaAction",
+          a."tone",
+          a."emoji",
+          a."startsAt",
+          a."endsAt",
+          a."sortOrder",
+          a."createdAt"
+        FROM "Announcement" a
+        INNER JOIN "AnnouncementRecipient" ar ON ar."announcementId" = a."id"
+        WHERE
+          ar."userId" = ${userId}
+          AND a."isActive" = true
+          AND a."kind" = 'notification'
+          AND (a."startsAt" IS NULL OR a."startsAt" <= ${now})
+          AND (a."endsAt" IS NULL OR a."endsAt" >= ${now})
+        ORDER BY a."sortOrder" DESC, a."createdAt" DESC
+      `
+    : [];
   const triggered = userId ? await computeTriggeredAnnouncements(userId) : [];
-  return [...triggered, ...authored].sort((a, b) => b.priority - a.priority);
+  return [...triggered, ...notifications.map(mapDbAnnouncement), ...authored].sort(
+    (a, b) => b.priority - a.priority,
+  );
 }

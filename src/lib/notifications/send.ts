@@ -3,6 +3,75 @@ import { sendToFid } from "./adapters/farcaster";
 import { logNotification } from "./log";
 import { shouldSkipNotifications } from "./guards";
 import type { NotificationPayload, SendResult } from "./types";
+import { Prisma } from "@prisma";
+import crypto from "node:crypto";
+
+function notificationSlug(payload: NotificationPayload) {
+  const seed = payload.notificationId ?? `${Date.now()}-${crypto.randomUUID()}`;
+  const clean = seed.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  const hash = crypto
+    .createHash("sha256")
+    .update(`${seed}:${payload.title}:${payload.body}:${payload.targetUrl}`)
+    .digest("hex")
+    .slice(0, 12);
+  return `notif-${(clean || "message").slice(0, 40)}-${hash}`.slice(0, 60);
+}
+
+function notificationCtaAction(targetUrl: string) {
+  try {
+    const path = new URL(targetUrl).pathname;
+    return path.includes("result") ? "screen:profile" : "screen:home";
+  } catch {
+    return "screen:home";
+  }
+}
+
+export async function deliverInAppNotifications(
+  userIds: string[],
+  payload: NotificationPayload,
+): Promise<number> {
+  const uniqueUserIds = Array.from(new Set(userIds));
+  if (uniqueUserIds.length === 0) return 0;
+  const slug = notificationSlug(payload);
+  const ctaAction = notificationCtaAction(payload.targetUrl);
+
+  return prisma.$transaction(async (tx) => {
+    const announcement = await tx.announcement.upsert({
+      where: { slug },
+      create: {
+        slug,
+        title: payload.title,
+        body: payload.body,
+        ctaLabel: "Open",
+        ctaAction,
+        kind: "notification",
+        tone: "maple",
+        emoji: "🔔",
+        isActive: true,
+        sortOrder: 90,
+      },
+      update: {
+        title: payload.title,
+        body: payload.body,
+        ctaLabel: "Open",
+        ctaAction,
+        isActive: true,
+      },
+      select: { id: true },
+    });
+
+    const values = uniqueUserIds.map((userId) =>
+      Prisma.sql`(${crypto.randomUUID()}, ${userId}, ${announcement.id})`,
+    );
+
+    await tx.$executeRaw`
+      INSERT INTO "AnnouncementRecipient" ("id", "userId", "announcementId")
+      VALUES ${Prisma.join(values)}
+      ON CONFLICT ("userId", "announcementId") DO NOTHING
+    `;
+    return uniqueUserIds.length;
+  });
+}
 
 /**
  * Send a notification to a single user (resolves their platform automatically).
@@ -38,7 +107,12 @@ export async function sendToUser(
       break;
     case "MINIPAY":
     case "BASE_APP":
-      result = { state: "no_token" };
+      try {
+        await deliverInAppNotifications([userId], payload);
+        result = { state: "success" };
+      } catch (error) {
+        result = { state: "error", error };
+      }
       break;
   }
 
