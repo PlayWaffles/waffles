@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import withOutray from "@outray/next";
+import crypto from "node:crypto";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -38,11 +39,26 @@ const deploymentId = getDeploymentId();
 function assertServerActionsEncryptionKey() {
   if (process.env.NODE_ENV !== "production") return;
 
-  if (!process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY?.trim()) {
-    throw new Error(
-      "Missing NEXT_SERVER_ACTIONS_ENCRYPTION_KEY. Set the same value for every Dokploy build and runtime pod so Server Actions remain valid across rolling deploys.",
-    );
+  const configuredKey = process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY?.trim();
+  if (configuredKey) {
+    process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = /^[a-f0-9]{64}$/i.test(configuredKey)
+      ? Buffer.from(configuredKey, "hex").toString("base64")
+      : configuredKey;
+    return;
   }
+
+  const authSecret = process.env.AUTH_SECRET?.trim();
+  if (authSecret) {
+    process.env.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY = crypto
+      .createHash("sha256")
+      .update(authSecret)
+      .digest("base64");
+    return;
+  }
+
+  throw new Error(
+    "Missing NEXT_SERVER_ACTIONS_ENCRYPTION_KEY or AUTH_SECRET. Set one shared secret for every Dokploy build and runtime pod so Server Actions remain valid across rolling deploys.",
+  );
 }
 
 assertServerActionsEncryptionKey();
