@@ -1252,8 +1252,7 @@ export function ProtoProvider({
     update({ ...r, mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, pendingLevelQuestions: null });
     goto("levelIntro");
     // Prefetch the level's questions from the server during the intro screen so
-    // play starts instantly. Falls back to the local bank in beginLevelQuiz if
-    // this hasn't resolved (or returned nothing).
+    // play starts instantly.
     const lvTrack = state.levelTrack;
     const lvLevel = state.levelByTrack[lvTrack];
     void getLevelQuestions(lvTrack, lvLevel)

@@ -178,23 +178,57 @@ export type LevelTrack = "standard" | "world-cup";
 /** Questions per solo level. */
 export const QUESTIONS_PER_LEVEL = 4;
 
-/**
- * Difficulty ramp for a level — mirrors the client `levelDifficulties`: early
- * levels stay easy, later levels mix in medium then hard.
- */
-function levelDifficultyRamp(level: number, n: number): Difficulty[] {
-  let pool: Difficulty[];
-  if (level < 8) pool = [Difficulty.EASY];
-  else if (level < 16) pool = [Difficulty.EASY, Difficulty.MEDIUM];
-  else if (level < 28) pool = [Difficulty.MEDIUM];
-  else if (level < 40) pool = [Difficulty.MEDIUM, Difficulty.HARD];
-  else pool = [Difficulty.HARD];
-  return Array.from({ length: n }, (_, i) => pool[i % pool.length]);
+const DIFFICULTY_VALUE: Record<Difficulty, number> = {
+  [Difficulty.EASY]: 0,
+  [Difficulty.MEDIUM]: 1,
+  [Difficulty.HARD]: 2,
+};
+
+const KIND_ROTATION = [
+  QuestionKind.SINGLE,
+  QuestionKind.MULTI,
+  QuestionKind.ORDER,
+  QuestionKind.SPATIAL,
+];
+
+type LevelSlot = { difficulty: Difficulty; kind: QuestionKind };
+
+function levelDifficultyPlan(level: number, n: number): Difficulty[] {
+  let plan: Difficulty[];
+  if (level < 4) plan = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.EASY, Difficulty.MEDIUM];
+  else if (level < 8) plan = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.MEDIUM, Difficulty.HARD];
+  else if (level < 16) plan = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD, Difficulty.MEDIUM];
+  else if (level < 28) plan = [Difficulty.MEDIUM, Difficulty.HARD, Difficulty.MEDIUM, Difficulty.HARD];
+  else if (level < 40) plan = [Difficulty.MEDIUM, Difficulty.HARD, Difficulty.HARD, Difficulty.MEDIUM];
+  else plan = [Difficulty.HARD, Difficulty.MEDIUM, Difficulty.HARD, Difficulty.HARD];
+  return Array.from({ length: n }, (_, i) => plan[i % plan.length]);
 }
 
-// Candidate (id, difficulty) pool per track, cached briefly. "world-cup" draws
-// FOOTBALL-themed questions; "standard" draws everything else (evergreen).
-type Candidate = { id: string; difficulty: Difficulty };
+function levelSlots(level: number, n: number): LevelSlot[] {
+  const difficulties = levelDifficultyPlan(level, n);
+  const offset = Math.max(0, level - 1) % KIND_ROTATION.length;
+  return difficulties.map((difficulty, i) => ({
+    difficulty,
+    kind: KIND_ROTATION[(offset + i) % KIND_ROTATION.length],
+  }));
+}
+
+// Candidate pool per track, cached briefly. "world-cup" draws FOOTBALL-themed
+// questions; "standard" draws everything else (evergreen).
+type Candidate = {
+  id: string;
+  difficulty: Difficulty;
+  kind: QuestionKind;
+  category: string | null;
+  usageCount: number;
+  durationSec: number;
+  stats: {
+    playCount: number;
+    correctCount: number;
+    totalResponseMs: bigint;
+    lastPlayedAt: Date | null;
+  }[];
+};
 const levelPoolCache = new Map<LevelTrack, { items: Candidate[]; at: number }>();
 
 async function levelPool(track: LevelTrack): Promise<Candidate[]> {
@@ -206,25 +240,130 @@ async function levelPool(track: LevelTrack): Promise<Candidate[]> {
       : { theme: { not: GameTheme.FOOTBALL } };
   const rows = await prisma.questionTemplate.findMany({
     where,
-    select: { id: true, difficulty: true },
+    select: {
+      id: true,
+      difficulty: true,
+      kind: true,
+      category: true,
+      usageCount: true,
+      durationSec: true,
+      stats: {
+        where: { mode: "level" },
+        select: {
+          playCount: true,
+          correctCount: true,
+          totalResponseMs: true,
+          lastPlayedAt: true,
+        },
+      },
+    },
   });
   const items = rows as Candidate[];
   levelPoolCache.set(track, { items, at: Date.now() });
   return items;
 }
 
-/** Select level question ids by the difficulty ramp, no repeats. */
+function targetCorrectRate(difficulty: Difficulty): number {
+  if (difficulty === Difficulty.EASY) return 0.78;
+  if (difficulty === Difficulty.MEDIUM) return 0.62;
+  return 0.46;
+}
+
+function candidateScore(
+  candidate: Candidate,
+  slot: LevelSlot,
+  usedKinds: Set<QuestionKind>,
+  usedCategories: Set<string>,
+  now: number,
+): number {
+  const stat = candidate.stats[0];
+  const difficultyDistance = Math.abs(
+    DIFFICULTY_VALUE[candidate.difficulty] - DIFFICULTY_VALUE[slot.difficulty],
+  );
+  const categoryKey = candidate.category ?? "";
+  const playCount = stat?.playCount ?? 0;
+  const correctRate = playCount > 0 && stat ? stat.correctCount / playCount : null;
+  const avgResponseRatio =
+    playCount > 0 && stat && candidate.durationSec > 0
+      ? Number(stat.totalResponseMs) / playCount / (candidate.durationSec * 1000)
+      : null;
+  const daysSincePlayed = stat?.lastPlayedAt
+    ? (now - stat.lastPlayedAt.getTime()) / 86_400_000
+    : null;
+
+  let score = 0;
+  score += difficultyDistance === 0 ? 120 : difficultyDistance === 1 ? 52 : 8;
+  score += candidate.kind === slot.kind ? 105 : usedKinds.has(candidate.kind) ? -20 : 32;
+  score += categoryKey && !usedCategories.has(categoryKey) ? 38 : categoryKey ? -34 : 0;
+  score += Math.max(0, 28 - candidate.usageCount * 0.8);
+
+  if (correctRate == null || playCount < 8) {
+    score += 16;
+  } else {
+    score += Math.max(0, 34 - Math.abs(correctRate - targetCorrectRate(slot.difficulty)) * 100);
+    if (slot.difficulty === Difficulty.EASY && correctRate > 0.9) score -= 24;
+  }
+
+  if (avgResponseRatio != null) {
+    score += Math.max(0, Math.min(16, avgResponseRatio * 18));
+  }
+  if (daysSincePlayed != null && daysSincePlayed < 7) {
+    score -= 14 - daysSincePlayed * 2;
+  }
+
+  return score;
+}
+
+function pickRanked(candidates: Candidate[], score: (candidate: Candidate) => number): Candidate {
+  const ranked = candidates
+    .map((candidate) => ({ candidate, score: score(candidate) }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, Math.min(5, candidates.length));
+  const floor = Math.min(...ranked.map((item) => item.score));
+  const weighted = ranked.map((item) => ({
+    ...item,
+    weight: Math.max(1, item.score - floor + 1),
+  }));
+  const total = weighted.reduce((sum, item) => sum + item.weight, 0);
+  let cursor = Math.random() * total;
+  for (const item of weighted) {
+    cursor -= item.weight;
+    if (cursor <= 0) return item.candidate;
+  }
+  return weighted[0].candidate;
+}
+
+/** Select level question ids by difficulty, kind, category, and observed stats. */
 async function levelIds(track: LevelTrack, level: number, n: number): Promise<string[]> {
   const pool = await levelPool(track);
   if (pool.length === 0) return [];
   const used = new Set<string>();
+  const usedKinds = new Set<QuestionKind>();
+  const usedCategories = new Set<string>();
   const out: string[] = [];
-  for (const d of levelDifficultyRamp(level, n)) {
-    let tier = pool.filter((q) => q.difficulty === d && !used.has(q.id));
-    if (tier.length === 0) tier = pool.filter((q) => !used.has(q.id));
-    if (tier.length === 0) break;
-    const pick = tier[Math.floor(Math.random() * tier.length)];
+  const now = Date.now();
+
+  for (const slot of levelSlots(level, n)) {
+    const unused = pool.filter((q) => !used.has(q.id));
+    if (unused.length === 0) break;
+
+    const exact = unused.filter((q) => q.difficulty === slot.difficulty && q.kind === slot.kind);
+    const kindMatched = unused.filter((q) => q.kind === slot.kind);
+    const difficultyMatched = unused.filter((q) => q.difficulty === slot.difficulty);
+    const tier = exact.length > 0
+      ? exact
+      : kindMatched.length > 0
+        ? kindMatched
+        : difficultyMatched.length > 0
+          ? difficultyMatched
+          : unused;
+
+    const pick = pickRanked(tier, (candidate) =>
+      candidateScore(candidate, slot, usedKinds, usedCategories, now),
+    );
     used.add(pick.id);
+    usedKinds.add(pick.kind);
+    if (pick.category) usedCategories.add(pick.category);
     out.push(pick.id);
   }
   return out;
