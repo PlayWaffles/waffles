@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/db";
+import Link from "next/link";
 import { Suspense } from "react";
 import {
     BanknotesIcon,
@@ -94,6 +95,16 @@ type EntrySourceSegment = {
     noShowRate: number;
 };
 
+type GameplayGameFilterOption = {
+    id: string;
+    title: string;
+    platform: string;
+    network: string;
+    startsAt: Date;
+    endsAt: Date;
+    playerCount: number;
+};
+
 const ONBOARDING_WAIT_BUCKETS: OnboardingWaitBucket[] = [
     { label: "<15m", minMs: 0, maxMs: 15 * 60 * 1000 },
     { label: "15m-1h", minMs: 15 * 60 * 1000, maxMs: 60 * 60 * 1000 },
@@ -177,9 +188,35 @@ function formatGameHour(startsAt: Date) {
     return `${String(startsAt.getUTCHours()).padStart(2, "0")}:00 UTC`;
 }
 
+function formatGameDateTime(value: Date) {
+    return new Intl.DateTimeFormat("en", {
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+        timeZoneName: "short",
+    }).format(value);
+}
+
 function formatTicketPrice(prices: number[]) {
     const price = Math.min(...prices.filter((value) => Number.isFinite(value)));
     return Number.isFinite(price) ? `$${price.toFixed(price % 1 === 0 ? 0 : 2)}` : "No price";
+}
+
+function buildGameplayFilterHref({
+    range,
+    platform,
+    gameId,
+}: {
+    range: string;
+    platform?: string;
+    gameId?: string | null;
+}) {
+    const params = new URLSearchParams({ tab: "games", range });
+    if (platform) params.set("platform", platform);
+    if (gameId) params.set("gameId", gameId);
+    return `/admin/analytics?${params.toString()}`;
 }
 
 function buildTicketPurchaseWhere(
@@ -890,10 +927,19 @@ async function getRetentionData(
 // 3. GAMEPLAY QUALITY
 // ============================================================
 
-async function getGameplayData(start: Date, end: Date, platform?: string) {
+async function getGameplayData(start: Date, end: Date, platform?: string, selectedGameId?: string) {
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildPaidProductionEntryWhere(platform);
     const now = new Date();
+    const scopedGameWhere = selectedGameId
+        ? { ...gamePf, id: selectedGameId }
+        : { ...gamePf, startsAt: { gte: start, lte: end } };
+    const scopedEntryWhere = selectedGameId
+        ? { ...gpf, gameId: selectedGameId }
+        : { ...gpf, game: scopedGameWhere };
+    const ticketPurchaseWhere = selectedGameId
+        ? { ...gpf, gameId: selectedGameId, paidAt: { not: null } }
+        : buildTicketPurchaseWhere(start, end, gpf);
 
     const latestFiveEndedGames = await prisma.game.findMany({
         where: {
@@ -927,11 +973,13 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         // Theme participation
         themeParticipation,
         currentOrNextGame,
+        selectedGame,
+        gameFilterOptions,
         entrySourceEvents,
         entrySourceEntries,
     ] = await Promise.all([
         prisma.gameEntry.findMany({
-            where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } } },
+            where: scopedEntryWhere,
             select: {
                 score: true,
                 answered: true,
@@ -952,7 +1000,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             take: 10000,
         }),
         prisma.question.findMany({
-            where: { game: { ...gamePf, startsAt: { gte: start, lte: end } } },
+            where: { game: scopedGameWhere },
             select: {
                 id: true,
                 gameId: true,
@@ -964,14 +1012,14 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             },
         }),
         prisma.gameEntry.findMany({
-            where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: { not: null } },
+            where: { ...scopedEntryWhere, rank: { not: null } },
             select: { rank: true, createdAt: true, game: { select: { startsAt: true } } },
         }),
-        prisma.gameEntry.count({ where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: 1 } }),
-        prisma.gameEntry.count({ where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } }, rank: { not: null } } }),
+        prisma.gameEntry.count({ where: { ...scopedEntryWhere, rank: 1 } }),
+        prisma.gameEntry.count({ where: { ...scopedEntryWhere, rank: { not: null } } }),
         prisma.game.groupBy({
             by: ["theme"],
-            where: { ...gamePf, startsAt: { gte: start, lte: end } },
+            where: scopedGameWhere,
             _sum: { playerCount: true },
             _count: true,
             _avg: { prizePool: true },
@@ -988,10 +1036,38 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 endsAt: true,
             },
         }),
+        selectedGameId
+            ? prisma.game.findFirst({
+                where: scopedGameWhere,
+                select: {
+                    id: true,
+                    title: true,
+                    platform: true,
+                    network: true,
+                    startsAt: true,
+                    endsAt: true,
+                    playerCount: true,
+                },
+            })
+            : Promise.resolve(null),
+        prisma.game.findMany({
+            where: gamePf,
+            orderBy: { startsAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                platform: true,
+                network: true,
+                startsAt: true,
+                endsAt: true,
+                playerCount: true,
+            },
+            take: 24,
+        }),
         prisma.analyticsEvent.findMany({
             where: {
                 name: "ticket_purchase_authoritative",
-                createdAt: { gte: start, lte: end },
+                ...(selectedGameId ? {} : { createdAt: { gte: start, lte: end } }),
             },
             select: {
                 userId: true,
@@ -1000,7 +1076,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             take: 10000,
         }),
         prisma.gameEntry.findMany({
-            where: buildTicketPurchaseWhere(start, end, gpf),
+            where: ticketPurchaseWhere,
             select: {
                 gameId: true,
                 userId: true,
@@ -1010,13 +1086,18 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         }),
     ]);
 
-    const previousComparableGame = currentOrNextGame
+    const comparableGame = selectedGame ?? currentOrNextGame;
+    if (selectedGameId && !selectedGame) {
+        throw new Error(`Selected analytics game was not found: ${selectedGameId}`);
+    }
+
+    const previousComparableGame = comparableGame
         ? await prisma.game.findFirst({
             where: {
                 ...gamePf,
-                platform: currentOrNextGame.platform,
-                network: currentOrNextGame.network,
-                endsAt: { lt: currentOrNextGame.startsAt },
+                platform: comparableGame.platform,
+                network: comparableGame.network,
+                endsAt: { lt: comparableGame.startsAt },
             },
             orderBy: { endsAt: "desc" },
             select: {
@@ -1027,11 +1108,30 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
             },
         })
         : null;
+    const currentPairPreviousGame = currentOrNextGame
+        ? comparableGame?.id === currentOrNextGame.id
+            ? previousComparableGame
+            : await prisma.game.findFirst({
+                where: {
+                    ...gamePf,
+                    platform: currentOrNextGame.platform,
+                    network: currentOrNextGame.network,
+                    endsAt: { lt: currentOrNextGame.startsAt },
+                },
+                orderBy: { endsAt: "desc" },
+                select: {
+                    id: true,
+                    title: true,
+                    startsAt: true,
+                    endsAt: true,
+                },
+            })
+        : previousComparableGame;
 
-    const [currentComparableEntries, previousComparableEntries] = currentOrNextGame
+    const [currentComparableEntries, previousComparableEntries] = comparableGame
         ? await Promise.all([
             prisma.gameEntry.findMany({
-                where: { gameId: currentOrNextGame.id, ...gpf },
+                where: { gameId: comparableGame.id, ...gpf },
                 select: {
                     userId: true,
                 },
@@ -1048,12 +1148,12 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         ])
         : [[], []];
 
-    const priorCurrentCohortUsers = currentOrNextGame
+    const priorCurrentCohortUsers = comparableGame
         ? await prisma.gameEntry.findMany({
             where: {
                 ...gpf,
                 userId: { in: currentComparableEntries.map((entry) => entry.userId) },
-                game: { startsAt: { lt: currentOrNextGame.startsAt } },
+                game: { startsAt: { lt: comparableGame.startsAt } },
             },
             select: { userId: true },
             distinct: ["userId"],
@@ -1275,9 +1375,9 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         };
     };
 
-    const currentTicketBuyers = currentOrNextGame && previousComparableGame
+    const currentTicketBuyers = comparableGame && previousComparableGame
         ? {
-            currentGameTitle: currentOrNextGame.title,
+            currentGameTitle: comparableGame.title,
             previousGameTitle: previousComparableGame.title,
             buyers: summarizeCurrentTicketBuyers(),
         }
@@ -1308,6 +1408,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         if (platform && properties.platform !== platform) continue;
         const gameId = typeof properties.game_id === "string" ? properties.game_id : null;
         if (!gameId) continue;
+        if (selectedGameId && gameId !== selectedGameId) continue;
         const source = entrySource(properties.entry_source);
         const segment = entrySourceMap.get(source);
         if (!segment) continue;
@@ -1343,6 +1444,23 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         questions,
         themeParticipation: themeData,
         currentTicketBuyers,
+        gameFilter: {
+            selectedGameId: selectedGameId ?? null,
+            selectedGame: selectedGame
+                ? {
+                    id: selectedGame.id,
+                    title: selectedGame.title,
+                    platform: selectedGame.platform,
+                    network: selectedGame.network,
+                    startsAt: selectedGame.startsAt,
+                    endsAt: selectedGame.endsAt,
+                    playerCount: selectedGame.playerCount,
+                }
+                : null,
+            currentGame: currentOrNextGame,
+            previousGame: currentPairPreviousGame,
+            options: gameFilterOptions,
+        },
         entrySourceComparison,
         behavior: {
             tickets: {
@@ -1529,9 +1647,9 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
 export default async function AnalyticsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ range?: string; tab?: string; platform?: string }>;
+    searchParams: Promise<{ range?: string; tab?: string; platform?: string; gameId?: string }>;
 }) {
-    const { range, tab, platform } = await searchParams;
+    const { range, tab, platform, gameId } = await searchParams;
     const { start, end } = getDateRangeFromParam(range ?? "7d");
     const validTabs: AnalyticsTab[] = ["overview", "games", "players"];
     const activeTab = validTabs.includes(tab as AnalyticsTab)
@@ -1562,6 +1680,7 @@ export default async function AnalyticsPage({
                     activeTab={activeTab}
                     platform={platform}
                     range={range || "7d"}
+                    gameId={gameId}
                 />
             </Suspense>
         </div>
@@ -1574,12 +1693,14 @@ async function AnalyticsContent({
     activeTab,
     platform,
     range,
+    gameId,
 }: {
     start: Date;
     end: Date;
     activeTab: AnalyticsTab;
     platform?: string;
     range: string;
+    gameId?: string;
 }) {
     if (activeTab === "overview") {
         const [data, retention, onboarding] = await Promise.all([
@@ -1590,8 +1711,8 @@ async function AnalyticsContent({
         return <OverviewTab data={data} retention={retention} onboarding={onboarding} />;
     }
     if (activeTab === "games") {
-        const gameplay = await getGameplayData(start, end, platform);
-        return <GameplayTab data={gameplay} />;
+        const gameplay = await getGameplayData(start, end, platform, gameId);
+        return <GameplayTab data={gameplay} range={range} platform={platform} />;
     }
     if (activeTab === "players") {
         const [revenue, retention] = await Promise.all([
@@ -1959,9 +2080,117 @@ function OnboardingDiagnosticTable({
 // TAB: GAMEPLAY QUALITY
 // ============================================================
 
-function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData>> }) {
+function GameFilterLink({
+    href,
+    active,
+    children,
+}: {
+    href: string;
+    active: boolean;
+    children: React.ReactNode;
+}) {
+    return (
+        <Link
+            href={href}
+            className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition ${active
+                ? "bg-[#FFC931] text-black shadow-sm shadow-[#FFC931]/20"
+                : "border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white"
+                }`}
+        >
+            {children}
+        </Link>
+    );
+}
+
+function GameplayGameFilter({
+    data,
+    range,
+    platform,
+}: {
+    data: Awaited<ReturnType<typeof getGameplayData>>;
+    range: string;
+    platform?: string;
+}) {
+    const { selectedGameId, selectedGame, currentGame, previousGame, options } = data.gameFilter;
+
+    return (
+        <div className="rounded-2xl border border-white/10 p-5">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                <div>
+                    <h3 className="text-sm font-semibold text-white font-display">Game Filter</h3>
+                    <p className="mt-1 text-xs text-white/50">
+                        {selectedGame
+                            ? `${selectedGame.title} · ${formatGameDateTime(selectedGame.startsAt)}`
+                            : "All games in the selected date range"}
+                    </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                    <GameFilterLink
+                        href={buildGameplayFilterHref({ range, platform })}
+                        active={!selectedGameId}
+                    >
+                        All games
+                    </GameFilterLink>
+                    {currentGame ? (
+                        <GameFilterLink
+                            href={buildGameplayFilterHref({ range, platform, gameId: currentGame.id })}
+                            active={selectedGameId === currentGame.id}
+                        >
+                            Current
+                        </GameFilterLink>
+                    ) : null}
+                    {previousGame ? (
+                        <GameFilterLink
+                            href={buildGameplayFilterHref({ range, platform, gameId: previousGame.id })}
+                            active={selectedGameId === previousGame.id}
+                        >
+                            Previous
+                        </GameFilterLink>
+                    ) : null}
+                </div>
+            </div>
+
+            <form action="/admin/analytics" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
+                <input type="hidden" name="tab" value="games" />
+                <input type="hidden" name="range" value={range} />
+                {platform ? <input type="hidden" name="platform" value={platform} /> : null}
+                <select
+                    name="gameId"
+                    defaultValue={selectedGameId ?? ""}
+                    className="h-10 rounded-lg border border-white/10 bg-[#141414] px-3 text-sm text-white outline-none focus:border-[#FFC931]/60"
+                >
+                    <option value="">All games in range</option>
+                    {options.map((game: GameplayGameFilterOption) => (
+                        <option key={game.id} value={game.id}>
+                            {game.title} · {formatGameDateTime(game.startsAt)} · {game.playerCount} players
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="submit"
+                    className="h-10 rounded-lg bg-white/10 px-4 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                    Apply
+                </button>
+            </form>
+        </div>
+    );
+}
+
+function GameplayTab({
+    data,
+    range,
+    platform,
+}: {
+    data: Awaited<ReturnType<typeof getGameplayData>>;
+    range: string;
+    platform?: string;
+}) {
     return (
         <div className="space-y-6">
+            <GameplayGameFilter data={data} range={range} platform={platform} />
+
             {/* Top-line gameplay KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <MiniStat label="Accuracy" value={`${data.avgAccuracy.toFixed(1)}%`} color="#14B985" tooltip="Correct answers divided by all submitted answers in the selected range." />
