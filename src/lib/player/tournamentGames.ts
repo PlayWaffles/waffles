@@ -23,6 +23,7 @@ import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
+import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 import { trackServerEvent } from "@/lib/server-analytics";
 import {
@@ -326,6 +327,7 @@ export async function enterTournamentOnChain(input: {
     return { ok: false, error: verification.error ?? "verification_failed", retryable: verification.retryable };
   }
   console.log("[buy-ticket] verified ✓ — recording entry", { gameId, userId, entryFee });
+  const prizePoolContribution = calculatePrizePoolContribution(entryFee);
 
   try {
     const entry = await prisma.$transaction(async (tx) => {
@@ -344,7 +346,7 @@ export async function enterTournamentOnChain(input: {
       // Denormalized pool + headcount, mirroring v1's on-entry bookkeeping.
       await tx.game.update({
         where: { id: gameId },
-        data: { prizePool: { increment: entryFee }, playerCount: { increment: 1 } },
+        data: { prizePool: { increment: prizePoolContribution }, playerCount: { increment: 1 } },
       });
       // Authoritative, DB-backed purchase event — emitted in the same tx as the
       // entry write so it can't drift from reality (and rolls back with it).

@@ -12,6 +12,7 @@ import type { ChainPlatform } from "@/lib/chain/platform";
 import type { GameNetwork } from "@/lib/chain/network";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { unlockReferralRewards } from "@/lib/game/shared";
+import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { PendingPurchaseStatus } from "../../../prisma/generated/enums";
 import { processPendingPurchaseByTxHash } from "@/lib/game/pending-purchases";
 import {
@@ -183,6 +184,8 @@ export async function retryPendingPurchaseAction(
 export async function replayPendingPurchasesAction(
   _prevState: PendingPurchaseAdminResult | null,
 ): Promise<PendingPurchaseAdminResult> {
+  void _prevState;
+
   const auth = await requireAdminSession();
   if (!auth.authenticated || !auth.session) {
     return { success: false, error: "Unauthorized" };
@@ -340,6 +343,7 @@ export async function reconcilePaidTicketAction(
       error: "Unable to derive a valid ticket amount from the on-chain purchase.",
     };
   }
+  const prizePoolContribution = calculatePrizePoolContribution(paidAmount);
 
   const result = await prisma.$transaction(async (tx) => {
     const entry = await tx.gameEntry.create({
@@ -359,7 +363,7 @@ export async function reconcilePaidTicketAction(
       where: { id: game.id },
       data: {
         playerCount: { increment: 1 },
-        prizePool: { increment: paidAmount },
+        prizePool: { increment: prizePoolContribution },
       },
       select: {
         playerCount: true,
@@ -509,6 +513,7 @@ export async function reconcilePaidTicketToUserAction(
       error: "Unable to derive a valid ticket amount from the on-chain purchase.",
     };
   }
+  const prizePoolContribution = calculatePrizePoolContribution(paidAmount);
 
   let result:
     | { entryId: string; playerCount: number; prizePool: number }
@@ -549,7 +554,7 @@ export async function reconcilePaidTicketToUserAction(
         where: { id: game.id },
         data: {
           playerCount: { increment: 1 },
-          prizePool: { increment: paidAmount },
+          prizePool: { increment: prizePoolContribution },
         },
         select: {
           playerCount: true,
