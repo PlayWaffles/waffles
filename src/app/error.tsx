@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
 import { WaffleButton } from "@/components/buttons/WaffleButton";
+import { isDeploymentSkewError, reloadForDeploymentSkew } from "@/components/DeploymentSkewReloader";
 
 interface ErrorPageProps {
   error: Error & { digest?: string };
@@ -13,6 +14,12 @@ export default function GameErrorPage({ error, reset }: ErrorPageProps) {
   const [showDetails, setShowDetails] = useState(false);
 
   useEffect(() => {
+    // A post-deploy server-action mismatch can only be fixed by loading the new
+    // build — auto-reload instead of stranding the user on an error screen.
+    if (isDeploymentSkewError(error.message)) {
+      reloadForDeploymentSkew();
+      return;
+    }
     console.error("Game Segment Error:", error);
   }, [error]);
 

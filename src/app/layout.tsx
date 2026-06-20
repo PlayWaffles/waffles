@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
 import Script from "next/script";
 import { env } from "@/lib/env";
+import { DeploymentSkewReloader } from "@/components/DeploymentSkewReloader";
 
 // These are PUBLIC values (they ship in the client tracker), so they're hardcoded
 // as defaults rather than relying on build-time env. The deploy platform (Dokploy)
@@ -79,6 +80,7 @@ export default function RootLayout({
         />
       </head>
       <body className="antialiased" suppressHydrationWarning>
+        <DeploymentSkewReloader />
         {children}
         {UMAMI_HOST && UMAMI_WEBSITE_ID ? (
           <Script
