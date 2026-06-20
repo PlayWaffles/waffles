@@ -34,7 +34,7 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
-import type { UserPlatform } from "@prisma";
+import type { GameNetwork, UserPlatform } from "@prisma";
 
 // ============================================================
 // HELPERS
@@ -108,14 +108,23 @@ type LevelProgressionPlayer = {
     updatedAt: Date;
 };
 
-type GameplayGameFilterOption = {
+type AnalyticsGameFilterOption = {
     id: string;
     title: string;
-    platform: string;
-    network: string;
+    platform: UserPlatform;
+    network: GameNetwork;
     startsAt: Date;
     endsAt: Date;
     playerCount: number;
+};
+
+type AnalyticsGameFilterData = {
+    selectedGameId: string | null;
+    selectedGame: AnalyticsGameFilterOption | null;
+    currentGame: AnalyticsGameFilterOption | null;
+    previousGame: AnalyticsGameFilterOption | null;
+    comparisonGame: AnalyticsGameFilterOption | null;
+    options: AnalyticsGameFilterOption[];
 };
 
 const ONBOARDING_WAIT_BUCKETS: OnboardingWaitBucket[] = [
@@ -217,16 +226,18 @@ function formatTicketPrice(prices: number[]) {
     return Number.isFinite(price) ? `$${price.toFixed(price % 1 === 0 ? 0 : 2)}` : "No price";
 }
 
-function buildGameplayFilterHref({
+function buildAnalyticsFilterHref({
+    tab,
     range,
     platform,
     gameId,
 }: {
+    tab: AnalyticsTab;
     range: string;
     platform?: string;
     gameId?: string | null;
 }) {
-    const params = new URLSearchParams({ tab: "games", range });
+    const params = new URLSearchParams({ tab, range });
     if (platform) params.set("platform", platform);
     if (gameId) params.set("gameId", gameId);
     return `/admin/analytics?${params.toString()}`;
@@ -309,19 +320,135 @@ function attachAverageScores<
     }));
 }
 
+async function getAnalyticsGameFilterData(platform?: string, selectedGameId?: string): Promise<AnalyticsGameFilterData> {
+    const gamePf = buildProductionGameWhere(platform);
+    const now = new Date();
+    const [currentGame, selectedGame, options] = await Promise.all([
+        prisma.game.findFirst({
+            where: { ...gamePf, endsAt: { gt: now } },
+            orderBy: { startsAt: "asc" },
+            select: {
+                id: true,
+                title: true,
+                platform: true,
+                network: true,
+                startsAt: true,
+                endsAt: true,
+                playerCount: true,
+            },
+        }),
+        selectedGameId
+            ? prisma.game.findFirst({
+                where: { ...gamePf, id: selectedGameId },
+                select: {
+                    id: true,
+                    title: true,
+                    platform: true,
+                    network: true,
+                    startsAt: true,
+                    endsAt: true,
+                    playerCount: true,
+                },
+            })
+            : Promise.resolve(null),
+        prisma.game.findMany({
+            where: gamePf,
+            orderBy: { startsAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                platform: true,
+                network: true,
+                startsAt: true,
+                endsAt: true,
+                playerCount: true,
+            },
+            take: 24,
+        }),
+    ]);
+
+    if (selectedGameId && !selectedGame) {
+        throw new Error(`Selected analytics game was not found: ${selectedGameId}`);
+    }
+
+    const previousBaseGame = currentGame ?? selectedGame;
+    const previousGame = previousBaseGame
+        ? await prisma.game.findFirst({
+            where: {
+                ...gamePf,
+                platform: previousBaseGame.platform,
+                network: previousBaseGame.network,
+                endsAt: { lt: previousBaseGame.startsAt },
+            },
+            orderBy: { endsAt: "desc" },
+            select: {
+                id: true,
+                title: true,
+                platform: true,
+                network: true,
+                startsAt: true,
+                endsAt: true,
+                playerCount: true,
+            },
+        })
+        : null;
+    const comparisonBaseGame = selectedGame ?? currentGame;
+    const comparisonGame = comparisonBaseGame
+        ? comparisonBaseGame.id === previousBaseGame?.id
+            ? previousGame
+            : await prisma.game.findFirst({
+                where: {
+                    ...gamePf,
+                    platform: comparisonBaseGame.platform,
+                    network: comparisonBaseGame.network,
+                    endsAt: { lt: comparisonBaseGame.startsAt },
+                },
+                orderBy: { endsAt: "desc" },
+                select: {
+                    id: true,
+                    title: true,
+                    platform: true,
+                    network: true,
+                    startsAt: true,
+                    endsAt: true,
+                    playerCount: true,
+                },
+            })
+        : null;
+
+    return {
+        selectedGameId: selectedGameId ?? null,
+        selectedGame,
+        currentGame,
+        previousGame,
+        comparisonGame,
+        options,
+    };
+}
+
 // ============================================================
 // 1. CORE DASHBOARD (The "first dashboard" metrics)
 // ============================================================
 
-async function getCoreDashboard(start: Date, end: Date, platform?: string) {
+async function getCoreDashboard(
+    start: Date,
+    end: Date,
+    platform?: string,
+    selectedGameId?: string,
+    gameFilter?: AnalyticsGameFilterData,
+) {
     const now = new Date();
     const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const previousStart = new Date(start.getTime() - periodDays * 24 * 60 * 60 * 1000);
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
-    const ticketPurchaseWhere = buildTicketPurchaseWhere(start, end, gpf);
-    const previousTicketPurchaseWhere = buildTicketPurchaseWhere(previousStart, start, gpf);
+    const ticketPurchaseWhere = selectedGameId
+        ? { ...gpf, gameId: selectedGameId, paidAt: { not: null } }
+        : buildTicketPurchaseWhere(start, end, gpf);
+    const previousTicketPurchaseWhere = selectedGameId && gameFilter?.comparisonGame
+        ? { ...gpf, gameId: gameFilter.comparisonGame.id, paidAt: { not: null } }
+        : buildTicketPurchaseWhere(previousStart, start, gpf);
 
     // Helper to build date range for daily aggregation
     const buildDailyMap = (startDate: Date, endDate: Date) => {
@@ -416,7 +543,11 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             where: {
                 ...pf,
                 createdAt: { gte: start, lte: end },
-                entries: { some: { ...buildPaidProductionEntryWhere(platform), game: gamePf } },
+                entries: {
+                    some: selectedGameId
+                        ? { ...buildPaidProductionEntryWhere(platform), gameId: selectedGameId }
+                        : { ...buildPaidProductionEntryWhere(platform), game: gamePf },
+                },
             },
         }),
         // Average score
@@ -431,9 +562,9 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             take: 5000,
         }),
         // Total prizes awarded
-        prisma.gameEntry.count({ where: { prize: { not: null, gt: 0 }, ...gpf, paidAt: { gte: start, lte: end } } }),
+        prisma.gameEntry.count({ where: { prize: { not: null, gt: 0 }, ...ticketPurchaseWhere } }),
         // Claimed prizes
-        prisma.gameEntry.count({ where: { claimedAt: { not: null }, prize: { gt: 0 }, ...gpf, paidAt: { gte: start, lte: end } } }),
+        prisma.gameEntry.count({ where: { claimedAt: { not: null }, prize: { gt: 0 }, ...ticketPurchaseWhere } }),
         // Daily signups for sparkline
         prisma.user.groupBy({
             by: ["createdAt"],
@@ -442,7 +573,7 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         }),
         // Revenue entries for sparkline + summaries
         prisma.gameEntry.findMany({
-            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
+            where: ticketPurchaseWhere,
             select: {
                 paidAt: true,
                 paidAmount: true,
@@ -500,7 +631,6 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
             ticketMap.set(key, (ticketMap.get(key) || 0) + 1);
         }
     });
-    const revenueSparkline = Array.from(revenueMap.values()).slice(-7);
     const gamesWithRevenue = summarizeRevenueByGame(revenueEntries as RevenueEntryWithGame[]);
 
     // Computed metrics
@@ -513,6 +643,9 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
         (sum, entry) => sum + calculateProtocolRevenue(entry.paidAmount),
         0,
     );
+    const revenueSparkline = selectedGameId
+        ? [totalRevenue]
+        : Array.from(revenueMap.values()).slice(-7);
     const revenuePerGame = gamesWithRevenue.length > 0
         ? totalRevenue / gamesWithRevenue.length
         : 0;
@@ -526,11 +659,17 @@ async function getCoreDashboard(start: Date, end: Date, platform?: string) {
 
     // Revenue chart data (single pass — revenueMap and ticketMap built above)
     const sortedRevenueDates = Array.from(revenueMap.keys()).sort();
-    const revenueChartData = sortedRevenueDates.map((date) => ({
-        date: date.slice(5),
-        revenue: revenueMap.get(date) || 0,
-        tickets: ticketMap.get(date) || 0,
-    }));
+    const revenueChartData = selectedGameId
+        ? gamesWithRevenue.map((game) => ({
+            date: game.title,
+            revenue: game.revenue,
+            tickets: game.ticketCount,
+        }))
+        : sortedRevenueDates.map((date) => ({
+            date: date.slice(5),
+            revenue: revenueMap.get(date) || 0,
+            tickets: ticketMap.get(date) || 0,
+        }));
 
     return {
         // KPIs
@@ -767,11 +906,15 @@ async function getRetentionData(
     end: Date,
     platform?: string,
     range?: string,
+    selectedGameId?: string,
 ) {
     const now = new Date();
     const isAllTime = range === "all";
     const pf = buildPlatformWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
+    const entryWhere = selectedGameId
+        ? { ...gpf, gameId: selectedGameId, paidAt: { not: null } }
+        : { paidAt: { not: null, gte: start, lte: end }, ...gpf };
 
     const [
         lifetimeUsers,
@@ -834,7 +977,7 @@ async function getRetentionData(
             orderBy: { currentStreak: "asc" },
         }),
         prisma.gameEntry.findMany({
-            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
+            where: entryWhere,
             select: {
                 userId: true,
                 user: {
@@ -940,10 +1083,18 @@ async function getRetentionData(
 // 3. GAMEPLAY QUALITY
 // ============================================================
 
-async function getGameplayData(start: Date, end: Date, platform?: string, selectedGameId?: string) {
+async function getGameplayData(
+    start: Date,
+    end: Date,
+    platform: string | undefined,
+    selectedGameId: string | undefined,
+    gameFilter: AnalyticsGameFilterData,
+) {
     const gamePf = buildProductionGameWhere(platform);
     const gpf = buildPaidProductionEntryWhere(platform);
     const now = new Date();
+    const currentOrNextGame = gameFilter.currentGame;
+    const selectedGame = gameFilter.selectedGame;
     const scopedGameWhere = selectedGameId
         ? { ...gamePf, id: selectedGameId }
         : { ...gamePf, startsAt: { gte: start, lte: end } };
@@ -985,9 +1136,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string, select
         totalRankedEntries,
         // Theme participation
         themeParticipation,
-        currentOrNextGame,
-        selectedGame,
-        gameFilterOptions,
         entrySourceEvents,
         entrySourceEntries,
     ] = await Promise.all([
@@ -1037,46 +1185,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string, select
             _count: true,
             _avg: { prizePool: true },
         }),
-        prisma.game.findFirst({
-            where: { ...gamePf, endsAt: { gt: now } },
-            orderBy: { startsAt: "asc" },
-            select: {
-                id: true,
-                title: true,
-                platform: true,
-                network: true,
-                startsAt: true,
-                endsAt: true,
-            },
-        }),
-        selectedGameId
-            ? prisma.game.findFirst({
-                where: scopedGameWhere,
-                select: {
-                    id: true,
-                    title: true,
-                    platform: true,
-                    network: true,
-                    startsAt: true,
-                    endsAt: true,
-                    playerCount: true,
-                },
-            })
-            : Promise.resolve(null),
-        prisma.game.findMany({
-            where: gamePf,
-            orderBy: { startsAt: "desc" },
-            select: {
-                id: true,
-                title: true,
-                platform: true,
-                network: true,
-                startsAt: true,
-                endsAt: true,
-                playerCount: true,
-            },
-            take: 24,
-        }),
         prisma.analyticsEvent.findMany({
             where: {
                 name: "ticket_purchase_authoritative",
@@ -1121,26 +1229,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string, select
             },
         })
         : null;
-    const currentPairPreviousGame = currentOrNextGame
-        ? comparableGame?.id === currentOrNextGame.id
-            ? previousComparableGame
-            : await prisma.game.findFirst({
-                where: {
-                    ...gamePf,
-                    platform: currentOrNextGame.platform,
-                    network: currentOrNextGame.network,
-                    endsAt: { lt: currentOrNextGame.startsAt },
-                },
-                orderBy: { endsAt: "desc" },
-                select: {
-                    id: true,
-                    title: true,
-                    startsAt: true,
-                    endsAt: true,
-                },
-            })
-        : previousComparableGame;
-
     const [currentComparableEntries, previousComparableEntries] = comparableGame
         ? await Promise.all([
             prisma.gameEntry.findMany({
@@ -1457,23 +1545,6 @@ async function getGameplayData(start: Date, end: Date, platform?: string, select
         questions,
         themeParticipation: themeData,
         currentTicketBuyers,
-        gameFilter: {
-            selectedGameId: selectedGameId ?? null,
-            selectedGame: selectedGame
-                ? {
-                    id: selectedGame.id,
-                    title: selectedGame.title,
-                    platform: selectedGame.platform,
-                    network: selectedGame.network,
-                    startsAt: selectedGame.startsAt,
-                    endsAt: selectedGame.endsAt,
-                    playerCount: selectedGame.playerCount,
-                }
-                : null,
-            currentGame: currentOrNextGame,
-            previousGame: currentPairPreviousGame,
-            options: gameFilterOptions,
-        },
         entrySourceComparison,
         behavior: {
             tickets: {
@@ -1528,10 +1599,25 @@ async function getGameplayData(start: Date, end: Date, platform?: string, select
 // 4. REVENUE ANALYTICS
 // ============================================================
 
-async function getRevenueData(start: Date, end: Date, platform?: string) {
+async function getRevenueData(
+    start: Date,
+    end: Date,
+    platform?: string,
+    selectedGameId?: string,
+    gameFilter?: AnalyticsGameFilterData,
+) {
     const gpf = buildProductionEntryWhere(platform);
     const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const previousStart = new Date(start.getTime() - periodDays * 24 * 60 * 60 * 1000);
+    const revenueWhere = selectedGameId
+        ? { ...gpf, gameId: selectedGameId, paidAt: { not: null } }
+        : { paidAt: { not: null, gte: start, lte: end }, ...gpf };
+    const previousRevenueWhere = selectedGameId && gameFilter?.comparisonGame
+        ? { ...gpf, gameId: gameFilter.comparisonGame.id, paidAt: { not: null } }
+        : { paidAt: { not: null, gte: previousStart, lt: start }, ...gpf };
+    const lifetimeRevenueWhere = selectedGameId
+        ? { ...gpf, gameId: selectedGameId, paidAt: { not: null } }
+        : { paidAt: { not: null }, ...gpf };
 
     const [
         currentRevenue,
@@ -1554,18 +1640,18 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         // Lifetime value
         lifetimeRevenue,
     ] = await Promise.all([
-        prisma.gameEntry.aggregate({ where: { paidAt: { not: null, gte: start, lte: end }, ...gpf }, _sum: { paidAmount: true } }),
-        prisma.gameEntry.aggregate({ where: { paidAt: { not: null, gte: previousStart, lt: start }, ...gpf }, _sum: { paidAmount: true } }),
-        prisma.gameEntry.count({ where: { paidAt: { not: null, gte: start, lte: end }, ...gpf } }),
-        prisma.gameEntry.count({ where: { paidAt: { not: null, gte: previousStart, lt: start }, ...gpf } }),
-        prisma.gameEntry.groupBy({ by: ["userId"], where: { paidAt: { not: null, gte: start, lte: end }, ...gpf } }).then((r) => r.length),
-        prisma.gameEntry.aggregate({ where: { paidAt: { not: null, gte: start, lte: end }, ...gpf }, _avg: { paidAmount: true } }),
-        prisma.gameEntry.groupBy({ by: ["userId"], where: { paidAt: { not: null, gte: start, lte: end }, ...gpf }, _count: true }),
-        prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, paidAt: { not: null, gte: start, lte: end }, ...gpf }, _count: true, _sum: { prize: true } }),
-        prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, claimedAt: { not: null }, paidAt: { not: null, gte: start, lte: end }, ...gpf }, _count: true, _sum: { prize: true } }),
-        prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, claimedAt: null, paidAt: { not: null, gte: start, lte: end }, ...gpf }, _sum: { prize: true } }),
+        prisma.gameEntry.aggregate({ where: revenueWhere, _sum: { paidAmount: true } }),
+        prisma.gameEntry.aggregate({ where: previousRevenueWhere, _sum: { paidAmount: true } }),
+        prisma.gameEntry.count({ where: revenueWhere }),
+        prisma.gameEntry.count({ where: previousRevenueWhere }),
+        prisma.gameEntry.groupBy({ by: ["userId"], where: revenueWhere }).then((r) => r.length),
+        prisma.gameEntry.aggregate({ where: revenueWhere, _avg: { paidAmount: true } }),
+        prisma.gameEntry.groupBy({ by: ["userId"], where: revenueWhere, _count: true }),
+        prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, ...revenueWhere }, _count: true, _sum: { prize: true } }),
+        prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, claimedAt: { not: null }, ...revenueWhere }, _count: true, _sum: { prize: true } }),
+        prisma.gameEntry.aggregate({ where: { prize: { gt: 0 }, claimedAt: null, ...revenueWhere }, _sum: { prize: true } }),
         prisma.gameEntry.findMany({
-            where: { paidAt: { not: null, gte: start, lte: end }, ...gpf },
+            where: revenueWhere,
             select: {
                 paidAt: true,
                 paidAmount: true,
@@ -1584,13 +1670,12 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
         prisma.gameEntry.groupBy({
             by: ["gameId"],
             where: {
-                ...gpf,
+                ...revenueWhere,
                 answered: { gt: 0 },
-                paidAt: { not: null, gte: start, lte: end },
             },
             _avg: { score: true },
         }),
-        prisma.gameEntry.aggregate({ where: { paidAt: { not: null }, ...gpf }, _sum: { paidAmount: true } }),
+        prisma.gameEntry.aggregate({ where: lifetimeRevenueWhere, _sum: { paidAmount: true } }),
     ]);
 
     const revenue = calculateProtocolRevenue(currentRevenue._sum.paidAmount);
@@ -1628,11 +1713,17 @@ async function getRevenueData(start: Date, end: Date, platform?: string) {
             }
         }
     });
-    const chartData = Array.from(dailyMap.entries()).sort().map(([date, data]) => ({
-        date: date.slice(5),
-        ...data,
-    }));
     const topGames = summarizeRevenueByGame(dailyEntries as RevenueEntryWithGame[]).slice(0, 10);
+    const chartData = selectedGameId
+        ? topGames.map((game) => ({
+            date: game.title,
+            revenue: game.revenue,
+            tickets: game.ticketCount,
+        }))
+        : Array.from(dailyMap.entries()).sort().map(([date, data]) => ({
+            date: date.slice(5),
+            ...data,
+        }));
 
     return {
         revenue,
@@ -1772,6 +1863,7 @@ export default async function AnalyticsPage({
     const activeTab = validTabs.includes(tab as AnalyticsTab)
         ? (tab as AnalyticsTab)
         : "overview";
+    const gameFilter = await getAnalyticsGameFilterData(platform, gameId);
 
     return (
         <div className="space-y-6">
@@ -1790,6 +1882,13 @@ export default async function AnalyticsPage({
 
             <AnalyticsTabs currentTab={activeTab} />
 
+            <AnalyticsGameFilter
+                data={gameFilter}
+                tab={activeTab}
+                range={range || "7d"}
+                platform={platform}
+            />
+
             <Suspense fallback={<AnalyticsSkeleton />}>
                 <AnalyticsContent
                     start={start}
@@ -1798,6 +1897,7 @@ export default async function AnalyticsPage({
                     platform={platform}
                     range={range || "7d"}
                     gameId={gameId}
+                    gameFilter={gameFilter}
                 />
             </Suspense>
         </div>
@@ -1811,6 +1911,7 @@ async function AnalyticsContent({
     platform,
     range,
     gameId,
+    gameFilter,
 }: {
     start: Date;
     end: Date;
@@ -1818,23 +1919,24 @@ async function AnalyticsContent({
     platform?: string;
     range: string;
     gameId?: string;
+    gameFilter: AnalyticsGameFilterData;
 }) {
     if (activeTab === "overview") {
         const [data, retention, onboarding] = await Promise.all([
-            getCoreDashboard(start, end, platform),
-            getRetentionData(start, end, platform, range),
+            getCoreDashboard(start, end, platform, gameId, gameFilter),
+            getRetentionData(start, end, platform, range, gameId),
             getOnboardingConversionData(start, end, platform),
         ]);
         return <OverviewTab data={data} retention={retention} onboarding={onboarding} />;
     }
     if (activeTab === "games") {
-        const gameplay = await getGameplayData(start, end, platform, gameId);
-        return <GameplayTab data={gameplay} range={range} platform={platform} />;
+        const gameplay = await getGameplayData(start, end, platform, gameId, gameFilter);
+        return <GameplayTab data={gameplay} />;
     }
     if (activeTab === "players") {
         const [revenue, retention, levels] = await Promise.all([
-            getRevenueData(start, end, platform),
-            getRetentionData(start, end, platform, range),
+            getRevenueData(start, end, platform, gameId, gameFilter),
+            getRetentionData(start, end, platform, range, gameId),
             getLevelProgressionData(start, end, platform),
         ]);
         return <RevenueRetentionTab revenue={revenue} retention={retention} levels={levels} />;
@@ -2220,16 +2322,18 @@ function GameFilterLink({
     );
 }
 
-function GameplayGameFilter({
+function AnalyticsGameFilter({
     data,
+    tab,
     range,
     platform,
 }: {
-    data: Awaited<ReturnType<typeof getGameplayData>>;
+    data: AnalyticsGameFilterData;
+    tab: AnalyticsTab;
     range: string;
     platform?: string;
 }) {
-    const { selectedGameId, selectedGame, currentGame, previousGame, options } = data.gameFilter;
+    const { selectedGameId, selectedGame, currentGame, previousGame, options } = data;
 
     return (
         <div className="rounded-2xl border border-white/10 p-5">
@@ -2245,14 +2349,14 @@ function GameplayGameFilter({
 
                 <div className="flex flex-wrap items-center gap-2">
                     <GameFilterLink
-                        href={buildGameplayFilterHref({ range, platform })}
+                        href={buildAnalyticsFilterHref({ tab, range, platform })}
                         active={!selectedGameId}
                     >
                         All games
                     </GameFilterLink>
                     {currentGame ? (
                         <GameFilterLink
-                            href={buildGameplayFilterHref({ range, platform, gameId: currentGame.id })}
+                            href={buildAnalyticsFilterHref({ tab, range, platform, gameId: currentGame.id })}
                             active={selectedGameId === currentGame.id}
                         >
                             Current
@@ -2260,7 +2364,7 @@ function GameplayGameFilter({
                     ) : null}
                     {previousGame ? (
                         <GameFilterLink
-                            href={buildGameplayFilterHref({ range, platform, gameId: previousGame.id })}
+                            href={buildAnalyticsFilterHref({ tab, range, platform, gameId: previousGame.id })}
                             active={selectedGameId === previousGame.id}
                         >
                             Previous
@@ -2270,7 +2374,7 @@ function GameplayGameFilter({
             </div>
 
             <form action="/admin/analytics" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
-                <input type="hidden" name="tab" value="games" />
+                <input type="hidden" name="tab" value={tab} />
                 <input type="hidden" name="range" value={range} />
                 {platform ? <input type="hidden" name="platform" value={platform} /> : null}
                 <select
@@ -2279,7 +2383,7 @@ function GameplayGameFilter({
                     className="h-10 rounded-lg border border-white/10 bg-[#141414] px-3 text-sm text-white outline-none focus:border-[#FFC931]/60"
                 >
                     <option value="">All games in range</option>
-                    {options.map((game: GameplayGameFilterOption) => (
+                    {options.map((game: AnalyticsGameFilterOption) => (
                         <option key={game.id} value={game.id}>
                             {game.title} · {formatGameDateTime(game.startsAt)} · {game.playerCount} players
                         </option>
@@ -2296,19 +2400,9 @@ function GameplayGameFilter({
     );
 }
 
-function GameplayTab({
-    data,
-    range,
-    platform,
-}: {
-    data: Awaited<ReturnType<typeof getGameplayData>>;
-    range: string;
-    platform?: string;
-}) {
+function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData>> }) {
     return (
         <div className="space-y-6">
-            <GameplayGameFilter data={data} range={range} platform={platform} />
-
             {/* Top-line gameplay KPIs */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
                 <MiniStat label="Accuracy" value={`${data.avgAccuracy.toFixed(1)}%`} color="#14B985" tooltip="Correct answers divided by all submitted answers in the selected range." />
