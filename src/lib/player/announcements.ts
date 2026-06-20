@@ -13,7 +13,7 @@
  * one-off modals (migrationNotice.ts, worldCupTakeover.ts), not feed cards.
  */
 import { prisma } from "@/lib/db";
-import { loadTournamentClaims } from "@/lib/player/tournamentGames";
+import { loadTournamentClaims, loadRecentResults } from "@/lib/player/tournamentGames";
 
 export type AnnouncementTone = "maple" | "berry" | "leaf";
 
@@ -105,6 +105,27 @@ async function computeTriggeredAnnouncements(userId: string): Promise<PlayerAnno
       body: `${total.toFixed(2)} USDT is waiting in your Prize Wallet. Claim it before it slips your mind.`,
       cta: { label: "Open Prize Wallet", screen: "profile" },
       publishedAt: now,
+      startsAt: 0,
+      endsAt: FAR_FUTURE,
+      ephemeral: true,
+    });
+  }
+
+  // Recent settled result recap. A winner with an unclaimed prize is already
+  // covered (higher-priority card above), so here we re-engage the player whose
+  // result is informational: a "near-miss" placement that didn't reach the prize
+  // bracket. It nudges them straight back into the next round while it stings.
+  const [latest] = await loadRecentResults(userId, 1);
+  if (latest && latest.reward <= 0) {
+    out.push({
+      id: `${TRIGGERED_PREFIX}result-${latest.id}`,
+      priority: 80,
+      tone: "leaf",
+      emoji: "🎯",
+      title: `You finished #${latest.rank} — so close`,
+      body: "The prize bracket was just ahead. The next round is live — go again while you're warmed up.",
+      cta: { label: "Play the next round", screen: "home" },
+      publishedAt: latest.roundId,
       startsAt: 0,
       endsAt: FAR_FUTURE,
       ephemeral: true,

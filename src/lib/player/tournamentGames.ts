@@ -266,6 +266,8 @@ export type EnterResult =
   | { ok: true; entryId: string; alreadyEntered: boolean }
   | { ok: false; error: string; retryable?: boolean };
 
+export type TournamentEntrySource = "home" | "post_first_level_upsell" | "unknown";
+
 /**
  * Record a tournament entry after verifying the player's on-chain `buyTicket`.
  * The deposit funds the on-chain prize pool (v1 model). Idempotent: one entry
@@ -276,8 +278,9 @@ export async function enterTournamentOnChain(input: {
   gameId: string;
   txHash: string;
   wallet: string;
+  entrySource?: TournamentEntrySource;
 }): Promise<EnterResult> {
-  const { userId, gameId, txHash, wallet } = input;
+  const { userId, gameId, txHash, wallet, entrySource = "unknown" } = input;
   console.log("[buy-ticket] server verify start", { userId, gameId, txHash, wallet });
   const game = await prisma.game.findUnique({
     where: { id: gameId },
@@ -359,6 +362,7 @@ export async function enterTournamentOnChain(input: {
           revenue: entryFee,
           currency: "USD",
           entry_fee: entryFee,
+          entry_source: entrySource,
         },
       });
       return created;
@@ -530,6 +534,29 @@ export async function tournamentStandings(
     you: opts.userId ? ranked.find((r) => r.you) ?? null : null,
     settled: game.rankedAt != null,
   };
+}
+
+/** A settled result to surface as a return-pop / in-app notification: the
+ *  player's rank + prize in a recently-ranked game. `reward > 0` ⇒ they won. */
+export type PlayerResult = { id: string; roundId: number; rank: number; reward: number };
+
+/** The player's recent SETTLED tournament results (ranked games), newest first.
+ *  Powers the "you're back — here's your result" popup + announcement cards.
+ *  MiniPay has no push, so this is how a returning user learns they placed/won. */
+export async function loadRecentResults(userId: string, limit = 5): Promise<PlayerResult[]> {
+  const since = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000); // last 3 days
+  const entries = await prisma.gameEntry.findMany({
+    where: { userId, rank: { not: null }, game: { rankedAt: { not: null, gte: since } } },
+    orderBy: { game: { rankedAt: "desc" } },
+    take: limit,
+    select: { gameId: true, rank: true, prize: true, game: { select: { rankedAt: true } } },
+  });
+  return entries.map((e) => ({
+    id: e.gameId,
+    roundId: e.game.rankedAt!.getTime(),
+    rank: e.rank!,
+    reward: e.prize ?? 0,
+  }));
 }
 
 /** The platform's latest tournament game (live or most-recently ended) — for the

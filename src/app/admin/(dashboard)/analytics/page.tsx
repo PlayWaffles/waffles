@@ -80,6 +80,20 @@ type OnboardingDiagnosticSegment = {
     nextGameConversionRate?: number;
 };
 
+type EntrySource = "home" | "post_first_level_upsell" | "unknown";
+
+type EntrySourceSegment = {
+    source: EntrySource;
+    label: string;
+    purchases: number;
+    buyers: number;
+    revenue: number;
+    started: number;
+    startRate: number;
+    noShows: number;
+    noShowRate: number;
+};
+
 const ONBOARDING_WAIT_BUCKETS: OnboardingWaitBucket[] = [
     { label: "<15m", minMs: 0, maxMs: 15 * 60 * 1000 },
     { label: "15m-1h", minMs: 15 * 60 * 1000, maxMs: 60 * 60 * 1000 },
@@ -119,6 +133,28 @@ function addOnboardingSegment(
     if (boughtTicket) segment.ticketBuyers += 1;
     if (boughtNextGame) segment.nextGameBuyers = (segment.nextGameBuyers ?? 0) + 1;
     map.set(label, segment);
+}
+
+function analyticsObject(value: unknown): Record<string, unknown> {
+    return value && typeof value === "object" && !Array.isArray(value)
+        ? value as Record<string, unknown>
+        : {};
+}
+
+function analyticsNumber(value: unknown) {
+    return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+function entrySource(value: unknown): EntrySource {
+    return value === "home" || value === "post_first_level_upsell"
+        ? value
+        : "unknown";
+}
+
+function entrySourceLabel(source: EntrySource) {
+    if (source === "home") return "Home";
+    if (source === "post_first_level_upsell") return "Post-level upsell";
+    return "Unknown";
 }
 
 function finalizeOnboardingSegments(
@@ -891,6 +927,8 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         // Theme participation
         themeParticipation,
         currentOrNextGame,
+        entrySourceEvents,
+        entrySourceEntries,
     ] = await Promise.all([
         prisma.gameEntry.findMany({
             where: { ...gpf, game: { ...gamePf, startsAt: { gte: start, lte: end } } },
@@ -949,6 +987,26 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
                 startsAt: true,
                 endsAt: true,
             },
+        }),
+        prisma.analyticsEvent.findMany({
+            where: {
+                name: "ticket_purchase_authoritative",
+                createdAt: { gte: start, lte: end },
+            },
+            select: {
+                userId: true,
+                properties: true,
+            },
+            take: 10000,
+        }),
+        prisma.gameEntry.findMany({
+            where: buildTicketPurchaseWhere(start, end, gpf),
+            select: {
+                gameId: true,
+                userId: true,
+                answered: true,
+            },
+            take: 10000,
         }),
     ]);
 
@@ -1225,6 +1283,51 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         }
         : null;
 
+    const entryByUserAndGame = new Map(
+        entrySourceEntries.map((entry) => [`${entry.userId}:${entry.gameId}`, entry]),
+    );
+    const entrySourceMap = new Map<EntrySource, EntrySourceSegment & { buyerIds: Set<string> }>();
+    for (const source of ["home", "post_first_level_upsell", "unknown"] as const) {
+        entrySourceMap.set(source, {
+            source,
+            label: entrySourceLabel(source),
+            purchases: 0,
+            buyers: 0,
+            revenue: 0,
+            started: 0,
+            startRate: 0,
+            noShows: 0,
+            noShowRate: 0,
+            buyerIds: new Set<string>(),
+        });
+    }
+
+    for (const event of entrySourceEvents) {
+        if (!event.userId) continue;
+        const properties = analyticsObject(event.properties);
+        if (platform && properties.platform !== platform) continue;
+        const gameId = typeof properties.game_id === "string" ? properties.game_id : null;
+        if (!gameId) continue;
+        const source = entrySource(properties.entry_source);
+        const segment = entrySourceMap.get(source);
+        if (!segment) continue;
+        const entry = entryByUserAndGame.get(`${event.userId}:${gameId}`);
+        segment.purchases += 1;
+        segment.buyerIds.add(event.userId);
+        segment.revenue += analyticsNumber(properties.revenue);
+        if (entry?.answered && entry.answered > 0) segment.started += 1;
+        else segment.noShows += 1;
+    }
+
+    const entrySourceComparison = Array.from(entrySourceMap.values())
+        .map(({ buyerIds, ...segment }) => ({
+            ...segment,
+            buyers: buyerIds.size,
+            startRate: segment.purchases > 0 ? (segment.started / segment.purchases) * 100 : 0,
+            noShowRate: segment.purchases > 0 ? (segment.noShows / segment.purchases) * 100 : 0,
+        }))
+        .filter((segment) => segment.purchases > 0 || segment.source !== "unknown");
+
     return {
         avgAccuracy,
         avgAnswerTime,
@@ -1240,6 +1343,7 @@ async function getGameplayData(start: Date, end: Date, platform?: string) {
         questions,
         themeParticipation: themeData,
         currentTicketBuyers,
+        entrySourceComparison,
         behavior: {
             tickets: {
                 entries: ticketStats.entries,
@@ -1897,6 +2001,38 @@ function GameplayTab({ data }: { data: Awaited<ReturnType<typeof getGameplayData
                         No live or upcoming game pair is available yet for current-ticket buyer analytics.
                     </div>
                 )}
+            </div>
+
+            <div className="rounded-2xl border border-white/10 p-6 space-y-6">
+                <div>
+                    <h3 className="text-lg font-semibold text-white font-display">Entry Source Comparison</h3>
+                    <p className="text-sm text-white/50">
+                        Tournament purchases attributed to Home vs the post-level upsell
+                    </p>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-white/8">
+                    <div className="grid grid-cols-[minmax(120px,1fr)_72px_72px_88px_88px_88px] gap-3 border-b border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-white/40">
+                        <span>Source</span>
+                        <span className="text-right">Buys</span>
+                        <span className="text-right">Buyers</span>
+                        <span className="text-right">Revenue</span>
+                        <span className="text-right">Started</span>
+                        <span className="text-right">No-show</span>
+                    </div>
+                    <div className="divide-y divide-white/8">
+                        {data.entrySourceComparison.map((source) => (
+                            <div key={source.source} className="grid grid-cols-[minmax(120px,1fr)_72px_72px_88px_88px_88px] items-center gap-3 px-3 py-3 text-xs">
+                                <span className="truncate font-medium text-white/75">{source.label}</span>
+                                <span className="text-right font-body text-[#FFC931]">{source.purchases.toLocaleString()}</span>
+                                <span className="text-right text-white/60">{source.buyers.toLocaleString()}</span>
+                                <span className="text-right font-body text-[#14B985]">${source.revenue.toFixed(2)}</span>
+                                <span className="text-right font-body text-[#00CFF2]">{source.startRate.toFixed(1)}%</span>
+                                <span className="text-right font-body text-[#FB72FF]">{source.noShowRate.toFixed(1)}%</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Behavior Signals */}

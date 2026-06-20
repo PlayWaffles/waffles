@@ -16,7 +16,7 @@ import type { PlayerState, Track } from "@/lib/player/playerState";
 import { getLevelClientQuestions, recordLevelQuestionStats, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
 import { topWinnerShare } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
-import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentGame } from "@/lib/player/tournamentGames";
+import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentEntrySource, TournamentGame } from "@/lib/player/tournamentGames";
 import * as migrationSvc from "@/lib/player/migrationNotice";
 import * as wcTakeoverSvc from "@/lib/player/worldCupTakeover";
 import type { RoundAnswer } from "@/lib/player/scoring";
@@ -218,7 +218,11 @@ export async function getTournament(): Promise<
 /** Record a tournament entry after the player's on-chain `buyTicket` deposit.
  *  The client sends the entry tx hash; the server verifies it on-chain (reusing
  *  v1's `verifyTicketPurchase`) before creating the entry. */
-export async function enterTournament(gameId: string, txHash: string): Promise<EnterResult | null> {
+export async function enterTournament(
+  gameId: string,
+  txHash: string,
+  entrySource: TournamentEntrySource = "unknown",
+): Promise<EnterResult | null> {
   const user = await getCurrentUser();
   if (!user) {
     console.warn("[buy-ticket] enterTournament: no authed user", { gameId, txHash });
@@ -228,7 +232,7 @@ export async function enterTournament(gameId: string, txHash: string): Promise<E
     console.warn("[buy-ticket] enterTournament: user has no wallet", { userId: user.id, gameId });
     return { ok: false, error: "no_wallet" };
   }
-  const res = await tournamentSvc.enterTournamentOnChain({ userId: user.id, gameId, txHash, wallet: user.wallet });
+  const res = await tournamentSvc.enterTournamentOnChain({ userId: user.id, gameId, txHash, wallet: user.wallet, entrySource });
   console.log("[buy-ticket] enterTournament result", { userId: user.id, gameId, ok: res.ok, error: res.ok ? undefined : res.error });
   return res;
 }

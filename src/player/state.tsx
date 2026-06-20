@@ -31,9 +31,11 @@ import {
   refillLives as refillLivesAction,
   setAnnouncementsRead,
   loadAnnouncements,
+  loadResults,
   setUsername as setUsernameAction,
   logClient,
 } from "@/actions/player";
+import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
 import { type Announcement } from "./announcements";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { useUser } from "@/hooks/useUser";
@@ -158,6 +160,9 @@ export function syrupLabel(amount: number): string {
 // post-first-level tournament upsell to lower the barrier to the first entry.
 export const FIRST_TICKET_DISCOUNT = 0.5;
 const FIRST_TICKET_OFFER_KEY = "waffles.v2.firstTicketUsed";
+// Settled results already shown in the return-pop modal, so it fires once per
+// result per device (we have no push channel to dedupe server-side).
+const RESULTS_SEEN_KEY = "waffles.v2.resultsSeen";
 export function isFirstTicketOfferAvailable(): boolean {
   if (typeof window === "undefined") return false;
   try {
@@ -582,7 +587,7 @@ export type Proto = State & {
   answerOrder: (order: number[]) => void;
   // On-chain tournament: deposit via wallet (buyTicket) + start the round; claim
   // a settled prize via the merkle proof. Resolve with ok/error for the UI.
-  enterTournamentOnChain: () => Promise<{ ok: boolean; error?: string }>;
+  enterTournamentOnChain: (entrySource?: TournamentEntrySource) => Promise<{ ok: boolean; error?: string }>;
   playEnteredTournament: () => Promise<{ ok: boolean; error?: string }>;
   claimTournamentPrize: (gameId: string) => Promise<{ ok: boolean; error?: string }>;
   markResultRead: (id: string) => void;
@@ -779,6 +784,25 @@ export function ProtoProvider({
     return () => {
       active = false;
     };
+  }, [authedUserId, update]);
+
+  // Recent SETTLED results → the return-pop result modal. With no MiniPay push
+  // channel, loading these on open is the only way a returning player learns they
+  // placed/won. Dismissed results are remembered per-device (localStorage) so the
+  // popup fires once, not on every open.
+  useEffect(() => {
+    if (!authedUserId) return;
+    let active = true;
+    loadResults()
+      .then((list) => {
+        if (!active || !list || list.length === 0) return;
+        let seen: string[] = [];
+        try { seen = JSON.parse(localStorage.getItem(RESULTS_SEEN_KEY) ?? "[]"); } catch { /* storage off */ }
+        const fresh = list.filter((r) => !seen.includes(r.id)).map((r) => ({ ...r, read: false }));
+        if (fresh.length) update({ resultNotifs: fresh });
+      })
+      .catch(() => {});
+    return () => { active = false; };
   }, [authedUserId, update]);
 
   useEffect(() => {
@@ -1181,6 +1205,12 @@ export function ProtoProvider({
   };
 
   const markResultRead = (id: string) => {
+    // Persist the dismissal so the modal doesn't re-pop on the next open.
+    try {
+      const seen = new Set<string>(JSON.parse(localStorage.getItem(RESULTS_SEEN_KEY) ?? "[]"));
+      seen.add(id);
+      localStorage.setItem(RESULTS_SEEN_KEY, JSON.stringify([...seen]));
+    } catch { /* storage off */ }
     update((s) => ({ resultNotifs: s.resultNotifs.map((r) => (r.id === id ? { ...r, read: true } : r)) }));
   };
 
@@ -1451,7 +1481,7 @@ export function ProtoProvider({
   // Enter the current on-chain tournament: deposit via wallet `buyTicket`, then
   // record the verified entry server-side and start the round on the server's
   // authoritative questions. Reuses v1's contract layer end-to-end.
-  const enterTournamentOnChain = async (): Promise<{ ok: boolean; error?: string }> => {
+  const enterTournamentOnChain = async (entrySource: TournamentEntrySource = "unknown"): Promise<{ ok: boolean; error?: string }> => {
     const t = await getTournament();
     if (!t || !t.game.onchainId) {
       blog("[buy-ticket] no tournament / not on-chain", { hasTournament: !!t, onchainId: t?.game.onchainId });
@@ -1470,6 +1500,7 @@ export function ProtoProvider({
       entry_fee: t.game.entryFee,
       platform: t.game.platform,
       onchain_id: t.game.onchainId,
+      entry_source: entrySource,
     };
     track(AnalyticsEvent.TournamentEntryStarted, entryContext);
     track(AnalyticsEvent.TicketPurchaseStarted, entryContext);
@@ -1507,7 +1538,7 @@ export function ProtoProvider({
       blog("[buy-ticket] on-chain done, verifying server-side", { txHash });
       update({ tournamentStep: "verifying" });
       track(AnalyticsEvent.TicketPurchaseSyncStarted, entryContext);
-      const res = await enterTournament(t.game.id, txHash);
+      const res = await enterTournament(t.game.id, txHash, entrySource);
       if (!res || !res.ok) {
         blog("[buy-ticket] server verify rejected", { res });
         update({ tournamentStep: null });

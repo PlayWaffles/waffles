@@ -108,7 +108,7 @@ const TournamentUpsellSheet = ({
     });
     setEntryError(null);
     setEntering(true);
-    const res = await proto.enterTournamentOnChain();
+    const res = await proto.enterTournamentOnChain("post_first_level_upsell");
     setEntering(false);
     if (res.ok) onAccept();
     else setEntryError(res.error ?? "Entry failed — try again");

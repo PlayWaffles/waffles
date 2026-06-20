@@ -349,7 +349,7 @@ export const HomeScreen = () => {
   const confirmEntry = async () => {
     setEntryError(null);
     setEntering(true);
-    const res = await proto.enterTournamentOnChain();
+    const res = await proto.enterTournamentOnChain("home");
     setEntering(false);
     if (res.ok) setGate(null);
     else setEntryError(res.error ?? "Entry failed");
