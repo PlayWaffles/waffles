@@ -19,13 +19,13 @@ function createPlayer(overrides: Partial<PlayerEntry> = {}): PlayerEntry {
   };
 }
 
-function createPlayers(count: number, baseScore = 1000): PlayerEntry[] {
+function createPlayers(count: number, baseScore = 1000, paidAmount = 1): PlayerEntry[] {
   return Array.from({ length: count }, (_, index) =>
     createPlayer({
       id: `entry-${index}`,
       userId: `user-${index}`,
       score: baseScore - index * 10,
-      paidAmount: 1,
+      paidAmount,
       username: `player${index + 1}`,
     })
   );
@@ -82,49 +82,63 @@ describe("Prize Distribution Algorithm", () => {
     expect(winners[0].prize).toBeCloseTo(2, 6);
   });
 
-  it("still pays three winners for larger small-bracket games", () => {
+  it("uses the top-5 generous bracket for 8-14 paid entrants", () => {
     const result = calculatePrizeDistribution(createPlayers(9), 9);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
 
-    expect(winners).toHaveLength(3);
-    expect(winners[0].prize).toBeCloseTo(4.5, 6);
-    expect(winners[1].prize).toBeCloseTo(2.7, 6);
-    expect(winners[2].prize).toBeCloseTo(1.8, 6);
+    expect(winners).toHaveLength(5);
+    expect(winners[0].prize).toBeCloseTo(2.79, 6);
+    expect(winners[1].prize).toBeCloseTo(2.07, 6);
+    expect(winners[2].prize).toBeCloseTo(1.62, 6);
+    expect(winners[3].prize).toBeCloseTo(1.35, 6);
+    expect(winners[4].prize).toBeCloseTo(1.17, 6);
   });
 
-  it("uses the top-5 bracket for 10-39 paid entrants", () => {
+  it("uses the top-12 generous bracket for 25-39 paid entrants", () => {
     const result = calculatePrizeDistribution(createPlayers(25), 25);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
 
-    expect(winners).toHaveLength(5);
-    expect(winners[0].prize).toBeCloseTo(12.5, 6);
-    expect(winners[1].prize).toBeCloseTo(5, 6);
-    expect(winners[2].prize).toBeCloseTo(3.75, 6);
-    expect(winners[3].prize).toBeCloseTo(1.875, 6);
-    expect(winners[4].prize).toBeCloseTo(1.875, 6);
-    expect(result.podiumTotal).toBeCloseTo(21.25, 6);
-    expect(result.runnersTotal).toBeCloseTo(3.75, 6);
+    expect(winners).toHaveLength(12);
+    expect(winners[0].prize).toBeCloseTo(5.5, 6);
+    expect(winners[1].prize).toBeCloseTo(3.75, 6);
+    expect(winners[2].prize).toBeCloseTo(2.75, 6);
+    expect(winners[3].prize).toBeCloseTo(2.25, 6);
+    expect(winners[4].prize).toBeCloseTo(2, 6);
+    expect(winners[5].prize).toBeCloseTo(1.75, 6);
+    expect(winners[6].prize).toBeCloseTo(1.5, 6);
+    expect(winners[7].prize).toBeCloseTo(1.25, 6);
+    expect(winners[8].prize).toBeCloseTo(1.25, 6);
+    expect(winners[9].prize).toBeCloseTo(1, 6);
+    expect(winners[10].prize).toBeCloseTo(1, 6);
+    expect(winners[11].prize).toBeCloseTo(1, 6);
+    expect(result.podiumTotal).toBeCloseTo(12, 6);
+    expect(result.runnersTotal).toBeCloseTo(13, 6);
   });
 
-  it("uses the top-10 bracket for 40-100 paid entrants", () => {
+  it("uses the top-15 bracket for 40-100 paid entrants", () => {
     const result = calculatePrizeDistribution(createPlayers(100), 100);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
 
-    expect(winners).toHaveLength(10);
-    expect(winners[0].prize).toBeCloseTo(50, 6);
-    expect(winners[1].prize).toBeCloseTo(15, 6);
+    expect(winners).toHaveLength(15);
+    expect(winners[0].prize).toBeCloseTo(22, 6);
+    expect(winners[1].prize).toBeCloseTo(14, 6);
     expect(winners[2].prize).toBeCloseTo(10, 6);
-    expect(winners[3].prize).toBeCloseTo(5, 6);
-    expect(winners[4].prize).toBeCloseTo(5, 6);
-    expect(winners[5].prize).toBeCloseTo(4, 6);
-    expect(winners[6].prize).toBeCloseTo(4, 6);
-    expect(winners[7].prize).toBeCloseTo(2.5, 6);
-    expect(winners[8].prize).toBeCloseTo(2.5, 6);
-    expect(winners[9].prize).toBeCloseTo(2, 6);
+    expect(winners[3].prize).toBeCloseTo(8, 6);
+    expect(winners[4].prize).toBeCloseTo(7, 6);
+    expect(winners[5].prize).toBeCloseTo(6, 6);
+    expect(winners[6].prize).toBeCloseTo(5, 6);
+    expect(winners[7].prize).toBeCloseTo(5, 6);
+    expect(winners[8].prize).toBeCloseTo(4, 6);
+    expect(winners[9].prize).toBeCloseTo(4, 6);
+    expect(winners[10].prize).toBeCloseTo(3.5, 6);
+    expect(winners[11].prize).toBeCloseTo(3, 6);
+    expect(winners[12].prize).toBeCloseTo(3, 6);
+    expect(winners[13].prize).toBeCloseTo(2.75, 6);
+    expect(winners[14].prize).toBeCloseTo(2.75, 6);
   });
 
   it("uses the top-15 bracket for more than 100 paid entrants", () => {
-    const result = calculatePrizeDistribution(createPlayers(101), 20);
+    const result = calculatePrizeDistribution(createPlayers(101, 1000, 0.05), 20);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
 
     expect(winners).toHaveLength(WINNERS_COUNT);
@@ -143,6 +157,15 @@ describe("Prize Distribution Algorithm", () => {
     expect(winners[12].prize).toBeCloseTo(0.4, 6);
     expect(winners[13].prize).toBeCloseTo(0.4, 6);
     expect(winners[14].prize).toBeCloseTo(0.3, 6);
+  });
+
+  it("does not award prizes below the entrant's ticket amount", () => {
+    const result = calculatePrizeDistribution(createPlayers(8, 1000, 0.05), 0.32);
+    const winners = result.allocations.filter((allocation) => allocation.prize > 0);
+
+    expect(winners).toHaveLength(4);
+    expect(winners.every((winner) => winner.prize >= 0.05)).toBe(true);
+    expect(winners.reduce((sum, winner) => sum + winner.prize, 0)).toBeCloseTo(0.32, 6);
   });
 
   it("keeps unpaid entries ranked but prize-free", () => {

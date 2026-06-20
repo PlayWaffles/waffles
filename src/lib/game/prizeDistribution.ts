@@ -6,13 +6,21 @@
  *
  * Brackets:
  * - 1-4 paid entrants: top 1 gets 100%
- * - 5-9 paid entrants: top 3 get 50% / 30% / 20%
- * - 10-39 paid entrants: top 5 get 50% / 20% / 15% / 7.5% / 7.5%
- * - 40-100 paid entrants: top 10 get
- *   50% / 15% / 10% / 5% / 5% / 4% / 4% / 2.5% / 2.5% / 2%
+ * - 5-7 paid entrants: top 3 get 50% / 30% / 20%
+ * - 8-14 paid entrants: top 5 get 31% / 23% / 18% / 15% / 13%
+ * - 15-24 paid entrants: top 8 get 28% / 19% / 14% / 10% / 8% /
+ *   7% / 7% / 7%
+ * - 25-39 paid entrants: top 12 get 22% / 15% / 11% / 9% / 8% /
+ *   7% / 6% / 5% / 5% / 4% / 4% / 4%
+ * - 40-100 paid entrants: top 15 get
+ *   22% / 14% / 10% / 8% / 7% / 6% / 5% / 5% / 4% / 4% /
+ *   3.5% / 3% / 3% / 2.75% / 2.75%
  * - 101+ paid entrants: top 15 get
  *   40% / 14% / 9% / 6% / 5% / 4% / 4% / 3% / 3% / 2.5% /
  *   2% / 2% / 2% / 2% / 1.5%
+ *
+ * Tail winners are dropped if their prize would be smaller than their ticket
+ * amount, then the remaining winner shares are normalized back to 100%.
  *
  * @module prizeDistribution
  */
@@ -27,8 +35,10 @@ export const WINNERS_COUNT = 15;
 const BRACKET_SCHEDULES = {
   solo: [1],
   small: [0.5, 0.3, 0.2],
-  medium: [0.5, 0.2, 0.15, 0.075, 0.075],
-  large: [0.5, 0.15, 0.1, 0.05, 0.05, 0.04, 0.04, 0.025, 0.025, 0.02],
+  generousSmall: [0.31, 0.23, 0.18, 0.15, 0.13],
+  generousMedium: [0.28, 0.19, 0.14, 0.1, 0.08, 0.07, 0.07, 0.07],
+  generousUpperMedium: [0.22, 0.15, 0.11, 0.09, 0.08, 0.07, 0.06, 0.05, 0.05, 0.04, 0.04, 0.04],
+  large: [0.22, 0.14, 0.1, 0.08, 0.07, 0.06, 0.05, 0.05, 0.04, 0.04, 0.035, 0.03, 0.03, 0.0275, 0.0275],
   expanded: [
     0.4,
     0.14,
@@ -142,8 +152,10 @@ export function calculatePrizeDistribution(
 
 function getScheduleForPaidEntrants(paidEntrants: number): number[] {
   if (paidEntrants <= 4) return [...BRACKET_SCHEDULES.solo];
-  if (paidEntrants < 10) return [...BRACKET_SCHEDULES.small];
-  if (paidEntrants < 40) return [...BRACKET_SCHEDULES.medium];
+  if (paidEntrants < 8) return [...BRACKET_SCHEDULES.small];
+  if (paidEntrants < 15) return [...BRACKET_SCHEDULES.generousSmall];
+  if (paidEntrants < 25) return [...BRACKET_SCHEDULES.generousMedium];
+  if (paidEntrants < 40) return [...BRACKET_SCHEDULES.generousUpperMedium];
   if (paidEntrants > 100) return [...BRACKET_SCHEDULES.expanded];
   return [...BRACKET_SCHEDULES.large];
 }
@@ -156,11 +168,19 @@ function buildWinnerAllocations(
     return [];
   }
 
-  const schedule = getScheduleForPaidEntrants(paidEntries.length).slice(
+  let schedule = getScheduleForPaidEntrants(paidEntries.length).slice(
     0,
     paidEntries.length
   );
-  const normalizedSchedule = normalizeShares(schedule);
+  let normalizedSchedule = normalizeShares(schedule);
+
+  while (
+    normalizedSchedule.length > 0 &&
+    normalizedSchedule.some((share, index) => prizePool * share < paidEntries[index].paidAmount)
+  ) {
+    schedule = schedule.slice(0, -1);
+    normalizedSchedule = normalizeShares(schedule);
+  }
 
   return paidEntries.slice(0, normalizedSchedule.length).map((entry, index) => ({
     entryId: entry.id,
