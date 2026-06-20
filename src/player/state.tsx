@@ -976,6 +976,21 @@ export function ProtoProvider({
               xp_delta: state.score,
             });
           }
+          trackClientEvent(AnalyticsEvent.LevelAdvanced, {
+            screen: state.screen,
+            mode: "level",
+            level_track: track,
+            level_number: newLevel,
+            previous_level_number: state.levelByTrack[track],
+            score: state.score,
+            question_count: totalQs,
+            tickets_before: state.tickets,
+            tickets_after: state.tickets + milestoneTicket,
+            ticket_delta: milestoneTicket,
+            xp_before: state.xp,
+            xp_after: state.xp + state.score,
+            xp_delta: state.score,
+          });
           update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
           // Persist: advanceLevel credits the same milestone ticket + xp server-side.
           void advanceLevel(track, state.score);

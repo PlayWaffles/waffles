@@ -132,6 +132,7 @@ export const AnalyticsEvent = {
   QuestionNextClicked: "question_next_clicked",
   LevelCompleted: "level_completed",
   FirstLevelCompleted: "first_level_completed",
+  LevelAdvanced: "level_advanced",
   LevelFailed: "level_failed",
   LevelRetryClicked: "level_retry_clicked",
   LifeLost: "life_lost",
