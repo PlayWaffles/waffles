@@ -45,6 +45,13 @@ const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
     "30d": "last 30 days",
     all: "all time",
 };
+const DASHBOARD_TREND_LABELS: Record<DashboardTimeframe, string> = {
+    current: "vs yesterday",
+    "7d": "vs previous 7 days",
+    "14d": "vs previous 14 days",
+    "30d": "vs previous 30 days",
+    all: "vs all time",
+};
 
 function formatCompactNumber(value: number) {
     return value.toLocaleString("en-US", {
@@ -266,7 +273,7 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         0
     );
     const showPeriodTrend = Boolean(metricWindow);
-    const trendLabel = timeframe === "current" ? "vs yesterday" : "vs previous period";
+    const trendLabel = DASHBOARD_TREND_LABELS[timeframe];
 
     return {
         totalUsers,
