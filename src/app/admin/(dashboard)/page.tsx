@@ -478,7 +478,11 @@ export default async function AdminDashboard({
                             activity.games.map((game) => {
                                 const phase = getGamePhase(game);
                                 return (
-                                    <div key={game.id} className="px-6 py-4 flex items-center justify-between hover:bg-white/3 transition-colors">
+                                    <Link
+                                        key={game.id}
+                                        href={`/admin/games/${game.id}`}
+                                        className="flex items-center justify-between px-6 py-4 transition-colors hover:bg-white/3"
+                                    >
                                         <div>
                                             <p className="font-medium text-white">{game.title}</p>
                                             <p className="text-xs text-white/50">{new Date(game.startsAt).toLocaleDateString()}</p>
@@ -491,7 +495,7 @@ export default async function AdminDashboard({
                                                 {phase}
                                             </span>
                                         </div>
-                                    </div>
+                                    </Link>
                                 );
                             })
                         )}
