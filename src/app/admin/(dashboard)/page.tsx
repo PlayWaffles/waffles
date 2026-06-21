@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
 import { PlatformFilter } from "@/components/admin/PlatformFilter";
+import { DashboardTimeframeFilter, type DashboardTimeframe } from "@/components/admin/DashboardTimeframeFilter";
 import {
     UsersIcon,
     TrophyIcon,
@@ -18,7 +19,7 @@ import {
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
 import { getDisplayName } from "@/lib/address";
-import { UserPlatform } from "@prisma";
+import { Prisma, UserPlatform } from "@prisma";
 
 type TrendDirection = "up" | "down" | "flat";
 type WeekOverWeekTrend = {
@@ -27,8 +28,22 @@ type WeekOverWeekTrend = {
     label?: string;
 };
 
-const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_DASHBOARD_PLATFORM = UserPlatform.MINIPAY;
+const DEFAULT_DASHBOARD_TIMEFRAME: DashboardTimeframe = "7d";
+const DASHBOARD_TIMEFRAME_DAYS: Partial<Record<DashboardTimeframe, number>> = {
+    "7d": 7,
+    "14d": 14,
+    "30d": 30,
+};
+const DASHBOARD_TIMEFRAMES = new Set<DashboardTimeframe>(["current", "7d", "14d", "30d", "all"]);
+const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
+    current: "current game",
+    "7d": "last 7 days",
+    "14d": "last 14 days",
+    "30d": "last 30 days",
+    all: "all time",
+};
 
 function formatCompactNumber(value: number) {
     return value.toLocaleString("en-US", {
@@ -36,20 +51,28 @@ function formatCompactNumber(value: number) {
     });
 }
 
+function formatCurrency(value: number) {
+    return value.toLocaleString("en-US", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+    });
+}
+
 function formatWeekOverWeekTrend(
     current: number,
     previous: number,
-    formatValue: (value: number) => string = formatCompactNumber
+    formatValue: (value: number) => string = formatCompactNumber,
+    label = "vs previous period"
 ): WeekOverWeekTrend {
     if (current === previous) {
-        return { value: "0%", direction: "flat" };
+        return { value: "0%", direction: "flat", label };
     }
 
     if (previous === 0) {
         return {
             value: `+${formatValue(current)}`,
             direction: "up",
-            label: "new this week",
+            label: "new this period",
         };
     }
 
@@ -60,16 +83,106 @@ function formatWeekOverWeekTrend(
     return {
         value: `${formattedChange}%`,
         direction: change > 0 ? "up" : "down",
+        label,
     };
 }
 
-async function getStats(platform?: string) {
+function parseDashboardTimeframe(value?: string): DashboardTimeframe {
+    return DASHBOARD_TIMEFRAMES.has(value as DashboardTimeframe)
+        ? value as DashboardTimeframe
+        : DEFAULT_DASHBOARD_TIMEFRAME;
+}
+
+function getDateKey(date: Date) {
+    return date.toISOString().split("T")[0];
+}
+
+function getMetricWindow(timeframe: DashboardTimeframe, now: Date) {
+    const days = DASHBOARD_TIMEFRAME_DAYS[timeframe];
+    if (!days) return null;
+
+    const start = new Date(now.getTime() - (days - 1) * DAY_MS);
+    start.setHours(0, 0, 0, 0);
+
+    return {
+        start,
+        previousStart: new Date(start.getTime() - days * DAY_MS),
+        previousEnd: start,
+        days,
+    };
+}
+
+async function getCurrentDashboardGame(gameWhere: Prisma.GameWhereInput, now: Date) {
+    const liveGame = await prisma.game.findFirst({
+        where: { ...gameWhere, startsAt: { lte: now }, endsAt: { gt: now } },
+        orderBy: { startsAt: "asc" },
+        select: { id: true, title: true, startsAt: true, endsAt: true },
+    });
+
+    if (liveGame) return liveGame;
+
+    return prisma.game.findFirst({
+        where: { ...gameWhere, startsAt: { gte: now } },
+        orderBy: { startsAt: "asc" },
+        select: { id: true, title: true, startsAt: true, endsAt: true },
+    });
+}
+
+async function getStats(platform: string | undefined, timeframe: DashboardTimeframe) {
     const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - ONE_WEEK_MS);
-    const fourteenDaysAgo = new Date(now.getTime() - 2 * ONE_WEEK_MS);
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
-    const gpf = buildProductionEntryWhere(platform);
+    const currentGame = timeframe === "current"
+        ? await getCurrentDashboardGame(gamePf, now)
+        : null;
+    const metricWindow = getMetricWindow(timeframe, now);
+    const entryWhere: Prisma.GameEntryWhereInput = currentGame
+        ? { gameId: currentGame.id }
+        : { game: gamePf };
+    const paidEntryWhere: Prisma.GameEntryWhereInput = {
+        ...entryWhere,
+        paidAt: metricWindow ? { not: null, gte: metricWindow.start } : { not: null },
+    };
+    const previousPaidEntryWhere: Prisma.GameEntryWhereInput = metricWindow
+        ? {
+            ...entryWhere,
+            paidAt: {
+                not: null,
+                gte: metricWindow.previousStart,
+                lt: metricWindow.previousEnd,
+            },
+        }
+        : { ...entryWhere, paidAt: { not: null } };
+    const userWhere: Prisma.UserWhereInput = currentGame
+        ? { ...pf, entries: { some: { gameId: currentGame.id } } }
+        : metricWindow
+            ? { ...pf, createdAt: { gte: metricWindow.start } }
+            : pf;
+    const activeUserWhere: Prisma.UserWhereInput = currentGame
+        ? { ...pf, entries: { some: { gameId: currentGame.id, paidAt: { not: null } } } }
+        : metricWindow
+            ? { ...pf, lastLoginAt: { gte: metricWindow.start } }
+            : { ...pf, lastLoginAt: { not: null } };
+    const gameWhere: Prisma.GameWhereInput = currentGame
+        ? { id: currentGame.id }
+        : metricWindow
+            ? { ...gamePf, startsAt: { gte: metricWindow.start } }
+            : gamePf;
+    const previousUserWhere: Prisma.UserWhereInput = metricWindow
+        ? { ...pf, createdAt: { gte: metricWindow.previousStart, lt: metricWindow.previousEnd } }
+        : pf;
+    const previousGameWhere: Prisma.GameWhereInput = metricWindow
+        ? { ...gamePf, startsAt: { gte: metricWindow.previousStart, lt: metricWindow.previousEnd } }
+        : gamePf;
+    const chartDays = metricWindow?.days ?? 7;
+    const chartStart = metricWindow?.start ?? new Date(now.getTime() - (chartDays - 1) * DAY_MS);
+    const dates = Array.from({ length: chartDays }, (_, i) => {
+        const date = new Date(chartStart.getTime() + i * DAY_MS);
+        return getDateKey(date);
+    });
+    const chartUserWhere: Prisma.UserWhereInput = currentGame
+        ? userWhere
+        : { ...pf, createdAt: { gte: chartStart } };
 
     const [
         totalUsers,
@@ -81,28 +194,26 @@ async function getStats(platform?: string) {
         recentUsers,
         recentEntries,
         previousUsers,
-        recentGames,
         previousGames,
         previousEntries,
         totalPaidAmount,
     ] = await Promise.all([
-        prisma.user.count({ where: pf }),
-        prisma.user.count({ where: { ...pf, lastLoginAt: { not: null } } }),
-        prisma.game.count({ where: gamePf }),
+        prisma.user.count({ where: userWhere }),
+        prisma.user.count({ where: activeUserWhere }),
+        prisma.game.count({ where: gameWhere }),
         prisma.game.count({
-            where: { ...gamePf, startsAt: { lte: now }, endsAt: { gt: now } },
+            where: currentGame
+                ? { id: currentGame.id, startsAt: { lte: now }, endsAt: { gt: now } }
+                : { ...gamePf, startsAt: { lte: now }, endsAt: { gt: now } },
         }),
-        prisma.gameEntry.count({ where: gpf }),
-        prisma.gameEntry.count({ where: { paidAt: { not: null }, ...gpf } }),
+        prisma.gameEntry.count({ where: entryWhere }),
+        prisma.gameEntry.count({ where: paidEntryWhere }),
         prisma.user.findMany({
-            where: { ...pf, createdAt: { gte: sevenDaysAgo } },
+            where: chartUserWhere,
             select: { createdAt: true },
         }),
         prisma.gameEntry.findMany({
-            where: {
-                paidAt: { not: null, gte: sevenDaysAgo },
-                ...gpf,
-            },
+            where: paidEntryWhere,
             select: {
                 paidAt: true,
                 paidAmount: true,
@@ -115,53 +226,33 @@ async function getStats(platform?: string) {
                 },
             },
         }),
-        prisma.user.count({
-            where: {
-                ...pf,
-                createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
-            },
-        }),
-        prisma.game.count({
-            where: {
-                ...gamePf,
-                createdAt: { gte: sevenDaysAgo },
-            },
-        }),
-        prisma.game.count({
-            where: {
-                ...gamePf,
-                createdAt: { gte: fourteenDaysAgo, lt: sevenDaysAgo },
-            },
-        }),
-        prisma.gameEntry.findMany({
-            where: {
-                paidAt: { not: null, gte: fourteenDaysAgo, lt: sevenDaysAgo },
-                ...gpf,
-            },
-            select: {
-                paidAmount: true,
-            },
-        }),
+        metricWindow ? prisma.user.count({ where: previousUserWhere }) : Promise.resolve(0),
+        metricWindow ? prisma.game.count({ where: previousGameWhere }) : Promise.resolve(0),
+        metricWindow
+            ? prisma.gameEntry.findMany({
+                where: previousPaidEntryWhere,
+                select: {
+                    paidAmount: true,
+                },
+            })
+            : Promise.resolve([]),
         prisma.gameEntry.aggregate({
-            where: { paidAt: { not: null }, ...gpf },
+            where: paidEntryWhere,
             _sum: { paidAmount: true },
         }),
     ]);
 
-    const dates = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(now.getTime() - (6 - i) * 24 * 60 * 60 * 1000);
-        return d.toISOString().split('T')[0];
-    });
-
     const userGrowth = dates.map(date => ({
         date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-        count: recentUsers.filter((u: { createdAt: Date }) => u.createdAt.toISOString().startsWith(date)).length
+        count: currentGame
+            ? (date === getDateKey(currentGame.startsAt) ? totalUsers : 0)
+            : recentUsers.filter((u: { createdAt: Date }) => getDateKey(u.createdAt) === date).length
     }));
 
     const revenueData = dates.map(date => ({
         date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
         amount: recentEntries
-            .filter((e: { paidAt: Date | null }) => e.paidAt?.toISOString().startsWith(date))
+            .filter((e: { paidAt: Date | null }) => e.paidAt && getDateKey(e.paidAt) === date)
             .reduce((sum: number, e: { paidAmount: number | null }) => sum + calculateProtocolRevenue(e.paidAmount), 0)
     }));
     const revenueByGame = Array.from(
@@ -191,8 +282,10 @@ async function getStats(platform?: string) {
         (sum, entry) => sum + calculateProtocolRevenue(entry.paidAmount),
         0
     );
+    const showPeriodTrend = Boolean(metricWindow);
 
     return {
+        currentGameTitle: currentGame?.title ?? null,
         totalUsers,
         activeUsers,
         totalGames,
@@ -204,14 +297,14 @@ async function getStats(platform?: string) {
         revenueData,
         revenueByGame,
         weekOverWeek: {
-            users: formatWeekOverWeekTrend(recentUsers.length, previousUsers),
-            games: formatWeekOverWeekTrend(recentGames, previousGames),
-            revenue: formatWeekOverWeekTrend(
+            users: showPeriodTrend ? formatWeekOverWeekTrend(totalUsers, previousUsers) : undefined,
+            games: showPeriodTrend ? formatWeekOverWeekTrend(totalGames, previousGames) : undefined,
+            revenue: showPeriodTrend ? formatWeekOverWeekTrend(
                 currentRevenue,
                 previousRevenue,
                 (value) => `$${formatCompactNumber(value)}`
-            ),
-            tickets: formatWeekOverWeekTrend(recentEntries.length, previousEntries.length),
+            ) : undefined,
+            tickets: showPeriodTrend ? formatWeekOverWeekTrend(recentEntries.length, previousEntries.length) : undefined,
         },
     };
 }
@@ -281,14 +374,19 @@ async function getRecentActivity(platform?: string) {
 export default async function AdminDashboard({
     searchParams,
 }: {
-    searchParams: Promise<{ platform?: string }>;
+    searchParams: Promise<{ platform?: string; timeframe?: string }>;
 }) {
-    const { platform } = await searchParams;
+    const { platform, timeframe } = await searchParams;
     const activePlatform = platform === "ALL" ? undefined : platform ?? DEFAULT_DASHBOARD_PLATFORM;
+    const activeTimeframe = parseDashboardTimeframe(timeframe);
+    const timeframeLabel = DASHBOARD_TIMEFRAME_LABELS[activeTimeframe];
     const [stats, activity] = await Promise.all([
-        getStats(activePlatform),
+        getStats(activePlatform, activeTimeframe),
         getRecentActivity(activePlatform),
     ]);
+    const scopedLabel = activeTimeframe === "current" && stats.currentGameTitle
+        ? stats.currentGameTitle
+        : timeframeLabel;
 
     return (
         <div className="space-y-8">
@@ -299,7 +397,10 @@ export default async function AdminDashboard({
                         Overview of your Waffles trivia platform
                     </p>
                 </div>
-                <PlatformFilter defaultPlatform={DEFAULT_DASHBOARD_PLATFORM} />
+                <div className="flex flex-wrap items-center gap-2">
+                    <DashboardTimeframeFilter activeTimeframe={activeTimeframe} />
+                    <PlatformFilter defaultPlatform={DEFAULT_DASHBOARD_PLATFORM} />
+                </div>
             </div>
 
             {/* Stats Grid */}
@@ -307,7 +408,7 @@ export default async function AdminDashboard({
                 <StatsCard
                     title="Total Users"
                     value={stats.totalUsers.toLocaleString()}
-                    subtitle={`${stats.activeUsers} signed in`}
+                    subtitle={`${stats.activeUsers} active · ${scopedLabel}`}
                     trend={stats.weekOverWeek.users}
                     icon={<UsersIcon className="h-6 w-6 text-[#00CFF2]" />}
                     glowVariant="cyan"
@@ -315,15 +416,15 @@ export default async function AdminDashboard({
                 <StatsCard
                     title="Total Games"
                     value={stats.totalGames}
-                    subtitle={`${stats.liveGames} live now`}
+                    subtitle={`${stats.liveGames} live now · ${scopedLabel}`}
                     trend={stats.weekOverWeek.games}
                     icon={<TrophyIcon className="h-6 w-6 text-[#FB72FF]" />}
                     glowVariant="pink"
                 />
                 <StatsCard
                     title="Protocol Revenue"
-                    value={`$${stats.totalRevenue.toLocaleString()}`}
-                    subtitle="20% fee share"
+                    value={`$${formatCurrency(stats.totalRevenue)}`}
+                    subtitle={`20% fee share · ${scopedLabel}`}
                     trend={stats.weekOverWeek.revenue}
                     icon={<BanknotesIcon className="h-6 w-6 text-[#FFC931]" />}
                     glowVariant="gold"
@@ -331,7 +432,7 @@ export default async function AdminDashboard({
                 <StatsCard
                     title="Tickets Sold"
                     value={stats.paidTickets.toLocaleString()}
-                    subtitle={`${stats.totalTickets} total`}
+                    subtitle={`${stats.totalTickets} total · ${scopedLabel}`}
                     trend={stats.weekOverWeek.tickets}
                     icon={<TicketIcon className="h-6 w-6 text-[#14B985]" />}
                     glowVariant="success"
