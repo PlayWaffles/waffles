@@ -716,13 +716,57 @@ async function getRetentionData(
     range?: string,
     selectedGameId?: string,
 ) {
-    const now = new Date();
+    const snapshotEnd = end;
     const isAllTime = range === "all";
     const pf = buildPlatformWhere(platform);
     const gpf = buildProductionEntryWhere(platform);
     const entryWhere = selectedGameId
         ? { ...gpf, gameId: selectedGameId, paidAt: { not: null } }
         : { paidAt: { not: null, gte: start, lte: end }, ...gpf };
+    const activeUserWhere = (windowStart: Date) => selectedGameId
+        ? {
+            ...pf,
+            entries: {
+                some: {
+                    ...gpf,
+                    gameId: selectedGameId,
+                    paidAt: { not: null, gte: windowStart, lte: snapshotEnd },
+                },
+            },
+        }
+        : {
+            ...pf,
+            lastLoginAt: { not: null, gte: windowStart, lte: snapshotEnd },
+        };
+    const scopedLifetimeUserWhere = selectedGameId
+        ? {
+            ...pf,
+            entries: {
+                some: {
+                    ...gpf,
+                    gameId: selectedGameId,
+                    paidAt: { not: null },
+                },
+            },
+        }
+        : pf;
+    const scopedNewUserWhere = selectedGameId
+        ? {
+            ...pf,
+            createdAt: { gte: start, lte: end },
+            entries: {
+                some: {
+                    ...gpf,
+                    gameId: selectedGameId,
+                    paidAt: { not: null, gte: start, lte: end },
+                },
+            },
+        }
+        : {
+            ...pf,
+            createdAt: { gte: start, lte: end },
+            lastLoginAt: { not: null, gte: start, lte: end },
+        };
 
     const [
         lifetimeUsers,
@@ -740,43 +784,15 @@ async function getRetentionData(
         // Users with last session info
         usersWithLastEntry,
     ] = await Promise.all([
-        prisma.user.count({ where: pf }),
-        // DAU: unique users with paid entry in last 24h
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: { not: null, gte: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000) },
-            },
-        }),
-        // WAU: last 7 days
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: { not: null, gte: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000) },
-            },
-        }),
-        // MAU: last 30 days
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: { not: null, gte: new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000) },
-            },
-        }),
+        prisma.user.count({ where: scopedLifetimeUserWhere }),
+        // DAU / WAU / MAU are anchored to the selected range end, not wall-clock now.
+        prisma.user.count({ where: activeUserWhere(new Date(snapshotEnd.getTime() - 1 * 24 * 60 * 60 * 1000)) }),
+        prisma.user.count({ where: activeUserWhere(new Date(snapshotEnd.getTime() - 7 * 24 * 60 * 60 * 1000)) }),
+        prisma.user.count({ where: activeUserWhere(new Date(snapshotEnd.getTime() - 30 * 24 * 60 * 60 * 1000)) }),
         // New players: first entry in period
-        prisma.user.count({
-            where: {
-                ...pf,
-                createdAt: { gte: start, lte: end },
-                lastLoginAt: { not: null, gte: start, lte: end },
-            },
-        }),
+        prisma.user.count({ where: scopedNewUserWhere }),
         // Total active users in period
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: { not: null, gte: start, lte: end },
-            },
-        }),
+        prisma.user.count({ where: activeUserWhere(start) }),
         // Login streak distribution from User model
         prisma.user.groupBy({
             by: ["currentStreak"],
@@ -862,7 +878,7 @@ async function getRetentionData(
     const daysSinceData = daysSinceBuckets.map(({ range, min, max }) => {
         const count = usersWithLastEntry.filter((u) => {
             if (!u.lastLoginAt) return false;
-            const days = Math.floor((now.getTime() - new Date(u.lastLoginAt).getTime()) / (1000 * 60 * 60 * 24));
+            const days = Math.floor((snapshotEnd.getTime() - new Date(u.lastLoginAt).getTime()) / (1000 * 60 * 60 * 24));
             return days >= min && days <= max;
         }).length;
         return { range, count };
