@@ -33,7 +33,7 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
-import { getHourlyUmamiActivity } from "@/lib/umami";
+import { getUmamiOverviewMetrics } from "@/lib/umami";
 import type { GameNetwork, UserPlatform } from "@prisma";
 
 // ============================================================
@@ -406,7 +406,6 @@ async function getCoreDashboard(
     selectedGameId?: string,
     gameFilter?: AnalyticsGameFilterData,
 ) {
-    const now = new Date();
     const periodDays = Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
     const previousStart = new Date(start.getTime() - periodDays * 24 * 60 * 60 * 1000);
     const pf = buildPlatformWhere(platform);
@@ -431,11 +430,6 @@ async function getCoreDashboard(
     };
 
     const [
-        // Active users in period (login/session activity)
-        activeUsersInPeriod,
-        previousActiveUsers,
-        // DAU: users active in last 24h
-        dauUsers,
         // Total signups vs onboarded (hasGameAccess)
         totalSignups,
         onboardedUsers,
@@ -461,32 +455,8 @@ async function getCoreDashboard(
         revenueEntries,
         gameScoreAverages,
         hourlyUsers,
-        umamiSessionsByHour,
+        umamiOverviewMetrics,
     ] = await Promise.all([
-        // Active players in period
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: { not: null, gte: start, lte: end },
-            },
-        }),
-        // Previous period active users
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: { not: null, gte: previousStart, lt: start },
-            },
-        }),
-        // DAU: users active in last 24h
-        prisma.user.count({
-            where: {
-                ...pf,
-                lastLoginAt: {
-                    not: null,
-                    gte: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-                },
-            },
-        }),
         // Total signups in period
         prisma.user.count({ where: { ...pf, createdAt: { gte: start, lte: end } } }),
         // Onboarded users created in period
@@ -580,7 +550,7 @@ async function getCoreDashboard(
             },
             take: 20000,
         }),
-        getHourlyUmamiActivity(start, end),
+        getUmamiOverviewMetrics(start, end),
     ]);
 
     // Compute average answer speed from JSON
@@ -637,8 +607,8 @@ async function getCoreDashboard(
         ? totalRevenue / gamesWithRevenue.length
         : 0;
     const claimRate = totalPrizes > 0 ? (claimedPrizes / totalPrizes) * 100 : 0;
-    const activeUsersChange = previousActiveUsers > 0
-        ? ((activeUsersInPeriod - previousActiveUsers) / previousActiveUsers) * 100
+    const activeUsersChange = umamiOverviewMetrics.previousActiveVisitors > 0
+        ? ((umamiOverviewMetrics.activeVisitors - umamiOverviewMetrics.previousActiveVisitors) / umamiOverviewMetrics.previousActiveVisitors) * 100
         : 0;
     const entriesChange = previousEntriesInPeriod > 0
         ? ((totalEntriesInPeriod - previousEntriesInPeriod) / previousEntriesInPeriod) * 100
@@ -657,13 +627,13 @@ async function getCoreDashboard(
             revenue: revenueMap.get(date) || 0,
             tickets: ticketMap.get(date) || 0,
         }));
-    const hourlyUserActivity = buildHourlyUserActivityData(hourlyUsers, umamiSessionsByHour, start, end);
+    const hourlyUserActivity = buildHourlyUserActivityData(hourlyUsers, umamiOverviewMetrics.sessionsByHour, start, end);
 
     return {
         // KPIs
-        activeUsers: activeUsersInPeriod,
+        activeUsers: umamiOverviewMetrics.activeVisitors,
         activeUsersChange,
-        dau: dauUsers,
+        dau: umamiOverviewMetrics.dailyVisitors,
         onboardingRate,
         activationRate,
         purchaseToCompletionRate,
@@ -1763,7 +1733,7 @@ function OverviewTab({
                 <KPICard
                     title="Active Users"
                     value={data.activeUsers.toLocaleString()}
-                    tooltip="Users whose last login falls inside the selected date range. This measures app activity, not just purchases."
+                    tooltip="Unique Umami visitors in the selected date range. This measures app activity, not just purchases or database logins."
                     change={{ value: data.activeUsersChange, isPositive: data.activeUsersChange >= 0 }}
                     icon={<UsersIcon className="h-5 w-5 text-[#00CFF2]" />}
                     subtitle={`${data.dau} DAU`}

@@ -12,6 +12,17 @@ type UmamiPageviewsResponse = {
   sessions: UmamiSeriesPoint[];
 };
 
+type UmamiStatsResponse = {
+  visitors: number;
+};
+
+type UmamiRequestContext = {
+  baseUrl: string;
+  websiteId: string;
+  token: string;
+  timezone: string;
+};
+
 function getUmamiBaseUrl() {
   const host = process.env.UMAMI_HOST ?? process.env.NEXT_PUBLIC_UMAMI_HOST;
   if (!host) {
@@ -81,21 +92,30 @@ function getHourInTimezone(value: string, timezone: string) {
   return Number(hour) % 24;
 }
 
-export async function getHourlyUmamiActivity(start: Date, end: Date) {
+async function getUmamiRequestContext(): Promise<UmamiRequestContext> {
   const baseUrl = getUmamiBaseUrl();
   const websiteId = getUmamiWebsiteId();
   const token = await getUmamiAuthToken(baseUrl);
   const timezone = getAnalyticsTimezone();
+
+  return { baseUrl, websiteId, token, timezone };
+}
+
+async function getUmamiPageviews(
+  context: UmamiRequestContext,
+  start: Date,
+  end: Date,
+) {
   const params = new URLSearchParams({
     startAt: String(start.getTime()),
     endAt: String(end.getTime()),
     unit: "hour",
-    timezone,
+    timezone: context.timezone,
   });
-  const response = await fetch(`${baseUrl}/api/websites/${websiteId}/pageviews?${params.toString()}`, {
+  const response = await fetch(`${context.baseUrl}/api/websites/${context.websiteId}/pageviews?${params.toString()}`, {
     headers: {
       Accept: "application/json",
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${context.token}`,
     },
     cache: "no-store",
   });
@@ -104,7 +124,34 @@ export async function getHourlyUmamiActivity(start: Date, end: Date) {
     throw new Error(`Umami pageviews request failed with status ${response.status}.`);
   }
 
-  const body = await response.json() as UmamiPageviewsResponse;
+  return await response.json() as UmamiPageviewsResponse;
+}
+
+async function getUmamiStats(
+  context: UmamiRequestContext,
+  start: Date,
+  end: Date,
+) {
+  const params = new URLSearchParams({
+    startAt: String(start.getTime()),
+    endAt: String(end.getTime()),
+  });
+  const response = await fetch(`${context.baseUrl}/api/websites/${context.websiteId}/stats?${params.toString()}`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${context.token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Umami stats request failed with status ${response.status}.`);
+  }
+
+  return await response.json() as UmamiStatsResponse;
+}
+
+function hourlySessionsFromPageviews(body: UmamiPageviewsResponse, timezone: string) {
   const sessionsByHour = Array.from({ length: 24 }, () => 0);
 
   for (const point of body.sessions ?? []) {
@@ -114,4 +161,30 @@ export async function getHourlyUmamiActivity(start: Date, end: Date) {
   }
 
   return sessionsByHour;
+}
+
+export async function getHourlyUmamiActivity(start: Date, end: Date) {
+  const context = await getUmamiRequestContext();
+  const pageviews = await getUmamiPageviews(context, start, end);
+  return hourlySessionsFromPageviews(pageviews, context.timezone);
+}
+
+export async function getUmamiOverviewMetrics(start: Date, end: Date) {
+  const context = await getUmamiRequestContext();
+  const periodMs = end.getTime() - start.getTime();
+  const previousStart = new Date(start.getTime() - periodMs);
+  const last24hStart = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+  const [pageviews, currentStats, previousStats, dailyStats] = await Promise.all([
+    getUmamiPageviews(context, start, end),
+    getUmamiStats(context, start, end),
+    getUmamiStats(context, previousStart, start),
+    getUmamiStats(context, last24hStart, end),
+  ]);
+
+  return {
+    sessionsByHour: hourlySessionsFromPageviews(pageviews, context.timezone),
+    activeVisitors: currentStats.visitors ?? 0,
+    previousActiveVisitors: previousStats.visitors ?? 0,
+    dailyVisitors: dailyStats.visitors ?? 0,
+  };
 }
