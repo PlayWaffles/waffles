@@ -28,6 +28,9 @@ export function PlatformFilter({ defaultPlatform }: PlatformFilterProps) {
         } else {
             params.delete("platform");
         }
+        if (params.has("page")) {
+            params.set("page", "1");
+        }
         router.replace(`?${params.toString()}`);
     };
 

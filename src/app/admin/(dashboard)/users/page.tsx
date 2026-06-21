@@ -5,7 +5,7 @@ import { AdminPagination } from "@/components/admin/AdminPagination";
 import { Prisma, UserPlatform, UserRole } from "@prisma";
 import { getDisplayName } from "@/lib/address";
 
-async function getUsers(searchParams: { page?: string; status?: string; q?: string; role?: string }) {
+async function getUsers(searchParams: { page?: string; status?: string; q?: string; role?: string; platform?: string }) {
     const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
     const pageSize = 50;
     const skip = (page - 1) * pageSize;
@@ -21,6 +21,10 @@ async function getUsers(searchParams: { page?: string; status?: string; q?: stri
 
     if (searchParams.role && Object.values(UserRole).includes(searchParams.role as UserRole)) {
         where.role = searchParams.role as UserRole;
+    }
+
+    if (searchParams.platform && Object.values(UserPlatform).includes(searchParams.platform as UserPlatform)) {
+        where.platform = searchParams.platform as UserPlatform;
     }
 
     if (searchParams.q) {
@@ -93,7 +97,7 @@ function PlatformBadge({ platform }: { platform: UserPlatform }) {
 export default async function UsersListPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; status?: string; q?: string; role?: string }>;
+    searchParams: Promise<{ page?: string; status?: string; q?: string; role?: string; platform?: string }>;
 }) {
     const resolvedParams = await searchParams;
     const { users, total, page, pageSize } = await getUsers(resolvedParams);
@@ -213,6 +217,7 @@ export default async function UsersListPage({
                     status: resolvedParams.status,
                     q: resolvedParams.q,
                     role: resolvedParams.role,
+                    platform: resolvedParams.platform,
                 }}
             />
         </div>

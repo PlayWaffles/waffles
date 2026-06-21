@@ -1,6 +1,6 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { useAccount, useConnect, useDisconnect } from "wagmi";
 import {
@@ -9,6 +9,7 @@ import {
     Bars3Icon,
     ArrowPathIcon,
 } from "@heroicons/react/24/outline";
+import { PlatformFilter } from "@/components/admin/PlatformFilter";
 
 interface AdminHeaderProps {
     username: string;
@@ -18,6 +19,7 @@ interface AdminHeaderProps {
 
 export function AdminHeader({ username, pfpUrl, onMenuToggle }: AdminHeaderProps) {
     const router = useRouter();
+    const pathname = usePathname();
     const [isRefreshing, startRefresh] = useTransition();
     const { isConnected, address, chain } = useAccount();
 
@@ -32,7 +34,7 @@ export function AdminHeader({ username, pfpUrl, onMenuToggle }: AdminHeaderProps
     };
 
     return (
-        <header className="bg-[#0a0a0b]/80 border-b border-white/6 backdrop-blur-xl flex h-16 items-center justify-between px-4 md:px-6">
+        <header className="bg-[#0a0a0b]/80 border-b border-white/6 backdrop-blur-xl flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-6">
             {/* Left: Menu + Title */}
             <div className="flex items-center gap-3">
                 {onMenuToggle && (
@@ -48,6 +50,10 @@ export function AdminHeader({ username, pfpUrl, onMenuToggle }: AdminHeaderProps
                 <h2 className="text-lg font-semibold text-white font-body">
                     Admin Dashboard
                 </h2>
+            </div>
+
+            <div className="order-3 w-full overflow-x-auto md:order-none md:w-auto">
+                <PlatformFilter defaultPlatform={pathname === "/admin" ? "MINIPAY" : undefined} />
             </div>
 
             {/* Right: Wallet + User */}

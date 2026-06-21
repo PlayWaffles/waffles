@@ -3,7 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebouncedCallback } from "use-debounce";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { PlatformFilter } from "./PlatformFilter";
 
 const STATUSES = [
     { value: "", label: "All Statuses" },
@@ -33,16 +32,7 @@ export function GameFilters() {
     }, 300);
 
     return (
-        <div className="rounded-2xl border border-white/10 p-4 space-y-4">
-            {/* Platform segmented control */}
-            <div className="flex items-center gap-2">
-                <span className="text-xs font-medium text-white/40 uppercase tracking-wider mr-1">
-                    Platform
-                </span>
-                <PlatformFilter />
-            </div>
-
-            {/* Search + status row */}
+        <div className="rounded-2xl border border-white/10 p-4">
             <div className="flex flex-col sm:flex-row gap-3">
                 <div className="relative flex-1">
                     <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />

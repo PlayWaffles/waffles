@@ -1,7 +1,6 @@
 import { prisma } from "@/lib/db";
 import { StatsCard } from "@/components/admin/StatsCard";
 import { DashboardCharts } from "@/components/admin/DashboardCharts";
-import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import { DashboardTimeframeFilter, type DashboardTimeframe } from "@/components/admin/DashboardTimeframeFilter";
 import {
     UsersIcon,
@@ -388,7 +387,6 @@ export default async function AdminDashboard({
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                     <DashboardTimeframeFilter activeTimeframe={activeTimeframe} />
-                    <PlatformFilter defaultPlatform={DEFAULT_DASHBOARD_PLATFORM} />
                 </div>
             </div>
 

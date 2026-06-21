@@ -6,7 +6,7 @@ import { TicketReconciliationCard } from "./_components/TicketReconciliationCard
 import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
 import { AdminPagination } from "@/components/admin/AdminPagination";
-import { Prisma, TicketPurchaseSource } from "@prisma";
+import { Prisma, TicketPurchaseSource, UserPlatform } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import type { ChainPlatform } from "@/lib/chain/platform";
@@ -61,11 +61,13 @@ async function getTickets(searchParams: {
     status?: string;
     game?: string;
     q?: string;
+    platform?: string;
 }) {
     const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
     const pageSize = 50;
     const skip = (page - 1) * pageSize;
-    const where: Prisma.GameEntryWhereInput = buildPaidProductionEntryWhere();
+    const platform = parsePlatformParam(searchParams.platform);
+    const where: Prisma.GameEntryWhereInput = buildPaidProductionEntryWhere(platform);
 
     // Filter by ticket status
     if (searchParams.status === "claimed") {
@@ -114,9 +116,16 @@ async function getTickets(searchParams: {
     return { entries, total, page, pageSize };
 }
 
-async function getStats() {
-    const paidProductionEntriesWhere = buildPaidProductionEntryWhere();
-    const productionGamesWhere = buildProductionGameWhere();
+function parsePlatformParam(platform?: string): ChainPlatform | undefined {
+    return platform && Object.values(UserPlatform).includes(platform as UserPlatform)
+        ? platform as ChainPlatform
+        : undefined;
+}
+
+async function getStats(platform?: string) {
+    const parsedPlatform = parsePlatformParam(platform);
+    const paidProductionEntriesWhere = buildPaidProductionEntryWhere(parsedPlatform);
+    const productionGamesWhere = buildProductionGameWhere(parsedPlatform);
     const [totalTickets, claimedPrizes, games] = await Promise.all([
         prisma.gameEntry.count({ where: paidProductionEntriesWhere }),
         prisma.gameEntry.count({ where: { ...paidProductionEntriesWhere, claimedAt: { not: null } } }),
@@ -141,8 +150,11 @@ async function getStats() {
     };
 }
 
-async function getRecentOnchainMismatches(): Promise<OnchainMismatchRow[]> {
-    const platforms: ChainPlatform[] = ["FARCASTER", "MINIPAY", "BASE_APP"];
+async function getRecentOnchainMismatches(platform?: string): Promise<OnchainMismatchRow[]> {
+    const parsedPlatform = parsePlatformParam(platform);
+    const platforms: ChainPlatform[] = parsedPlatform
+        ? [parsedPlatform]
+        : ["FARCASTER", "MINIPAY", "BASE_APP"];
     const allRows = await Promise.all(platforms.map((platform) => getPlatformMismatches(platform)));
 
     return allRows
@@ -427,13 +439,13 @@ async function getTicketPurchasedLogs({
 export default async function TicketsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ page?: string; status?: string; game?: string; q?: string }>;
+    searchParams: Promise<{ page?: string; status?: string; game?: string; q?: string; platform?: string }>;
 }) {
     const resolvedParams = await searchParams;
     const [{ entries, total, page, pageSize }, stats, onchainMismatches] = await Promise.all([
         getTickets(resolvedParams),
-        getStats(),
-        getRecentOnchainMismatches(),
+        getStats(resolvedParams.platform),
+        getRecentOnchainMismatches(resolvedParams.platform),
     ]);
 
     return (
@@ -767,6 +779,7 @@ export default async function TicketsPage({
                     status: resolvedParams.status,
                     game: resolvedParams.game,
                     q: resolvedParams.q,
+                    platform: resolvedParams.platform,
                 }}
             />
         </div>

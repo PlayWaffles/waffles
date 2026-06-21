@@ -23,7 +23,6 @@ import {
     MetricTooltip,
     type AnalyticsTab,
 } from "@/components/admin/analytics";
-import { PlatformFilter } from "@/components/admin/PlatformFilter";
 import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { getGamePhase } from "@/lib/types";
 import { getDisplayName } from "@/lib/address";
@@ -1875,7 +1874,6 @@ export default async function AnalyticsPage({
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <PlatformFilter />
                     <DateRangePicker currentRange={range || "7d"} />
                 </div>
             </div>
