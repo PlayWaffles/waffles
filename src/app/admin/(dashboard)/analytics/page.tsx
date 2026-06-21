@@ -165,7 +165,7 @@ function buildHourlyUserActivityData(
 ) {
     const arrivalsByHour = Array.from({ length: 24 }, () => new Set<string>());
     const returningByHour = Array.from({ length: 24 }, () => new Set<string>());
-    const retainedByHour = Array.from({ length: 24 }, () => new Set<string>());
+    const activeCohortsByHour = Array.from({ length: 24 }, () => new Set<string>());
 
     for (const user of users) {
         if (user.createdAt >= start && user.createdAt <= end) {
@@ -194,7 +194,7 @@ function buildHourlyUserActivityData(
         finalHour.setMinutes(0, 0, 0);
         while (cursor <= finalHour && cursor <= end) {
             if (cursor >= start) {
-                retainedByHour[cursor.getHours()].add(user.id);
+                activeCohortsByHour[cursor.getHours()].add(user.id);
             }
             cursor.setHours(cursor.getHours() + 1);
         }
@@ -204,7 +204,7 @@ function buildHourlyUserActivityData(
         hour: formatHourLabel(hour),
         totalArrivals: arrivalsByHour[hour].size,
         returningUsers: returningByHour[hour].size,
-        retainedUsers: retainedByHour[hour].size,
+        activeCohortUsers: activeCohortsByHour[hour].size,
     }));
 }
 

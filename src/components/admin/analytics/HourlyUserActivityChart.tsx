@@ -16,7 +16,7 @@ export type HourlyUserActivityPoint = {
     hour: string;
     totalArrivals: number;
     returningUsers: number;
-    retainedUsers: number;
+    activeCohortUsers: number;
 };
 
 interface HourlyUserActivityChartProps {
@@ -29,7 +29,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
             <div className="mb-6 flex flex-col gap-1">
                 <h3 className="text-lg font-semibold text-white font-display">Hourly User Flow</h3>
                 <p className="text-sm text-white/50">
-                    New and returning users by hour, with users still present linked across hours
+                    New and returning users by hour, with active cohorts carried forward
                 </p>
             </div>
 
@@ -68,7 +68,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                                     ? "Users came in"
                                     : name === "returningUsers"
                                         ? "Returning users"
-                                        : "Still in app",
+                                        : "Still active from cohorts",
                             ]}
                         />
                         <Legend
@@ -79,7 +79,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                                         ? "Users came in"
                                         : value === "returningUsers"
                                             ? "Returning users"
-                                            : "Still in app"}
+                                            : "Still active from cohorts"}
                                 </span>
                             )}
                         />
@@ -99,7 +99,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                         />
                         <Line
                             type="monotone"
-                            dataKey="retainedUsers"
+                            dataKey="activeCohortUsers"
                             stroke="#A100FF"
                             strokeWidth={3}
                             dot={{ r: 4, fill: "#A100FF", stroke: "#A100FF" }}
