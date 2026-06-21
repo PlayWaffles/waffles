@@ -640,6 +640,18 @@ export default async function TicketsPage({
                 <GameFilter games={stats.games} />
             </div>
 
+            <AdminPagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                params={{
+                    status: resolvedParams.status,
+                    game: resolvedParams.game,
+                    q: resolvedParams.q,
+                    platform: resolvedParams.platform,
+                }}
+            />
+
             {/* Table */}
             <div className="rounded-2xl border border-white/10 overflow-hidden">
                 <div className="overflow-x-auto">
@@ -770,18 +782,6 @@ export default async function TicketsPage({
                     </table>
                 </div>
             </div>
-
-            <AdminPagination
-                page={page}
-                pageSize={pageSize}
-                total={total}
-                params={{
-                    status: resolvedParams.status,
-                    game: resolvedParams.game,
-                    q: resolvedParams.q,
-                    platform: resolvedParams.platform,
-                }}
-            />
         </div>
     );
 }

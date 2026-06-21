@@ -115,6 +115,18 @@ export default async function UsersListPage({
             {/* Filters */}
             <UserFilters />
 
+            <AdminPagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                params={{
+                    status: resolvedParams.status,
+                    q: resolvedParams.q,
+                    role: resolvedParams.role,
+                    platform: resolvedParams.platform,
+                }}
+            />
+
             {/* Users Table */}
             <div className="rounded-2xl border border-white/10 overflow-hidden overflow-x-auto">
                 <table className="min-w-full">
@@ -208,18 +220,6 @@ export default async function UsersListPage({
                     </tbody>
                 </table>
             </div>
-
-            <AdminPagination
-                page={page}
-                pageSize={pageSize}
-                total={total}
-                params={{
-                    status: resolvedParams.status,
-                    q: resolvedParams.q,
-                    role: resolvedParams.role,
-                    platform: resolvedParams.platform,
-                }}
-            />
         </div>
     );
 }

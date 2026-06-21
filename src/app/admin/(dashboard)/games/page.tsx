@@ -109,6 +109,17 @@ export default async function GamesListPage({
 
             <GameFilters />
 
+            <AdminPagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                params={{
+                    search: resolvedParams.search,
+                    status: resolvedParams.status,
+                    platform: resolvedParams.platform,
+                }}
+            />
+
             <div className="rounded-2xl border border-white/10 overflow-hidden">
                 <div className="overflow-x-auto">
                     <table className="min-w-full">
@@ -156,17 +167,6 @@ export default async function GamesListPage({
                     </table>
                 </div>
             </div>
-
-            <AdminPagination
-                page={page}
-                pageSize={pageSize}
-                total={total}
-                params={{
-                    search: resolvedParams.search,
-                    status: resolvedParams.status,
-                    platform: resolvedParams.platform,
-                }}
-            />
         </div>
     );
 }
