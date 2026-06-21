@@ -454,6 +454,9 @@ async function getCoreDashboard(
         revenueEntries,
         gameScoreAverages,
         hourlyUsers,
+        previousHourlyUsers,
+        dailyHourlyUsers,
+        levelCompletedUsers,
         umamiOverviewMetrics,
     ] = await Promise.all([
         // Total signups in period
@@ -537,6 +540,45 @@ async function getCoreDashboard(
             },
             take: 20000,
         }),
+        prisma.user.findMany({
+            where: {
+                ...pf,
+                OR: [
+                    { createdAt: { gte: previousStart, lt: start } },
+                    { lastLoginAt: { not: null, gte: previousStart, lt: start } },
+                ],
+            },
+            select: {
+                id: true,
+                createdAt: true,
+                lastLoginAt: true,
+            },
+            take: 20000,
+        }),
+        prisma.user.findMany({
+            where: {
+                ...pf,
+                OR: [
+                    { createdAt: { gte: new Date(end.getTime() - 24 * 60 * 60 * 1000), lte: end } },
+                    { lastLoginAt: { not: null, gte: new Date(end.getTime() - 24 * 60 * 60 * 1000), lte: end } },
+                ],
+            },
+            select: {
+                id: true,
+            },
+            take: 20000,
+        }),
+        prisma.levelProgress.findMany({
+            where: {
+                level: { gt: 1 },
+                updatedAt: { gte: start, lte: end },
+                user: pf,
+            },
+            distinct: ["userId"],
+            select: {
+                userId: true,
+            },
+        }),
         getUmamiOverviewMetrics(start, end, { platform }),
     ]);
 
@@ -578,7 +620,20 @@ async function getCoreDashboard(
     const gamesWithRevenue = summarizeRevenueByGame(revenueEntries as RevenueEntryWithGame[]);
 
     // Computed metrics
-    const onboardingRate = umamiOverviewMetrics.onboardingRate;
+    const hasAdminScope = Boolean(platform || selectedGameId);
+    const dbActiveUsers = new Set(hourlyUsers.map((user) => user.id)).size;
+    const previousDbActiveUsers = new Set(previousHourlyUsers.map((user) => user.id)).size;
+    const dbDailyUsers = new Set(dailyHourlyUsers.map((user) => user.id)).size;
+    const activeUsers = hasAdminScope ? dbActiveUsers : umamiOverviewMetrics.activeVisitors;
+    const previousActiveUsers = hasAdminScope ? previousDbActiveUsers : umamiOverviewMetrics.previousActiveVisitors;
+    const dailyActiveUsers = hasAdminScope ? dbDailyUsers : umamiOverviewMetrics.dailyVisitors;
+    const levelCompletedVisitors = hasAdminScope
+        ? levelCompletedUsers.length
+        : umamiOverviewMetrics.levelCompletedVisitors;
+    const onboardingVisitors = activeUsers;
+    const onboardingRate = onboardingVisitors > 0
+        ? (levelCompletedVisitors / onboardingVisitors) * 100
+        : 0;
     const purchaseToCompletionRate = totalEntriesInPeriod > 0 ? (completedEntries / totalEntriesInPeriod) * 100 : 0;
     const leaveRate = totalEntriesInPeriod > 0 ? (leftEntries / totalEntriesInPeriod) * 100 : 0;
     const activationRate = totalSignups > 0 ? (activatedUsers / totalSignups) * 100 : 0;
@@ -594,8 +649,8 @@ async function getCoreDashboard(
         ? totalRevenue / gamesWithRevenue.length
         : 0;
     const claimRate = totalPrizes > 0 ? (claimedPrizes / totalPrizes) * 100 : 0;
-    const activeUsersChange = umamiOverviewMetrics.previousActiveVisitors > 0
-        ? ((umamiOverviewMetrics.activeVisitors - umamiOverviewMetrics.previousActiveVisitors) / umamiOverviewMetrics.previousActiveVisitors) * 100
+    const activeUsersChange = previousActiveUsers > 0
+        ? ((activeUsers - previousActiveUsers) / previousActiveUsers) * 100
         : 0;
     const entriesChange = previousEntriesInPeriod > 0
         ? ((totalEntriesInPeriod - previousEntriesInPeriod) / previousEntriesInPeriod) * 100
@@ -618,12 +673,12 @@ async function getCoreDashboard(
 
     return {
         // KPIs
-        activeUsers: umamiOverviewMetrics.activeVisitors,
+        activeUsers,
         activeUsersChange,
-        dau: umamiOverviewMetrics.dailyVisitors,
+        dau: dailyActiveUsers,
         onboardingRate,
-        levelCompletedVisitors: umamiOverviewMetrics.levelCompletedVisitors,
-        umamiVisitors: umamiOverviewMetrics.activeVisitors,
+        levelCompletedVisitors,
+        umamiVisitors: onboardingVisitors,
         activationRate,
         purchaseToCompletionRate,
         leaveRate,
@@ -1722,7 +1777,7 @@ function OverviewTab({
                 <KPICard
                     title="Active Users"
                     value={data.activeUsers.toLocaleString()}
-                    tooltip="Unique Umami visitors in the selected date range. This measures app activity, not just purchases or database logins."
+                    tooltip="Unique active users in the selected date range and filter scope. This measures app activity, not just purchases."
                     change={{ value: data.activeUsersChange, isPositive: data.activeUsersChange >= 0 }}
                     icon={<UsersIcon className="h-5 w-5 text-[#00CFF2]" />}
                     subtitle={`${data.dau} DAU`}
@@ -1731,7 +1786,7 @@ function OverviewTab({
                 <KPICard
                     title="Onboarding Rate"
                     value={`${data.onboardingRate.toFixed(1)}%`}
-                    tooltip="Unique Umami visitors in the selected range who fired level_completed. This measures people who completed a level."
+                    tooltip="Unique active users in the selected range who completed a level."
                     icon={<CheckCircleIcon className="h-5 w-5 text-[#14B985]" />}
                     subtitle={`${data.levelCompletedVisitors.toLocaleString()} of ${data.umamiVisitors.toLocaleString()} visitors`}
                     glowVariant="success"
