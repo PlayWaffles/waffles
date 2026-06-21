@@ -24,7 +24,6 @@ import {
     MetricTooltip,
     type AnalyticsTab,
 } from "@/components/admin/analytics";
-import { isGameVisibleToPlatform } from "@/lib/platform/query";
 import { getGamePhase } from "@/lib/types";
 import { getDisplayName } from "@/lib/address";
 import {
@@ -74,21 +73,6 @@ type HourlyUserRow = {
     lastLoginAt: Date | null;
 };
 
-type OnboardingWaitBucket = {
-    label: string;
-    minMs: number;
-    maxMs: number;
-};
-
-type OnboardingDiagnosticSegment = {
-    label: string;
-    users: number;
-    ticketBuyers: number;
-    conversionRate: number;
-    nextGameBuyers?: number;
-    nextGameConversionRate?: number;
-};
-
 type EntrySource = "home" | "post_first_level_upsell" | "unknown";
 
 type EntrySourceSegment = {
@@ -134,47 +118,6 @@ type AnalyticsGameFilterData = {
     options: AnalyticsGameFilterOption[];
 };
 
-const ONBOARDING_WAIT_BUCKETS: OnboardingWaitBucket[] = [
-    { label: "<15m", minMs: 0, maxMs: 15 * 60 * 1000 },
-    { label: "15m-1h", minMs: 15 * 60 * 1000, maxMs: 60 * 60 * 1000 },
-    { label: "1-3h", minMs: 60 * 60 * 1000, maxMs: 3 * 60 * 60 * 1000 },
-    { label: "3-12h", minMs: 3 * 60 * 60 * 1000, maxMs: 12 * 60 * 60 * 1000 },
-    { label: "12-24h", minMs: 12 * 60 * 60 * 1000, maxMs: 24 * 60 * 60 * 1000 },
-    { label: "1-3d", minMs: 24 * 60 * 60 * 1000, maxMs: 3 * 24 * 60 * 60 * 1000 },
-    { label: "3d+", minMs: 3 * 24 * 60 * 60 * 1000, maxMs: Infinity },
-];
-
-function rate(numerator: number, denominator: number) {
-    return denominator > 0 ? (numerator / denominator) * 100 : 0;
-}
-
-function getWaitBucket(waitMs: number) {
-    return ONBOARDING_WAIT_BUCKETS.find(
-        (bucket) => waitMs >= bucket.minMs && waitMs < bucket.maxMs,
-    ) ?? ONBOARDING_WAIT_BUCKETS[ONBOARDING_WAIT_BUCKETS.length - 1];
-}
-
-function addOnboardingSegment(
-    map: Map<string, OnboardingDiagnosticSegment>,
-    label: string,
-    boughtTicket: boolean,
-    boughtNextGame?: boolean,
-) {
-    const segment = map.get(label) ?? {
-        label,
-        users: 0,
-        ticketBuyers: 0,
-        conversionRate: 0,
-        nextGameBuyers: 0,
-        nextGameConversionRate: 0,
-    };
-
-    segment.users += 1;
-    if (boughtTicket) segment.ticketBuyers += 1;
-    if (boughtNextGame) segment.nextGameBuyers = (segment.nextGameBuyers ?? 0) + 1;
-    map.set(label, segment);
-}
-
 function analyticsObject(value: unknown): Record<string, unknown> {
     return value && typeof value === "object" && !Array.isArray(value)
         ? value as Record<string, unknown>
@@ -197,26 +140,6 @@ function entrySourceLabel(source: EntrySource) {
     return "Unknown";
 }
 
-function finalizeOnboardingSegments(
-    map: Map<string, OnboardingDiagnosticSegment>,
-    options?: { includeNextGameConversion?: boolean; limit?: number },
-) {
-    return Array.from(map.values())
-        .map((segment) => ({
-            ...segment,
-            conversionRate: rate(segment.ticketBuyers, segment.users),
-            nextGameConversionRate: options?.includeNextGameConversion
-                ? rate(segment.nextGameBuyers ?? 0, segment.users)
-                : undefined,
-        }))
-        .sort((a, b) => b.users - a.users)
-        .slice(0, options?.limit);
-}
-
-function formatGameHour(startsAt: Date) {
-    return `${String(startsAt.getUTCHours()).padStart(2, "0")}:00 UTC`;
-}
-
 function formatGameDateTime(value: Date) {
     return new Intl.DateTimeFormat("en", {
         month: "short",
@@ -226,11 +149,6 @@ function formatGameDateTime(value: Date) {
         timeZone: "UTC",
         timeZoneName: "short",
     }).format(value);
-}
-
-function formatTicketPrice(prices: number[]) {
-    const price = Math.min(...prices.filter((value) => Number.isFinite(value)));
-    return Number.isFinite(price) ? `$${price.toFixed(price % 1 === 0 ? 0 : 2)}` : "No price";
 }
 
 function formatHourLabel(hour: number) {
@@ -765,206 +683,6 @@ async function getCoreDashboard(
         hourlyUserActivity,
         // Game performance table
         gamePerformance: attachAverageScores(gamesWithRevenue, gameScoreAverages),
-    };
-}
-
-// ============================================================
-// 1.5 ONBOARDING CONVERSION ANALYTICS
-// ============================================================
-
-async function getOnboardingConversionData(start: Date, end: Date, platform?: string) {
-    const pf = buildPlatformWhere(platform);
-    const gamePf = buildProductionGameWhere(platform);
-    const onboardedUsers = await prisma.user.findMany({
-        where: {
-            ...pf,
-            onboardingCompletedAt: { not: null, gte: start, lte: end },
-        },
-        select: {
-            id: true,
-            platform: true,
-            referredById: true,
-            onboardingCompletedAt: true,
-            notifs: {
-                select: { id: true },
-                take: 1,
-            },
-            entries: {
-                where: {
-                    paidAt: { not: null },
-                    ...buildProductionEntryWhere(platform),
-                },
-                select: {
-                    gameId: true,
-                    paidAt: true,
-                    game: {
-                        select: {
-                            id: true,
-                            platform: true,
-                            network: true,
-                            isTestnet: true,
-                            startsAt: true,
-                            theme: true,
-                            tierPrices: true,
-                        },
-                    },
-                },
-                orderBy: { paidAt: "asc" },
-            },
-        },
-    });
-
-    const completed = onboardedUsers.length;
-    const earliestCompletion = onboardedUsers.reduce<Date | null>((earliest, user) => {
-        const completedAt = user.onboardingCompletedAt;
-        if (!completedAt) return earliest;
-        return !earliest || completedAt < earliest ? completedAt : earliest;
-    }, null);
-
-    const games = earliestCompletion
-        ? await prisma.game.findMany({
-            where: {
-                ...gamePf,
-                startsAt: { gte: earliestCompletion },
-            },
-            select: {
-                id: true,
-                platform: true,
-                network: true,
-                isTestnet: true,
-                startsAt: true,
-                theme: true,
-                tierPrices: true,
-                ticketOpenNotifsSent: true,
-            },
-            orderBy: { startsAt: "asc" },
-            take: 5000,
-        })
-        : [];
-
-    const bucketMap = new Map(ONBOARDING_WAIT_BUCKETS.map((bucket) => [
-        bucket.label,
-        {
-            label: bucket.label,
-            users: 0,
-            nextGameBuyers: 0,
-            conversionRate: 0,
-        },
-    ]));
-    let noUpcomingGameUsers = 0;
-    let noUpcomingGameBuyers = 0;
-    let ticketBuyers = 0;
-    let nextGameBuyers = 0;
-    let laterGameBuyers = 0;
-
-    const platformSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const referralSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const notificationSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const nextGameThemeSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const nextGameStartHourSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const nextGamePriceSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const nextGameReminderSegments = new Map<string, OnboardingDiagnosticSegment>();
-    const purchasePathSegments = new Map<string, OnboardingDiagnosticSegment>();
-
-    for (const user of onboardedUsers) {
-        const completedAt = user.onboardingCompletedAt;
-        if (!completedAt) continue;
-
-        const visibleEntries = user.entries.filter((entry) =>
-            isGameVisibleToPlatform(entry.game, user.platform as UserPlatform) &&
-            entry.paidAt &&
-            entry.paidAt >= completedAt
-        );
-
-        if (visibleEntries.length > 0) {
-            ticketBuyers++;
-        }
-
-        const boughtTicket = visibleEntries.length > 0;
-        const nextGame = games.find((game) =>
-            game.startsAt >= completedAt &&
-            isGameVisibleToPlatform(game, user.platform as UserPlatform)
-        );
-        const boughtNextGame = !!nextGame && visibleEntries.some((entry) =>
-            entry.gameId === nextGame.id &&
-            entry.paidAt &&
-            entry.paidAt <= nextGame.startsAt
-        );
-
-        addOnboardingSegment(platformSegments, user.platform, boughtTicket, boughtNextGame);
-        addOnboardingSegment(referralSegments, user.referredById ? "Referred" : "Direct / unknown", boughtTicket, boughtNextGame);
-        addOnboardingSegment(notificationSegments, user.notifs.length > 0 ? "Notification token present" : "No notification token", boughtTicket, boughtNextGame);
-
-        if (boughtNextGame) {
-            nextGameBuyers++;
-            addOnboardingSegment(purchasePathSegments, "Bought next game", true, true);
-        } else if (boughtTicket) {
-            laterGameBuyers++;
-            addOnboardingSegment(purchasePathSegments, "Bought later game", true, false);
-        } else {
-            addOnboardingSegment(purchasePathSegments, "Did not buy", false, false);
-        }
-
-        if (!nextGame) {
-            noUpcomingGameUsers++;
-            if (visibleEntries.length > 0) noUpcomingGameBuyers++;
-            continue;
-        }
-
-        addOnboardingSegment(nextGameThemeSegments, nextGame.theme, boughtTicket, boughtNextGame);
-        addOnboardingSegment(nextGameStartHourSegments, formatGameHour(nextGame.startsAt), boughtTicket, boughtNextGame);
-        addOnboardingSegment(nextGamePriceSegments, formatTicketPrice(nextGame.tierPrices), boughtTicket, boughtNextGame);
-        addOnboardingSegment(
-            nextGameReminderSegments,
-            nextGame.ticketOpenNotifsSent.length > 0 ? "Game reminders sent" : "No game reminders sent",
-            boughtTicket,
-            boughtNextGame,
-        );
-
-        const waitMs = nextGame.startsAt.getTime() - completedAt.getTime();
-        const bucket = getWaitBucket(waitMs);
-        const row = bucketMap.get(bucket.label);
-        if (!row) continue;
-
-        row.users++;
-        if (visibleEntries.some((entry) =>
-            entry.gameId === nextGame.id &&
-            entry.paidAt &&
-            entry.paidAt <= nextGame.startsAt
-        )) {
-            row.nextGameBuyers++;
-        }
-    }
-
-    const waitBuckets = Array.from(bucketMap.values()).map((bucket) => ({
-        ...bucket,
-        conversionRate: rate(bucket.nextGameBuyers, bucket.users),
-    }));
-
-    return {
-        completed,
-        ticketBuyers,
-        ticketBuyerRate: rate(ticketBuyers, completed),
-        nextGameBuyers,
-        nextGameBuyerRate: rate(nextGameBuyers, completed),
-        laterGameBuyers,
-        laterGameBuyerRate: rate(laterGameBuyers, completed),
-        waitBuckets,
-        noUpcomingGame: {
-            users: noUpcomingGameUsers,
-            ticketBuyers: noUpcomingGameBuyers,
-            conversionRate: rate(noUpcomingGameBuyers, noUpcomingGameUsers),
-        },
-        diagnostics: {
-            platform: finalizeOnboardingSegments(platformSegments, { includeNextGameConversion: true }),
-            referral: finalizeOnboardingSegments(referralSegments, { includeNextGameConversion: true }),
-            notifications: finalizeOnboardingSegments(notificationSegments, { includeNextGameConversion: true }),
-            nextGameTheme: finalizeOnboardingSegments(nextGameThemeSegments, { includeNextGameConversion: true }),
-            nextGameStartHour: finalizeOnboardingSegments(nextGameStartHourSegments, { includeNextGameConversion: true, limit: 8 }),
-            nextGamePrice: finalizeOnboardingSegments(nextGamePriceSegments, { includeNextGameConversion: true }),
-            nextGameReminders: finalizeOnboardingSegments(nextGameReminderSegments, { includeNextGameConversion: true }),
-            purchasePath: finalizeOnboardingSegments(purchasePathSegments),
-        },
     };
 }
 
@@ -2006,12 +1724,11 @@ async function AnalyticsContent({
     gameFilter: AnalyticsGameFilterData;
 }) {
     if (activeTab === "overview") {
-        const [data, retention, onboarding] = await Promise.all([
+        const [data, retention] = await Promise.all([
             getCoreDashboard(start, end, platform, gameId, gameFilter),
             getRetentionData(start, end, platform, range, gameId),
-            getOnboardingConversionData(start, end, platform),
         ]);
-        return <OverviewTab data={data} retention={retention} onboarding={onboarding} />;
+        return <OverviewTab data={data} retention={retention} />;
     }
     if (activeTab === "games") {
         const gameplay = await getGameplayData(start, end, platform, gameId, gameFilter);
@@ -2035,11 +1752,9 @@ async function AnalyticsContent({
 function OverviewTab({
     data,
     retention,
-    onboarding,
 }: {
     data: Awaited<ReturnType<typeof getCoreDashboard>>;
     retention: Awaited<ReturnType<typeof getRetentionData>>;
-    onboarding: Awaited<ReturnType<typeof getOnboardingConversionData>>;
 }) {
     return (
         <div className="space-y-6">
@@ -2097,8 +1812,6 @@ function OverviewTab({
             </div>
 
             <HourlyUserActivityChart data={data.hourlyUserActivity} />
-
-            <OnboardingConversionPanel data={onboarding} />
 
             {/* Revenue chart */}
             <RevenueChart data={data.revenueChartData} />
@@ -2169,215 +1882,6 @@ function OverviewTab({
 
             {/* Game performance table */}
             <GamePerformanceTable games={data.gamePerformance} />
-        </div>
-    );
-}
-
-function OnboardingConversionPanel({
-    data,
-}: {
-    data: Awaited<ReturnType<typeof getOnboardingConversionData>>;
-}) {
-    const maxUsers = Math.max(1, ...data.waitBuckets.map((bucket) => bucket.users));
-
-    return (
-        <section className="rounded-2xl border border-white/10 p-6">
-            <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-                <div>
-                    <h3 className="text-lg font-semibold text-white font-display">Onboarding Conversion</h3>
-                    <p className="text-sm text-white/50">
-                        Users who completed onboarding, then bought a paid ticket
-                    </p>
-                </div>
-                <div className="grid grid-cols-2 gap-3 text-right">
-                    <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                        <div className="text-xs uppercase tracking-wider text-white/40">Completed</div>
-                        <div className="mt-1 text-2xl font-bold text-[#00CFF2] font-body">
-                            {data.completed.toLocaleString()}
-                        </div>
-                    </div>
-                    <div className="rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3">
-                        <div className="text-xs uppercase tracking-wider text-white/40">Bought Ticket</div>
-                        <div className="mt-1 text-2xl font-bold text-[#14B985] font-body">
-                            {data.ticketBuyerRate.toFixed(1)}%
-                        </div>
-                        <div className="mt-1 text-[11px] text-white/40">
-                            {data.ticketBuyers.toLocaleString()} users
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="mb-5 grid gap-3 md:grid-cols-3">
-                <OnboardingOutcomeStat
-                    label="Bought Next Game"
-                    value={`${data.nextGameBuyerRate.toFixed(1)}%`}
-                    detail={`${data.nextGameBuyers.toLocaleString()} users`}
-                    color="#00CFF2"
-                />
-                <OnboardingOutcomeStat
-                    label="Bought Later Game"
-                    value={`${data.laterGameBuyerRate.toFixed(1)}%`}
-                    detail={`${data.laterGameBuyers.toLocaleString()} users`}
-                    color="#FFC931"
-                />
-                <OnboardingOutcomeStat
-                    label="No Upcoming Game"
-                    value={`${data.noUpcomingGame.conversionRate.toFixed(1)}%`}
-                    detail={`${data.noUpcomingGame.users.toLocaleString()} users`}
-                    color="#14B985"
-                />
-            </div>
-
-            <div className="overflow-hidden rounded-2xl border border-white/8">
-                <div className="grid grid-cols-[minmax(78px,0.8fr)_minmax(120px,1.5fr)_minmax(82px,0.8fr)_minmax(92px,0.8fr)] gap-3 border-b border-white/8 bg-white/[0.03] px-4 py-3 text-xs font-medium uppercase tracking-wider text-white/40">
-                    <span>Wait</span>
-                    <span>Onboarded Users</span>
-                    <span>Buyers</span>
-                    <span>Conversion</span>
-                </div>
-                <div className="divide-y divide-white/8">
-                    {data.waitBuckets.map((bucket) => (
-                        <div
-                            key={bucket.label}
-                            className="grid grid-cols-[minmax(78px,0.8fr)_minmax(120px,1.5fr)_minmax(82px,0.8fr)_minmax(92px,0.8fr)] items-center gap-3 px-4 py-3 text-sm"
-                        >
-                            <span className="font-body text-white">{bucket.label}</span>
-                            <div className="flex items-center gap-3">
-                                <div className="h-2 min-w-0 flex-1 overflow-hidden rounded-full bg-white/10">
-                                    <div
-                                        className="h-full rounded-full bg-[#00CFF2]"
-                                        style={{ width: `${(bucket.users / maxUsers) * 100}%` }}
-                                    />
-                                </div>
-                                <span className="w-12 text-right text-white/60">{bucket.users}</span>
-                            </div>
-                            <span className="text-white/70">{bucket.nextGameBuyers}</span>
-                            <span className="font-body text-[#14B985]">
-                                {bucket.conversionRate.toFixed(1)}%
-                            </span>
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {data.noUpcomingGame.users > 0 ? (
-                <div className="mt-3 rounded-xl border border-white/8 bg-white/[0.03] px-4 py-3 text-sm text-white/60">
-                    {data.noUpcomingGame.users.toLocaleString()} onboarded users had no upcoming production game in the tracked schedule;
-                    {" "}
-                    {data.noUpcomingGame.conversionRate.toFixed(1)}% later bought any paid ticket.
-                </div>
-            ) : null}
-
-            <div className="mt-5 grid gap-4 xl:grid-cols-2">
-                <OnboardingDiagnosticTable
-                    title="Traffic Source"
-                    rows={data.diagnostics.platform}
-                    labelHeader="Platform"
-                />
-                <OnboardingDiagnosticTable
-                    title="Referral"
-                    rows={data.diagnostics.referral}
-                    labelHeader="Source"
-                />
-                <OnboardingDiagnosticTable
-                    title="Reminder Channel"
-                    rows={data.diagnostics.notifications}
-                    labelHeader="State"
-                />
-                <OnboardingDiagnosticTable
-                    title="Game Reminder Readiness"
-                    rows={data.diagnostics.nextGameReminders}
-                    labelHeader="State"
-                />
-                <OnboardingDiagnosticTable
-                    title="First Upcoming Game Theme"
-                    rows={data.diagnostics.nextGameTheme}
-                    labelHeader="Theme"
-                />
-                <OnboardingDiagnosticTable
-                    title="First Upcoming Game Price"
-                    rows={data.diagnostics.nextGamePrice}
-                    labelHeader="Price"
-                />
-                <OnboardingDiagnosticTable
-                    title="First Upcoming Game Start"
-                    rows={data.diagnostics.nextGameStartHour}
-                    labelHeader="Hour"
-                />
-                <OnboardingDiagnosticTable
-                    title="Purchase Path"
-                    rows={data.diagnostics.purchasePath}
-                    labelHeader="Outcome"
-                    showNextGameConversion={false}
-                />
-            </div>
-        </section>
-    );
-}
-
-function OnboardingOutcomeStat({
-    label,
-    value,
-    detail,
-    color,
-}: {
-    label: string;
-    value: string;
-    detail: string;
-    color: string;
-}) {
-    return (
-        <div className="border-t border-white/8 pt-3">
-            <div className="text-xs uppercase tracking-wider text-white/40">{label}</div>
-            <div className="mt-1 text-xl font-bold font-body" style={{ color }}>
-                {value}
-            </div>
-            <div className="mt-1 text-[11px] text-white/40">{detail}</div>
-        </div>
-    );
-}
-
-function OnboardingDiagnosticTable({
-    title,
-    rows,
-    labelHeader,
-    showNextGameConversion = true,
-}: {
-    title: string;
-    rows: OnboardingDiagnosticSegment[];
-    labelHeader: string;
-    showNextGameConversion?: boolean;
-}) {
-    const grid = showNextGameConversion
-        ? "grid-cols-[minmax(88px,1.2fr)_64px_72px_72px]"
-        : "grid-cols-[minmax(88px,1.2fr)_64px_72px]";
-
-    return (
-        <div className="min-w-0 border-t border-white/8 pt-4">
-            <h4 className="mb-3 text-sm font-semibold text-white font-display">{title}</h4>
-            <div className="overflow-hidden rounded-xl border border-white/8">
-                <div className={`grid ${grid} gap-2 border-b border-white/8 bg-white/[0.03] px-3 py-2 text-[11px] font-medium uppercase tracking-wider text-white/40`}>
-                    <span>{labelHeader}</span>
-                    <span className="text-right">Users</span>
-                    <span className="text-right">Any Buy</span>
-                    {showNextGameConversion ? <span className="text-right">Next Buy</span> : null}
-                </div>
-                <div className="divide-y divide-white/8">
-                    {rows.map((row) => (
-                        <div key={row.label} className={`grid ${grid} items-center gap-2 px-3 py-2 text-xs`}>
-                            <span className="truncate text-white/70">{row.label}</span>
-                            <span className="text-right text-white/60">{row.users.toLocaleString()}</span>
-                            <span className="text-right font-body text-[#14B985]">{row.conversionRate.toFixed(1)}%</span>
-                            {showNextGameConversion ? (
-                                <span className="text-right font-body text-[#00CFF2]">
-                                    {(row.nextGameConversionRate ?? 0).toFixed(1)}%
-                                </span>
-                            ) : null}
-                        </div>
-                    ))}
-                </div>
-            </div>
         </div>
     );
 }
