@@ -21,23 +21,18 @@ export async function verifyAdminCredentials(
 ): Promise<{ success: boolean; error?: string; session?: AdminSession }> {
   try {
     const user = await prisma.user.findFirst({
-      where: { username },
+      where: { username, role: "ADMIN" },
       select: {
         id: true,
         fid: true,
         username: true,
         pfpUrl: true,
-        role: true,
         password: true,
       },
     });
 
     if (!user) {
       return { success: false, error: "Invalid credentials" };
-    }
-
-    if (user.role !== "ADMIN") {
-      return { success: false, error: "Access denied: Admin role required" };
     }
 
     if (!user.password) {
@@ -146,23 +141,15 @@ export async function createAdminAccount(
   password: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Check if user exists by username
     const existingUser = await prisma.user.findFirst({
-      where: { username },
-      select: { id: true, role: true, password: true },
+      where: { username, role: "ADMIN" },
+      select: { id: true, password: true },
     });
 
     if (!existingUser) {
       return {
         success: false,
-        error: "User not found. Please sign up in the main app first.",
-      };
-    }
-
-    if (existingUser.role !== "ADMIN") {
-      return {
-        success: false,
-        error: "You must be manually assigned the Admin role first.",
+        error: "Admin user not found. Please sign up in the main app first and have the Admin role assigned.",
       };
     }
 
