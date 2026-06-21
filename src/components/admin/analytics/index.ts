@@ -5,6 +5,7 @@ export { MetricTooltip } from "./MetricTooltip";
 export { RevenueChart } from "./RevenueChart";
 export { UserGrowthChart } from "./UserGrowthChart";
 export { GamePerformanceTable } from "./GamePerformanceTable";
+export { HourlyUserActivityChart } from "./HourlyUserActivityChart";
 export { ReferralFunnel } from "./ReferralFunnel";
 export { ThemeAnalytics } from "./ThemeAnalytics";
 export { ActivityFeed } from "./ActivityFeed";

@@ -16,6 +16,7 @@ import {
     getDateRangeFromParam,
     KPICard,
     RevenueChart,
+    HourlyUserActivityChart,
     GamePerformanceTable,
     QuestionDifficulty,
     PlayerEngagement,
@@ -33,6 +34,7 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
+import { getHourlyUmamiActivity } from "@/lib/umami";
 import type { GameNetwork, UserPlatform } from "@prisma";
 
 // ============================================================
@@ -65,6 +67,12 @@ interface GameScoreAggregate {
         score: number | null;
     };
 }
+
+type HourlyUserRow = {
+    id: string;
+    createdAt: Date;
+    lastLoginAt: Date | null;
+};
 
 type OnboardingWaitBucket = {
     label: string;
@@ -223,6 +231,42 @@ function formatGameDateTime(value: Date) {
 function formatTicketPrice(prices: number[]) {
     const price = Math.min(...prices.filter((value) => Number.isFinite(value)));
     return Number.isFinite(price) ? `$${price.toFixed(price % 1 === 0 ? 0 : 2)}` : "No price";
+}
+
+function formatHourLabel(hour: number) {
+    if (hour === 0) return "12 AM";
+    if (hour < 12) return `${hour} AM`;
+    if (hour === 12) return "12 PM";
+    return `${hour - 12} PM`;
+}
+
+function buildHourlyUserActivityData(
+    users: HourlyUserRow[],
+    umamiSessionsByHour: number[],
+    start: Date,
+    end: Date,
+) {
+    const arrivalsByHour = Array.from({ length: 24 }, () => new Set<string>());
+    const returningByHour = Array.from({ length: 24 }, () => new Set<string>());
+
+    for (const user of users) {
+        if (user.createdAt >= start && user.createdAt <= end) {
+            arrivalsByHour[user.createdAt.getHours()].add(user.id);
+        }
+
+        if (user.lastLoginAt && user.lastLoginAt >= start && user.lastLoginAt <= end && user.createdAt < start) {
+            const hour = user.lastLoginAt.getHours();
+            arrivalsByHour[hour].add(user.id);
+            returningByHour[hour].add(user.id);
+        }
+    }
+
+    return Array.from({ length: 24 }, (_, hour) => ({
+        hour: formatHourLabel(hour),
+        totalArrivals: arrivalsByHour[hour].size,
+        returningUsers: returningByHour[hour].size,
+        activeUsers: umamiSessionsByHour[hour] ?? 0,
+    }));
 }
 
 function buildAnalyticsFilterHref({
@@ -498,6 +542,8 @@ async function getCoreDashboard(
         // Revenue entries for chart + summaries
         revenueEntries,
         gameScoreAverages,
+        hourlyUsers,
+        umamiSessionsByHour,
     ] = await Promise.all([
         // Active players in period
         prisma.user.count({
@@ -601,6 +647,22 @@ async function getCoreDashboard(
             where: { ...ticketPurchaseWhere, answered: { gt: 0 } },
             _avg: { score: true },
         }),
+        prisma.user.findMany({
+            where: {
+                ...pf,
+                OR: [
+                    { createdAt: { gte: start, lte: end } },
+                    { lastLoginAt: { not: null, gte: start, lte: end } },
+                ],
+            },
+            select: {
+                id: true,
+                createdAt: true,
+                lastLoginAt: true,
+            },
+            take: 20000,
+        }),
+        getHourlyUmamiActivity(start, end),
     ]);
 
     // Compute average answer speed from JSON
@@ -677,6 +739,7 @@ async function getCoreDashboard(
             revenue: revenueMap.get(date) || 0,
             tickets: ticketMap.get(date) || 0,
         }));
+    const hourlyUserActivity = buildHourlyUserActivityData(hourlyUsers, umamiSessionsByHour, start, end);
 
     return {
         // KPIs
@@ -699,6 +762,7 @@ async function getCoreDashboard(
         revenueSparkline,
         // Chart data
         revenueChartData,
+        hourlyUserActivity,
         // Game performance table
         gamePerformance: attachAverageScores(gamesWithRevenue, gameScoreAverages),
     };
@@ -2031,6 +2095,8 @@ function OverviewTab({
                 <MiniStat label="Claim Rate" value={`${data.claimRate.toFixed(1)}%`} color="#FB72FF" tooltip="The share of prize-winning entries that have already claimed their payouts." />
                 <MiniStat label="DAU/WAU" value={`${retention.dauWauRatio.toFixed(0)}%`} color="#FFC931" tooltip="Daily active users divided by weekly active users. Higher values usually mean better short-term stickiness." />
             </div>
+
+            <HourlyUserActivityChart data={data.hourlyUserActivity} />
 
             <OnboardingConversionPanel data={onboarding} />
 
