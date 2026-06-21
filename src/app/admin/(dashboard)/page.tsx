@@ -106,6 +106,13 @@ async function getStats(platform?: string) {
             select: {
                 paidAt: true,
                 paidAmount: true,
+                game: {
+                    select: {
+                        id: true,
+                        title: true,
+                        startsAt: true,
+                    },
+                },
             },
         }),
         prisma.user.count({
@@ -157,6 +164,24 @@ async function getStats(platform?: string) {
             .filter((e: { paidAt: Date | null }) => e.paidAt?.toISOString().startsWith(date))
             .reduce((sum: number, e: { paidAmount: number | null }) => sum + calculateProtocolRevenue(e.paidAmount), 0)
     }));
+    const revenueByGame = Array.from(
+        recentEntries.reduce((games, entry) => {
+            const existing = games.get(entry.game.id) ?? {
+                date: entry.game.title,
+                amount: 0,
+                startsAt: entry.game.startsAt,
+            };
+
+            existing.amount += calculateProtocolRevenue(entry.paidAmount);
+            games.set(entry.game.id, existing);
+
+            return games;
+        }, new Map<string, { date: string; amount: number; startsAt: Date }>())
+            .values()
+    )
+        .sort((a, b) => b.startsAt.getTime() - a.startsAt.getTime())
+        .slice(0, 7)
+        .map(({ date, amount }) => ({ date, amount }));
 
     const currentRevenue = recentEntries.reduce(
         (sum, entry) => sum + calculateProtocolRevenue(entry.paidAmount),
@@ -177,6 +202,7 @@ async function getStats(platform?: string) {
         totalRevenue: calculateProtocolRevenue(totalPaidAmount._sum.paidAmount),
         userGrowth,
         revenueData,
+        revenueByGame,
         weekOverWeek: {
             users: formatWeekOverWeekTrend(recentUsers.length, previousUsers),
             games: formatWeekOverWeekTrend(recentGames, previousGames),
@@ -316,6 +342,7 @@ export default async function AdminDashboard({
             <DashboardCharts
                 userGrowth={stats.userGrowth}
                 revenueData={stats.revenueData}
+                revenueByGame={stats.revenueByGame}
             />
 
             <div className="rounded-2xl border border-white/10 bg-linear-to-br from-[#FFC931]/6 to-transparent p-6">

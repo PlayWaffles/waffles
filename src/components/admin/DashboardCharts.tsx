@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
     AreaChart,
     Area,
@@ -22,6 +23,14 @@ const COLORS = {
     axisText: "rgba(255, 255, 255, 0.5)",
 };
 
+type RevenueMode = "day" | "game";
+type ChartPoint = { date: string; amount: number };
+
+function formatRevenueTick(value: string, mode: RevenueMode) {
+    if (mode === "day" || value.length <= 12) return value;
+    return `${value.slice(0, 11)}...`;
+}
+
 // Custom tooltip style matching the admin theme
 const tooltipStyle = {
     backgroundColor: "rgba(10, 10, 11, 0.95)",
@@ -40,10 +49,15 @@ const tooltipLabelStyle = {
 export function DashboardCharts({
     userGrowth,
     revenueData,
+    revenueByGame,
 }: {
     userGrowth: { date: string; count: number }[];
-    revenueData: { date: string; amount: number }[];
+    revenueData: ChartPoint[];
+    revenueByGame: ChartPoint[];
 }) {
+    const [revenueMode, setRevenueMode] = useState<RevenueMode>("day");
+    const activeRevenueData = revenueMode === "day" ? revenueData : revenueByGame;
+
     return (
         <div className="grid min-w-0 grid-cols-1 gap-6 lg:grid-cols-2">
             {/* User Growth Chart */}
@@ -96,10 +110,31 @@ export function DashboardCharts({
 
             {/* Revenue Chart */}
             <div className="min-w-0 bg-linear-to-br from-[#FFC931]/5 to-transparent border border-white/10 rounded-2xl p-6">
-                <h3 className="text-lg font-semibold text-white mb-6 font-body">Revenue (USDC)</h3>
+                <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <h3 className="text-lg font-semibold text-white font-body">Revenue (USDC)</h3>
+                    <div className="inline-flex w-fit rounded-lg border border-white/10 bg-white/5 p-0.5">
+                        {[
+                            { value: "day", label: "Day" },
+                            { value: "game", label: "Game" },
+                        ].map((option) => (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => setRevenueMode(option.value as RevenueMode)}
+                                className={`rounded-md px-3 py-1 text-xs font-medium transition-all duration-200 ${
+                                    revenueMode === option.value
+                                        ? "bg-[#FFC931] text-[#1E1E1E] shadow-sm shadow-[#FFC931]/20"
+                                        : "text-white/50 hover:bg-white/5 hover:text-white/80"
+                                }`}
+                            >
+                                {option.label}
+                            </button>
+                        ))}
+                    </div>
+                </div>
                 <div className="h-[300px] w-full min-w-0">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={revenueData}>
+                        <BarChart data={activeRevenueData}>
                             <defs>
                                 <linearGradient id="colorRevenueGold" x1="0" y1="0" x2="0" y2="1">
                                     <stop offset="0%" stopColor={COLORS.gold} stopOpacity={1} />
@@ -117,6 +152,8 @@ export function DashboardCharts({
                                 tickLine={false}
                                 tick={{ fill: COLORS.axisText, fontSize: 12 }}
                                 dy={10}
+                                interval={0}
+                                tickFormatter={(value: string) => formatRevenueTick(value, revenueMode)}
                             />
                             <YAxis
                                 axisLine={false}
