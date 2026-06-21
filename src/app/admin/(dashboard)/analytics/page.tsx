@@ -228,15 +228,23 @@ function formatTicketPrice(prices: number[]) {
 function buildAnalyticsFilterHref({
     tab,
     range,
+    startDate,
+    endDate,
     platform,
     gameId,
 }: {
     tab: AnalyticsTab;
     range: string;
+    startDate?: string;
+    endDate?: string;
     platform?: string;
     gameId?: string | null;
 }) {
     const params = new URLSearchParams({ tab, range });
+    if (range === "custom" && startDate && endDate) {
+        params.set("startDate", startDate);
+        params.set("endDate", endDate);
+    }
     if (platform) params.set("platform", platform);
     if (gameId) params.set("gameId", gameId);
     return `/admin/analytics?${params.toString()}`;
@@ -1854,10 +1862,18 @@ async function getLevelProgressionData(start: Date, end: Date, platform?: string
 export default async function AnalyticsPage({
     searchParams,
 }: {
-    searchParams: Promise<{ range?: string; tab?: string; platform?: string; gameId?: string }>;
+    searchParams: Promise<{
+        range?: string;
+        startDate?: string;
+        endDate?: string;
+        tab?: string;
+        platform?: string;
+        gameId?: string;
+    }>;
 }) {
-    const { range, tab, platform, gameId } = await searchParams;
-    const { start, end } = getDateRangeFromParam(range ?? "7d");
+    const { range, startDate, endDate, tab, platform, gameId } = await searchParams;
+    const activeRange = range ?? "7d";
+    const { start, end } = getDateRangeFromParam(activeRange, startDate, endDate);
     const validTabs: AnalyticsTab[] = ["overview", "games", "players"];
     const activeTab = validTabs.includes(tab as AnalyticsTab)
         ? (tab as AnalyticsTab)
@@ -1874,7 +1890,11 @@ export default async function AnalyticsPage({
                     </p>
                 </div>
                 <div className="flex items-center gap-3">
-                    <DateRangePicker currentRange={range || "7d"} />
+                    <DateRangePicker
+                        currentRange={activeRange}
+                        startDate={startDate}
+                        endDate={endDate}
+                    />
                 </div>
             </div>
 
@@ -1883,7 +1903,9 @@ export default async function AnalyticsPage({
             <AnalyticsGameFilter
                 data={gameFilter}
                 tab={activeTab}
-                range={range || "7d"}
+                range={activeRange}
+                startDate={startDate}
+                endDate={endDate}
                 platform={platform}
             />
 
@@ -1893,7 +1915,7 @@ export default async function AnalyticsPage({
                     end={end}
                     activeTab={activeTab}
                     platform={platform}
-                    range={range || "7d"}
+                    range={activeRange}
                     gameId={gameId}
                     gameFilter={gameFilter}
                 />
@@ -2324,11 +2346,15 @@ function AnalyticsGameFilter({
     data,
     tab,
     range,
+    startDate,
+    endDate,
     platform,
 }: {
     data: AnalyticsGameFilterData;
     tab: AnalyticsTab;
     range: string;
+    startDate?: string;
+    endDate?: string;
     platform?: string;
 }) {
     const { selectedGameId, selectedGame, currentGame, previousGame, options } = data;
@@ -2347,14 +2373,14 @@ function AnalyticsGameFilter({
 
                 <div className="flex flex-wrap items-center gap-2">
                     <GameFilterLink
-                        href={buildAnalyticsFilterHref({ tab, range, platform })}
+                        href={buildAnalyticsFilterHref({ tab, range, startDate, endDate, platform })}
                         active={!selectedGameId}
                     >
                         All games
                     </GameFilterLink>
                     {currentGame ? (
                         <GameFilterLink
-                            href={buildAnalyticsFilterHref({ tab, range, platform, gameId: currentGame.id })}
+                            href={buildAnalyticsFilterHref({ tab, range, startDate, endDate, platform, gameId: currentGame.id })}
                             active={selectedGameId === currentGame.id}
                         >
                             Current
@@ -2362,7 +2388,7 @@ function AnalyticsGameFilter({
                     ) : null}
                     {previousGame ? (
                         <GameFilterLink
-                            href={buildAnalyticsFilterHref({ tab, range, platform, gameId: previousGame.id })}
+                            href={buildAnalyticsFilterHref({ tab, range, startDate, endDate, platform, gameId: previousGame.id })}
                             active={selectedGameId === previousGame.id}
                         >
                             Previous
@@ -2374,6 +2400,8 @@ function AnalyticsGameFilter({
             <form action="/admin/analytics" className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-[1fr_auto]">
                 <input type="hidden" name="tab" value={tab} />
                 <input type="hidden" name="range" value={range} />
+                {range === "custom" && startDate ? <input type="hidden" name="startDate" value={startDate} /> : null}
+                {range === "custom" && endDate ? <input type="hidden" name="endDate" value={endDate} /> : null}
                 {platform ? <input type="hidden" name="platform" value={platform} /> : null}
                 <select
                     name="gameId"
