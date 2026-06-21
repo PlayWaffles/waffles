@@ -68,7 +68,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                                     ? "Users came in"
                                     : name === "returningUsers"
                                         ? "Returning users"
-                                        : "Active sessions",
+                                        : "Active sessions (event data)",
                             ]}
                         />
                         <Legend
@@ -79,7 +79,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                                         ? "Users came in"
                                         : value === "returningUsers"
                                             ? "Returning users"
-                                            : "Active sessions"}
+                                            : "Active sessions (event data)"}
                                 </span>
                             )}
                         />

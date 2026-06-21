@@ -234,7 +234,7 @@ export async function getUmamiOverviewMetrics(
   const previousStart = new Date(start.getTime() - periodMs);
   const last24hStart = new Date(end.getTime() - 24 * 60 * 60 * 1000);
   const [pageviews, currentStats, previousStats, dailyStats, eventMetrics] = await Promise.all([
-    getUmamiPageviews(context, start, end, scope),
+    getUmamiPageviews(context, start, end),
     getUmamiStats(context, start, end, scope),
     getUmamiStats(context, previousStart, start, scope),
     getUmamiStats(context, last24hStart, end, scope),
