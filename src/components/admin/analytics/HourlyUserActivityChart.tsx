@@ -16,7 +16,7 @@ export type HourlyUserActivityPoint = {
     hour: string;
     totalArrivals: number;
     returningUsers: number;
-    activeCohortUsers: number;
+    activeSessions: number;
 };
 
 interface HourlyUserActivityChartProps {
@@ -29,7 +29,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
             <div className="mb-6 flex flex-col gap-1">
                 <h3 className="text-lg font-semibold text-white font-display">Hourly User Flow</h3>
                 <p className="text-sm text-white/50">
-                    New and returning users by hour, with active cohorts carried forward
+                    New and returning users by hour, with event-sourced app activity
                 </p>
             </div>
 
@@ -68,7 +68,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                                     ? "Users came in"
                                     : name === "returningUsers"
                                         ? "Returning users"
-                                        : "Still active from cohorts",
+                                        : "Active sessions",
                             ]}
                         />
                         <Legend
@@ -79,7 +79,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                                         ? "Users came in"
                                         : value === "returningUsers"
                                             ? "Returning users"
-                                            : "Still active from cohorts"}
+                                            : "Active sessions"}
                                 </span>
                             )}
                         />
@@ -99,7 +99,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                         />
                         <Line
                             type="monotone"
-                            dataKey="activeCohortUsers"
+                            dataKey="activeSessions"
                             stroke="#A100FF"
                             strokeWidth={3}
                             dot={{ r: 4, fill: "#A100FF", stroke: "#A100FF" }}

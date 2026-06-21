@@ -160,12 +160,12 @@ function formatHourLabel(hour: number) {
 
 function buildHourlyUserActivityData(
     users: HourlyUserRow[],
+    eventSessionsByHour: number[],
     start: Date,
     end: Date,
 ) {
     const arrivalsByHour = Array.from({ length: 24 }, () => new Set<string>());
     const returningByHour = Array.from({ length: 24 }, () => new Set<string>());
-    const activeCohortsByHour = Array.from({ length: 24 }, () => new Set<string>());
 
     for (const user of users) {
         if (user.createdAt >= start && user.createdAt <= end) {
@@ -177,34 +177,13 @@ function buildHourlyUserActivityData(
             arrivalsByHour[hour].add(user.id);
             returningByHour[hour].add(user.id);
         }
-
-        const firstSeenAt = user.createdAt >= start && user.createdAt <= end
-            ? user.createdAt
-            : user.lastLoginAt && user.lastLoginAt >= start && user.lastLoginAt <= end
-                ? user.lastLoginAt
-                : null;
-        const lastSeenAt = user.lastLoginAt && user.lastLoginAt >= start && user.lastLoginAt <= end
-            ? user.lastLoginAt
-            : firstSeenAt;
-        if (!firstSeenAt || !lastSeenAt) continue;
-
-        const cursor = new Date(firstSeenAt);
-        cursor.setMinutes(0, 0, 0);
-        const finalHour = new Date(lastSeenAt);
-        finalHour.setMinutes(0, 0, 0);
-        while (cursor <= finalHour && cursor <= end) {
-            if (cursor >= start) {
-                activeCohortsByHour[cursor.getHours()].add(user.id);
-            }
-            cursor.setHours(cursor.getHours() + 1);
-        }
     }
 
     return Array.from({ length: 24 }, (_, hour) => ({
         hour: formatHourLabel(hour),
         totalArrivals: arrivalsByHour[hour].size,
         returningUsers: returningByHour[hour].size,
-        activeCohortUsers: activeCohortsByHour[hour].size,
+        activeSessions: eventSessionsByHour[hour] ?? 0,
     }));
 }
 
@@ -690,7 +669,12 @@ async function getCoreDashboard(
             revenue: revenueMap.get(date) || 0,
             tickets: ticketMap.get(date) || 0,
         }));
-    const hourlyUserActivity = buildHourlyUserActivityData(hourlyUsers, start, end);
+    const hourlyUserActivity = buildHourlyUserActivityData(
+        hourlyUsers,
+        umamiOverviewMetrics.sessionsByHour,
+        start,
+        end,
+    );
 
     return {
         // KPIs
