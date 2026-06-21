@@ -9,15 +9,22 @@ const PLATFORMS = [
     { value: "BASE_APP", label: "Base App" },
 ] as const;
 
-export function PlatformFilter() {
+type PlatformFilterProps = {
+    defaultPlatform?: string;
+};
+
+export function PlatformFilter({ defaultPlatform }: PlatformFilterProps) {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const activePlatform = searchParams.get("platform") || "";
+    const platformParam = searchParams.get("platform");
+    const activePlatform = platformParam === "ALL" ? "" : platformParam ?? defaultPlatform ?? "";
 
     const handleChange = (value: string) => {
         const params = new URLSearchParams(searchParams);
         if (value) {
             params.set("platform", value);
+        } else if (defaultPlatform) {
+            params.set("platform", "ALL");
         } else {
             params.delete("platform");
         }

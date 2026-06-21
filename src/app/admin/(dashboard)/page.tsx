@@ -18,6 +18,7 @@ import {
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
 import { getDisplayName } from "@/lib/address";
+import { UserPlatform } from "@prisma";
 
 type TrendDirection = "up" | "down" | "flat";
 type WeekOverWeekTrend = {
@@ -27,6 +28,7 @@ type WeekOverWeekTrend = {
 };
 
 const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+const DEFAULT_DASHBOARD_PLATFORM = UserPlatform.MINIPAY;
 
 function formatCompactNumber(value: number) {
     return value.toLocaleString("en-US", {
@@ -256,9 +258,10 @@ export default async function AdminDashboard({
     searchParams: Promise<{ platform?: string }>;
 }) {
     const { platform } = await searchParams;
+    const activePlatform = platform === "ALL" ? undefined : platform ?? DEFAULT_DASHBOARD_PLATFORM;
     const [stats, activity] = await Promise.all([
-        getStats(platform),
-        getRecentActivity(platform),
+        getStats(activePlatform),
+        getRecentActivity(activePlatform),
     ]);
 
     return (
@@ -270,7 +273,7 @@ export default async function AdminDashboard({
                         Overview of your Waffles trivia platform
                     </p>
                 </div>
-                <PlatformFilter />
+                <PlatformFilter defaultPlatform={DEFAULT_DASHBOARD_PLATFORM} />
             </div>
 
             {/* Stats Grid */}
