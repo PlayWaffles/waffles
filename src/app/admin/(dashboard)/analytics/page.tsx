@@ -430,9 +430,8 @@ async function getCoreDashboard(
     };
 
     const [
-        // Total signups vs onboarded (hasGameAccess)
+        // Total signups
         totalSignups,
-        onboardedUsers,
         // Ticket activation
         totalEntriesInPeriod,
         previousEntriesInPeriod,
@@ -459,18 +458,6 @@ async function getCoreDashboard(
     ] = await Promise.all([
         // Total signups in period
         prisma.user.count({ where: { ...pf, createdAt: { gte: start, lte: end } } }),
-        // Onboarded users created in period
-        prisma.user.count({
-            where: {
-                ...pf,
-                createdAt: { gte: start, lte: end },
-                OR: [
-                    { hasGameAccess: true },
-                    { accessGrantedAt: { not: null } },
-                    { entries: { some: { game: gamePf } } },
-                ],
-            },
-        }),
         // Total entries (ticket purchases) in period
         prisma.gameEntry.count({ where: ticketPurchaseWhere }),
         // Previous period entries
@@ -591,7 +578,7 @@ async function getCoreDashboard(
     const gamesWithRevenue = summarizeRevenueByGame(revenueEntries as RevenueEntryWithGame[]);
 
     // Computed metrics
-    const onboardingRate = totalSignups > 0 ? (onboardedUsers / totalSignups) * 100 : 0;
+    const onboardingRate = umamiOverviewMetrics.onboardingRate;
     const purchaseToCompletionRate = totalEntriesInPeriod > 0 ? (completedEntries / totalEntriesInPeriod) * 100 : 0;
     const leaveRate = totalEntriesInPeriod > 0 ? (leftEntries / totalEntriesInPeriod) * 100 : 0;
     const activationRate = totalSignups > 0 ? (activatedUsers / totalSignups) * 100 : 0;
@@ -635,6 +622,8 @@ async function getCoreDashboard(
         activeUsersChange,
         dau: umamiOverviewMetrics.dailyVisitors,
         onboardingRate,
+        levelCompletedVisitors: umamiOverviewMetrics.levelCompletedVisitors,
+        umamiVisitors: umamiOverviewMetrics.activeVisitors,
         activationRate,
         purchaseToCompletionRate,
         leaveRate,
@@ -1742,9 +1731,9 @@ function OverviewTab({
                 <KPICard
                     title="Onboarding Rate"
                     value={`${data.onboardingRate.toFixed(1)}%`}
-                    tooltip="The share of users created in the selected range who reached game access or bought a ticket."
+                    tooltip="Unique Umami visitors in the selected range who fired level_completed. This measures people who completed a level."
                     icon={<CheckCircleIcon className="h-5 w-5 text-[#14B985]" />}
-                    subtitle="signup → onboarded"
+                    subtitle={`${data.levelCompletedVisitors.toLocaleString()} of ${data.umamiVisitors.toLocaleString()} visitors`}
                     glowVariant="success"
                 />
                 <KPICard

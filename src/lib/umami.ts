@@ -16,6 +16,11 @@ type UmamiStatsResponse = {
   visitors: number;
 };
 
+type UmamiExpandedMetricRow = {
+  name: string;
+  visitors: number;
+};
+
 type UmamiRequestContext = {
   baseUrl: string;
   websiteId: string;
@@ -151,6 +156,32 @@ async function getUmamiStats(
   return await response.json() as UmamiStatsResponse;
 }
 
+async function getUmamiEventMetrics(
+  context: UmamiRequestContext,
+  start: Date,
+  end: Date,
+) {
+  const params = new URLSearchParams({
+    startAt: String(start.getTime()),
+    endAt: String(end.getTime()),
+    type: "event",
+    limit: "500",
+  });
+  const response = await fetch(`${context.baseUrl}/api/websites/${context.websiteId}/metrics/expanded?${params.toString()}`, {
+    headers: {
+      Accept: "application/json",
+      Authorization: `Bearer ${context.token}`,
+    },
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    throw new Error(`Umami event metrics request failed with status ${response.status}.`);
+  }
+
+  return await response.json() as UmamiExpandedMetricRow[];
+}
+
 function hourlySessionsFromPageviews(body: UmamiPageviewsResponse, timezone: string) {
   const sessionsByHour = Array.from({ length: 24 }, () => 0);
 
@@ -174,17 +205,22 @@ export async function getUmamiOverviewMetrics(start: Date, end: Date) {
   const periodMs = end.getTime() - start.getTime();
   const previousStart = new Date(start.getTime() - periodMs);
   const last24hStart = new Date(end.getTime() - 24 * 60 * 60 * 1000);
-  const [pageviews, currentStats, previousStats, dailyStats] = await Promise.all([
+  const [pageviews, currentStats, previousStats, dailyStats, eventMetrics] = await Promise.all([
     getUmamiPageviews(context, start, end),
     getUmamiStats(context, start, end),
     getUmamiStats(context, previousStart, start),
     getUmamiStats(context, last24hStart, end),
+    getUmamiEventMetrics(context, start, end),
   ]);
+  const activeVisitors = currentStats.visitors ?? 0;
+  const levelCompletedVisitors = eventMetrics.find((row) => row.name === "level_completed")?.visitors ?? 0;
 
   return {
     sessionsByHour: hourlySessionsFromPageviews(pageviews, context.timezone),
-    activeVisitors: currentStats.visitors ?? 0,
+    activeVisitors,
     previousActiveVisitors: previousStats.visitors ?? 0,
     dailyVisitors: dailyStats.visitors ?? 0,
+    levelCompletedVisitors,
+    onboardingRate: activeVisitors > 0 ? (levelCompletedVisitors / activeVisitors) * 100 : 0,
   };
 }
