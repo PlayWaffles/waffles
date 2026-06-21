@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 
 export const DASHBOARD_TIMEFRAMES = [
-    { value: "current", label: "Current Game" },
+    { value: "current", label: "Today" },
     { value: "7d", label: "7D" },
     { value: "14d", label: "14D" },
     { value: "30d", label: "30D" },

@@ -32,13 +32,14 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const DEFAULT_DASHBOARD_PLATFORM = UserPlatform.MINIPAY;
 const DEFAULT_DASHBOARD_TIMEFRAME: DashboardTimeframe = "7d";
 const DASHBOARD_TIMEFRAME_DAYS: Partial<Record<DashboardTimeframe, number>> = {
+    current: 1,
     "7d": 7,
     "14d": 14,
     "30d": 30,
 };
 const DASHBOARD_TIMEFRAMES = new Set<DashboardTimeframe>(["current", "7d", "14d", "30d", "all"]);
 const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
-    current: "current game",
+    current: "today",
     "7d": "last 7 days",
     "14d": "last 14 days",
     "30d": "last 30 days",
@@ -112,33 +113,12 @@ function getMetricWindow(timeframe: DashboardTimeframe, now: Date) {
     };
 }
 
-async function getCurrentDashboardGame(gameWhere: Prisma.GameWhereInput, now: Date) {
-    const liveGame = await prisma.game.findFirst({
-        where: { ...gameWhere, startsAt: { lte: now }, endsAt: { gt: now } },
-        orderBy: { startsAt: "asc" },
-        select: { id: true, title: true, startsAt: true, endsAt: true },
-    });
-
-    if (liveGame) return liveGame;
-
-    return prisma.game.findFirst({
-        where: { ...gameWhere, startsAt: { gte: now } },
-        orderBy: { startsAt: "asc" },
-        select: { id: true, title: true, startsAt: true, endsAt: true },
-    });
-}
-
 async function getStats(platform: string | undefined, timeframe: DashboardTimeframe) {
     const now = new Date();
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
-    const currentGame = timeframe === "current"
-        ? await getCurrentDashboardGame(gamePf, now)
-        : null;
     const metricWindow = getMetricWindow(timeframe, now);
-    const entryWhere: Prisma.GameEntryWhereInput = currentGame
-        ? { gameId: currentGame.id }
-        : { game: gamePf };
+    const entryWhere: Prisma.GameEntryWhereInput = { game: gamePf };
     const paidEntryWhere: Prisma.GameEntryWhereInput = {
         ...entryWhere,
         paidAt: metricWindow ? { not: null, gte: metricWindow.start } : { not: null },
@@ -153,21 +133,15 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
             },
         }
         : { ...entryWhere, paidAt: { not: null } };
-    const userWhere: Prisma.UserWhereInput = currentGame
-        ? { ...pf, entries: { some: { gameId: currentGame.id } } }
-        : metricWindow
-            ? { ...pf, createdAt: { gte: metricWindow.start } }
-            : pf;
-    const activeUserWhere: Prisma.UserWhereInput = currentGame
-        ? { ...pf, entries: { some: { gameId: currentGame.id, paidAt: { not: null } } } }
-        : metricWindow
-            ? { ...pf, lastLoginAt: { gte: metricWindow.start } }
-            : { ...pf, lastLoginAt: { not: null } };
-    const gameWhere: Prisma.GameWhereInput = currentGame
-        ? { id: currentGame.id }
-        : metricWindow
-            ? { ...gamePf, startsAt: { gte: metricWindow.start } }
-            : gamePf;
+    const userWhere: Prisma.UserWhereInput = metricWindow
+        ? { ...pf, createdAt: { gte: metricWindow.start } }
+        : pf;
+    const activeUserWhere: Prisma.UserWhereInput = metricWindow
+        ? { ...pf, lastLoginAt: { gte: metricWindow.start } }
+        : { ...pf, lastLoginAt: { not: null } };
+    const gameWhere: Prisma.GameWhereInput = metricWindow
+        ? { ...gamePf, startsAt: { gte: metricWindow.start } }
+        : gamePf;
     const previousUserWhere: Prisma.UserWhereInput = metricWindow
         ? { ...pf, createdAt: { gte: metricWindow.previousStart, lt: metricWindow.previousEnd } }
         : pf;
@@ -180,9 +154,7 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         const date = new Date(chartStart.getTime() + i * DAY_MS);
         return getDateKey(date);
     });
-    const chartUserWhere: Prisma.UserWhereInput = currentGame
-        ? userWhere
-        : { ...pf, createdAt: { gte: chartStart } };
+    const chartUserWhere: Prisma.UserWhereInput = { ...pf, createdAt: { gte: chartStart } };
 
     const [
         totalUsers,
@@ -202,9 +174,7 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         prisma.user.count({ where: activeUserWhere }),
         prisma.game.count({ where: gameWhere }),
         prisma.game.count({
-            where: currentGame
-                ? { id: currentGame.id, startsAt: { lte: now }, endsAt: { gt: now } }
-                : { ...gamePf, startsAt: { lte: now }, endsAt: { gt: now } },
+            where: { ...gamePf, startsAt: { lte: now }, endsAt: { gt: now } },
         }),
         prisma.gameEntry.count({ where: entryWhere }),
         prisma.gameEntry.count({ where: paidEntryWhere }),
@@ -244,9 +214,7 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
 
     const userGrowth = dates.map(date => ({
         date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-        count: currentGame
-            ? (date === getDateKey(currentGame.startsAt) ? totalUsers : 0)
-            : recentUsers.filter((u: { createdAt: Date }) => getDateKey(u.createdAt) === date).length
+        count: recentUsers.filter((u: { createdAt: Date }) => getDateKey(u.createdAt) === date).length
     }));
 
     const revenueData = dates.map(date => ({
@@ -285,7 +253,6 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
     const showPeriodTrend = Boolean(metricWindow);
 
     return {
-        currentGameTitle: currentGame?.title ?? null,
         totalUsers,
         activeUsers,
         totalGames,
@@ -384,9 +351,7 @@ export default async function AdminDashboard({
         getStats(activePlatform, activeTimeframe),
         getRecentActivity(activePlatform),
     ]);
-    const scopedLabel = activeTimeframe === "current" && stats.currentGameTitle
-        ? stats.currentGameTitle
-        : timeframeLabel;
+    const scopedLabel = timeframeLabel;
 
     return (
         <div className="space-y-8">
