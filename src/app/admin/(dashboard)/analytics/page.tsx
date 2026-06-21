@@ -537,7 +537,7 @@ async function getCoreDashboard(
             },
             take: 20000,
         }),
-        getUmamiOverviewMetrics(start, end),
+        getUmamiOverviewMetrics(start, end, { platform }),
     ]);
 
     // Compute average answer speed from JSON

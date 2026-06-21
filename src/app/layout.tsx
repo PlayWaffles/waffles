@@ -2,9 +2,11 @@ import "./globals.css";
 import { fontBody, fontDisplay, fontInput } from "@/lib/fonts";
 import { cn } from "@/lib/utils";
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Script from "next/script";
 import { env } from "@/lib/env";
 import { DeploymentSkewReloader } from "@/components/DeploymentSkewReloader";
+import { parsePlatform, PLATFORM_COOKIE } from "@/lib/platform/constants";
 
 // These are PUBLIC values (they ship in the client tracker), so they're hardcoded
 // as defaults rather than relying on build-time env. The deploy platform (Dokploy)
@@ -53,11 +55,14 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.rootUrl),
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const cookieStore = await cookies();
+  const umamiPlatformTag = parsePlatform(cookieStore.get(PLATFORM_COOKIE)?.value);
+
   return (
     <html
       lang="en"
@@ -90,6 +95,7 @@ export default function RootLayout({
             data-cfasync="false"
             src={`${UMAMI_HOST.replace(/\/$/, "")}/script.js`}
             data-website-id={UMAMI_WEBSITE_ID}
+            {...(umamiPlatformTag ? { "data-tag": umamiPlatformTag } : {})}
             {...(UMAMI_DOMAINS ? { "data-domains": UMAMI_DOMAINS } : {})}
             strategy="afterInteractive"
           />

@@ -1,3 +1,5 @@
+import { UserPlatform } from "@prisma";
+
 type UmamiLoginResponse = {
   token: string;
 };
@@ -26,6 +28,10 @@ type UmamiRequestContext = {
   websiteId: string;
   token: string;
   timezone: string;
+};
+
+type UmamiMetricScope = {
+  platform?: string | null;
 };
 
 function getUmamiBaseUrl() {
@@ -106,10 +112,23 @@ async function getUmamiRequestContext(): Promise<UmamiRequestContext> {
   return { baseUrl, websiteId, token, timezone };
 }
 
+function getPlatformTag(scope?: UmamiMetricScope) {
+  if (!scope?.platform) return null;
+  return Object.values(UserPlatform).includes(scope.platform as UserPlatform)
+    ? scope.platform
+    : null;
+}
+
+function applyMetricScope(params: URLSearchParams, scope?: UmamiMetricScope) {
+  const tag = getPlatformTag(scope);
+  if (tag) params.set("tag", tag);
+}
+
 async function getUmamiPageviews(
   context: UmamiRequestContext,
   start: Date,
   end: Date,
+  scope?: UmamiMetricScope,
 ) {
   const params = new URLSearchParams({
     startAt: String(start.getTime()),
@@ -117,6 +136,7 @@ async function getUmamiPageviews(
     unit: "hour",
     timezone: context.timezone,
   });
+  applyMetricScope(params, scope);
   const response = await fetch(`${context.baseUrl}/api/websites/${context.websiteId}/pageviews?${params.toString()}`, {
     headers: {
       Accept: "application/json",
@@ -136,11 +156,13 @@ async function getUmamiStats(
   context: UmamiRequestContext,
   start: Date,
   end: Date,
+  scope?: UmamiMetricScope,
 ) {
   const params = new URLSearchParams({
     startAt: String(start.getTime()),
     endAt: String(end.getTime()),
   });
+  applyMetricScope(params, scope);
   const response = await fetch(`${context.baseUrl}/api/websites/${context.websiteId}/stats?${params.toString()}`, {
     headers: {
       Accept: "application/json",
@@ -160,6 +182,7 @@ async function getUmamiEventMetrics(
   context: UmamiRequestContext,
   start: Date,
   end: Date,
+  scope?: UmamiMetricScope,
 ) {
   const params = new URLSearchParams({
     startAt: String(start.getTime()),
@@ -167,6 +190,7 @@ async function getUmamiEventMetrics(
     type: "event",
     limit: "500",
   });
+  applyMetricScope(params, scope);
   const response = await fetch(`${context.baseUrl}/api/websites/${context.websiteId}/metrics/expanded?${params.toString()}`, {
     headers: {
       Accept: "application/json",
@@ -200,17 +224,21 @@ export async function getHourlyUmamiActivity(start: Date, end: Date) {
   return hourlySessionsFromPageviews(pageviews, context.timezone);
 }
 
-export async function getUmamiOverviewMetrics(start: Date, end: Date) {
+export async function getUmamiOverviewMetrics(
+  start: Date,
+  end: Date,
+  scope?: UmamiMetricScope,
+) {
   const context = await getUmamiRequestContext();
   const periodMs = end.getTime() - start.getTime();
   const previousStart = new Date(start.getTime() - periodMs);
   const last24hStart = new Date(end.getTime() - 24 * 60 * 60 * 1000);
   const [pageviews, currentStats, previousStats, dailyStats, eventMetrics] = await Promise.all([
-    getUmamiPageviews(context, start, end),
-    getUmamiStats(context, start, end),
-    getUmamiStats(context, previousStart, start),
-    getUmamiStats(context, last24hStart, end),
-    getUmamiEventMetrics(context, start, end),
+    getUmamiPageviews(context, start, end, scope),
+    getUmamiStats(context, start, end, scope),
+    getUmamiStats(context, previousStart, start, scope),
+    getUmamiStats(context, last24hStart, end, scope),
+    getUmamiEventMetrics(context, start, end, scope),
   ]);
   const activeVisitors = currentStats.visitors ?? 0;
   const levelCompletedVisitors = eventMetrics.find((row) => row.name === "level_completed")?.visitors ?? 0;

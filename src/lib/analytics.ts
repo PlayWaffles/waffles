@@ -1,3 +1,5 @@
+import { parsePlatform, PLATFORM_COOKIE } from "@/lib/platform/constants";
+
 export const AnalyticsEvent = {
   PageViewed: "$pageview",
   AppOpened: "app_opened",
@@ -224,10 +226,17 @@ const BLOCKED_PROPERTY_KEYS = new Set([
 ]);
 
 type UmamiTracker = {
-  track: (
-    event: string,
-    data?: Record<string, string | number | boolean | null>,
-  ) => void;
+  track: {
+    (
+      event: string,
+      data?: Record<string, string | number | boolean | null>,
+    ): void;
+    (
+      payload: (
+        defaults: Record<string, string | number | boolean | null>,
+      ) => Record<string, unknown>,
+    ): void;
+  };
 };
 
 type QueuedEvent = {
@@ -246,6 +255,45 @@ function getUmami(): UmamiTracker | undefined {
       umami?: UmamiTracker;
     }
   ).umami;
+}
+
+function getCookieValue(name: string) {
+  if (typeof document === "undefined") return null;
+
+  return (
+    document.cookie
+      .split(";")
+      .map((part) => part.trim())
+      .find((part) => part.startsWith(`${name}=`))
+      ?.slice(name.length + 1) ?? null
+  );
+}
+
+function getCurrentPlatformTag() {
+  return parsePlatform(getCookieValue(PLATFORM_COOKIE));
+}
+
+function getEventPlatformTag(data: Record<string, string | number | boolean | null>) {
+  return parsePlatform(typeof data.platform === "string" ? data.platform : null);
+}
+
+function sendUmamiEvent(
+  umami: UmamiTracker,
+  event: string,
+  data: Record<string, string | number | boolean | null>,
+) {
+  const tag = getEventPlatformTag(data);
+  if (!tag) {
+    umami.track(event, data);
+    return;
+  }
+
+  umami.track((defaults) => ({
+    ...defaults,
+    name: event,
+    tag,
+    data,
+  }));
 }
 
 function scheduleFlush() {
@@ -268,7 +316,7 @@ function flushAnalyticsQueue() {
   flushAttempts = 0;
   while (pendingEvents.length) {
     const item = pendingEvents.shift();
-    if (item) umami.track(item.event, item.data);
+    if (item) sendUmamiEvent(umami, item.event, item.data);
   }
 }
 
@@ -357,6 +405,7 @@ export function getClientAnalyticsContext(properties: AnalyticsProperties = {}) 
   return {
     path: window.location.pathname,
     session_id: getSessionId(),
+    platform: getCurrentPlatformTag(),
     ...properties,
   };
 }
@@ -395,6 +444,6 @@ export function trackClientEvent(
     return;
   }
 
-  umami.track(event, data);
+  sendUmamiEvent(umami, event, data);
   flushAnalyticsQueue();
 }

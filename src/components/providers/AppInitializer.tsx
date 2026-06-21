@@ -62,6 +62,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
         appOpenedRef.current = true;
         trackClientEvent(AnalyticsEvent.AppOpened, {
           runtime: nextRuntime,
+          platform: runtimeToPlatform(nextRuntime),
           path: window.location.pathname,
           screen: window.location.pathname.startsWith("/v2") ? "v2" : "legacy",
           is_authenticated: Boolean(currentUser),
@@ -97,6 +98,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
     if (!runtime || !pathname) return;
     trackClientEvent(AnalyticsEvent.PageViewed, {
       runtime,
+      platform: runtimeToPlatform(runtime),
       path: pathname,
       screen: pathname.startsWith("/v2") ? "v2" : "legacy",
       is_authenticated: Boolean(user),
@@ -147,7 +149,7 @@ export function AppInitializer({ children }: { children: ReactNode }) {
 
     trackClientEvent(AnalyticsEvent.MiniappContextDetected, {
       runtime,
-      platform: runtime === "minipay" ? "minipay" : runtime,
+      platform: runtimeToPlatform(runtime),
       wallet_connected: Boolean(injectedEthereum?.selectedAddress),
       chain_id: injectedEthereum?.chainId ?? null,
     });
