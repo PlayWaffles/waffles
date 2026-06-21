@@ -2,16 +2,20 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { GameFilters } from "@/components/admin/GameFilters";
 import { GameRow } from "@/components/admin/GameRow";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { PlusIcon } from "@heroicons/react/24/outline";
 import { getGamePhase, type GamePhase } from "@/lib/types";
-import { UserPlatform } from "@prisma";
+import { Prisma, UserPlatform } from "@prisma";
 import { buildAdminGameWhere } from "@/lib/admin-utils";
 
 // Phase filtering using time-based logic
 const VALID_PHASES: GamePhase[] = ["SCHEDULED", "LIVE", "ENDED"];
 
-async function getGames(searchParams: { search?: string; status?: string; platform?: string }) {
-    const where: Record<string, unknown> = buildAdminGameWhere();
+async function getGames(searchParams: { page?: string; search?: string; status?: string; platform?: string }) {
+    const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
+    const pageSize = 50;
+    const skip = (page - 1) * pageSize;
+    const where: Prisma.GameWhereInput = buildAdminGameWhere();
     const now = new Date();
 
     if (searchParams.search) {
@@ -25,7 +29,7 @@ async function getGames(searchParams: { search?: string; status?: string; platfo
         searchParams.platform &&
         Object.values(UserPlatform).includes(searchParams.platform as UserPlatform)
     ) {
-        where.platform = searchParams.platform;
+        where.platform = searchParams.platform as UserPlatform;
     }
 
     // Filter by phase using time-based logic
@@ -41,39 +45,45 @@ async function getGames(searchParams: { search?: string; status?: string; platfo
         }
     }
 
-    return prisma.game.findMany({
-        where,
-        take: 100,
-        orderBy: [{ startsAt: "desc" }],
-        select: {
-            id: true,
-            platform: true,
-            title: true,
-            theme: true,
-            startsAt: true,
-            endsAt: true,
-            playerCount: true,
-            prizePool: true,
-            tierPrices: true,
-            maxPlayers: true,
-            isTestnet: true,
-            _count: {
-                select: {
-                    questions: true,
-                    entries: true,
+    const [games, total] = await Promise.all([
+        prisma.game.findMany({
+            where,
+            skip,
+            take: pageSize,
+            orderBy: [{ startsAt: "desc" }],
+            select: {
+                id: true,
+                platform: true,
+                title: true,
+                theme: true,
+                startsAt: true,
+                endsAt: true,
+                playerCount: true,
+                prizePool: true,
+                tierPrices: true,
+                maxPlayers: true,
+                isTestnet: true,
+                _count: {
+                    select: {
+                        questions: true,
+                        entries: true,
+                    },
                 },
             },
-        },
-    });
+        }),
+        prisma.game.count({ where }),
+    ]);
+
+    return { games, total, page, pageSize };
 }
 
 export default async function GamesListPage({
     searchParams,
 }: {
-    searchParams: Promise<{ search?: string; status?: string; platform?: string }>;
+    searchParams: Promise<{ page?: string; search?: string; status?: string; platform?: string }>;
 }) {
     const resolvedParams = await searchParams;
-    const games = await getGames(resolvedParams);
+    const { games, total, page, pageSize } = await getGames(resolvedParams);
 
     // Add phase to each game for display
     const gamesWithPhase = games.map(game => ({
@@ -146,6 +156,17 @@ export default async function GamesListPage({
                     </table>
                 </div>
             </div>
+
+            <AdminPagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                params={{
+                    search: resolvedParams.search,
+                    status: resolvedParams.status,
+                    platform: resolvedParams.platform,
+                }}
+            />
         </div>
     );
 }

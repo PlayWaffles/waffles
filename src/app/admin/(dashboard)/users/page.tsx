@@ -1,15 +1,16 @@
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 import { UserFilters } from "@/components/admin/UserFilters";
-import { UserPlatform } from "@prisma";
+import { AdminPagination } from "@/components/admin/AdminPagination";
+import { Prisma, UserPlatform, UserRole } from "@prisma";
 import { getDisplayName } from "@/lib/address";
 
 async function getUsers(searchParams: { page?: string; status?: string; q?: string; role?: string }) {
-    const page = parseInt(searchParams.page || "1");
+    const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
     const pageSize = 50;
     const skip = (page - 1) * pageSize;
 
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
 
     // Handle status filter by converting to boolean queries
     if (searchParams.status === 'ACTIVE') {
@@ -18,20 +19,16 @@ async function getUsers(searchParams: { page?: string; status?: string; q?: stri
         where.isBanned = true;
     }
 
-    if (searchParams.role) {
-        where.role = searchParams.role;
+    if (searchParams.role && Object.values(UserRole).includes(searchParams.role as UserRole)) {
+        where.role = searchParams.role as UserRole;
     }
 
     if (searchParams.q) {
         const query = searchParams.q.trim();
         const isFidQuery = /^\d+$/.test(query);
-        const isWalletAddress = /^0x[a-fA-F0-9]{40}$/.test(query);
         where.OR = [
             { username: { contains: query, mode: "insensitive" } },
             { wallet: { contains: query, mode: "insensitive" } },
-            ...(isWalletAddress
-                ? [{ wallet: { equals: query, mode: "insensitive" } }]
-                : []),
             ...(isFidQuery ? [{ fid: { equals: parseInt(query, 10) } }] : []),
         ];
     }
@@ -100,8 +97,6 @@ export default async function UsersListPage({
 }) {
     const resolvedParams = await searchParams;
     const { users, total, page, pageSize } = await getUsers(resolvedParams);
-    const totalPages = Math.ceil(total / pageSize);
-
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -210,32 +205,16 @@ export default async function UsersListPage({
                 </table>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-white/50">
-                        Page <span className="text-white font-medium">{page}</span> of <span className="text-white font-medium">{totalPages}</span>
-                    </p>
-                    <div className="flex gap-2">
-                        {page > 1 && (
-                            <Link
-                                href={`?page=${page - 1}${resolvedParams.status ? `&status=${resolvedParams.status}` : ""}${resolvedParams.q ? `&q=${resolvedParams.q}` : ""}${resolvedParams.role ? `&role=${resolvedParams.role}` : ""}`}
-                                className="px-4 py-2 border border-white/10 rounded-xl hover:bg-white/5 text-sm font-medium text-white transition-colors"
-                            >
-                                Previous
-                            </Link>
-                        )}
-                        {page < totalPages && (
-                            <Link
-                                href={`?page=${page + 1}${resolvedParams.status ? `&status=${resolvedParams.status}` : ""}${resolvedParams.q ? `&q=${resolvedParams.q}` : ""}${resolvedParams.role ? `&role=${resolvedParams.role}` : ""}`}
-                                className="px-4 py-2 bg-[#FFC931] text-black rounded-xl hover:bg-[#FFD966] text-sm font-bold transition-colors"
-                            >
-                                Next
-                            </Link>
-                        )}
-                    </div>
-                </div>
-            )}
+            <AdminPagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                params={{
+                    status: resolvedParams.status,
+                    q: resolvedParams.q,
+                    role: resolvedParams.role,
+                }}
+            />
         </div>
     );
 }

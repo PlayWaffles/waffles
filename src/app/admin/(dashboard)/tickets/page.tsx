@@ -7,6 +7,7 @@ import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
 import { RetryPendingPurchaseButton } from "./_components/RetryPendingPurchaseButton";
 import { ReplayPendingPurchasesButton } from "./_components/ReplayPendingPurchasesButton";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { Prisma, TicketPurchaseSource } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
 import { getPublicClient, getWaffleContractAddress, PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
@@ -86,7 +87,7 @@ async function getTickets(searchParams: {
     game?: string;
     q?: string;
 }) {
-    const page = parseInt(searchParams.page || "1");
+    const page = Math.max(parseInt(searchParams.page || "1", 10) || 1, 1);
     const pageSize = 50;
     const skip = (page - 1) * pageSize;
     const where: Prisma.GameEntryWhereInput = buildPaidProductionEntryWhere();
@@ -504,7 +505,6 @@ export default async function TicketsPage({
         getRecentOnchainMismatches(),
         getPendingPurchases(),
     ]);
-    const totalPages = Math.ceil(total / pageSize);
 
     return (
         <div className="space-y-6">
@@ -965,34 +965,16 @@ export default async function TicketsPage({
                 </div>
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-                <div className="flex items-center justify-between">
-                    <p className="text-sm text-white/50">
-                        Page <span className="text-white font-medium">{page}</span> of{" "}
-                        <span className="text-white font-medium">{totalPages}</span>
-                        <span className="text-white/30 ml-2">({total} total)</span>
-                    </p>
-                    <div className="flex gap-2">
-                        {page > 1 && (
-                            <Link
-                                href={`?page=${page - 1}${resolvedParams.status ? `&status=${resolvedParams.status}` : ""}${resolvedParams.game ? `&game=${resolvedParams.game}` : ""}`}
-                                className="px-4 py-2 border border-white/10 rounded-xl hover:bg-white/5 text-sm font-medium text-white transition-colors"
-                            >
-                                Previous
-                            </Link>
-                        )}
-                        {page < totalPages && (
-                            <Link
-                                href={`?page=${page + 1}${resolvedParams.status ? `&status=${resolvedParams.status}` : ""}${resolvedParams.game ? `&game=${resolvedParams.game}` : ""}`}
-                                className="px-4 py-2 bg-[#FFC931] text-black rounded-xl hover:bg-[#FFD966] text-sm font-bold transition-colors"
-                            >
-                                Next
-                            </Link>
-                        )}
-                    </div>
-                </div>
-            )}
+            <AdminPagination
+                page={page}
+                pageSize={pageSize}
+                total={total}
+                params={{
+                    status: resolvedParams.status,
+                    game: resolvedParams.game,
+                    q: resolvedParams.q,
+                }}
+            />
         </div>
     );
 }
