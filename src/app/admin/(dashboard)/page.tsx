@@ -118,14 +118,17 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
     const pf = buildPlatformWhere(platform);
     const gamePf = buildProductionGameWhere(platform);
     const metricWindow = getMetricWindow(timeframe, now);
-    const entryWhere: Prisma.GameEntryWhereInput = { game: gamePf };
+    const baseEntryWhere: Prisma.GameEntryWhereInput = { game: gamePf };
+    const entryWhere: Prisma.GameEntryWhereInput = metricWindow
+        ? { ...baseEntryWhere, createdAt: { gte: metricWindow.start } }
+        : baseEntryWhere;
     const paidEntryWhere: Prisma.GameEntryWhereInput = {
-        ...entryWhere,
+        ...baseEntryWhere,
         paidAt: metricWindow ? { not: null, gte: metricWindow.start } : { not: null },
     };
     const previousPaidEntryWhere: Prisma.GameEntryWhereInput = metricWindow
         ? {
-            ...entryWhere,
+            ...baseEntryWhere,
             paidAt: {
                 not: null,
                 gte: metricWindow.previousStart,
@@ -148,13 +151,30 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
     const previousGameWhere: Prisma.GameWhereInput = metricWindow
         ? { ...gamePf, startsAt: { gte: metricWindow.previousStart, lt: metricWindow.previousEnd } }
         : gamePf;
-    const chartDays = metricWindow?.days ?? 7;
-    const chartStart = metricWindow?.start ?? new Date(now.getTime() - (chartDays - 1) * DAY_MS);
+    const chartDays = timeframe === "current" ? 2 : metricWindow?.days ?? 7;
+    const chartStart = timeframe === "current" && metricWindow
+        ? metricWindow.previousStart
+        : metricWindow?.start ?? new Date(now.getTime() - (chartDays - 1) * DAY_MS);
     const dates = Array.from({ length: chartDays }, (_, i) => {
         const date = new Date(chartStart.getTime() + i * DAY_MS);
         return getDateKey(date);
     });
     const chartUserWhere: Prisma.UserWhereInput = { ...pf, createdAt: { gte: chartStart } };
+    const chartPaidEntryWhere: Prisma.GameEntryWhereInput = {
+        ...baseEntryWhere,
+        paidAt: { not: null, gte: chartStart },
+    };
+    const entrySelect = {
+        paidAt: true,
+        paidAmount: true,
+        game: {
+            select: {
+                id: true,
+                title: true,
+                startsAt: true,
+            },
+        },
+    } satisfies Prisma.GameEntrySelect;
 
     const [
         totalUsers,
@@ -165,6 +185,7 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         paidEntries,
         recentUsers,
         recentEntries,
+        chartEntries,
         previousUsers,
         previousGames,
         previousEntries,
@@ -184,17 +205,11 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         }),
         prisma.gameEntry.findMany({
             where: paidEntryWhere,
-            select: {
-                paidAt: true,
-                paidAmount: true,
-                game: {
-                    select: {
-                        id: true,
-                        title: true,
-                        startsAt: true,
-                    },
-                },
-            },
+            select: entrySelect,
+        }),
+        prisma.gameEntry.findMany({
+            where: chartPaidEntryWhere,
+            select: entrySelect,
         }),
         metricWindow ? prisma.user.count({ where: previousUserWhere }) : Promise.resolve(0),
         metricWindow ? prisma.game.count({ where: previousGameWhere }) : Promise.resolve(0),
@@ -219,12 +234,12 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
 
     const revenueData = dates.map(date => ({
         date: new Date(date).toLocaleDateString('en-US', { weekday: 'short' }),
-        amount: recentEntries
+        amount: chartEntries
             .filter((e: { paidAt: Date | null }) => e.paidAt && getDateKey(e.paidAt) === date)
             .reduce((sum: number, e: { paidAmount: number | null }) => sum + calculateProtocolRevenue(e.paidAmount), 0)
     }));
     const revenueByGame = Array.from(
-        recentEntries.reduce((games, entry) => {
+        chartEntries.reduce((games, entry) => {
             const existing = games.get(entry.game.id) ?? {
                 date: entry.game.title,
                 amount: 0,
@@ -251,6 +266,7 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         0
     );
     const showPeriodTrend = Boolean(metricWindow);
+    const trendLabel = timeframe === "current" ? "vs yesterday" : "vs previous period";
 
     return {
         totalUsers,
@@ -264,14 +280,15 @@ async function getStats(platform: string | undefined, timeframe: DashboardTimefr
         revenueData,
         revenueByGame,
         weekOverWeek: {
-            users: showPeriodTrend ? formatWeekOverWeekTrend(totalUsers, previousUsers) : undefined,
-            games: showPeriodTrend ? formatWeekOverWeekTrend(totalGames, previousGames) : undefined,
+            users: showPeriodTrend ? formatWeekOverWeekTrend(totalUsers, previousUsers, formatCompactNumber, trendLabel) : undefined,
+            games: showPeriodTrend ? formatWeekOverWeekTrend(totalGames, previousGames, formatCompactNumber, trendLabel) : undefined,
             revenue: showPeriodTrend ? formatWeekOverWeekTrend(
                 currentRevenue,
                 previousRevenue,
-                (value) => `$${formatCompactNumber(value)}`
+                (value) => `$${formatCompactNumber(value)}`,
+                trendLabel
             ) : undefined,
-            tickets: showPeriodTrend ? formatWeekOverWeekTrend(recentEntries.length, previousEntries.length) : undefined,
+            tickets: showPeriodTrend ? formatWeekOverWeekTrend(recentEntries.length, previousEntries.length, formatCompactNumber, trendLabel) : undefined,
         },
     };
 }
