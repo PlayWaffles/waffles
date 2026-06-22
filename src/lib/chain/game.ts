@@ -16,6 +16,9 @@ import {
 import { type ChainPlatform } from "./platform";
 import type { GameNetwork } from "./network";
 
+const CREATE_GAME_GAS_LIMIT = BigInt(120_000);
+const CREATE_GAME_RETRY_LIMIT = 3;
+
 // ============================================================================
 // Types (v5 Contract)
 // ============================================================================
@@ -67,17 +70,31 @@ export async function createGameOnChain(
   );
 
   try {
-    const hash = await walletClient.writeContract(
-      withBuilderCodeDataSuffix({
-        address: contractAddress,
-        abi: waffleGameAbi,
-        functionName: "createGame",
-        args: [onchainId, minimumTicketPrice],
-      }, chainTarget),
-    );
+    const request = withBuilderCodeDataSuffix({
+      address: contractAddress,
+      abi: waffleGameAbi,
+      functionName: "createGame",
+      args: [onchainId, minimumTicketPrice],
+    }, chainTarget);
 
-    console.log(`[Chain] Created game ${onchainId}. TX: ${hash}`);
-    return hash;
+    let lastError: unknown = null;
+    for (let attempt = 1; attempt <= CREATE_GAME_RETRY_LIMIT; attempt += 1) {
+      try {
+        const hash = await walletClient.writeContract({
+          ...request,
+          gas: CREATE_GAME_GAS_LIMIT,
+        });
+
+        console.log(`[Chain] Created game ${onchainId}. TX: ${hash}`);
+        return hash;
+      } catch (error) {
+        lastError = error;
+        if (attempt === CREATE_GAME_RETRY_LIMIT) break;
+        await new Promise((resolve) => setTimeout(resolve, attempt * 1000));
+      }
+    }
+
+    throw lastError;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
 
