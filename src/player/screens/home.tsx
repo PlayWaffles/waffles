@@ -163,7 +163,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
 
 // Live-buying strip — replays real recent buyers on a paced loop (red pulse →
 // popping avatar stack → rotating message) so DB history reads as live activity.
-const LiveBuyingStrip = ({ entrants }: { entrants: RecentEntrant[] }) => {
+const LiveBuyingStrip = ({ entrants, title }: { entrants: RecentEntrant[]; title: string }) => {
   const [i, setI] = useState(0);
   useEffect(() => {
     if (entrants.length === 0) return;
@@ -174,8 +174,12 @@ const LiveBuyingStrip = ({ entrants }: { entrants: RecentEntrant[] }) => {
   const len = entrants.length;
   const e = entrants[i % len];
   const stack = [entrants[i % len], entrants[(i + 1) % len], entrants[(i + 2) % len]];
+  // Vary the verb per entrant (stable per person) so the feed doesn't read as a
+  // monotonous "bought a ticket" repeat.
+  const actions = ["just bought a ticket", `joined ${title}`, "is in for the next round", "just entered"];
+  const action = actions[(i % len) % actions.length];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", padding: "7px 12px", overflow: "hidden" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, background: "#0F0F10", border: "1px solid rgba(255,255,255,.08)", padding: "7px 12px", overflow: "hidden" }}>
       <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
       <div style={{ display: "flex", flexShrink: 0 }}>
         {stack.map((p, idx) => (
@@ -185,7 +189,7 @@ const LiveBuyingStrip = ({ entrants }: { entrants: RecentEntrant[] }) => {
         ))}
       </div>
       <div key={i} style={{ minWidth: 0, flex: 1, fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,.65)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "waffles-v2-buyer-swap 600ms cubic-bezier(0.25,1,0.5,1)" }}>
-        <span style={{ color: "#fff" }}>{e.name}</span> just bought a ticket
+        <span style={{ color: "#fff" }}>{e.name}</span> {action}
       </div>
     </div>
   );
@@ -527,7 +531,7 @@ export const HomeScreen = () => {
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 84, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
         <AnnouncementBanner />
-        {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} />}
+        {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} title={round?.title ?? "the tournament"} />}
         <div
           role="button"
           tabIndex={0}
