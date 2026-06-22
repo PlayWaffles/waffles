@@ -428,8 +428,6 @@ export const HomeScreen = () => {
   const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
   const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
   const prizeGuaranteed = round != null && prizeTickets > liveTopTickets;
-  const prizePoolLabel = round ? `$${round.prizePoolUsdc.toFixed(2)}` : "$--";
-  const todayPoolLabel = round ? `$${round.todayPrizePoolUsdc.toFixed(2)}` : "$--";
   const currentPlayersLabel = `${realEntrants.toLocaleString()} player${realEntrants === 1 ? "" : "s"}`;
   const recentEntryLabel = round && round.recentEntryCount > 0 ? `+${round.recentEntryCount.toLocaleString()} joined recently` : "Round is open";
 
@@ -513,9 +511,9 @@ export const HomeScreen = () => {
           {round && (
             <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
               <div style={{ borderRadius: 12, border: "1px solid rgba(255,201,49,.2)", background: "rgba(255,201,49,.08)", padding: "10px 11px" }}>
-                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>PRIZE POOL</div>
-                <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1 }}>{prizePoolLabel}</div>
-                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>Top prize up to <TicketIcon size={11} /> {prizeTickets}</div>
+                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>TOP PRIZE</div>
+                <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1, display: "inline-flex", alignItems: "center", gap: 5 }}><TicketIcon size={20} />{prizeTickets}</div>
+                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>{prizeGuaranteed ? "Guaranteed" : "Top finisher's cut"}</div>
               </div>
               <div style={{ borderRadius: 12, border: "1px solid rgba(0,207,242,.18)", background: "rgba(0,207,242,.07)", padding: "10px 11px" }}>
                 <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--leaf)" }}>PLAYING NOW</div>
@@ -529,7 +527,7 @@ export const HomeScreen = () => {
             <div style={{ marginTop: 8, borderRadius: 10, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.06)", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,.45)", letterSpacing: 0.8 }}>TODAY</span>
               <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.75)", textAlign: "right" }}>
-                {round.todayEntryCount.toLocaleString()} entries · {round.todayPlayerCount.toLocaleString()} players · {todayPoolLabel} in pools
+                {round.todayPlayerCount.toLocaleString()} players
               </span>
             </div>
           )}
@@ -562,14 +560,8 @@ export const HomeScreen = () => {
               </Fragment>
             ))}
             <div style={{ flex: 1 }} />
-            {/* Compact payoff beside the countdown for the repeated scan case. */}
-            <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>TOP PRIZE</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 23, color: "#fff", display: "inline-flex", alignItems: "center", gap: 4, lineHeight: 1.1 }}>
-                <TicketIcon size={18} />{prizeTickets}
-              </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(prizeTickets)}{prizeGuaranteed ? " guaranteed" : ""}</div>
-            </div>
+            {/* Countdown stands alone now — the payoff lives in the TOP PRIZE
+                stat card above, so the old duplicate here is gone. */}
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
             <div className="waffle-mark" style={{ width: 120, height: 120, borderRadius: 24 }} />
