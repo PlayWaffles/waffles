@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { displayFieldSize, FIELD_REVEAL_MIN, TOURNAMENT_PRIZES, TOURNAMENT_TOP_PRIZE, useProto } from "../state";
+import { TOURNAMENT_PRIZES, TOURNAMENT_TOP_PRIZE, useProto } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, TicketIcon, TopHeader } from "../shared";
 import { useTheme } from "../theme";
 import { playSound } from "../sound";
@@ -23,9 +23,7 @@ export const LobbyScreen = () => {
     return () => clearTimeout(t);
   }, []);
 
-  // Real entrant count, with the same near-empty floor as the Home card: under
-  // FIELD_REVEAL_MIN real players we show the simulated field (and the "+Xk"
-  // overflow chip); at/above it we show the true count and drop the fake chip.
+  // Real entrant count for the current round.
   const [realEntrants, setRealEntrants] = useState(0);
   useEffect(() => {
     let active = true;
@@ -34,8 +32,7 @@ export const LobbyScreen = () => {
       .catch(() => {});
     return () => { active = false; };
   }, [proto.tournamentGameId]);
-  const playersJoined = displayFieldSize(realEntrants);
-  const floored = realEntrants < FIELD_REVEAL_MIN;
+  const playersJoined = Math.max(0, realEntrants);
   const sec = proto.countdownSec;
   const mm = String(Math.floor(sec / 60)).padStart(2, "0");
   const ss = String(sec % 60).padStart(2, "0");
@@ -67,9 +64,6 @@ export const LobbyScreen = () => {
               {[ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda, ASSETS.avatarOwl].map((src, i) => (
                 <PixelImg key={i} src={src} size={58} alt="" style={{ marginLeft: i ? -18 : 0 }} />
               ))}
-              {floored && (
-                <div aria-hidden="true" style={{ width: 40, height: 40, borderRadius: 99, background: "var(--maple-500)", color: "var(--frame)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, marginLeft: -14, fontFamily: "var(--font-display)" }}>+2k</div>
-              )}
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>

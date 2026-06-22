@@ -71,11 +71,12 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 
 const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, winnersLabel }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null; round: TournamentRound | null; prizeTickets: number; winnersLabel: string }) => {
   const usd = (n: number) => `$${n.toFixed(2)}`;
+  const canJoin = !!fee && !!round;
   // MiniPay: if the wallet can't cover the entry, swap JOIN for a one-tap
   // "Add Cash" deeplink instead of dead-ending at an insufficient-balance error.
   const { needsTopUp, openAddCash, isMiniPay } = useMiniPayTopUp(fee?.entryFee);
   return (
-    <Sheet onClose={onClose} ariaLabel="Enter the Top of the Hour tournament">
+    <Sheet onClose={onClose} ariaLabel="Enter tournament">
       {(close) => (
       <>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
@@ -86,11 +87,13 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       <div style={{ textAlign: "center", marginBottom: 14 }}>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "var(--ink)" }}>Enter tournament?</div>
         <div style={{ fontSize: 12, fontWeight: 700, color: "var(--ink-soft)", marginTop: 4 }}>
-          {round ? `${round.title} · ${round.category} · ${round.questionCount} Q` : "Top of the Hour · Mixed · 6 Q"}
+          {round ? `${round.title} · ${round.category} · ${round.questionCount} Q` : "Live round details unavailable"}
         </div>
-        <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-          <TicketIcon size={14} />Win up to {prizeTickets} — {winnersLabel.toLowerCase()}
-        </div>
+        {round && (
+          <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
+            <TicketIcon size={14} />Win up to {prizeTickets} — {winnersLabel.toLowerCase()}
+          </div>
+        )}
       </div>
 
       {/* Entry is a flat $0.05 for everyone, every round — the struck-through
@@ -118,9 +121,8 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       ) : (
         <div style={{ background: "var(--surface-2)", border: "1px solid rgba(253,251,246,0.06)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: error ? 8 : 14 }}>
           <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", letterSpacing: 0.4, textTransform: "uppercase", display: "inline-flex", alignItems: "center", gap: 5 }}>
-            Entry · 1 <TicketIcon size={14} />
+            Entry unavailable
           </span>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--maple-500)" }}>—</span>
         </div>
       )}
 
@@ -145,7 +147,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         {needsTopUp ? (
           <Button flex={1.4} onClick={openAddCash} ariaLabel="Add cash in MiniPay to play">ADD CASH TO PLAY</Button>
         ) : (
-          <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Join the tournament">
+          <Button flex={1.4} onClick={pending || !canJoin ? () => {} : onConfirm} disabled={!canJoin} ariaLabel="Join the tournament">
             {pending ? (stepLabel ?? "Working…") : (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <TicketIcon size={18} />Join game
@@ -199,11 +201,7 @@ const homeMissionIcon = (title: string): string => {
   return "xp";
 };
 
-const STATIC_HOME_MISSIONS = [
-  { label: "Earn 50 XP", cur: 32, tgt: 50, reward: "+10 XP", icon: "xp" },
-  { label: "Win a round", cur: 0, tgt: 1, reward: "syrup", icon: "win" },
-  { label: "Play 2 games", cur: 1, tgt: 2, reward: "+25 XP", icon: "play" },
-];
+type HomeMissionRow = { label: string; cur: number; tgt: number; reward: string; icon: string };
 
 // "Hh Mm" until the next UTC midnight — the boundary the server resets daily
 // missions on (see lib/player/missions.ts).
@@ -222,17 +220,18 @@ const HomeMissions = () => {
     const id = setInterval(() => setResetIn(timeToUtcMidnight()), 60_000);
     return () => clearInterval(id);
   }, []);
-  // Real daily-mission progress (top 3). Falls back to the static preview list
-  // before the server responds / in the unauthenticated context.
-  const [loaded, setLoaded] = useState<typeof STATIC_HOME_MISSIONS | null>(null);
+  const [loaded, setLoaded] = useState<HomeMissionRow[] | null>(null);
+  const [missionLoading, setMissionLoading] = useState(true);
   useEffect(() => {
     let active = true;
     loadMissions()
       .then((m) => {
-        if (!active || !m || !m.length) return;
+        if (!active) return;
+        if (!m || !m.length) {
+          setMissionLoading(false);
+          return;
+        }
         setLoaded(
-          // The fixed home set = the featured missions (loadMissions returns them
-          // first; the generated set lives only on the Missions page).
           m.filter((x) => x.featured).map((x) => ({
             label: x.title,
             cur: x.count,
@@ -241,13 +240,16 @@ const HomeMissions = () => {
             icon: homeMissionIcon(x.title),
           })),
         );
+        setMissionLoading(false);
       })
-      .catch(() => {});
+      .catch(() => {
+        if (active) setMissionLoading(false);
+      });
     return () => {
       active = false;
     };
   }, []);
-  const missions = loaded ?? STATIC_HOME_MISSIONS;
+  const missions = loaded ?? [];
   return (
     <button
       type="button"
@@ -261,7 +263,7 @@ const HomeMissions = () => {
         <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.8 }}>RESETS IN {resetIn}</div>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-        {missions.map((m, i) => {
+        {missions.length ? missions.map((m, i) => {
           const pct = Math.min(100, Math.round((m.cur / m.tgt) * 100));
           const done = m.cur >= m.tgt;
           return (
@@ -291,7 +293,11 @@ const HomeMissions = () => {
               </div>
             </div>
           );
-        })}
+        }) : (
+          <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.06)", borderRadius: 10, padding: "12px", textAlign: "center", fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.5)" }}>
+            {missionLoading ? "Loading daily missions..." : "Daily missions unavailable"}
+          </div>
+        )}
       </div>
       {/* Explicit affordance — signals the whole card opens the Missions screen. */}
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 12, paddingTop: 10, borderTop: "1px solid rgba(255,255,255,.06)", fontSize: 11, fontWeight: 800, color: "var(--leaf)", letterSpacing: 0.6, textTransform: "uppercase" }}>
@@ -364,11 +370,9 @@ export const HomeScreen = () => {
   const [entering, setEntering] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
   // Live, DB-backed details for the hero card (entry fee, close time, title /
-  // format / prize). Resilient fetch: `getTournament` is an API call whose
-  // auth is the session cookie set async by AuthBootstrap (which can lag the
-  // client mount), and it returns null in the brief gap between hourly rounds —
-  // so retry rather than leave the card empty on a one-shot miss. Until it lands,
-  // the derived values are null and the copy falls back to the themed defaults.
+  // format / prize). Resilient fetch retries through the auth-cookie race and
+  // brief gap between hourly rounds; until it lands, the card shows loading /
+  // unavailable states instead of themed tournament copy.
   // Live refresh — the pool, spots and player counts grow as people enter, so
   // re-pull every 20s instead of freezing on the mount-time snapshot.
   const [refreshKey, setRefreshKey] = useState(0);
@@ -376,7 +380,7 @@ export const HomeScreen = () => {
     const id = setInterval(() => setRefreshKey((k) => k + 1), 20_000);
     return () => clearInterval(id);
   }, []);
-  const { data: tourney } = useResilientAction(() => getTournament(), [refreshKey]);
+  const { data: tourney, loading: tournamentLoading } = useResilientAction(() => getTournament(), [refreshKey]);
   const fee = tourney ? { entryFee: tourney.entryFee, standardFee: tourney.standardFee, firstEntry: tourney.firstEntry } : null;
   const round: TournamentRound | null = tourney?.round ?? null;
   const now = useNow();
@@ -401,6 +405,7 @@ export const HomeScreen = () => {
     else setEntryError(res.error ?? "Entry failed");
   };
   const openJoin = () => {
+    if (!round || !fee) return;
     // Already entered this round (one paid entry per round). If they haven't
     // played yet, resume into the quiz for the entry they already paid for — no
     // second charge. Otherwise just show their standing.
@@ -451,8 +456,7 @@ export const HomeScreen = () => {
   // finish; first-timers get the "Top 100 win tickets" pitch instead.
   const lastRank = proto.lastTournamentRank;
 
-  // Real entrant count for the current tournament (falls back to the simulated
-  // field in preview / before any real entrants). Resilient fetch so the
+  // Real entrant count for the current tournament. Resilient fetch so the
   // auth-cookie / between-rounds race doesn't drop it.
   const { data: rawBoard } = useResilientAction(() => loadCurrentTournamentBoard(), [proto.tournamentGameId, refreshKey]);
   const { data: recentBuyers } = useResilientAction(() => loadRecentEntrants(), [proto.tournamentGameId, refreshKey]);
@@ -529,7 +533,7 @@ export const HomeScreen = () => {
           role="button"
           tabIndex={0}
           data-coach="home-join"
-          aria-label={entered ? (canResume ? "Play your tournament round" : "View your tournament standing") : `Join the Top of the Hour tournament — costs ${TOURNAMENT_TICKET_COST} ticket`}
+          aria-label={entered ? (canResume ? "Play your tournament round" : "View your tournament standing") : round ? `Join ${round.title} — costs ${TOURNAMENT_TICKET_COST} ticket` : "Live tournament unavailable"}
           onClick={onCardTap}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -543,14 +547,16 @@ export const HomeScreen = () => {
               your-entry badge. */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
-            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "var(--font-display)" }}>TICKETS CLOSING IN <span style={{ fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</span></div>
+            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "var(--font-display)" }}>
+              {round ? <>TICKETS CLOSING IN <span style={{ fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</span></> : tournamentLoading ? "LOADING LIVE ROUND" : "LIVE ROUND UNAVAILABLE"}
+            </div>
             <div style={{ flex: 1 }} />
             {entered && (
               <div className="chip" style={{ background: "rgba(255,159,28,.14)", color: "var(--leaf)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(255,159,28,.4)", whiteSpace: "nowrap", flexShrink: 0 }}>YOU&apos;RE IN</div>
             )}
           </div>
 
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 24, lineHeight: 1.04, color: "#fff" }}>{round?.title || theme.copy.liveTitle}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 24, lineHeight: 1.04, color: "#fff" }}>{round?.title ?? (tournamentLoading ? "Loading live round" : "Live round unavailable")}</div>
 
           {/* Accents — skill cue (always) + first-game 2× XP (conditional). */}
           <div style={{ marginTop: 9, display: "flex", flexDirection: "column", gap: 5 }}>
@@ -604,7 +610,7 @@ export const HomeScreen = () => {
                   {round.todayPlayerCount > 0 ? (
                     <>{joiners.length > 0 ? "and " : ""}<span style={{ color: "#fff" }}>{round.todayPlayerCount.toLocaleString()}</span> {joiners.length > 0 ? "others " : ""}joined today</>
                   ) : (
-                    "Be the first to enter this round"
+                    "No entries yet today"
                   )}
                 </span>
               </div>
@@ -616,7 +622,7 @@ export const HomeScreen = () => {
           <div className="btn-3d-gold" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, letterSpacing: 0.3, fontSize: 16 }}>
             {entered
               ? (canResume ? "Play your round" : "View standing")
-              : (<><TicketIcon size={18} />Join game</>)}
+              : round && fee ? (<><TicketIcon size={18} />Join game</>) : tournamentLoading ? "Loading live game..." : "Live game unavailable"}
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
             <div className="waffle-mark" style={{ width: 120, height: 120, borderRadius: 24 }} />

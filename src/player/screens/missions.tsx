@@ -32,29 +32,15 @@ export const MissionsScreen = () => {
 
   // Load real daily missions (Quest + per-user progress) via a resilient fetch
   // (retries through the auth-cookie race), then mirror into local state so the
-  // optimistic claim flip below can mutate it. Falls back to the static list in
-  // the preview / unauthenticated context.
-  const { data: fetchedMissions } = useResilientAction(() => loadMissions(), []);
+  // optimistic claim flip below can mutate it.
+  const { data: fetchedMissions, loading: missionsLoading } = useResilientAction(() => loadMissions(), []);
   const [loaded, setLoaded] = useState<Mission[] | null>(null);
-  useEffect(() => {
-    if (fetchedMissions && fetchedMissions.length) setLoaded(fetchedMissions);
-  }, [fetchedMissions]);
+  const missionSource = loaded ?? fetchedMissions;
 
   type DailyRow = { slug: string | null; t: string; p: number; tot: number; xp: number; icon: string; done: boolean; claimable: boolean; featured: boolean };
-  // Preview rows for the unauth/loading context: the 3 featured dailies + a few
-  // sample generated missions, mirroring the real two-section layout.
-  const staticDaily: DailyRow[] = [
-    { slug: null, t: "Answer 5 questions", p: 0, tot: 5, xp: 300, icon: ASSETS.iconTarget, done: false, claimable: false, featured: true },
-    { slug: null, t: "Win a tournament", p: 0, tot: 1, xp: 500, icon: ASSETS.trophy, done: false, claimable: false, featured: true },
-    { slug: null, t: "Keep a 5-day streak", p: 3, tot: 5, xp: 400, icon: ASSETS.iconCalendar, done: false, claimable: false, featured: true },
-    { slug: null, t: "Score 1,000 points", p: 0, tot: 1000, xp: 250, icon: ASSETS.flame, done: false, claimable: false, featured: false },
-    { slug: null, t: "Play 3 games", p: 1, tot: 3, xp: 180, icon: ASSETS.iconCalendar, done: false, claimable: false, featured: false },
-    { slug: null, t: "Enter 3 tournaments", p: 0, tot: 3, xp: 300, icon: ASSETS.trophy, done: false, claimable: false, featured: false },
-    { slug: null, t: "Answer 10 questions", p: 0, tot: 10, xp: 200, icon: ASSETS.iconTarget, done: false, claimable: false, featured: false },
-  ];
-  const dailyMissions: DailyRow[] = loaded
-    ? loaded.map((m) => ({ slug: m.slug, t: m.title, p: m.count, tot: m.total, xp: m.xp, icon: ICON_ASSETS[m.icon] ?? ASSETS.iconTarget, done: m.done, claimable: m.claimable, featured: m.featured }))
-    : staticDaily;
+  const dailyMissions: DailyRow[] = missionSource
+    ? missionSource.map((m) => ({ slug: m.slug, t: m.title, p: m.count, tot: m.total, xp: m.xp, icon: ICON_ASSETS[m.icon] ?? ASSETS.iconTarget, done: m.done, claimable: m.claimable, featured: m.featured }))
+    : [];
   const featuredMissions = dailyMissions.filter((m) => m.featured);
   const generatedMissions = dailyMissions.filter((m) => !m.featured);
 
@@ -69,7 +55,7 @@ export const MissionsScreen = () => {
       const res = await claimMission(slug);
       if (res?.ok) {
         proto.update(() => ({ xp: res.xp }));
-        setLoaded((list) => list?.map((m) => (m.slug === slug ? { ...m, done: true, claimable: false, count: m.total } : m)) ?? list);
+        setLoaded((list) => (list ?? fetchedMissions)?.map((m) => (m.slug === slug ? { ...m, done: true, claimable: false, count: m.total } : m)) ?? null);
         trackClientEvent(AnalyticsEvent.MissionClaimSucceeded, { screen: "missions", mission_slug: slug, xp_awarded: res.xpAwarded });
       } else {
         trackClientEvent(AnalyticsEvent.MissionClaimFailed, { screen: "missions", mission_slug: slug, reason: res?.error ?? "no_session" });
@@ -213,7 +199,7 @@ export const MissionsScreen = () => {
                 <PixelImg src={ASSETS.trophy} size={62} alt="" />
               </AssetWell>
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", letterSpacing: 0.3 }}>Earn up to {totalDailyXP} XP today</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "var(--ink)", letterSpacing: 0.3 }}>{dailyMissions.length ? `Earn up to ${totalDailyXP} XP today` : missionsLoading ? "Loading daily missions" : "No daily missions available"}</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-mute)", marginTop: 2 }}>Resets in {resetLabel}</div>
               </div>
             </div>
@@ -225,6 +211,12 @@ export const MissionsScreen = () => {
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {featuredMissions.map((m, i) => renderRow(m, m.slug ?? `f${i}`))}
             </div>
+
+            {!dailyMissions.length && (
+              <div style={{ background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "18px 14px", textAlign: "center", fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
+                {missionsLoading ? "Loading missions..." : "Daily missions are unavailable right now."}
+              </div>
+            )}
 
             {generatedMissions.length > 0 && (
               <>

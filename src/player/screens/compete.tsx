@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
-import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
+import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader, useNow } from "../shared";
 import { loadLeague, loadSeasonPass, claimSeasonReward, loadMissions, loadPartnerOffers } from "@/player/api";
 import type { League } from "@/lib/player/leagues";
 import type { SeasonPass } from "@/lib/player/seasonPass";
@@ -222,13 +222,13 @@ export const CompeteScreen = () => {
     window.setTimeout(() => setToast(null), 2200);
   };
 
-  // Real league standing + season pass + mission/offer counts. Each falls back
-  // to a sensible preview default before the server responds.
+  // Real league standing + season pass + mission/offer counts.
   const [league, setLeague] = useState<League | null>(null);
   const [pass, setPass] = useState<SeasonPass | null>(null);
   const [counts, setCounts] = useState<{ daily: number; partner: number; xp: number; open: number } | null>(null);
   const [localClaimed, setLocalClaimed] = useState<Set<number>>(new Set());
   const [claiming, setClaiming] = useState(false);
+  const now = useNow(!!league, 60_000);
   useEffect(() => {
     let active = true;
     loadLeague().then((l) => { if (active && l) setLeague(l); }).catch(() => {});
@@ -247,39 +247,27 @@ export const CompeteScreen = () => {
     return () => { active = false; };
   }, []);
 
-  // League ladder (DB tiers when available; otherwise the canonical 11-tier list).
   const ladder = league?.tiers?.length
     ? league.tiers.map((t) => ({ key: t.key, label: t.label, color: t.color }))
-    : [
-        { key: "apprentice1", label: "APPRENTICE I", color: "#cd7f32" },
-        { key: "apprentice2", label: "APPRENTICE II", color: "#cd7f32" },
-        { key: "silver1", label: "SILVER I", color: "#bfc7d0" },
-        { key: "silver2", label: "SILVER II", color: "#bfc7d0" },
-        { key: "silver3", label: "SILVER III", color: "#bfc7d0" },
-        { key: "advanced1", label: "ADVANCED I", color: "#9aa6b3" },
-        { key: "advanced2", label: "ADVANCED II", color: "#9aa6b3" },
-        { key: "genius", label: "GENIUS", color: "#3ddbb8" },
-        { key: "master3", label: "MASTER III", color: "#FFC931" },
-        { key: "master2", label: "MASTER II", color: "#FFC931" },
-        { key: "master1", label: "MASTER I", color: "#FFC931" },
-      ];
-  const currentIdx = Math.max(0, ladder.findIndex((t) => t.key === league?.key));
-  const score = league?.points ?? 0;
+    : [];
+  const currentIdx = league ? Math.max(0, ladder.findIndex((t) => t.key === league.key)) : -1;
+  const currentTier = currentIdx >= 0 ? ladder[currentIdx] : null;
+  const score = league?.points;
   const safeZone = 6;
   const seasonEnd = league
     ? (() => {
-        const ms = Math.max(0, league.seasonEndsAt - Date.now());
+        const ms = Math.max(0, league.seasonEndsAt - now);
         const d = Math.floor(ms / 86_400_000);
         const h = Math.floor((ms % 86_400_000) / 3_600_000);
         return `${String(d).padStart(2, "0")}d ${String(h).padStart(2, "0")}h`;
       })()
-    : "01d 17h";
+    : "Loading";
 
   // Season pass progression — pass level + per-tier XP from the player's XP.
-  const passLevel = pass?.level ?? 1;
+  const passLevel = pass?.level ?? 0;
   const passXpNext = pass?.xpPerTier ?? 500;
-  const passXp = pass ? pass.xp % passXpNext : 340;
-  const passPct = Math.min(100, Math.round((passXp / passXpNext) * 100));
+  const passXp = pass ? pass.xp % passXpNext : 0;
+  const passPct = pass ? Math.min(100, Math.round((passXp / passXpNext) * 100)) : 0;
 
   // Free-track reward cells claimed this season (server + optimistic local).
   const claimedFree = new Set<number>([
@@ -333,18 +321,18 @@ export const CompeteScreen = () => {
 
       <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 80, overflow: "auto", display: "flex", flexDirection: "column", scrollbarWidth: "none" }}>
         <div data-coach="compete-ladder" style={{ padding: "10px 14px 0", display: "flex", gap: 3, alignItems: "center", justifyContent: "center" }}>
-          {ladder.map((t, i) => {
+          {ladder.length ? ladder.map((t, i) => {
             const isCurrent = i === currentIdx;
             const locked = i > currentIdx;
             return <TierMedal key={t.key} color={t.color} size={isCurrent ? 34 : 22} state={isCurrent ? "current" : locked ? "locked" : "passed"} />;
-          })}
+          }) : <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.55)", padding: "8px 0" }}>Loading league...</div>}
         </div>
 
         <div style={{ padding: "12px 16px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ minWidth: 0, flex: 1 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#fff", letterSpacing: 0.5, lineHeight: 1 }}>{ladder[currentIdx].label}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#fff", letterSpacing: 0.5, lineHeight: 1 }}>{currentTier?.label ?? "Loading league"}</div>
             <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.65)", flexWrap: "nowrap", whiteSpace: "nowrap" }}>
-              <span style={{ color: "#FFC931", display: "inline-flex", alignItems: "center", gap: 3 }}>🏆 {score}</span>
+              <span style={{ color: "#FFC931", display: "inline-flex", alignItems: "center", gap: 3 }}>🏆 {score ?? "—"}</span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>⏱ Ends in {seasonEnd}</span>
             </div>
           </div>
@@ -363,14 +351,14 @@ export const CompeteScreen = () => {
                 <path d="M9 11.5l2 2 4-4M5 5h14a1 1 0 0 1 1 1v13l-4-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="#FFC931" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,201,49,.1)" />
               </svg>
             </AssetWell>
-            <div style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#FC1919", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{counts?.open ?? 7}</div>
+            <div style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#FC1919", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{counts?.open ?? "…"}</div>
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#fff", letterSpacing: 0.4 }}>MISSIONS</div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>{counts?.daily ?? 3} daily · {counts?.partner ?? 4} partner offers</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>{counts ? `${counts.daily} daily · ${counts.partner} partner offers` : "Loading missions"}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.25)", color: "var(--maple-500)", padding: "3px 7px", borderRadius: 6, fontFamily: "var(--font-display)", fontSize: 11 }}>+{counts?.xp ?? 675} XP</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.25)", color: "var(--maple-500)", padding: "3px 7px", borderRadius: 6, fontFamily: "var(--font-display)", fontSize: 11 }}>{counts ? `+${counts.xp} XP` : "—"}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(255,255,255,.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
         </button>

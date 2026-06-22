@@ -6,11 +6,7 @@ import {
   levelTicketMilestoneInfo,
   LIVES_MAX,
   LIVES_REFILL_COST,
-  displayFieldSize,
-  TOURNAMENT_FIELD_SIZE,
-  TOURNAMENT_TOP_PRIZE,
   USDT_PER_TICKET,
-  tournamentRank,
   syrupLabel,
   useProto,
 } from "../state";
@@ -57,9 +53,8 @@ const TournamentUpsellSheet = ({
   onDismiss: () => void;
 }) => {
   const proto = useProto();
-  // Flatter-but-fair "you'd have placed Top X%" hook from the level score.
-  const rank = tournamentRank(score, total);
-  const pct = Math.max(1, Math.min(99, Math.round((rank / TOURNAMENT_FIELD_SIZE) * 100)));
+  const scorePct = total > 0 ? score / (total * 250) : 0;
+  const pct = Math.max(1, Math.min(99, Math.round(100 - Math.min(99, scorePct * 100))));
   const bonus = isDailyBonusAvailable();
 
   // Flat entry fee + the struck-through "standard" price for the discount
@@ -79,12 +74,8 @@ const TournamentUpsellSheet = ({
   }, []);
   const usd = (n: number) => `$${n.toFixed(2)}`;
 
-  // Live "playing now" headcount and the floored "win up to" prize — the same
-  // model the Home card uses, so the upsell tells the identical story. A
-  // near-empty round shows the simulated field rather than a lonely real count.
-  const playingNow = displayFieldSize(round?.playerCount ?? 0);
-  const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
-  const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
+  const playingNow = round?.playerCount ?? null;
+  const prizeTickets = round ? Math.max(1, Math.round(round.topPrizeUsdc / USDT_PER_TICKET)) : null;
 
   // Keep the sheet open through the on-chain flow so the player sees live
   // progress (approve → pay → verify) on the button instead of the sheet
@@ -106,6 +97,7 @@ const TournamentUpsellSheet = ({
       first_entry: fee?.firstEntry ?? null,
       entry_fee: fee?.entryFee ?? null,
     });
+    if (!round || !fee) return;
     setEntryError(null);
     setEntering(true);
     const res = await proto.enterTournamentOnChain("post_first_level_upsell");
@@ -128,13 +120,17 @@ const TournamentUpsellSheet = ({
           </div>
         </div>
 
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 12, fontWeight: 800, margin: "12px 0" }}>
-          <span style={{ color: "var(--ink-soft)" }}>{playingNow.toLocaleString()} playing now</span>
-          <span style={{ color: "var(--ink-faint)" }}>·</span>
-          <span style={{ color: "var(--maple-500)", display: "inline-flex", alignItems: "center", gap: 4 }}>
-            Win up to <TicketIcon size={13} />{prizeTickets}
-          </span>
-        </div>
+        {round && prizeTickets != null ? (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, fontSize: 12, fontWeight: 800, margin: "12px 0" }}>
+            <span style={{ color: "var(--ink-soft)" }}>{playingNow?.toLocaleString()} playing now</span>
+            <span style={{ color: "var(--ink-faint)" }}>·</span>
+            <span style={{ color: "var(--maple-500)", display: "inline-flex", alignItems: "center", gap: 4 }}>
+              Win up to <TicketIcon size={13} />{prizeTickets}
+            </span>
+          </div>
+        ) : (
+          <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-soft)", textAlign: "center", margin: "12px 0" }}>Loading live tournament details...</div>
+        )}
 
         {/* Flat $0.05 for everyone; the struck $0.10 is the season anchor. Card
             shows for all — copy is personalized: genuine first-timers get the
@@ -182,12 +178,12 @@ const TournamentUpsellSheet = ({
             ADD CASH TO PLAY
           </button>
         ) : (
-          <button type="button" className="cta maple" onClick={entering ? undefined : () => void enter()} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...(entering ? { opacity: 0.85, cursor: "default" } : null) }}>
+          <button type="button" className="cta maple" onClick={entering || !round || !fee ? undefined : () => void enter()} disabled={!round || !fee} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...((entering || !round || !fee) ? { opacity: 0.85, cursor: "default" } : null) }}>
             {entering
               ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Working…")
               : entryError
                 ? `RETRY · ${fee ? usd(fee.entryFee) : ""}`.trim()
-                : fee ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "ENTER LIVE TOURNAMENT"}
+                : fee && round ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "LOADING LIVE TOURNAMENT"}
           </button>
         )}
         <button type="button" onClick={entering ? undefined : close} disabled={entering} style={{ width: "100%", background: "transparent", border: "none", color: "var(--ink-faint)", fontFamily: "var(--font-body)", fontWeight: 800, fontSize: 12, cursor: entering ? "default" : "pointer", padding: 6, opacity: entering ? 0.5 : 1 }}>

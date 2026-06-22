@@ -1,14 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, tournamentSyrupReward, useProto } from "../state";
+import { TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, tournamentSyrupReward, useProto } from "../state";
 import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/player/api";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, SyrupIcon, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
-
-const FIELD_SIZE = TOURNAMENT_FIELD_SIZE;
+import { scoreToXp } from "@/lib/player/xp";
 
 // Animated count between two values with an ease-out roll. Used for the rank
 // reveal (counts the big number down from the full field to the player's spot,
@@ -89,18 +88,19 @@ export const ResultsScreen = () => {
   // Re-opening standings in a fresh session (e.g. the Home "view standing" card)
   // has no `tournamentGameId` in local state — fall back to the current round so
   // the server hands back the real entry instead of empty defaults.
-  const { data: rawBoard } = useResilientAction(
+  const { data: rawBoard, loading: boardLoading } = useResilientAction(
     () => (proto.tournamentGameId ? loadTournamentBoard(proto.tournamentGameId) : loadCurrentTournamentBoard()),
     [proto.tournamentGameId],
   );
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const settled = board?.settled ?? false;
   const provisional = !settled;
-  const fieldSize = board?.fieldSize ?? FIELD_SIZE;
+  const fieldSize = board?.fieldSize ?? 0;
   // `??` doesn't catch NaN, and a freshly-entered player can have no scored row
   // yet — clamp to a real position within the field so nothing renders as NaN.
   const rawRank = board?.you?.rank ?? liveRank;
-  const rank = Number.isFinite(rawRank) ? Math.min(Math.max(1, rawRank), fieldSize) : fieldSize;
+  const rankLimit = fieldSize > 0 ? fieldSize : Number.isFinite(rawRank) ? Math.max(1, rawRank) : 1;
+  const rank = Number.isFinite(rawRank) ? Math.min(Math.max(1, rawRank), rankLimit) : rankLimit;
 
   // Prefer the server's recorded score — on a fresh-session re-visit the local
   // `proto.score` is 0, but the board carries the real entry.
@@ -112,8 +112,8 @@ export const ResultsScreen = () => {
 
   // XP actually credited — doubled by the first-tournament-of-the-day bonus.
   const xpMult = proto.tournamentBonus ? 2 : 1;
-  const xpEarned = youScore * xpMult;
-  const pct = Math.min(100, Math.max(1, Math.round((rank / fieldSize) * 100)));
+  const xpEarned = scoreToXp(youScore, xpMult);
+  const pct = fieldSize > 0 ? Math.min(100, Math.max(1, Math.round((rank / fieldSize) * 100))) : 0;
   // Prize: settled = the locked on-chain reward; provisional = "if it holds"
   // before rankGame/publishResults locks the GameEntry prize.
   const won = board?.you ? board.you.prize : settled ? 0 : tournamentReward(rank);
@@ -221,8 +221,12 @@ export const ResultsScreen = () => {
         {/* Rank header */}
         <div style={{ textAlign: "center", color: "#fff", flexShrink: 0 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 2, color: "rgba(255,255,255,.6)", animation: "waffles-v2-lvl-rise .4s ease-out both" }}>{settled ? "YOU FINISHED" : "YOU'RE IN — CURRENTLY"}</div>
-          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFC931", textShadow: "0 0 32px rgba(255,201,49,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>#<CountUp from={fieldSize} to={rank} /></div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>of {fieldSize.toLocaleString()} · Top {pct}%</div>
+          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFC931", textShadow: "0 0 32px rgba(255,201,49,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>
+            {fieldSize > 0 ? <>#<CountUp from={fieldSize} to={rank} /></> : "—"}
+          </div>
+          <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>
+            {fieldSize > 0 ? <>of {fieldSize.toLocaleString()} · Top {pct}%</> : boardLoading ? "Loading standings..." : "Standings unavailable"}
+          </div>
           {provisional && (
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "5px 12px", borderRadius: 999, background: "rgba(255,159,28,.12)", border: "1px solid rgba(255,159,28,.35)", color: "#fff", fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
               Standings update live

@@ -118,17 +118,7 @@ export type PowerUpName = "FIFTY_FIFTY" | "EXTRA_TIME" | "SKIP" | "SHIELD";
 // below. Levels never cost a ticket; only the competitive ladder does.
 export const TOURNAMENT_TICKET_COST = 1;
 
-// Simulated size of the live field. Drives the displayed finishing rank and the
-// "of N players" copy across the lobby, results, and Home card.
-export const TOURNAMENT_FIELD_SIZE = 2418;
-
-// Below this many *real* entrants a round is too empty to show its true
-// headcount (a lone "1 playing" kills the live feel), so the simulated field is
-// shown instead. At/above it, the genuine count is surfaced.
-export const FIELD_REVEAL_MIN = 10;
-export function displayFieldSize(realCount: number): number {
-  return realCount >= FIELD_REVEAL_MIN ? realCount : TOURNAMENT_FIELD_SIZE;
-}
+const PROJECTED_TOURNAMENT_FIELD_SIZE = 2418;
 
 // Prize ladder: finishing rank → tickets won. Risking 1 ticket to enter for a
 // shot at 25 is the stakes hook we sell on the Home card. Ordered best tier
@@ -257,12 +247,13 @@ export type Winning = {
   status: "pending" | "claimed" | "converted";
 };
 
-// Derive a finishing rank out of the simulated field from the player's score.
+// Derive a projected finishing rank from the player's score before the real
+// tournament board exists.
 export function tournamentRank(score: number, totalQuestions: number): number {
   // No questions answered yet (just entered, haven't played) → bottom of the
   // field rather than NaN from a 0/0 divide.
-  if (!totalQuestions || totalQuestions <= 0) return TOURNAMENT_FIELD_SIZE;
-  return Math.max(1, Math.round(TOURNAMENT_FIELD_SIZE * (1 - Math.min(1, score / (totalQuestions * 250)))) + 1);
+  if (!totalQuestions || totalQuestions <= 0) return PROJECTED_TOURNAMENT_FIELD_SIZE;
+  return Math.max(1, Math.round(PROJECTED_TOURNAMENT_FIELD_SIZE * (1 - Math.min(1, score / (totalQuestions * 250)))) + 1);
 }
 
 // Syrup (off-chain reward) everyone earns for PLAYING a tournament round — extra
