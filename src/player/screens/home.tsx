@@ -424,22 +424,25 @@ export const HomeScreen = () => {
   const realEntrants = board && board.fieldSize > 0 ? board.fieldSize : (round?.playerCount ?? 0);
   const fieldSize = realEntrants;
 
-  // Headline prize: the #1 finisher's projected cut of the *live* pool (server
-  // computes it with the real bracket math), floored at the advertised
-  // guarantee so a near-empty round still reads as a deal. Once the live cut
-  // overtakes the floor, the number tracks the pool exactly. Falls back to the
-  // advertised top prize until the round loads.
   // Headline top prize = the #1 finisher's cut of the *live* pool, straight from
   // the settlement bracket (topPrizeUsdc = pool × topWinnerShare), valued in
   // tickets. No hardcoded floor — it's the real algo, so it grows as the pool
   // fills. Floored at 1 ticket only so a near-empty round never renders "🎫 0".
   const prizeTickets = round ? Math.max(1, Math.round(round.topPrizeUsdc / USDT_PER_TICKET)) : 0;
-  // Winner count from the same bracket → "Winner takes all" vs "Top N split the
-  // pool" (replaces the static, almost-always-wrong "Top 100").
+  // Winner count from the same bracket → "Winner takes the pool" vs "Top N split
+  // the pool" (replaces the static, almost-always-wrong "Top 100").
   const winnerCount = round?.winnerCount ?? 1;
   const winnersLabel = winnerCount <= 1 ? "Winner takes all" : `Top ${winnerCount} split the pool`;
-  const currentPlayersLabel = `${realEntrants.toLocaleString()} player${realEntrants === 1 ? "" : "s"}`;
-  const recentEntryLabel = round && round.recentEntryCount > 0 ? `+${round.recentEntryCount.toLocaleString()} joined recently` : "Round is open";
+  const poolHeadline = winnerCount <= 1 ? "Winner takes the pool" : `Top ${winnerCount} split the pool`;
+  // "Filling up" bar: each prize bracket widens as more rivals join (1 winner →
+  // 3 → 5 → 8 → 12 → 15), and the pot grows with every $0.05 entry. Fill = how
+  // close the field is to the next bracket, so an empty round reads as
+  // momentum/"get in early" instead of a lonely "1". Honest: it's the real
+  // bracket ladder, not a fake meter.
+  const BRACKET_STEPS = [5, 8, 15, 25, 40];
+  const nextBracketAt = BRACKET_STEPS.find((n) => n > realEntrants) ?? 40;
+  const fillRatio = Math.min(1, Math.max(0.06, realEntrants / nextBracketAt));
+  const fillStatus = realEntrants >= 40 ? "packed" : fillRatio >= 0.85 ? "almost full" : fillRatio >= 0.34 ? "heating up" : "filling up";
 
   const lastPct = lastRank && fieldSize > 0 ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
 
@@ -525,16 +528,28 @@ export const HomeScreen = () => {
           )}
 
           {round && (
-            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-              <div style={{ borderRadius: 12, border: "1px solid rgba(255,201,49,.2)", background: "rgba(255,201,49,.08)", padding: "10px 11px" }}>
-                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>TOP PRIZE</div>
-                <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1, display: "inline-flex", alignItems: "center", gap: 5 }}><TicketIcon size={20} />{prizeTickets}</div>
-                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>{winnersLabel}</div>
+            <div style={{ marginTop: 12, borderRadius: 14, border: "1px solid rgba(255,201,49,.22)", background: "linear-gradient(180deg, rgba(255,201,49,.11), rgba(255,201,49,.035))", padding: "12px 13px" }}>
+              {/* Prize as a mechanic, not a lonely number — "Winner takes the
+                  pool" reads as a deal even on a near-empty round. */}
+              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                <TicketIcon size={20} />
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#fff", letterSpacing: 0.3, textTransform: "uppercase", lineHeight: 1 }}>{poolHeadline}</span>
               </div>
-              <div style={{ borderRadius: 12, border: "1px solid rgba(0,207,242,.18)", background: "rgba(0,207,242,.07)", padding: "10px 11px" }}>
-                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--leaf)" }}>PLAYING NOW</div>
-                <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1 }}>{currentPlayersLabel}</div>
-                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>{recentEntryLabel}</div>
+              {/* Fill bar — the pot/field momentum. Each entry widens the prize
+                  bracket and grows the pot, so an empty round reads as "get in
+                  early" rather than dead. */}
+              <div style={{ marginTop: 11, display: "flex", alignItems: "center", gap: 9 }}>
+                <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.07)", overflow: "hidden", position: "relative" }}>
+                  <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${Math.round(fillRatio * 100)}%`, borderRadius: 99, background: "linear-gradient(90deg, #F5BB1B, #FFCF31)", boxShadow: "0 0 10px rgba(255,201,49,.45)", overflow: "hidden" }}>
+                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent)", animation: "waffles-v2-shimmer 1.9s infinite" }} />
+                  </div>
+                </div>
+                <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.8, color: "var(--maple-500)", textTransform: "uppercase", flexShrink: 0 }}>{fillStatus}</span>
+              </div>
+              {/* Live momentum line — replaces the standalone "1 player" stat. */}
+              <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
+                <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(0,207,242,.18)", flexShrink: 0, animation: "waffles-v2-pulse 1.5s infinite" }} />
+                {realEntrants.toLocaleString()} playing · every entry grows the pot
               </div>
             </div>
           )}
