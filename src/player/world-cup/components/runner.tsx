@@ -257,13 +257,13 @@ function Summary({ total, correct, score, onReplay, onExit }: { total: number; c
   return (
     <Phone statusDark>
       <div className="bg-deep" />
-      <div className="glow-top" style={{ height: 300, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.28), transparent 65%)" }} />
+      <div className="glow-top" style={{ height: 300, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.28), transparent 65%)" }} />
       <BackBar onExit={onExit} />
       {perfect ? <Confetti /> : null}
       <div style={{ position: "relative", zIndex: 2, height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 22, padding: 28, textAlign: "center" }}>
         <div style={{ fontSize: 64 }}>{perfect ? "🏆" : correct > 0 ? "⚽" : "🧤"}</div>
         <div>
-          <div style={{ fontFamily: "var(--font-hero)", fontSize: 44, color: "#FFC931", lineHeight: 1 }}>{score}</div>
+          <div style={{ fontFamily: "var(--font-hero)", fontSize: 44, color: "#FFD24D", lineHeight: 1 }}>{score}</div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "rgba(255,255,255,.6)", marginTop: 4, letterSpacing: 0.5 }}>POINTS</div>
           <div style={{ fontSize: 13, fontWeight: 800, color: "rgba(255,255,255,.55)", marginTop: 10 }}>{correct} / {total} correct</div>
         </div>

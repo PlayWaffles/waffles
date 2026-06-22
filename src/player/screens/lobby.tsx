@@ -39,14 +39,14 @@ export const LobbyScreen = () => {
   return (
     <Phone statusDark>
       <div className="bg-deep" />
-      <div className="glow-top" style={{ height: 300, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.25), transparent 65%)" }} />
+      <div className="glow-top" style={{ height: 300, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.25), transparent 65%)" }} />
 
       <TopHeader tickets={tickets} title="LOBBY" />
 
       <div style={{ position: "absolute", top: 12, left: 0, right: 0, bottom: 90, padding: "10px 18px", display: "flex", flexDirection: "column", gap: 14, overflow: "hidden" }}>
         <div style={{ textAlign: "center", color: "white", padding: "4px 0 8px" }}>
           <div style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.5)", letterSpacing: 1.5, textTransform: "uppercase" }}>Starts in</div>
-          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 64, lineHeight: 1, letterSpacing: 1, color: "#FFC931", textShadow: "0 0 24px rgba(255,201,49,.4)", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{mm}:{ss}</div>
+          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 64, lineHeight: 1, letterSpacing: 1, color: "#FFD24D", textShadow: "0 0 24px rgba(255,210,77,.4)", marginTop: 4, fontVariantNumeric: "tabular-nums" }}>{mm}:{ss}</div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 18, marginTop: 8, letterSpacing: 0.5, color: "#fff" }}>{theme.copy.liveTitle.toUpperCase()}</div>
           <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Mixed · 6 Q · 90s</div>
           {proto.tournamentBonus && (
@@ -71,8 +71,8 @@ export const LobbyScreen = () => {
               <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FF9F1C" }}>+80 XP</div>
               <div>per win</div>
             </div>
-            <div style={{ flex: 1, padding: "8px 10px", background: "rgba(255,201,49,.06)", border: "1px solid rgba(255,201,49,.15)", borderRadius: 10, textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FFC931", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+            <div style={{ flex: 1, padding: "8px 10px", background: "rgba(255,210,77,.06)", border: "1px solid rgba(255,210,77,.15)", borderRadius: 10, textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FFD24D", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
                 <TicketIcon size={14} />{TOURNAMENT_TOP_PRIZE}
               </div>
               <div>top prize</div>
@@ -80,13 +80,13 @@ export const LobbyScreen = () => {
           </div>
 
           {/* Full prize ladder so players see exactly what each tier pays. */}
-          <div style={{ marginTop: 10, display: "flex", alignItems: "stretch", justifyContent: "space-around", background: "rgba(255,201,49,.05)", border: "1px solid rgba(255,201,49,.14)", borderRadius: 10, padding: "8px 6px" }}>
+          <div style={{ marginTop: 10, display: "flex", alignItems: "stretch", justifyContent: "space-around", background: "rgba(255,210,77,.05)", border: "1px solid rgba(255,210,77,.14)", borderRadius: 10, padding: "8px 6px" }}>
             {TOURNAMENT_PRIZES.map((t, i) => (
               <Fragment key={t.label}>
                 {i > 0 && <div style={{ width: 1, background: "rgba(255,255,255,.07)", margin: "2px 0" }} />}
                 <div style={{ flex: 1, textAlign: "center" }}>
                   <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", letterSpacing: 0.5, textTransform: "uppercase" }}>{t.label}</div>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FFC931", display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3 }}>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FFD24D", display: "inline-flex", alignItems: "center", gap: 3, marginTop: 3 }}>
                     <TicketIcon size={12} />{t.tickets}
                   </div>
                 </div>
@@ -119,13 +119,13 @@ export const LobbyScreen = () => {
       {entryFlash && (
         <div aria-live="assertive" style={{ position: "absolute", inset: 0, zIndex: 80, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "rgba(10,10,12,.84)", backdropFilter: "blur(4px)", WebkitBackdropFilter: "blur(4px)", animation: "waffles-v2-enter-splash 1.9s ease forwards", pointerEvents: "none" }}>
           <Confetti pieces={40} />
-          <div aria-hidden style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 260, height: 260, background: "radial-gradient(circle, rgba(255,201,49,.4), transparent 65%)" }} />
+          <div aria-hidden style={{ position: "absolute", top: "30%", left: "50%", transform: "translateX(-50%)", width: 260, height: 260, background: "radial-gradient(circle, rgba(255,210,77,.4), transparent 65%)" }} />
           <div style={{ animation: "waffles-v2-lvl-trophy-in .6s cubic-bezier(0.34,1.56,0.64,1) both" }}>
-            <div style={{ width: 96, height: 96, borderRadius: 28, background: "rgba(255,201,49,.16)", border: "2px solid rgba(255,201,49,.5)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 40px rgba(255,201,49,.4)" }}>
+            <div style={{ width: 96, height: 96, borderRadius: 28, background: "rgba(255,210,77,.16)", border: "2px solid rgba(255,210,77,.5)", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 0 40px rgba(255,210,77,.4)" }}>
               <TicketIcon size={52} />
             </div>
           </div>
-          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, color: "#FFC931", marginTop: 18, textShadow: "0 0 24px rgba(255,201,49,.45)", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .25s both" }}>YOU&apos;RE IN!</div>
+          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, color: "#FFD24D", marginTop: 18, textShadow: "0 0 24px rgba(255,210,77,.45)", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .25s both" }}>YOU&apos;RE IN!</div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 6, animation: "waffles-v2-lvl-rise .4s ease-out .4s both" }}>Entry confirmed — get ready</div>
         </div>
       )}

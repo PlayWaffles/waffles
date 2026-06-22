@@ -50,7 +50,7 @@ function buildCatalog(cat: ShopCatalog): BuiltCatalog {
     if (it.kind === "POWERUP") {
       powerUps.push({ id: it.slug.replace(/^pu-/, ""), label: it.label, sub: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#FF9F1C", icon: POWERUP_ICON[it.slug] ?? ASSETS.powerup5050 });
     } else if (it.kind === "COSMETIC") {
-      cosmetics.push({ id: it.slug, label: it.label, type: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#FFC931", owned: cat.ownedCosmetics.includes(it.slug) });
+      cosmetics.push({ id: it.slug, label: it.label, type: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#FFD24D", owned: cat.ownedCosmetics.includes(it.slug) });
     } else if (it.kind === "BUNDLE") {
       const p = (it.payload ?? {}) as { count?: number; bonus?: number };
       bundles.push({ count: p.count ?? 0, bonus: p.bonus ?? 0, price: `$${(it.priceFiat ?? 0).toFixed(2)}`, badge: it.sub });
@@ -483,7 +483,7 @@ export const ShopScreen = () => {
   return (
     <Phone statusDark>
       <div className="bg-deep" />
-      <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 240, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.18), transparent 60%)" }} />
+      <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 240, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.18), transparent 60%)" }} />
 
       <TopHeader tickets={tickets} title="SHOP" />
 
@@ -558,7 +558,7 @@ export const ShopScreen = () => {
               type="button"
               onClick={buyFirstTicket}
               aria-label={`Buy your first ticket at half price, ${usdtLabel(TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT))}`}
-              style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 10, cursor: "pointer" }}
+              style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "rgba(255,210,77,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 10, cursor: "pointer" }}
             >
               <div style={{ position: "relative", flexShrink: 0 }}>
                 <TicketIcon size={28} />
@@ -717,7 +717,7 @@ export const ShopScreen = () => {
 const ComingSoonLabel = ({ children }: { children: ReactNode }) => (
   <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, marginTop: 2 }}>
     <span style={{ fontFamily: "var(--font-display)", fontSize: 11, color: "rgba(255,255,255,.5)", letterSpacing: 1.2 }}>{children}</span>
-    <span style={{ fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 1, color: "var(--maple-500)", background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.32)", borderRadius: 99, padding: "2px 7px" }}>SOON</span>
+    <span style={{ fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 1, color: "var(--maple-500)", background: "rgba(255,210,77,.12)", border: "1px solid rgba(255,210,77,.32)", borderRadius: 99, padding: "2px 7px" }}>SOON</span>
   </div>
 );
 
@@ -754,9 +754,9 @@ const PriceTag = ({ price, affordable, committed = false, block = false }: {
 }) => (
   <div
     style={{
-      background: committed ? "rgba(255,159,28,.25)" : affordable ? "rgba(255,201,49,.1)" : "rgba(253,251,246,0.04)",
-      border: `1px solid ${committed ? "var(--leaf)" : affordable ? "rgba(255,201,49,.3)" : "rgba(253,251,246,0.08)"}`,
-      color: committed ? "var(--leaf)" : affordable ? "#FFC931" : "var(--ink-faint)",
+      background: committed ? "rgba(255,159,28,.25)" : affordable ? "rgba(255,210,77,.1)" : "rgba(253,251,246,0.04)",
+      border: `1px solid ${committed ? "var(--leaf)" : affordable ? "rgba(255,210,77,.3)" : "rgba(253,251,246,0.08)"}`,
+      color: committed ? "var(--leaf)" : affordable ? "#FFD24D" : "var(--ink-faint)",
       borderRadius: 8,
       padding: block ? "6px 0" : "6px 14px",
       width: block ? "100%" : undefined,
@@ -842,8 +842,8 @@ const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable:
 );
 
 const BundleCard = ({ bundle, onBuy }: { bundle: Bundle; onBuy: () => void }) => (
-  <div style={{ background: "#0F0F10", border: bundle.badge ? "1.5px solid rgba(255,201,49,.4)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 6px", textAlign: "center", position: "relative", boxShadow: bundle.badge ? "0 0 20px rgba(255,201,49,.1)" : "none" }}>
-    {bundle.badge && <div style={{ position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", background: "#FFC931", color: "#1e1e1e", padding: "2px 8px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 8, letterSpacing: 0.5, whiteSpace: "nowrap" }}>{bundle.badge}</div>}
+  <div style={{ background: "#0F0F10", border: bundle.badge ? "1.5px solid rgba(255,210,77,.4)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 6px", textAlign: "center", position: "relative", boxShadow: bundle.badge ? "0 0 20px rgba(255,210,77,.1)" : "none" }}>
+    {bundle.badge && <div style={{ position: "absolute", top: -7, left: "50%", transform: "translateX(-50%)", background: "#FFD24D", color: "#1e1e1e", padding: "2px 8px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 8, letterSpacing: 0.5, whiteSpace: "nowrap" }}>{bundle.badge}</div>}
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 4 }}>
       <SyrupIcon size={20} />
       <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff" }}>{bundle.count}</span>
@@ -1056,7 +1056,7 @@ const CosmeticSheet = ({ item, canAfford, onClose, onConfirm }: { item: Cosmetic
 
 const BundleSheet = ({ bundle, phase, onClose, onConfirm }: { bundle: Bundle; phase: "confirm" | "processing"; onClose: () => void; onConfirm: () => void }) => {
   const total = bundle.count + bundle.bonus;
-  const accent = "#FFC931";
+  const accent = "#FFD24D";
   return (
       <Sheet onClose={phase === "processing" ? undefined : onClose} accent={accent} ariaLabel={`Buy ${syrupLabel(total)} for ${bundle.price}`}>
         {(close) => (
@@ -1225,7 +1225,7 @@ const ShortfallSheet = ({ need, itemLabel, bundles, haveTickets, onClose, onTopU
   const suggested = suggestBundleFor(bundles, shortfall);
   const suggestedIdx = bundles.indexOf(suggested);
   return (
-      <Sheet onClose={onClose} accent="#FFC931" ariaLabel={`Need more Syrup to buy ${itemLabel}`}>
+      <Sheet onClose={onClose} accent="#FFD24D" ariaLabel={`Need more Syrup to buy ${itemLabel}`}>
         {(close) => (
         <>
         <div style={{ textAlign: "center", marginBottom: 14 }}>
@@ -1235,7 +1235,7 @@ const ShortfallSheet = ({ need, itemLabel, bundles, haveTickets, onClose, onTopU
         </div>
 
         <div style={{ background: "var(--surface-2)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "14px", marginBottom: 14, display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ flexShrink: 0, width: 56, height: 56, borderRadius: 12, background: "rgba(255,201,49,0.18)", border: "1px solid rgba(255,201,49,0.4)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+          <div style={{ flexShrink: 0, width: 56, height: 56, borderRadius: 12, background: "rgba(255,210,77,0.18)", border: "1px solid rgba(255,210,77,0.4)", display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
             <SyrupIcon size={22} />
             <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--ink)" }}>{suggested.count + suggested.bonus}</span>
           </div>
@@ -1362,7 +1362,7 @@ const TicketCountUp = ({ from, to, onDone }: { from: number; to: number; onDone:
         display: "flex",
         alignItems: "center",
         gap: 14,
-        boxShadow: "0 6px 0 var(--frame), 0 0 60px rgba(255,201,49,0.35)",
+        boxShadow: "0 6px 0 var(--frame), 0 0 60px rgba(255,210,77,0.35)",
         zIndex: 60,
         animation: "waffles-v2-tile-enter 280ms cubic-bezier(0.22, 1, 0.36, 1)",
       }}

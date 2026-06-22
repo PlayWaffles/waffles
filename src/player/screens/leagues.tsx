@@ -16,9 +16,9 @@ const TIERS = [
   { key: "advanced1", label: "ADVANCED I", color: "#9aa6b3" },
   { key: "advanced2", label: "ADVANCED II", color: "#9aa6b3" },
   { key: "genius", label: "GENIUS", color: "#3ddbb8" },
-  { key: "master3", label: "MASTER III", color: "#FFC931" },
-  { key: "master2", label: "MASTER II", color: "#FFC931" },
-  { key: "master1", label: "MASTER I", color: "#FFC931" },
+  { key: "master3", label: "MASTER III", color: "#FFD24D" },
+  { key: "master2", label: "MASTER II", color: "#FFD24D" },
+  { key: "master1", label: "MASTER I", color: "#FFD24D" },
 ];
 
 // Map TIERS color → generated medal asset, falling back to apprentice if unmatched.
@@ -27,7 +27,7 @@ const MEDAL_BY_COLOR: Record<string, string> = {
   "#bfc7d0": ASSETS.medalSilver,
   "#9aa6b3": ASSETS.medalAdvanced,
   "#3ddbb8": ASSETS.medalGenius,
-  "#FFC931": ASSETS.medalMaster,
+  "#FFD24D": ASSETS.medalMaster,
 };
 const BigMedal = ({ color = "#cd7f32", size = 78 }: { color?: string; size?: number }) => (
   <PixelImg src={MEDAL_BY_COLOR[color] ?? ASSETS.medalApprentice} size={size} alt="medal" />
@@ -304,7 +304,7 @@ export const LeaguesScreen = () => {
           left: 0,
           right: 0,
           height: 200,
-          background: "radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.18), transparent 65%)",
+          background: "radial-gradient(ellipse at center top, rgba(255, 210, 77, 0.18), transparent 65%)",
           pointerEvents: "none",
         }}
       />
@@ -317,7 +317,7 @@ export const LeaguesScreen = () => {
           right: 0,
           height: 170,
           backgroundImage:
-            "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
+            "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
           backgroundSize: "80px 80px, 100px 100px, 70px 70px",
           backgroundPosition: "0 0, 30px 40px, 50px 20px",
           opacity: 0.3,

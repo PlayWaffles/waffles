@@ -6,7 +6,7 @@ import { txStepLabel } from "../useTournamentWallet";
 import { getTournament, loadCurrentTournamentBoard, loadRecentEntrants, loadMissions, type RecentEntrant, type TournamentRound } from "@/player/api";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
-import { AnnouncementBell } from "../announcements";
+import { AnnouncementBanner, AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -79,7 +79,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       {(close) => (
       <>
       <div style={{ display: "flex", justifyContent: "center", marginBottom: 12 }}>
-        <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(255,201,49,.16)", border: "1.5px solid rgba(255,201,49,.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ width: 64, height: 64, borderRadius: 16, background: "rgba(255,210,77,.16)", border: "1.5px solid rgba(255,210,77,.45)", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <TicketIcon size={34} />
         </div>
       </div>
@@ -103,7 +103,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
           the season flips off FOOTBALL — see DEFAULT_GAME_THEME in
           lib/game/auto-create — update the returning-player copy too.) */}
       {fee ? (
-        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: error ? 8 : 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,210,77,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: error ? 8 : 14 }}>
           <div style={{ position: "relative", flexShrink: 0, width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
             <TicketIcon size={28} />
             <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
@@ -136,7 +136,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
 
       {/* Proactive: detected the wallet can't cover entry — top up before tapping. */}
       {needsTopUp && !error && (
-        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,201,49,.10)", border: "1px solid rgba(255,201,49,.3)", borderRadius: 12, padding: "9px 12px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "rgba(255,210,77,.10)", border: "1px solid rgba(255,210,77,.3)", borderRadius: 12, padding: "9px 12px", marginBottom: 12, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
           <TicketIcon size={14} /> Not enough USDT to enter — add cash and you&apos;re in.
         </div>
       )}
@@ -284,7 +284,7 @@ const HomeMissions = () => {
                   <span style={{ fontSize: 10, fontWeight: 800, color: done ? "#FF9F1C" : "rgba(255,255,255,.5)", fontFamily: "var(--font-display)" }}>{m.cur}/{m.tgt}</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,.05)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: done ? "linear-gradient(90deg,#FF9F1C,#5DDDF0)" : "linear-gradient(90deg, #FFC931, #F5BB1B)", transition: "width .4s" }} />
+                  <div style={{ width: `${pct}%`, height: "100%", background: done ? "linear-gradient(90deg,#FF9F1C,#5DDDF0)" : "linear-gradient(90deg, #FFD24D, #F5A91B)", transition: "width .4s" }} />
                 </div>
               </div>
               <div style={{ fontSize: 10, fontWeight: 800, color: done ? "#FF9F1C" : "rgba(255,255,255,.55)", letterSpacing: 0.4, minWidth: 40, textAlign: "right" }}>
@@ -526,6 +526,7 @@ export const HomeScreen = () => {
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 84, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <AnnouncementBanner />
         {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} />}
         <div
           role="button"
@@ -573,7 +574,7 @@ export const HomeScreen = () => {
           {round && (
             <>
               {/* Prize-pool hero + vertical scarcity gauge (filled / cap). */}
-              <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+              <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,210,77,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,210,77,.16), rgba(255,210,77,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
                   <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "var(--maple-500)", textTransform: "uppercase" }}>Prize pool</div>
                   <div style={{ marginTop: 4, display: "flex", alignItems: "flex-end", gap: 8 }}>

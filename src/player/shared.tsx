@@ -244,7 +244,7 @@ export const SyrupIcon = ({ size = 18 }: { size?: number }) => (
     />
     <path
       d="M12 5.8C9.2 9.2 7.2 12.2 7.2 15.1C7.2 17.9 9.3 19.9 12 19.9C14.7 19.9 16.8 17.9 16.8 15.1C16.8 12.2 14.8 9.2 12 5.8Z"
-      fill="#FFC931"
+      fill="#FFD24D"
     />
     <path d="M9.3 15.3C9.3 17.1 10.5 18.2 12 18.2C13.5 18.2 14.7 17.1 14.7 15.3C14.7 13.8 13.6 11.8 12 9.6C10.4 11.8 9.3 13.8 9.3 15.3Z" fill="#D98213" />
     <path d="M9.4 13.5C9.9 11.9 10.9 10.4 11.8 9.2C13.4 11.5 14.5 13.6 14.5 15.1C14.5 15.9 14.2 16.6 13.8 17.1C13.1 14.7 11.5 13.6 9.4 13.5Z" fill="#FFB020" />
@@ -258,7 +258,7 @@ export const SyrupIcon = ({ size = 18 }: { size?: number }) => (
 // pieces with randomised offsets, colours, and timings via inline CSS vars.
 // CSS-only animation; no library dependency. Auto-disables under
 // prefers-reduced-motion via the global stylesheet rule.
-const CONFETTI_COLORS = ["#FFC931", "#FF9F1C", "#FB72FF", "#FF6B6B", "#7BE57E"];
+const CONFETTI_COLORS = ["#FFD24D", "#FF9F1C", "#FB72FF", "#FF6B6B", "#7BE57E"];
 export const Confetti = ({ pieces = 36 }: { pieces?: number }) => (
   <div
     aria-hidden="true"
@@ -320,7 +320,7 @@ export const Spinner = ({ size = 56, label }: { size?: number; label?: string })
 export const GameLoader = ({ label = "Loading" }: { label?: string }) => (
   <div aria-busy="true" aria-live="polite" aria-label={label} style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
     {/* Soft maple glow behind the spinner */}
-    <div aria-hidden style={{ position: "absolute", width: 240, height: 240, background: "radial-gradient(circle, rgba(255,201,49,.16), transparent 65%)" }} />
+    <div aria-hidden style={{ position: "absolute", width: 240, height: 240, background: "radial-gradient(circle, rgba(255,210,77,.16), transparent 65%)" }} />
 
     <Spinner size={72} />
 
@@ -765,11 +765,11 @@ export const CategoryIcon = ({ name, size = 28 }: { name: string; size?: number 
 export const CATEGORY_COLORS: Record<string, { bg: string; fg: string }> = {
   Movies: { bg: "#1e1e1e", fg: "#FB72FF" },
   Sports: { bg: "#1e1e1e", fg: "#FF9F1C" },
-  Crypto: { bg: "#1e1e1e", fg: "#FFC931" },
-  History: { bg: "#1e1e1e", fg: "#F5BB1B" },
+  Crypto: { bg: "#1e1e1e", fg: "#FFD24D" },
+  History: { bg: "#1e1e1e", fg: "#F5A91B" },
   Geography: { bg: "#1e1e1e", fg: "#FF9F1C" },
   Science: { bg: "#1e1e1e", fg: "#FB72FF" },
-  Music: { bg: "#1e1e1e", fg: "#FFC931" },
+  Music: { bg: "#1e1e1e", fg: "#FFD24D" },
   Football: { bg: "#1e1e1e", fg: "#3dd17a" },
 };
 

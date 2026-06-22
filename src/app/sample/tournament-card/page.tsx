@@ -265,6 +265,39 @@ function Slot({ tag, name, note, children }: { tag: string; name: string; note: 
   );
 }
 
+// In-game "people answering" pill — the participant PFPs pop in one after
+// another (staggered waffles-v2-pfp-in). Re-mounts on a loop here so the burst
+// replays for preview; in the real game it remounts each question.
+const ANSWER_POOL = ["maya-7", "leo-3", "ada-9", "kai-2", "zoe-5", "sam-1", "ria-8", "tom-4", "uma-6", "ivy-2"];
+function LiveBurstAnswerers() {
+  // Continuous rolling stack: a new face pops in each tick and the oldest drops
+  // out — once it fills to 5, faces keep replacing one-by-one (never resets). The
+  // count climbs and caps at the field size.
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 1100);
+    return () => clearInterval(id);
+  }, []);
+  const start = Math.max(0, tick - 4);
+  const stack = Array.from({ length: tick - start + 1 }, (_, k) => ({ idx: start + k, seed: ANSWER_POOL[(start + k) % ANSWER_POOL.length] }));
+  const answered = Math.min(96, 8 + tick * 3);
+  return (
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,.55)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 99, padding: "4px 12px 4px 6px", backdropFilter: "blur(2px)", minHeight: 34 }}>
+      <div style={{ display: "flex", alignItems: "center", minWidth: 26 }}>
+        {stack.map((p, i) => (
+          <div key={p.idx} style={{ width: 26, height: 26, borderRadius: 99, marginLeft: i === 0 ? 0 : -9, overflow: "hidden", border: "2px solid var(--frame)", background: "linear-gradient(135deg, var(--maple-500), #FF6B35)", animation: "waffles-v2-pfp-in .42s cubic-bezier(0.34,1.56,0.64,1) both", zIndex: i + 1 }}>
+            <PixelImg src={resolveAvatar(null, p.seed)} size={26} alt="" style={{ borderRadius: 99, objectFit: "cover" }} />
+          </div>
+        ))}
+      </div>
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.3, color: "#fff", whiteSpace: "nowrap" }}>
+        <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(255,159,28,.25)" }} />
+        {answered} answered
+      </span>
+    </div>
+  );
+}
+
 export default function TournamentCardPreview() {
   const timer = useCountdown();
   return (
@@ -278,6 +311,11 @@ export default function TournamentCardPreview() {
       {/* Live-buying strip sitting above the cards, as it would on home. */}
       <div style={{ maxWidth: 380, margin: "0 auto 22px" }}>
         <LiveBuyingStrip />
+      </div>
+      {/* In-game "people answering" live burst — PFPs pop in one after another. */}
+      <div style={{ maxWidth: 380, margin: "0 auto 28px", textAlign: "center" }}>
+        <div style={{ fontFamily: "var(--font-fredoka)", fontSize: 12, color: "rgba(255,255,255,.4)", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>In-game · people answering (live burst)</div>
+        <LiveBurstAnswerers />
       </div>
       <div style={{ maxWidth: 1080, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 28, justifyItems: "center" }}>
         <Slot tag="V3" name="Compact Banner" note="Shortest layout. Explicit pill button instead of whole-card tap. Densest.">

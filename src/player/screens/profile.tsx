@@ -176,7 +176,7 @@ export const ProfileScreen = () => {
   return (
     <Phone statusDark>
       <div className="bg-deep" />
-      <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 280, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.2), transparent 60%)" }} />
+      <div style={{ position: "absolute", top: -40, left: -40, right: -40, height: 280, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.2), transparent 60%)" }} />
 
       <TopHeader tickets={tickets} title="ME" />
 
@@ -193,7 +193,7 @@ export const ProfileScreen = () => {
 
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           {[
-            { l: "LEVEL", v: String(level), c: "#FFC931" },
+            { l: "LEVEL", v: String(level), c: "#FFD24D" },
             { l: "WINS", v: String(badgeStats.prizesWon), c: "#fff" },
             { l: "STREAK", v: `${streak}`, c: "#FB72FF" },
             { l: "BEST", v: badgeStats.bestRank != null ? `#${badgeStats.bestRank}` : "—", c: "#FF9F1C" },
@@ -263,7 +263,7 @@ export const ProfileScreen = () => {
           </div>
         </div>
 
-        <div data-coach="profile-tickets" style={{ background: "#0F0F10", border: "1px solid rgba(255,201,49,.2)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(255,201,49,.06)" }}>
+        <div data-coach="profile-tickets" style={{ background: "#0F0F10", border: "1px solid rgba(255,210,77,.2)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(255,210,77,.06)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <AssetWell size={58} accent="var(--maple-500)" radius={14}>
               <SyrupIcon size={30} />

@@ -54,12 +54,12 @@ export const WorldCupTakeover = ({ onClose }: { onClose: () => void }) => {
       }}
     >
       {/* Festive top glow + confetti-dot texture */}
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.28), transparent 65%)", pointerEvents: "none" }} />
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #2bbf5b 2px, transparent 2.5px), radial-gradient(circle, #fff 1.5px, transparent 2px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.4, pointerEvents: "none" }} />
+      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.28), transparent 65%)", pointerEvents: "none" }} />
+      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, backgroundImage: "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #2bbf5b 2px, transparent 2.5px), radial-gradient(circle, #fff 1.5px, transparent 2px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.4, pointerEvents: "none" }} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 28px", position: "relative", zIndex: 1 }}>
         <div style={{ position: "relative", marginBottom: 8 }}>
-          <PixelImg src={ASSETS.trophy} size={128} alt="" style={{ filter: "drop-shadow(0 0 30px rgba(255,201,49,.55))", animation: "waffles-v2-lvl-trophy-float 3.2s ease-in-out infinite" }} />
+          <PixelImg src={ASSETS.trophy} size={128} alt="" style={{ filter: "drop-shadow(0 0 30px rgba(255,210,77,.55))", animation: "waffles-v2-lvl-trophy-float 3.2s ease-in-out infinite" }} />
           <span style={{ position: "absolute", right: -6, bottom: 2, fontSize: 40, filter: "drop-shadow(0 3px 6px rgba(0,0,0,.5))" }} aria-hidden>⚽</span>
         </div>
         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 8 }}>Season is live</div>
@@ -68,7 +68,7 @@ export const WorldCupTakeover = ({ onClose }: { onClose: () => void }) => {
         </div>
         <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap", justifyContent: "center" }}>
           <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 800, color: "#fff" }}>📅 Jun 11 – Jul 19</span>
-          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,201,49,.14)", border: "1px solid rgba(255,201,49,.4)", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 800, color: "var(--maple-500)", fontVariantNumeric: "tabular-nums" }}>⏱️ Next kickoff {mm}:{ss}</span>
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "rgba(255,210,77,.14)", border: "1px solid rgba(255,210,77,.4)", borderRadius: 999, padding: "5px 12px", fontSize: 12, fontWeight: 800, color: "var(--maple-500)", fontVariantNumeric: "tabular-nums" }}>⏱️ Next kickoff {mm}:{ss}</span>
         </div>
         <div style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,.6)", marginBottom: 24, maxWidth: 300 }}>
           A whole new season of football trivia. Play live, climb the table, win real prizes.

@@ -12,7 +12,7 @@ const MEDAL_BY_COLOR: Record<string, string> = {
   "#bfc7d0": ASSETS.medalSilver,
   "#9aa6b3": ASSETS.medalAdvanced,
   "#3ddbb8": ASSETS.medalGenius,
-  "#FFC931": ASSETS.medalMaster,
+  "#FFD24D": ASSETS.medalMaster,
 };
 
 const BigMedal = ({ color = "#cd7f32", size = 78 }: { color?: string; size?: number }) => (
@@ -91,7 +91,7 @@ export const LeaderboardScreen = () => {
           left: 0,
           right: 0,
           height: 280,
-          background: "radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.22), transparent 65%)",
+          background: "radial-gradient(ellipse at center top, rgba(255, 210, 77, 0.22), transparent 65%)",
           pointerEvents: "none",
         }}
       />
@@ -104,7 +104,7 @@ export const LeaderboardScreen = () => {
           right: 0,
           height: 280,
           backgroundImage:
-            "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
+            "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
           backgroundSize: "80px 80px, 100px 100px, 70px 70px",
           backgroundPosition: "0 0, 30px 40px, 50px 20px",
           opacity: 0.35,
@@ -130,7 +130,7 @@ export const LeaderboardScreen = () => {
       </div>
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 201, 49, 0.35))" }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
           <BigMedal color={board?.color ?? "#cd7f32"} size={120} />
         </div>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>{board?.label ?? "Loading league"}</div>

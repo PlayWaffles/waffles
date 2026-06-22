@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useProto, type ScreenName } from "./state";
+import { useProto, type Proto, type ScreenName } from "./state";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import type { AnnouncementTone, PlayerAnnouncement } from "@/lib/player/announcements";
 
@@ -20,7 +20,7 @@ export type Announcement = PlayerAnnouncement;
 const HOUR = 3_600_000;
 
 const TONE: Record<Tone, { fg: string; bg: string; bd: string }> = {
-  maple: { fg: "#FFC931", bg: "rgba(255,201,49,.12)", bd: "rgba(255,201,49,.32)" },
+  maple: { fg: "#FFD24D", bg: "rgba(255,210,77,.12)", bd: "rgba(255,210,77,.32)" },
   berry: { fg: "#FB72FF", bg: "rgba(251,114,255,.12)", bd: "rgba(251,114,255,.32)" },
   leaf: { fg: "#FF9F1C", bg: "rgba(255,159,28,.12)", bd: "rgba(255,159,28,.32)" },
 };
@@ -30,6 +30,37 @@ const timeAgo = (ts: number) => {
   if (h < 1) return "just now";
   if (h < 24) return `${h}h ago`;
   return `${Math.round(h / 24)}d ago`;
+};
+
+// Marks an announcement read and runs its CTA (open the season takeover, or
+// navigate to a screen). Shared by the Home banner, the inbox, and the global
+// push toast so all three behave identically. `sourceScreen` only tags analytics.
+const actOnAnnouncement = (proto: Proto, a: Announcement, sourceScreen: ScreenName) => {
+  proto.markAnnouncementsRead([a.id]);
+  trackClientEvent(AnalyticsEvent.AnnouncementMarkedRead, {
+    announcement_id: a.id,
+    announcement_type: a.tone,
+    source_screen: sourceScreen,
+  });
+  if (a.cta?.theme) {
+    trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
+      announcement_id: a.id,
+      announcement_type: a.tone,
+      cta_target: a.cta.theme,
+      source_screen: sourceScreen,
+    });
+    proto.update({ wcTakeoverOpen: true });
+    return;
+  }
+  if (a.cta?.screen) {
+    trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
+      announcement_id: a.id,
+      announcement_type: a.tone,
+      cta_target: a.cta.screen,
+      source_screen: sourceScreen,
+    });
+    proto.goto(a.cta.screen as ScreenName);
+  }
 };
 
 // ===== Home banner ============================================================
@@ -59,32 +90,7 @@ export const AnnouncementBanner = () => {
       cta_target: top.cta?.theme ?? top.cta?.screen ?? "none",
       source_screen: proto.screen,
     });
-    proto.markAnnouncementsRead([top.id]);
-    trackClientEvent(AnalyticsEvent.AnnouncementMarkedRead, {
-      announcement_id: top.id,
-      announcement_type: top.tone,
-      source_screen: proto.screen,
-    });
-    // A season CTA opens that season's full-page welcome.
-    if (top.cta?.theme) {
-      trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
-        announcement_id: top.id,
-        announcement_type: top.tone,
-        cta_target: top.cta.theme,
-        source_screen: proto.screen,
-      });
-      proto.update({ wcTakeoverOpen: true });
-      return;
-    }
-    if (top.cta?.screen) {
-      trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
-        announcement_id: top.id,
-        announcement_type: top.tone,
-        cta_target: top.cta.screen,
-        source_screen: proto.screen,
-      });
-      proto.goto(top.cta.screen as ScreenName);
-    }
+    actOnAnnouncement(proto, top, proto.screen);
   };
 
   return (
@@ -113,6 +119,84 @@ export const AnnouncementBanner = () => {
           proto.dismissAnnouncement(top.id);
         }}
         aria-label="Dismiss announcement"
+        style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 99, border: "none", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.6)", fontSize: 15, lineHeight: 1, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
+      >
+        ×
+      </button>
+    </div>
+  );
+};
+
+// ===== Global push toast ======================================================
+// A pushed announcement (PartyKit realtime) surfaces here as a top slide-down on
+// ANY screen, so it isn't missed by players who aren't on Home. It auto-clears
+// (timer lives in state.tsx); tapping runs the CTA, × just hides the toast — the
+// announcement still lives on in the Home banner + inbox.
+
+export const AnnouncementToast = () => {
+  const proto = useProto();
+  const a = proto.announcementToast;
+  const viewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!a || viewedRef.current === a.id) return;
+    viewedRef.current = a.id;
+    trackClientEvent(AnalyticsEvent.AnnouncementBannerViewed, {
+      announcement_id: a.id,
+      announcement_type: a.tone,
+      cta_target: a.cta?.theme ?? a.cta?.screen ?? "none",
+      source_screen: proto.screen,
+    });
+  }, [a, proto.screen]);
+  if (!a) return null;
+  const c = TONE[a.tone];
+
+  const onTap = () => {
+    trackClientEvent(AnalyticsEvent.AnnouncementBannerOpened, {
+      announcement_id: a.id,
+      announcement_type: a.tone,
+      cta_target: a.cta?.theme ?? a.cta?.screen ?? "none",
+      source_screen: proto.screen,
+    });
+    actOnAnnouncement(proto, a, proto.screen);
+    proto.update({ announcementToast: null });
+  };
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "max(8px, env(safe-area-inset-top))",
+        left: 10,
+        right: 10,
+        zIndex: 130,
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        background: "linear-gradient(rgba(20,16,12,.98), rgba(20,16,12,.98))",
+        border: `1px solid ${c.bd}`,
+        borderRadius: 14,
+        padding: "10px 12px",
+        boxShadow: "0 10px 30px rgba(0,0,0,.5)",
+        animation: "waffles-v2-onb-in .28s var(--ease-out-quart)",
+      }}
+    >
+      <button
+        type="button"
+        className="pressable"
+        onClick={onTap}
+        aria-label={`${a.title}. ${a.body}`}
+        style={{ flex: 1, minWidth: 0, display: "flex", alignItems: "center", gap: 10, background: "transparent", border: 0, padding: 0, textAlign: "left", cursor: "pointer", font: "inherit", color: "inherit" }}
+      >
+        <span style={{ flexShrink: 0, width: 34, height: 34, borderRadius: 10, background: c.bg, border: `1px solid ${c.bd}`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 19 }}>{a.emoji}</span>
+        <span style={{ minWidth: 0 }}>
+          <span style={{ display: "block", fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", lineHeight: 1.1 }}>{a.title}</span>
+          <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.6)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.cta ? a.cta.label + " ›" : a.body}</span>
+        </span>
+      </button>
+      <button
+        type="button"
+        onClick={() => proto.update({ announcementToast: null })}
+        aria-label="Dismiss"
         style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 99, border: "none", background: "rgba(255,255,255,.06)", color: "rgba(255,255,255,.6)", fontSize: 15, lineHeight: 1, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center" }}
       >
         ×

@@ -32,7 +32,7 @@ type RewardType = "xp" | "ticket" | "cosmetic";
 type Reward = { type: RewardType; label: string };
 
 const REWARD_PALETTE: Record<RewardType, { bg: string; fg: string }> = {
-  xp:       { bg: "rgba(255, 201, 49, 0.10)", fg: "var(--maple-500)" },
+  xp:       { bg: "rgba(255, 210, 77, 0.10)", fg: "var(--maple-500)" },
   ticket:   { bg: "rgba(255,159,28, 0.10)",  fg: "var(--leaf)" },
   cosmetic: { bg: "rgba(251, 114, 255, 0.10)", fg: "var(--berry)" },
 };
@@ -332,7 +332,7 @@ export const CompeteScreen = () => {
           <div style={{ minWidth: 0, flex: 1 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#fff", letterSpacing: 0.5, lineHeight: 1 }}>{currentTier?.label ?? "Loading league"}</div>
             <div style={{ display: "flex", gap: 10, marginTop: 6, fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.65)", flexWrap: "nowrap", whiteSpace: "nowrap" }}>
-              <span style={{ color: "#FFC931", display: "inline-flex", alignItems: "center", gap: 3 }}>🏆 {score ?? "—"}</span>
+              <span style={{ color: "#FFD24D", display: "inline-flex", alignItems: "center", gap: 3 }}>🏆 {score ?? "—"}</span>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>⏱ Ends in {seasonEnd}</span>
             </div>
           </div>
@@ -348,7 +348,7 @@ export const CompeteScreen = () => {
           <div style={{ position: "relative", flexShrink: 0 }}>
             <AssetWell size={48} accent="var(--maple-500)" radius={12}>
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                <path d="M9 11.5l2 2 4-4M5 5h14a1 1 0 0 1 1 1v13l-4-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="#FFC931" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,201,49,.1)" />
+                <path d="M9 11.5l2 2 4-4M5 5h14a1 1 0 0 1 1 1v13l-4-3H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" stroke="#FFD24D" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="rgba(255,210,77,.1)" />
               </svg>
             </AssetWell>
             <div style={{ position: "absolute", top: -4, right: -4, minWidth: 18, height: 18, borderRadius: 99, background: "#FC1919", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, display: "flex", alignItems: "center", justifyContent: "center", padding: "0 5px", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{counts?.open ?? "…"}</div>
@@ -358,7 +358,7 @@ export const CompeteScreen = () => {
             <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 2 }}>{counts ? `${counts.daily} daily · ${counts.partner} partner offers` : "Loading missions"}</div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.12)", border: "1px solid rgba(255,201,49,.25)", color: "var(--maple-500)", padding: "3px 7px", borderRadius: 6, fontFamily: "var(--font-display)", fontSize: 11 }}>{counts ? `+${counts.xp} XP` : "—"}</span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,210,77,.12)", border: "1px solid rgba(255,210,77,.25)", color: "var(--maple-500)", padding: "3px 7px", borderRadius: 6, fontFamily: "var(--font-display)", fontSize: 11 }}>{counts ? `+${counts.xp} XP` : "—"}</span>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(255,255,255,.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
         </button>
@@ -471,7 +471,7 @@ export const CompeteScreen = () => {
                       fontFamily: "var(--font-display)",
                       fontSize: 12,
                       color: row.claimed || row.current ? "var(--frame)" : "var(--ink-faint)",
-                      boxShadow: row.current ? "0 0 0 4px rgba(255, 201, 49, 0.20)" : undefined,
+                      boxShadow: row.current ? "0 0 0 4px rgba(255, 210, 77, 0.20)" : undefined,
                     }}
                   >
                     {row.level}

@@ -29,7 +29,7 @@ const MEDAL_BY_COLOR: Record<string, string> = {
   "#bfc7d0": ASSETS.medalSilver,
   "#9aa6b3": ASSETS.medalAdvanced,
   "#3ddbb8": ASSETS.medalGenius,
-  "#FFC931": ASSETS.medalMaster,
+  "#FFD24D": ASSETS.medalMaster,
 };
 const medalFor = (color: string) => MEDAL_BY_COLOR[color] ?? ASSETS.medalApprentice;
 
@@ -70,7 +70,7 @@ export const LeagueResultTakeover = ({ result, onClose }: { result: LeagueResult
         animation: "waffles-v2-onb-in 0.35s var(--ease-out-quart)",
       }}
     >
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.22), transparent 65%)", pointerEvents: "none" }} />
+      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.22), transparent 65%)", pointerEvents: "none" }} />
 
       <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 28px", position: "relative", zIndex: 1 }}>
         <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: o.accent, textTransform: "uppercase", marginBottom: 10 }}>{o.kicker}</div>
@@ -84,7 +84,7 @@ export const LeagueResultTakeover = ({ result, onClose }: { result: LeagueResult
               <PixelImg src={medalFor(result.to.color)} size={104} alt={result.to.label} style={{ filter: `drop-shadow(0 0 26px ${o.accent})` }} />
             </>
           ) : (
-            <PixelImg src={medalFor(result.to.color)} size={112} alt={result.to.label} style={{ filter: "drop-shadow(0 0 26px rgba(255,201,49,.5))" }} />
+            <PixelImg src={medalFor(result.to.color)} size={112} alt={result.to.label} style={{ filter: "drop-shadow(0 0 26px rgba(255,210,77,.5))" }} />
           )}
         </div>
 

@@ -220,7 +220,7 @@ export function Ordering({ deepLinked = false, onExit }: ExpansionProps) {
       footer={
         finished ? (
           <>
-            <div style={{ textAlign: "center", fontFamily: "var(--font-display)", fontSize: 18, color: perfect ? LEAF : "#FFC931" }}>
+            <div style={{ textAlign: "center", fontFamily: "var(--font-display)", fontSize: 18, color: perfect ? LEAF : "#FFD24D" }}>
               {perfect ? "Perfect order! 🏆" : `${correctCount}/${correctOrder.length} in place`}
             </div>
             <BackCta onExit={exit} />
@@ -258,9 +258,9 @@ export function Ordering({ deepLinked = false, onExit }: ExpansionProps) {
               type="button"
               disabled={finished}
               onClick={() => toggle(it.id)}
-              style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 12, padding: "12px", font: "inherit", textAlign: "left", cursor: finished ? "default" : "pointer", border: `3px solid ${ok ? LEAF : bad ? RED : placed ? "#FFC931" : "rgba(255,255,255,.12)"}`, background: placed ? "rgba(255,201,49,.08)" : "rgba(255,255,255,.04)", transition: "all .2s" }}
+              style={{ display: "flex", alignItems: "center", gap: 12, borderRadius: 12, padding: "12px", font: "inherit", textAlign: "left", cursor: finished ? "default" : "pointer", border: `3px solid ${ok ? LEAF : bad ? RED : placed ? "#FFD24D" : "rgba(255,255,255,.12)"}`, background: placed ? "rgba(255,210,77,.08)" : "rgba(255,255,255,.04)", transition: "all .2s" }}
             >
-              <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 99, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 15, background: placed ? "#FFC931" : "rgba(255,255,255,.08)", color: placed ? "#191919" : "rgba(255,255,255,.5)" }}>{placed ? pos + 1 : "?"}</span>
+              <span style={{ width: 32, height: 32, flexShrink: 0, borderRadius: 99, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 15, background: placed ? "#FFD24D" : "rgba(255,255,255,.08)", color: placed ? "#191919" : "rgba(255,255,255,.5)" }}>{placed ? pos + 1 : "?"}</span>
               <span style={{ fontSize: 22 }}>{it.flag}</span>
               <span style={{ flex: 1, fontWeight: 800, color: "#fff", fontSize: 17 }}>{it.label}</span>
               {finished ? <span style={{ fontWeight: 800, fontSize: 13, color: "rgba(255,255,255,.5)" }}>{it.year}</span> : null}
@@ -329,7 +329,7 @@ export function Bingo({ deepLinked = false, onExit }: ExpansionProps) {
 
   return (
     <Shell
-      accent="#FFC931"
+      accent="#FFD24D"
       kicker="TRIVIA BINGO"
       prompt={BINGO.prompt}
       timer={<LinearTimer remaining={remaining} duration={BINGO.durationSec} />}
@@ -337,7 +337,7 @@ export function Bingo({ deepLinked = false, onExit }: ExpansionProps) {
       footer={
         finished ? (
           <>
-            <div style={{ textAlign: "center", fontFamily: "var(--font-display)", fontSize: 20, color: bingoLine ? "#FFC931" : "#fff" }}>
+            <div style={{ textAlign: "center", fontFamily: "var(--font-display)", fontSize: 20, color: bingoLine ? "#FFD24D" : "#fff" }}>
               {bingoLine ? "BINGO! 🎉" : `${hits} true · ${mistakes} wrong`}
             </div>
             <BackCta onExit={exit} />
@@ -369,8 +369,8 @@ export function Bingo({ deepLinked = false, onExit }: ExpansionProps) {
           const ok = finished && isSel && cell.truth;
           const bad = finished && isSel && !cell.truth;
           const missed = finished && !isSel && cell.truth;
-          const border = inBingo ? "#FFC931" : ok ? LEAF : bad ? RED : missed ? "rgba(252,25,25,.4)" : isSel ? "#FFC931" : "rgba(255,255,255,.12)";
-          const bg = inBingo ? "rgba(255,201,49,.24)" : ok ? "rgba(255,159,28,.18)" : bad ? "rgba(252,25,25,.16)" : isSel ? "rgba(255,201,49,.12)" : "rgba(255,255,255,.04)";
+          const border = inBingo ? "#FFD24D" : ok ? LEAF : bad ? RED : missed ? "rgba(252,25,25,.4)" : isSel ? "#FFD24D" : "rgba(255,255,255,.12)";
+          const bg = inBingo ? "rgba(255,210,77,.24)" : ok ? "rgba(255,159,28,.18)" : bad ? "rgba(252,25,25,.16)" : isSel ? "rgba(255,210,77,.12)" : "rgba(255,255,255,.04)";
           return (
             <button
               key={i}

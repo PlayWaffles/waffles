@@ -272,12 +272,12 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
                   border: isToday
                     ? "2px solid var(--maple-500)"
                     : isJackpot && !isLocked
-                      ? "1.5px solid rgba(255,201,49,.45)"
+                      ? "1.5px solid rgba(255,210,77,.45)"
                       : "1.5px solid rgba(253,251,246,0.06)",
                   boxShadow: isToday
-                    ? "0 0 16px rgba(255,201,49,.42)"
+                    ? "0 0 16px rgba(255,210,77,.42)"
                     : isJackpot && !isLocked
-                      ? "0 0 12px rgba(255,201,49,.28)"
+                      ? "0 0 12px rgba(255,210,77,.28)"
                       : "none",
                   opacity: isLocked ? 0.5 : 1,
                   ...(isToday ? { animation: "waffles-v2-lvl-pop .4s cubic-bezier(0.34,1.56,0.64,1) both" } : {}),

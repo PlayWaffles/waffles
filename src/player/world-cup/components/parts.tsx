@@ -6,7 +6,7 @@ import type { VMedia } from "../data";
 
 /** Format accent → v2 brand colour. */
 export const ACCENT: Record<string, string> = {
-  gold: "#FFC931",
+  gold: "#FFD24D",
   purple: "#FB72FF",
   cyan: "#FF9F1C",
   green: "#7BE57E",
@@ -78,7 +78,7 @@ export function ProgressDots({ idx, total, answered }: { idx: number; total: num
     <div style={{ display: "flex", gap: 8, alignItems: "center", padding: "0 4px" }}>
       <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.08)", display: "flex", border: "1px solid rgba(255,255,255,.05)" }}>
         {dots.map((on, i) => (
-          <div key={i} style={{ flex: 1, margin: "0 1px", background: on ? "#FFC931" : "transparent", borderRadius: 99, transition: "background .3s" }} />
+          <div key={i} style={{ flex: 1, margin: "0 1px", background: on ? "#FFD24D" : "transparent", borderRadius: 99, transition: "background .3s" }} />
         ))}
       </div>
       <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#fff", fontWeight: 800, fontSize: 13 }}>
@@ -98,7 +98,7 @@ export function TimerRing({ timeLeft, total }: { timeLeft: number; total: number
     <div style={{ width: 96, height: 96, position: "relative", margin: "0 auto" }}>
       <svg width="96" height="96" viewBox="0 0 96 96">
         <circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,.08)" strokeWidth="8" fill="none" />
-        <circle cx="48" cy="48" r="42" stroke={low ? "#FC1919" : "#FFC931"} strokeWidth="8" fill="none" strokeDasharray={ringDash} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: "stroke-dashoffset .1s linear, stroke .3s" }} />
+        <circle cx="48" cy="48" r="42" stroke={low ? "#FC1919" : "#FFD24D"} strokeWidth="8" fill="none" strokeDasharray={ringDash} strokeDashoffset={offset} strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: "stroke-dashoffset .1s linear, stroke .3s" }} />
       </svg>
       <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 30, color: low ? "#FC1919" : "#fff", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{Math.max(0, timeLeft).toFixed(1)}</div>
@@ -114,7 +114,7 @@ export function LinearTimer({ remaining, duration }: { remaining: number; durati
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 4px" }}>
       <div style={{ flex: 1, height: 10, borderRadius: 99, background: "rgba(255,255,255,.1)", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${pct * 100}%`, borderRadius: 99, background: low ? "#FC1919" : "#FFC931", transition: "width 1s linear" }} />
+        <div style={{ height: "100%", width: `${pct * 100}%`, borderRadius: 99, background: low ? "#FC1919" : "#FFD24D", transition: "width 1s linear" }} />
       </div>
       <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: low ? "#FC1919" : "#fff", fontVariantNumeric: "tabular-nums" }}>{Math.max(0, remaining)}s</span>
     </div>
@@ -122,7 +122,7 @@ export function LinearTimer({ remaining, duration }: { remaining: number; durati
 }
 
 /** Kicker label above a prompt (e.g. "MISSING WORD"). */
-export function Kicker({ children, color = "#FFC931" }: { children: ReactNode; color?: string }) {
+export function Kicker({ children, color = "#FFD24D" }: { children: ReactNode; color?: string }) {
   return (
     <div style={{ fontFamily: "var(--font-display)", fontSize: 12, fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase", color, textAlign: "center" }}>
       {children}
@@ -187,7 +187,7 @@ function TrophyArt() {
       <defs>
         <linearGradient id="wc-gold" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#FFE08A" />
-          <stop offset="0.5" stopColor="#F5BB1B" />
+          <stop offset="0.5" stopColor="#F5A91B" />
           <stop offset="1" stopColor="#C9881A" />
         </linearGradient>
       </defs>
@@ -264,7 +264,7 @@ export function AudioClue({ line }: { line: string }) {
                 flex: 1,
                 height: "100%",
                 borderRadius: 2,
-                background: "rgba(255,201,49,.7)",
+                background: "rgba(255,210,77,.7)",
                 transformOrigin: "bottom",
                 transform: playing ? undefined : "scaleY(0.18)",
                 animation: playing ? `wc-eq ${0.5 + (i % 5) * 0.09}s ease-in-out ${i * 0.03}s infinite` : "none",

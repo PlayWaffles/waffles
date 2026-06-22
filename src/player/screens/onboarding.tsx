@@ -295,7 +295,7 @@ export const OnboardingScreen = ({
   return (
     <Phone>
       <div className="bg-deep" />
-      <div className="glow-top" style={{ height: 320, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.18), transparent 65%)" }} />
+      <div className="glow-top" style={{ height: 320, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.18), transparent 65%)" }} />
 
       {/* Tilted oversized wordmark watermark, matching Home. */}
       <div aria-hidden="true" style={{ position: "absolute", top: 30, left: -10, right: -10, fontFamily: "var(--font-display)", fontSize: 110, color: "var(--maple-500)", opacity: 0.04, letterSpacing: 4, transform: "rotate(-6deg)", textAlign: "center", pointerEvents: "none", whiteSpace: "nowrap" }}>WAFFLES</div>
@@ -432,10 +432,10 @@ export const OnboardingScreen = ({
           aria-label="Account created"
           style={{ position: "absolute", inset: 0, zIndex: 95, display: "flex", flexDirection: "column", background: "linear-gradient(180deg, #1a1410 0%, #0a0805 100%)", animation: "waffles-v2-onb-in .35s var(--ease-out-quart)" }}
         >
-          <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.24), transparent 65%)", pointerEvents: "none" }} />
+          <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.24), transparent 65%)", pointerEvents: "none" }} />
           <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", padding: "0 28px", position: "relative", zIndex: 1 }}>
             <div style={{ position: "relative", marginBottom: 14 }}>
-              <PixelImg src={ASSETS.wally} size={132} alt="" style={{ filter: "drop-shadow(0 0 28px rgba(255,201,49,.5))", animation: "waffles-v2-wally-idle 4s ease-in-out infinite" }} />
+              <PixelImg src={ASSETS.wally} size={132} alt="" style={{ filter: "drop-shadow(0 0 28px rgba(255,210,77,.5))", animation: "waffles-v2-wally-idle 4s ease-in-out infinite" }} />
               <div style={{ position: "absolute", right: 6, bottom: 6, width: 34, height: 34, borderRadius: 99, background: "var(--leaf)", color: "var(--frame)", display: "grid", placeItems: "center", fontSize: 18, fontFamily: "var(--font-display)", border: "3px solid #0a0805" }}>✓</div>
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 8 }}>Account created</div>

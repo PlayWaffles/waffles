@@ -431,7 +431,7 @@ function CoachOverlay({
             width: rect.width + TARGET_PAD * 2,
             height: rect.height + TARGET_PAD * 2,
             borderRadius: 16,
-            boxShadow: "0 0 0 9999px rgba(0,0,0,.72), 0 0 0 2px var(--maple-500), 0 0 26px rgba(255,201,49,.45)",
+            boxShadow: "0 0 0 9999px rgba(0,0,0,.72), 0 0 0 2px var(--maple-500), 0 0 26px rgba(255,210,77,.45)",
             pointerEvents: "none",
             animation: "waffles-v2-coach-ring 1.8s ease-in-out infinite",
           }}

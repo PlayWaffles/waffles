@@ -128,7 +128,7 @@ function SectionHeader({ title, count, note }: { title: string; count: number; n
   return (
     <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
       <h2 style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff" }}>{title}</h2>
-      <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 99, background: "#FFC931", color: "#191919", fontFamily: "var(--font-display)", fontSize: 12, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{count}</span>
+      <span style={{ minWidth: 20, height: 20, padding: "0 6px", borderRadius: 99, background: "#FFD24D", color: "#191919", fontFamily: "var(--font-display)", fontSize: 12, display: "inline-flex", alignItems: "center", justifyContent: "center" }}>{count}</span>
       <span style={{ marginLeft: "auto", fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.8, textTransform: "uppercase", color: "rgba(255,255,255,.35)" }}>{note}</span>
     </div>
   );

@@ -52,7 +52,7 @@ const avatarFor = (name: string) =>
   LIVE_AVATARS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % LIVE_AVATARS.length];
 
 const LeaderRow = ({ row, delay }: { row: Row; delay: number }) => {
-  const medal = row.r === 1 ? "#FFC931" : row.r === 2 ? "#bfc7d0" : row.r === 3 ? "#cd7f32" : "rgba(255,255,255,.4)";
+  const medal = row.r === 1 ? "#FFD24D" : row.r === 2 ? "#bfc7d0" : row.r === 3 ? "#cd7f32" : "rgba(255,255,255,.4)";
   return (
     <div
       style={{
@@ -61,7 +61,7 @@ const LeaderRow = ({ row, delay }: { row: Row; delay: number }) => {
         gap: 10,
         padding: "6px 10px",
         borderRadius: 12,
-        background: row.you ? "rgba(255,201,49,.08)" : "transparent",
+        background: row.you ? "rgba(255,210,77,.08)" : "transparent",
         border: row.you ? "1.5px solid var(--maple-500)" : "1.5px solid transparent",
         animation: `waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) ${delay}s both${row.you ? `, waffles-v2-row-glow 2.4s ease-in-out ${delay + 0.5}s infinite` : ""}`,
       }}
@@ -212,8 +212,8 @@ export const ResultsScreen = () => {
       <div className="bg-deep" />
       {/* Celebration burst — top-3 finishes get a richer confetti shower. */}
       <Confetti pieces={rank <= 3 ? 60 : 36} />
-      <div className="glow-top" style={{ height: 360, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.25), transparent 60%)" }} />
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.55 }} />
+      <div className="glow-top" style={{ height: 360, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.25), transparent 60%)" }} />
+      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, backgroundImage: "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.55 }} />
 
       {/* Single flex column from the top down to the sticky bottom bar so the
           leaderboard fills the slack instead of leaving dead space below. */}
@@ -221,7 +221,7 @@ export const ResultsScreen = () => {
         {/* Rank header */}
         <div style={{ textAlign: "center", color: "#fff", flexShrink: 0 }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 2, color: "rgba(255,255,255,.6)", animation: "waffles-v2-lvl-rise .4s ease-out both" }}>{settled ? "YOU FINISHED" : "YOU'RE IN — CURRENTLY"}</div>
-          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFC931", textShadow: "0 0 32px rgba(255,201,49,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>
+          <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFD24D", textShadow: "0 0 32px rgba(255,210,77,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>
             {fieldSize > 0 ? <>#<CountUp from={fieldSize} to={rank} /></> : "—"}
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>
@@ -262,7 +262,7 @@ export const ResultsScreen = () => {
 
         {/* Reward tiles */}
         <div style={{ display: "flex", gap: 10, marginTop: 20, flexShrink: 0 }}>
-          <div style={{ position: "relative", flex: 1, background: "linear-gradient(180deg, #FFC931, #F5BB1B)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .55s both" }}>
+          <div style={{ position: "relative", flex: 1, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .55s both" }}>
             {proto.tournamentBonus && (
               <div style={{ position: "absolute", top: -8, right: -8, background: "var(--leaf)", color: "var(--frame)", fontFamily: "var(--font-display)", fontSize: 10, padding: "2px 7px", borderRadius: 99, border: "2px solid #1e1e1e", boxShadow: "0 2px 0 #1e1e1e" }}>2×</div>
             )}
@@ -320,7 +320,7 @@ export const ResultsScreen = () => {
         <div style={{ flex: 1, minHeight: 0, marginTop: 16, background: "#0F0F10", borderRadius: 18, border: "1px solid rgba(255,255,255,.06)", padding: "14px 12px 8px", display: "flex", flexDirection: "column", animation: "waffles-v2-lvl-rise .5s cubic-bezier(0.22,1,0.36,1) .85s both" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10, padding: "0 6px", flexShrink: 0 }}>
             <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#fff", letterSpacing: 0.5 }}>LEADERBOARD</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#FFC931", display: "flex", alignItems: "center", gap: 5 }}>TOP 100 <TicketIcon size={14} /></div>
+            <div style={{ fontSize: 11, fontWeight: 800, color: "#FFD24D", display: "flex", alignItems: "center", gap: 5 }}>TOP 100 <TicketIcon size={14} /></div>
           </div>
 
           <div style={{ flex: 1, minHeight: 0, overflow: "auto", display: "flex", flexDirection: "column", gap: 3 }}>

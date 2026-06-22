@@ -69,7 +69,7 @@ export const MissionsScreen = () => {
   const renderRow = (m: DailyRow, key: string | number) => {
     const pct = Math.min(100, Math.round((m.p / m.tot) * 100));
     return (
-      <div key={key} style={{ background: "var(--surface-1)", border: m.claimable ? "1px solid rgba(255,201,49,.35)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: m.done ? 0.55 : 1 }}>
+      <div key={key} style={{ background: "var(--surface-1)", border: m.claimable ? "1px solid rgba(255,210,77,.35)" : "1px solid rgba(255,255,255,.06)", borderRadius: 12, padding: "10px 12px", display: "flex", alignItems: "center", gap: 10, opacity: m.done ? 0.55 : 1 }}>
         <AssetWell size={60} accent={m.icon === ASSETS.flame ? "var(--berry)" : m.icon === ASSETS.trophy ? "var(--maple-500)" : "var(--leaf)"} radius={14}>
           <PixelImg src={m.icon} size={46} alt="" />
         </AssetWell>
@@ -77,7 +77,7 @@ export const MissionsScreen = () => {
           <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
             <div style={{ flex: 1, height: 5, borderRadius: 99, background: "rgba(255,255,255,.06)", overflow: "hidden" }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: "#FFC931" }} />
+              <div style={{ width: `${pct}%`, height: "100%", background: "#FFD24D" }} />
             </div>
             <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", whiteSpace: "nowrap" }}>{m.p}/{m.tot}</span>
           </div>
@@ -97,7 +97,7 @@ export const MissionsScreen = () => {
             {claimingSlug === m.slug ? "…" : `CLAIM +${m.xp}`}
           </button>
         ) : (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,201,49,.15)", border: "1px solid rgba(255,201,49,.3)", color: "var(--maple-500)", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, flexShrink: 0 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,210,77,.15)", border: "1px solid rgba(255,210,77,.3)", color: "var(--maple-500)", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 11, flexShrink: 0 }}>
             +{m.xp} XP
           </div>
         )}
@@ -128,7 +128,7 @@ export const MissionsScreen = () => {
     { slug: "duolingo-lesson", brand: "Duolingo", brandColor: "#58CC02", glyph: "🦉", title: "Try a free language lesson", cta: "Open app", tickets: 3, estTime: "~2 min", verified: true, hot: false, claimed: false },
     { slug: "spotify-trial", brand: "Spotify", brandColor: "#1DB954", glyph: "♫", title: "Sign up for Spotify Free trial", cta: "Get offer", tickets: 5, estTime: "~5 min", verified: true, hot: false, claimed: false },
     { slug: "doordash-first-order", brand: "Doordash", brandColor: "#FF3008", glyph: "D", title: "Place your first order, $10 off", cta: "Claim", tickets: 10, estTime: "varies", verified: true, hot: true, claimed: false },
-    { slug: "pulse-survey", brand: "Pulse", brandColor: "#FFC931", glyph: "?", title: "Answer a 5-min market survey", cta: "Start", tickets: 2, estTime: "~5 min", verified: true, hot: false, claimed: false },
+    { slug: "pulse-survey", brand: "Pulse", brandColor: "#FFD24D", glyph: "?", title: "Answer a 5-min market survey", cta: "Start", tickets: 2, estTime: "~5 min", verified: true, hot: false, claimed: false },
     { slug: "lyft-first-ride", brand: "Lyft", brandColor: "#FF00BF", glyph: "L", title: "First ride, up to $5 off", cta: "Claim", tickets: 8, estTime: "~2 min", verified: true, hot: false, claimed: false },
     { slug: "calm-trial", brand: "Calm", brandColor: "#3a8df1", glyph: "☾", title: "Try a free 7-day trial", cta: "Open app", tickets: 6, estTime: "~3 min", verified: true, hot: false, claimed: false },
   ];
@@ -172,7 +172,7 @@ export const MissionsScreen = () => {
   return (
     <Phone>
       <div style={{ position: "absolute", inset: 0, background: "var(--frame)" }} />
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: "radial-gradient(ellipse at 50% 0%, rgba(255,201,49,.18), transparent 70%)" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: "radial-gradient(ellipse at 50% 0%, rgba(255,210,77,.18), transparent 70%)" }} />
 
       <div style={{ position: "absolute", top: 6, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "#fff", gap: 8 }}>
         <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
@@ -181,7 +181,7 @@ export const MissionsScreen = () => {
       </div>
 
       <div style={{ position: "absolute", top: 96, left: 14, right: 14, background: "#0F0F10", borderRadius: 99, padding: 4, border: "1px solid rgba(255,255,255,.06)", display: "flex", gap: 2 }}>
-        <button onClick={() => { trackClientEvent(AnalyticsEvent.MissionsTabChanged, { screen: "missions", tab: "daily" }); setTab("daily"); }} style={{ flex: 1, background: tab === "daily" ? "#FFC931" : "transparent", color: tab === "daily" ? "#1e1e1e" : "rgba(255,255,255,.6)", border: "none", padding: "9px 10px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <button onClick={() => { trackClientEvent(AnalyticsEvent.MissionsTabChanged, { screen: "missions", tab: "daily" }); setTab("daily"); }} style={{ flex: 1, background: tab === "daily" ? "#FFD24D" : "transparent", color: tab === "daily" ? "#1e1e1e" : "rgba(255,255,255,.6)", border: "none", padding: "9px 10px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <span>DAILY</span>
           <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 99, background: tab === "daily" ? "rgba(0,0,0,.15)" : "rgba(255,255,255,.1)" }}>{dailyMissions.length}</span>
         </button>
@@ -194,7 +194,7 @@ export const MissionsScreen = () => {
       <div style={{ position: "absolute", top: 148, left: 0, right: 0, bottom: 80, overflow: "auto", scrollbarWidth: "none", padding: "10px 14px 24px" }}>
         {tab === "daily" && (
           <>
-            <div data-coach="missions-daily" style={{ background: "linear-gradient(180deg, rgba(255,201,49,.14), rgba(255,201,49,.04))", border: "1px solid rgba(255,201,49,.25)", borderRadius: 14, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+            <div data-coach="missions-daily" style={{ background: "linear-gradient(180deg, rgba(255,210,77,.14), rgba(255,210,77,.04))", border: "1px solid rgba(255,210,77,.25)", borderRadius: 14, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
               <AssetWell size={76} accent="var(--maple-500)" radius={16}>
                 <PixelImg src={ASSETS.trophy} size={62} alt="" />
               </AssetWell>

@@ -11,15 +11,15 @@
 }
 
 .waffles-v2 {
-  --maple-500: #FFC931;
-  --maple-400: #F5BB1B;
-  --maple-300: #ffe07a;
-  --maple-200: rgba(255, 201, 49, 0.15);
-  --maple-100: rgba(255, 201, 49, 0.08);
+  --maple-500: #FFD24D;
+  --maple-400: #F5A91B;
+  --maple-300: #FFE08A;
+  --maple-200: rgba(255, 210, 77, 0.15);
+  --maple-100: rgba(255, 210, 77, 0.08);
 
-  --butter-500: #FFC931;
-  --butter-400: #F5BB1B;
-  --butter-300: #ffe07a;
+  --butter-500: #FFD24D;
+  --butter-400: #F5A91B;
+  --butter-300: #FFE08A;
 
   --berry: #FB72FF;
   --leaf: #FF9F1C;
@@ -238,7 +238,7 @@
    nothing else competing for attention. Quiet enough not to nag. */
 @keyframes waffles-v2-cta-invite {
   0%, 70%, 100% { box-shadow: 0 4px 0 var(--frame); }
-  85% { box-shadow: 0 4px 0 var(--frame), 0 0 0 6px rgba(255, 201, 49, 0.2); }
+  85% { box-shadow: 0 4px 0 var(--frame), 0 0 0 6px rgba(255, 210, 77, 0.2); }
 }
 /* Cloud drift: slow horizontal sway with a tiny vertical bob so the clouds
    over locked levels feel alive rather than stamped on. The keyframe uses
@@ -294,8 +294,8 @@
    the eye lands on it. The huge box-shadow (the dimmer) is held constant; only
    the maple ring + glow pulse. */
 @keyframes waffles-v2-coach-ring {
-  0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,.72), 0 0 0 2px var(--maple-500), 0 0 22px rgba(255,201,49,.35); }
-  50%      { box-shadow: 0 0 0 9999px rgba(0,0,0,.72), 0 0 0 3px var(--maple-500), 0 0 30px rgba(255,201,49,.6); }
+  0%, 100% { box-shadow: 0 0 0 9999px rgba(0,0,0,.72), 0 0 0 2px var(--maple-500), 0 0 22px rgba(255,210,77,.35); }
+  50%      { box-shadow: 0 0 0 9999px rgba(0,0,0,.72), 0 0 0 3px var(--maple-500), 0 0 30px rgba(255,210,77,.6); }
 }
 /* ── Level-up celebration sequence ──────────────────────────────────────
    A staged reveal: the screen flashes gold, a shockwave + rotating light
@@ -373,8 +373,8 @@
    finds it after the rows settle in. Border is held by inline style; only the
    outer glow pulses here. */
 @keyframes waffles-v2-row-glow {
-  0%, 100% { box-shadow: 0 0 0 rgba(255,201,49,0); }
-  50%      { box-shadow: 0 0 18px rgba(255,201,49,.38); }
+  0%, 100% { box-shadow: 0 0 0 rgba(255,210,77,0); }
+  50%      { box-shadow: 0 0 18px rgba(255,210,77,.38); }
 }
 
 /* ── Game loader ─────────────────────────────────────────────────────────
@@ -566,7 +566,7 @@
   font-size: 11px; font-weight: 800;
   color: rgba(255, 255, 255, 0.7);
 }
-.waffles-v2 .tab.active { color: #FFC931; }
+.waffles-v2 .tab.active { color: #FFD24D; }
 .waffles-v2 .tab svg { width: 22px; height: 22px; }
 
 .waffles-v2 .card {
@@ -727,7 +727,7 @@
   left: -40px;
   right: -40px;
   height: 280px;
-  background: radial-gradient(ellipse at center top, rgba(255, 201, 49, 0.15), transparent 60%);
+  background: radial-gradient(ellipse at center top, rgba(255, 210, 77, 0.15), transparent 60%);
   pointer-events: none;
 }
 

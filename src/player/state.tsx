@@ -40,6 +40,7 @@ import {
 } from "@/player/api";
 import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
 import { type Announcement } from "./announcements";
+import { soundManager } from "./sound";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
 import { useUser } from "@/hooks/useUser";
 import { assertChainPlatform } from "@/lib/chain/platform";
@@ -477,6 +478,10 @@ type State = {
   // The live announcement feed (authored DB rows + per-user triggered cards),
   // fetched from the server. Empty until that load resolves.
   announcements: Announcement[];
+  // A just-pushed announcement (PartyKit realtime delivery), surfaced as a
+  // transient global toast so it's seen immediately on any screen — not only the
+  // Home banner/inbox. Auto-clears; set only on live delivery, never on load.
+  announcementToast: Announcement | null;
   // The player's chosen handle (set in onboarding). Empty until set; persisted
   // to localStorage and hydrated post-mount.
   username: string;
@@ -557,6 +562,7 @@ const initialState = (tweaks: Tweaks): State => ({
   earnedBadges: [],
   // Empty until the DB feed loads (loadAnnouncements) — fully server-driven.
   announcements: [],
+  announcementToast: null,
   username: "",
   avatarId: null,
   levelJustUnlocked: null,
@@ -779,6 +785,14 @@ export function ProtoProvider({
     return () => clearTimeout(t);
   }, [state.toast, update]);
 
+  // Auto-dismiss the pushed-announcement toast (longer than the plain toast so
+  // there's time to read the title + tap the CTA).
+  useEffect(() => {
+    if (!state.announcementToast) return;
+    const t = setTimeout(() => update({ announcementToast: null }), 6500);
+    return () => clearTimeout(t);
+  }, [state.announcementToast, update]);
+
   // Fetch the live announcement feed (authored DB rows + per-user triggered
   // cards). Runs on mount for authored content and refetches once a session
   // lands so triggered cards (e.g. unclaimed prize) appear. The DB is the sole
@@ -811,8 +825,13 @@ export function ProtoProvider({
       }
 
       if (message.type === "announcement.delivered") {
+        // Merge into the persistent feed (Home banner + inbox) AND raise a
+        // transient toast so the player sees the push immediately, whatever
+        // screen they're on. This branch only runs on live delivery, so the
+        // toast never fires for the initial feed load.
         update((s) => ({
           announcements: mergeAnnouncement(s.announcements, message.announcement),
+          announcementToast: message.announcement,
         }));
         return;
       }
@@ -820,6 +839,7 @@ export function ProtoProvider({
       if (message.type === "announcement.removed") {
         update((s) => ({
           announcements: s.announcements.filter((announcement) => announcement.id !== message.id),
+          announcementToast: s.announcementToast?.id === message.id ? null : s.announcementToast,
         }));
       }
     };
@@ -937,6 +957,18 @@ export function ProtoProvider({
     const t = setTimeout(() => update({ timer: state.timer - 0.1 }), 100);
     return () => clearTimeout(t);
   }, [state.screen, state.timer, state.qAnswered, state.roundQuestions, state.qIdx, state.score, update, track]);
+
+  // Background music: loop the game track during active play (lobby + question),
+  // silent everywhere else. Both calls are no-ops while muted, and the track
+  // resumes after the first gesture if the browser blocked autoplay. Without
+  // this, gameplay had no ambient music at all.
+  useEffect(() => {
+    if (state.screen === "lobby" || state.screen === "question") {
+      soundManager.playBgMusic();
+    } else {
+      soundManager.stopBgMusic();
+    }
+  }, [state.screen]);
 
   // While not full, reconcile regenerated lives every second so the meter fills
   // and the "next life" countdown stays live. No interval when full.

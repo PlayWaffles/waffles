@@ -31,10 +31,10 @@ export const MigrationTakeover = ({ onClose }: { onClose: () => void }) => {
         animation: "waffles-v2-onb-in 0.35s var(--ease-out-quart)",
       }}
     >
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.26), transparent 65%)", pointerEvents: "none" }} />
+      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.26), transparent 65%)", pointerEvents: "none" }} />
 
       <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", padding: "28px 24px 8px", position: "relative", zIndex: 1 }}>
-        <PixelImg src={ASSETS.trophy} size={92} alt="" style={{ filter: "drop-shadow(0 0 26px rgba(255,201,49,.5))", marginBottom: 6 }} />
+        <PixelImg src={ASSETS.trophy} size={92} alt="" style={{ filter: "drop-shadow(0 0 26px rgba(255,210,77,.5))", marginBottom: 6 }} />
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 2.5, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 8 }}>What&apos;s new</div>
         <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, lineHeight: 1.05, color: "#fff", marginBottom: 18 }}>
           Waffles got a glow-up 🧇

@@ -136,7 +136,7 @@ const TournamentUpsellSheet = ({
             shows for all — copy is personalized: genuine first-timers get the
             "first tournament" welcome, returning players the World Cup framing. */}
         {fee && (
-          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,201,49,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, background: "rgba(255,210,77,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 12 }}>
             <div style={{ position: "relative", flexShrink: 0 }}>
               <PixelImg src={ASSETS.trophy} size={28} alt="" />
               <div style={{ position: "absolute", top: -10, right: -16, background: "var(--live-red)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 9, padding: "2px 6px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>-50%</div>
@@ -168,7 +168,7 @@ const TournamentUpsellSheet = ({
         )}
 
         {needsTopUp && !entryError && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "rgba(255,201,49,.10)", border: "1px solid rgba(255,201,49,.3)", borderRadius: 12, padding: "9px 12px", marginBottom: 10, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 7, background: "rgba(255,210,77,.10)", border: "1px solid rgba(255,210,77,.3)", borderRadius: 12, padding: "9px 12px", marginBottom: 10, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
             <TicketIcon size={14} /> Not enough USDT — add cash and you&apos;re in.
           </div>
         )}
@@ -242,31 +242,31 @@ export const LevelWinScreen = () => {
     <Phone statusDark>
       <div className="bg-deep" />
       {/* Opening gold flash — quick wash that punctuates the moment of victory. */}
-      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.9), transparent 70%)", zIndex: 60, pointerEvents: "none", animation: "waffles-v2-lvl-flash .7s ease-out forwards" }} />
+      <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.9), transparent 70%)", zIndex: 60, pointerEvents: "none", animation: "waffles-v2-lvl-flash .7s ease-out forwards" }} />
       <Confetti pieces={48} />
-      <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 380, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.3), transparent 60%)" }} />
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.6 }} />
+      <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 380, background: "radial-gradient(ellipse at center top, rgba(255,210,77,.3), transparent 60%)" }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, backgroundImage: "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.6 }} />
 
       {/* Rotating sunburst + one-shot shockwave bloom behind the trophy. */}
       <div aria-hidden style={{ position: "absolute", top: 150, left: "50%", transform: "translateX(-50%)", width: 280, height: 280, pointerEvents: "none" }}>
-        <div style={{ position: "absolute", inset: 0, animation: "waffles-v2-lvl-rays-in .5s ease-out .15s both, waffles-v2-lvl-rays-spin 18s linear .15s infinite", background: "repeating-conic-gradient(from 0deg, rgba(255,201,49,.22) 0deg 7deg, transparent 7deg 22deg)", borderRadius: "50%", WebkitMaskImage: "radial-gradient(circle, transparent 24%, #000 38%, #000 60%, transparent 75%)", maskImage: "radial-gradient(circle, transparent 24%, #000 38%, #000 60%, transparent 75%)" }} />
-        <div style={{ position: "absolute", top: "50%", left: "50%", width: 120, height: 120, borderRadius: "50%", border: "2px solid rgba(255,201,49,.6)", animation: "waffles-v2-lvl-shock .7s cubic-bezier(0.22,1,0.36,1) .15s forwards" }} />
+        <div style={{ position: "absolute", inset: 0, animation: "waffles-v2-lvl-rays-in .5s ease-out .15s both, waffles-v2-lvl-rays-spin 18s linear .15s infinite", background: "repeating-conic-gradient(from 0deg, rgba(255,210,77,.22) 0deg 7deg, transparent 7deg 22deg)", borderRadius: "50%", WebkitMaskImage: "radial-gradient(circle, transparent 24%, #000 38%, #000 60%, transparent 75%)", maskImage: "radial-gradient(circle, transparent 24%, #000 38%, #000 60%, transparent 75%)" }} />
+        <div style={{ position: "absolute", top: "50%", left: "50%", width: 120, height: 120, borderRadius: "50%", border: "2px solid rgba(255,210,77,.6)", animation: "waffles-v2-lvl-shock .7s cubic-bezier(0.22,1,0.36,1) .15s forwards" }} />
       </div>
 
       <div style={{ position: "absolute", top: 80, left: 0, right: 0, textAlign: "center", color: "#fff" }}>
         <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: 3, color: "rgba(255,255,255,.5)", animation: "waffles-v2-lvl-rise .4s ease-out both" }}>LEVEL CLEARED</div>
         <div style={{ marginTop: 14, display: "flex", justifyContent: "center", animation: "waffles-v2-lvl-trophy-in .65s cubic-bezier(0.34,1.56,0.64,1) .15s both" }}>
-          <div style={{ filter: "drop-shadow(0 0 28px rgba(255,201,49,.5))", animation: "waffles-v2-lvl-trophy-float 3.2s ease-in-out .9s infinite" }}>
+          <div style={{ filter: "drop-shadow(0 0 28px rgba(255,210,77,.5))", animation: "waffles-v2-lvl-trophy-float 3.2s ease-in-out .9s infinite" }}>
             <PixelImg src={ASSETS.trophy} size={92} alt="trophy" />
           </div>
         </div>
-        <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 38, marginTop: 8, color: "#FFC931", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .5s both", textShadow: "0 0 24px rgba(255,201,49,.45)" }}>LEVEL UP!</div>
+        <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 38, marginTop: 8, color: "#FFD24D", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .5s both", textShadow: "0 0 24px rgba(255,210,77,.45)" }}>LEVEL UP!</div>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", marginTop: 2, display: "inline-flex", alignItems: "baseline", justifyContent: "center", gap: 8, perspective: 500 }}>
           <span style={{ animation: "waffles-v2-lvl-rise .4s ease-out .6s both" }}>Level {justCompleted}</span>
           <span style={{ color: "rgba(255,255,255,.5)", animation: "waffles-v2-lvl-rise .4s ease-out .68s both" }}>→</span>
-          <span style={{ position: "relative", display: "inline-block", color: "#FFC931", fontWeight: 800, transformOrigin: "center bottom", animation: "waffles-v2-lvl-num-flip .55s cubic-bezier(0.34,1.56,0.64,1) .76s both" }}>
+          <span style={{ position: "relative", display: "inline-block", color: "#FFD24D", fontWeight: 800, transformOrigin: "center bottom", animation: "waffles-v2-lvl-num-flip .55s cubic-bezier(0.34,1.56,0.64,1) .76s both" }}>
             {/* one-shot glow that blooms behind the new number as it flips in */}
-            <span aria-hidden style={{ position: "absolute", inset: "-8px -10px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,201,49,.6), transparent 70%)", zIndex: -1, animation: "waffles-v2-lvl-num-glow .7s ease-out .76s both" }} />
+            <span aria-hidden style={{ position: "absolute", inset: "-8px -10px", borderRadius: "50%", background: "radial-gradient(circle, rgba(255,210,77,.6), transparent 70%)", zIndex: -1, animation: "waffles-v2-lvl-num-glow .7s ease-out .76s both" }} />
             {next}
           </span>
         </div>
@@ -274,7 +274,7 @@ export const LevelWinScreen = () => {
 
       <div style={{ position: "absolute", top: 330, left: 18, right: 18, display: "flex", gap: 10 }}>
         <div style={{ flex: 1, background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "14px 8px", textAlign: "center", animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) .95s both" }}>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#FFC931", lineHeight: 1 }}>+{score}</div>
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#FFD24D", lineHeight: 1 }}>+{score}</div>
           <div style={{ fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.5)", marginTop: 4, letterSpacing: 0.6 }}>XP EARNED</div>
         </div>
         <div style={{ flex: 1, background: "#0F0F10", border: "1px solid rgba(255,255,255,.06)", borderRadius: 14, padding: "14px 8px", textAlign: "center", animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) 1.05s both" }}>
@@ -307,7 +307,7 @@ export const LevelWinScreen = () => {
                   <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{info.toGo} level{info.toGo === 1 ? "" : "s"} to go</div>
                 </div>
                 <div style={{ height: 6, width: 60, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
-                  <div style={{ width: `${info.pct}%`, height: "100%", background: "#FFC931", borderRadius: 99 }} />
+                  <div style={{ width: `${info.pct}%`, height: "100%", background: "#FFD24D", borderRadius: 99 }} />
                 </div>
               </>
             )}

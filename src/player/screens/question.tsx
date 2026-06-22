@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
@@ -17,9 +17,11 @@ const POWERUP_DEFS: { kind: PowerUpName; label: string; icon: string }[] = [
   { kind: "SHIELD", label: "Shield", icon: ASSETS.powerupShield },
 ];
 
-// "People answering" social-presence strip (tournament only). REAL data only:
-// the avatar row + count come from actual round entrants in the DB — no
-// simulated trickle. Mounted with key={questionIdx} so each question starts fresh.
+// "People answering" social-presence strip (tournament only). Avatars + the
+// field-size cap come from real DB entrants; the live trickle (faces popping in
+// one-by-one, count climbing) is paced client-side, since the round is async
+// with no real-time answer feed. Mounted with key={questionIdx} so each question
+// starts fresh.
 const LIVE_AVATARS = [
   ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda,
   ASSETS.avatarOwl, ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit,
@@ -30,7 +32,9 @@ const avatarFor = (name: string) =>
 
 function LiveAnswerers() {
   const [people, setPeople] = useState<{ id: number; av: string }[]>([]);
-  const [count, setCount] = useState(0);
+  const [fieldSize, setFieldSize] = useState(0);
+  const [shown, setShown] = useState(0);
+  const [answered, setAnswered] = useState(0);
 
   // Real DB participants only — actual entrants of the current live tournament.
   useEffect(() => {
@@ -39,7 +43,7 @@ function LiveAnswerers() {
       .then((b) => {
         if (!active || !b) return;
         setPeople(b.standings.slice(0, 5).map((s, i) => ({ id: i + 1, av: avatarFor(s.name) })));
-        setCount(b.fieldSize);
+        setFieldSize(b.fieldSize);
       })
       .catch(() => {});
     return () => {
@@ -47,22 +51,37 @@ function LiveAnswerers() {
     };
   }, []);
 
+  // Live trickle: answerers arrive one-by-one as the question runs — each tick
+  // pops a new face into the stack and climbs the count toward the field size.
+  // The round is async (no real-time answer feed), so the cadence is paced
+  // client-side over the real participants / real field size.
+  useEffect(() => {
+    if (fieldSize === 0) return;
+    const id = setInterval(() => {
+      setShown((s) => Math.min(s + 1, 5));
+      setAnswered((a) => Math.min(a + 1 + Math.floor(Math.random() * 2), fieldSize));
+    }, 1400);
+    return () => clearInterval(id);
+  }, [fieldSize]);
+
+  const visible = people.slice(0, shown);
+
   // Compact top pill — sits above the timer where the answer-result banner (which
   // owns the bottom) can never cover it, so it stays live before AND after you
-  // answer. Avatars overlap into a stack; the count climbs in real time.
+  // answer. New faces pop into the stack one-by-one; the count climbs.
   return (
     <div style={{ position: "absolute", top: 102, left: 0, right: 0, display: "flex", justifyContent: "center", pointerEvents: "none", zIndex: 5 }}>
       <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,0,0,.55)", border: "1px solid rgba(255,255,255,.1)", borderRadius: 99, padding: "4px 12px 4px 6px", backdropFilter: "blur(2px)" }}>
         <div style={{ display: "flex", alignItems: "center" }}>
-          {people.map((p, i) => (
-            <div key={p.id} style={{ width: 26, height: 26, borderRadius: 99, marginLeft: i === 0 ? 0 : -9, overflow: "hidden", border: "2px solid var(--frame)", background: "linear-gradient(135deg, var(--maple-500), #FF6B35)", animation: "waffles-v2-pfp-in .42s cubic-bezier(0.34,1.56,0.64,1) both", zIndex: people.length - i }}>
+          {visible.map((p, i) => (
+            <div key={p.id} style={{ width: 26, height: 26, borderRadius: 99, marginLeft: i === 0 ? 0 : -9, overflow: "hidden", border: "2px solid var(--frame)", background: "linear-gradient(135deg, var(--maple-500), #FF6B35)", animation: "waffles-v2-pfp-in .42s cubic-bezier(0.34,1.56,0.64,1) both", zIndex: visible.length - i }}>
               <img src={p.av} alt="" width={26} height={26} style={{ width: "100%", height: "100%", objectFit: "cover", imageRendering: "pixelated", display: "block" }} />
             </div>
           ))}
         </div>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.3, color: "#fff", whiteSpace: "nowrap" }}>
           <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(255,159,28,.25)" }} />
-          {count.toLocaleString()} answered
+          {answered.toLocaleString()} answered
         </span>
       </div>
     </div>
@@ -122,6 +141,25 @@ export const QuestionScreen = () => {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLevel, q?.id, idx]);
+
+  // Timer SFX — the shared countdown lives in state.tsx; here we voice it. The
+  // tense final-seconds tick fires once when the clock crosses into the last 3s
+  // (still unanswered), and the time-up sting fires on a timeout. Refs gate each
+  // to once per question so the 10Hz tick can't retrigger them.
+  const finalTickQRef = useRef<number | null>(null);
+  const timeUpQRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (answered == null && timeLeft > 0 && timeLeft <= 3 && finalTickQRef.current !== idx) {
+      finalTickQRef.current = idx;
+      playSound("timerFinal");
+    }
+  }, [answered, timeLeft, idx]);
+  useEffect(() => {
+    if (answered === -1 && timeUpQRef.current !== idx) {
+      timeUpQRef.current = idx;
+      playSound("timeUp");
+    }
+  }, [answered, idx]);
 
   const isMulti = q.kind === "multi";
   const isOrder = q.kind === "order";
@@ -207,7 +245,7 @@ export const QuestionScreen = () => {
         </button>
         <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.08)", display: "flex", border: "1px solid rgba(255,255,255,.05)" }}>
           {dots.map((on, i) => (
-            <div key={i} style={{ flex: 1, margin: "0 1px", background: on ? "#FFC931" : "transparent", borderRadius: 99, transition: "background .3s" }} />
+            <div key={i} style={{ flex: 1, margin: "0 1px", background: on ? "#FFD24D" : "transparent", borderRadius: 99, transition: "background .3s" }} />
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#fff", fontWeight: 800, fontSize: 13 }}>
@@ -245,7 +283,7 @@ export const QuestionScreen = () => {
       <div style={{ position: "absolute", top: 142, left: "50%", transform: "translateX(-50%)", width: 96, height: 96 }}>
         <svg width="96" height="96" viewBox="0 0 96 96">
           <circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,.08)" strokeWidth="8" fill="none" />
-          <circle cx="48" cy="48" r="42" stroke={timeLeft < 3 ? "#FC1919" : "#FFC931"} strokeWidth="8" fill="none" strokeDasharray={ringDash} strokeDashoffset={ringOffset} strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: "stroke-dashoffset .1s linear, stroke .3s" }} />
+          <circle cx="48" cy="48" r="42" stroke={timeLeft < 3 ? "#FC1919" : "#FFD24D"} strokeWidth="8" fill="none" strokeDasharray={ringDash} strokeDashoffset={ringOffset} strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: "stroke-dashoffset .1s linear, stroke .3s" }} />
         </svg>
         <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color: timeLeft < 3 ? "#FC1919" : "#fff", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{Math.max(0, timeLeft).toFixed(1)}</div>

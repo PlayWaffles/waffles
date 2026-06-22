@@ -5,6 +5,7 @@ import { ProtoProvider, useProto, type ScreenName } from "./state";
 import { THEMES, ThemeProvider, resolveThemeId, type ThemeId } from "./theme";
 import { CoachmarkProvider, TOURS, useCoachTour } from "./coachmarks";
 import { BadgeUnlockWatcher } from "./badge-unlock";
+import { AnnouncementToast } from "./announcements";
 import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
 import { WorldCupTakeover } from "./screens/world-cup-takeover";
@@ -293,6 +294,8 @@ const Stage = () => {
       )}
       {/* Global: celebrates any newly-earned badge wherever the player is. */}
       <BadgeUnlockWatcher />
+      {/* Global: a pushed announcement (PartyKit) slides in on any screen. */}
+      <AnnouncementToast />
       {/* Global transient toast (e.g. a level whose server questions couldn't load). */}
       {proto.toast && (
         <div
@@ -335,7 +338,7 @@ export default function Page() {
     // Easter egg for developers poking around in DevTools.
     if (typeof window !== "undefined" && !(window as unknown as { __wafflesGreeted?: boolean }).__wafflesGreeted) {
       (window as unknown as { __wafflesGreeted: boolean }).__wafflesGreeted = true;
-      const big = "color:#FFC931;font-family:Archivo Black,sans-serif;font-size:22px;text-shadow:0 2px 0 #1e1e1e;padding:6px 0;";
+      const big = "color:#FFD24D;font-family:Archivo Black,sans-serif;font-size:22px;text-shadow:0 2px 0 #1e1e1e;padding:6px 0;";
       const small = "color:#888;font-size:11px;font-family:ui-monospace,monospace;";
       console.log("%c🧇 Waffles", big);
       console.log("%cReal-time multiplayer trivia. Built with care on Celo.", small);
