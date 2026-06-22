@@ -495,9 +495,8 @@ export const HomeScreen = () => {
 
   return (
     <Phone statusDark>
-      <div className="bg-deep" />
-      {/* Tilted oversized waffle wordmark watermark — replaces the generic radial glow on this screen. */}
-      <div aria-hidden="true" style={{ position: "absolute", top: 26, left: -10, right: -10, fontFamily: "var(--font-display)", fontSize: 110, color: "var(--maple-500)", opacity: 0.04, letterSpacing: 4, transform: "rotate(-6deg)", textAlign: "center", pointerEvents: "none", whiteSpace: "nowrap" }}>WAFFLES</div>
+      {/* v1's speckled backdrop (noise grain over a dark gradient). */}
+      <div className="bg-speckle" />
 
       <TopHeader tickets={tickets} title="WAFFLES" />
 
@@ -510,12 +509,13 @@ export const HomeScreen = () => {
         </div>
       </div>
 
-      <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 140, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
+      <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 84, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ padding: "0 18px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
         {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} />}
         <div
           role="button"
           tabIndex={0}
+          data-coach="home-join"
           aria-label={entered ? (canResume ? "Play your tournament round" : "View your tournament standing") : `Join the Top of the Hour tournament — costs ${TOURNAMENT_TICKET_COST} ticket`}
           onClick={onCardTap}
           onKeyDown={(e) => {
@@ -638,18 +638,6 @@ export const HomeScreen = () => {
         </div>
       </div>
 
-      <div className="cta-row sticky">
-        <button className="cta" data-coach="home-join" onClick={openJoin} style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8 }}>
-          {entered ? (
-            canResume ? "PLAY YOUR ROUND" : "VIEW YOUR STANDING"
-          ) : (
-            <>
-              JOIN NEXT TOURNAMENT
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 3, opacity: 0.85 }}><TicketIcon size={15} color="currentColor" />{TOURNAMENT_TICKET_COST}</span>
-            </>
-          )}
-        </button>
-      </div>
       <div className="bottom-bar">
         <TabBar active="home" />
       </div>

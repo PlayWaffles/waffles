@@ -688,6 +688,13 @@
   background: linear-gradient(180deg, var(--frame) 0%, var(--surface-deep) 100%);
 }
 
+/* v1's speckled backdrop — fractal-noise grain over a dark gradient. */
+.waffles-v2 .bg-speckle {
+  position: absolute;
+  inset: 0;
+  background: url("/noise.svg"), linear-gradient(180deg, #1e1e1e 0%, #000000 100%);
+}
+
 /* Header glow — used on home/levels/question/results. Use sparingly. */
 .waffles-v2 .glow-top {
   position: absolute;
