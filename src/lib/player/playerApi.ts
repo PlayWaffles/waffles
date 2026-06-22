@@ -12,7 +12,7 @@ import { getCurrentUser } from "@/lib/auth";
 import * as playerSvc from "@/lib/player/playerState";
 import type { PlayerState, Track } from "@/lib/player/playerState";
 import { getLevelClientQuestions, recordLevelQuestionStats, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
-import { topWinnerShare } from "@/lib/game/prizeDistribution";
+import { topWinnerShare, winnersForField } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
 import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentEntrySource, TournamentGame } from "@/lib/player/tournamentGames";
 import * as migrationSvc from "@/lib/player/migrationNotice";
@@ -24,6 +24,8 @@ import { PowerUpKind } from "@prisma";
 import * as missionsSvc from "@/lib/player/missions";
 import * as announcementsSvc from "@/lib/player/announcements";
 import type { PlayerAnnouncement } from "@/lib/player/announcements";
+import { userAnnouncementsRoom } from "@/lib/realtime/announcementMessages";
+import crypto from "node:crypto";
 import type { Mission, ClaimMissionResult } from "@/lib/player/missions";
 import * as leaguesSvc from "@/lib/player/leagues";
 import type { League } from "@/lib/player/leagues";
@@ -165,6 +167,9 @@ export type TournamentRound = {
   playerCount: number;
   prizePoolUsdc: number;
   topPrizeUsdc: number;
+  /** Finishers paid for the current field — the live bracket's winner count
+   *  (1 = winner-takes-all). Drives the "Top N split the pool" copy. */
+  winnerCount: number;
   todayEntryCount: number;
   todayPlayerCount: number;
   todayPrizePoolUsdc: number;
@@ -220,6 +225,7 @@ export async function getTournament(): Promise<
       playerCount: game.playerCount,
       prizePoolUsdc: game.prizePool,
       topPrizeUsdc: game.prizePool * topWinnerShare(game.playerCount),
+      winnerCount: winnersForField(game.playerCount),
       todayEntryCount: game.todayEntryCount,
       todayPlayerCount: game.todayPlayerCount,
       todayPrizePoolUsdc: game.todayPrizePool,
@@ -389,6 +395,39 @@ export async function setAnnouncementsRead(ids: string[]): Promise<void> {
 export async function loadAnnouncements(): Promise<PlayerAnnouncement[]> {
   const user = await getCurrentUser();
   return announcementsSvc.loadAnnouncements(user?.id ?? null);
+}
+
+function signRealtimeToken(userId: string) {
+  const secret = process.env.PARTYKIT_SECRET?.trim();
+  if (!secret) {
+    throw new Error("Missing PARTYKIT_SECRET for realtime announcement authentication.");
+  }
+  const payload = Buffer.from(
+    JSON.stringify({
+      sub: userId,
+      exp: Math.floor(Date.now() / 1000) + 10 * 60,
+    }),
+  ).toString("base64url");
+  const signature = crypto.createHmac("sha256", secret).update(payload).digest("base64url");
+  return `${payload}.${signature}`;
+}
+
+export async function getAnnouncementRealtimeToken(): Promise<{
+  host: string;
+  room: string;
+  token: string;
+} | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  const host = process.env.NEXT_PUBLIC_PARTYKIT_HOST ?? process.env.PARTYKIT_HOST;
+  if (!host?.trim()) {
+    throw new Error("Missing NEXT_PUBLIC_PARTYKIT_HOST or PARTYKIT_HOST for realtime announcements.");
+  }
+  return {
+    host: host.trim(),
+    room: userAnnouncementsRoom(user.id),
+    token: signRealtimeToken(user.id),
+  };
 }
 
 /** One-time v2-migration welcome modal: whether to show it (migrated + not yet

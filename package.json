@@ -11,7 +11,9 @@
     "duffel:check-nigeria-airlines": "node --import tsx scripts/check-duffel-nigeria-airlines.ts",
     "cloudinary:fetch": "node --import tsx scripts/fetch-cloudinary-images.ts",
     "celo:one-off-claim-game": "node --import tsx scripts/create-celo-one-off-claim-game.ts",
-    "base:one-off-claim-game": "ONE_OFF_PLATFORM=FARCASTER ONE_OFF_NETWORK=BASE_MAINNET ONE_OFF_CLAIM_AMOUNT=31.36 ONE_OFF_START_LIVE=true node --import tsx scripts/create-celo-one-off-claim-game.ts"
+    "base:one-off-claim-game": "ONE_OFF_PLATFORM=FARCASTER ONE_OFF_NETWORK=BASE_MAINNET ONE_OFF_CLAIM_AMOUNT=31.36 ONE_OFF_START_LIVE=true node --import tsx scripts/create-celo-one-off-claim-game.ts",
+    "partykit:dev": "partykit dev",
+    "partykit:deploy": "partykit deploy"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^1.1.2",
@@ -41,6 +43,7 @@
     "next": "16.2.9",
     "node-cron": "^4.2.1",
     "papaparse": "^5.5.3",
+    "partysocket": "^1.2.0",
     "postcss": "^8.5.6",
     "react": "19.2.3",
     "react-dom": "19.2.3",
@@ -63,6 +66,7 @@
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
     "eslint-config-next": "16.2.9",
+    "partykit": "^0.0.115",
     "pg": "^8.17.1",
     "prisma": "7.2.0",
     "tsx": "^4.21.0",

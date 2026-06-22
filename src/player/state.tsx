@@ -9,6 +9,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import PartySocket from "partysocket";
 import { type VMedia } from "./world-cup/data";
 import { THEMES, resolveThemeId } from "./theme";
 import {
@@ -31,6 +32,7 @@ import {
   refillLives as refillLivesAction,
   setAnnouncementsRead,
   loadAnnouncements,
+  getAnnouncementRealtimeToken,
   loadResults,
   setUsername as setUsernameAction,
   logClient,
@@ -47,6 +49,10 @@ import {
   trackClientEvent,
   type AnalyticsProperties,
 } from "@/lib/analytics";
+import {
+  ANNOUNCEMENTS_ROOM,
+  type AnnouncementRealtimeMessage,
+} from "@/lib/realtime/announcementMessages";
 
 // Forward the buy-ticket flow trace to the SERVER terminal (these run in the
 // browser). Errors are flattened since Error objects don't cross the RSC wire.
@@ -57,6 +63,15 @@ const blog = (msg: string, data?: unknown) => {
       : data;
   void logClient(msg, safe);
 };
+
+function normalizePartyHost(host: string) {
+  return host.trim().replace(/^https?:\/\//, "").replace(/\/$/, "");
+}
+
+function mergeAnnouncement(list: Announcement[], announcement: Announcement) {
+  const withoutExisting = list.filter((item) => item.id !== announcement.id);
+  return [announcement, ...withoutExisting].sort((a, b) => b.priority - a.priority);
+}
 
 export type ScreenName =
   | "home"
@@ -783,6 +798,65 @@ export function ProtoProvider({
       .catch(() => {});
     return () => {
       active = false;
+    };
+  }, [authedUserId, update]);
+
+  useEffect(() => {
+    const configuredHost = process.env.NEXT_PUBLIC_PARTYKIT_HOST;
+    if (!configuredHost) return;
+
+    const host = normalizePartyHost(configuredHost);
+    const sockets: PartySocket[] = [];
+
+    const onMessage = (event: MessageEvent<string>) => {
+      let message: AnnouncementRealtimeMessage;
+      try {
+        message = JSON.parse(event.data) as AnnouncementRealtimeMessage;
+      } catch {
+        return;
+      }
+
+      if (message.type === "announcement.delivered") {
+        update((s) => ({
+          announcements: mergeAnnouncement(s.announcements, message.announcement),
+        }));
+        return;
+      }
+
+      if (message.type === "announcement.removed") {
+        update((s) => ({
+          announcements: s.announcements.filter((announcement) => announcement.id !== message.id),
+        }));
+      }
+    };
+
+    const globalSocket = new PartySocket({
+      host,
+      room: ANNOUNCEMENTS_ROOM,
+      party: "main",
+    });
+    globalSocket.addEventListener("message", onMessage);
+    sockets.push(globalSocket);
+
+    if (authedUserId) {
+      const userSocket = new PartySocket({
+        host,
+        room: `user:${authedUserId}`,
+        party: "main",
+        query: async () => {
+          const auth = await getAnnouncementRealtimeToken();
+          return auth ? { token: auth.token } : {};
+        },
+      });
+      userSocket.addEventListener("message", onMessage);
+      sockets.push(userSocket);
+    }
+
+    return () => {
+      for (const socket of sockets) {
+        socket.removeEventListener("message", onMessage);
+        socket.close();
+      }
     };
   }, [authedUserId, update]);
 

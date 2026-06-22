@@ -225,6 +225,14 @@ export function loadAnnouncements(): Promise<PlayerAnnouncement[]> {
   return callPlayerApi("loadAnnouncements");
 }
 
+export function getAnnouncementRealtimeToken(): Promise<{
+  host: string;
+  room: string;
+  token: string;
+} | null> {
+  return callPlayerApi("getAnnouncementRealtimeToken");
+}
+
 export function getMigrationNotice(): Promise<{ show: boolean }> {
   return callPlayerApi("getMigrationNotice");
 }

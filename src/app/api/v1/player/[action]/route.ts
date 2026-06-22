@@ -37,6 +37,7 @@ const handlers = {
   adjustTickets: playerApi.adjustTickets,
   setAnnouncementsRead: playerApi.setAnnouncementsRead,
   loadAnnouncements: playerApi.loadAnnouncements,
+  getAnnouncementRealtimeToken: playerApi.getAnnouncementRealtimeToken,
   getMigrationNotice: playerApi.getMigrationNotice,
   dismissMigrationNotice: playerApi.dismissMigrationNotice,
   getWorldCupTakeover: playerApi.getWorldCupTakeover,

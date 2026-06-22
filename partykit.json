@@ -1,0 +1,4 @@
+{
+  "name": "waffles-party",
+  "main": "src/party/announcements.ts"
+}

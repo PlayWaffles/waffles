@@ -55,7 +55,7 @@ function parseCta(
   return undefined;
 }
 
-type DbAnnouncement = {
+export type DbAnnouncement = {
   id: string;
   title: string;
   body: string;
@@ -69,7 +69,7 @@ type DbAnnouncement = {
   createdAt: Date;
 };
 
-function mapDbAnnouncement(row: DbAnnouncement): PlayerAnnouncement {
+export function mapDbAnnouncement(row: DbAnnouncement): PlayerAnnouncement {
   return {
     id: row.id,
     priority: row.sortOrder,

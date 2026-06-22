@@ -5,6 +5,8 @@ import { requireAdminSession } from "@/lib/admin-auth";
 import { logAdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
+import { mapDbAnnouncement } from "@/lib/player/announcements";
+import { deliverGlobalAnnouncement, removeGlobalAnnouncement } from "@/lib/realtime/announcementDelivery";
 
 export type AnnouncementResult =
   | { success: true; id: string }
@@ -37,6 +39,11 @@ function parseDate(value: string | undefined): Date | null {
   if (!value) return null;
   const d = new Date(value);
   return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function isLiveAnnouncement(row: { startsAt: Date | null; endsAt: Date | null }) {
+  const now = Date.now();
+  return (!row.startsAt || row.startsAt.getTime() <= now) && (!row.endsAt || row.endsAt.getTime() >= now);
 }
 
 /** Create an authored in-app announcement (shown in the player banner/inbox). */
@@ -80,7 +87,19 @@ export async function createAnnouncementAction(
         endsAt: parseDate(d.endsAt),
         isActive: true,
       },
-      select: { id: true },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        ctaLabel: true,
+        ctaAction: true,
+        tone: true,
+        emoji: true,
+        startsAt: true,
+        endsAt: true,
+        sortOrder: true,
+        createdAt: true,
+      },
     });
 
     await logAdminAction({
@@ -91,6 +110,9 @@ export async function createAnnouncementAction(
       details: { title: d.title, tone: d.tone },
     });
 
+    if (isLiveAnnouncement(created)) {
+      await deliverGlobalAnnouncement(mapDbAnnouncement(created));
+    }
     revalidatePath("/admin/announcements");
     return { success: true, id: created.id };
   } catch (e) {
@@ -107,13 +129,34 @@ export async function setAnnouncementActiveAction(
   const auth = await requireAdminSession();
   if (!auth.authenticated || !auth.session) return { success: false, error: "Unauthorized" };
   try {
-    await prisma.announcement.update({ where: { id }, data: { isActive } });
+    const updated = await prisma.announcement.update({
+      where: { id },
+      data: { isActive },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        ctaLabel: true,
+        ctaAction: true,
+        tone: true,
+        emoji: true,
+        startsAt: true,
+        endsAt: true,
+        sortOrder: true,
+        createdAt: true,
+      },
+    });
     await logAdminAction({
       adminId: auth.session.userId,
       action: isActive ? "ACTIVATE_ANNOUNCEMENT" : "DEACTIVATE_ANNOUNCEMENT",
       entityType: EntityType.SYSTEM,
       entityId: id,
     });
+    if (isActive && isLiveAnnouncement(updated)) {
+      await deliverGlobalAnnouncement(mapDbAnnouncement(updated));
+    } else {
+      await removeGlobalAnnouncement(id);
+    }
     revalidatePath("/admin/announcements");
     return { success: true, id };
   } catch {
@@ -133,6 +176,7 @@ export async function deleteAnnouncementAction(id: string): Promise<Announcement
       entityType: EntityType.SYSTEM,
       entityId: id,
     });
+    await removeGlobalAnnouncement(id);
     revalidatePath("/admin/announcements");
     return { success: true, id };
   } catch {

@@ -5,6 +5,8 @@ import { shouldSkipNotifications } from "./guards";
 import type { NotificationPayload, SendResult } from "./types";
 import { Prisma } from "@prisma";
 import crypto from "node:crypto";
+import { mapDbAnnouncement } from "@/lib/player/announcements";
+import { deliverAnnouncementToUsers } from "@/lib/realtime/announcementDelivery";
 
 function notificationSlug(payload: NotificationPayload) {
   const seed = payload.notificationId ?? `${Date.now()}-${crypto.randomUUID()}`;
@@ -35,7 +37,7 @@ export async function deliverInAppNotifications(
   const slug = notificationSlug(payload);
   const ctaAction = notificationCtaAction(payload.targetUrl);
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const announcement = await tx.announcement.upsert({
       where: { slug },
       create: {
@@ -57,7 +59,19 @@ export async function deliverInAppNotifications(
         ctaAction,
         isActive: true,
       },
-      select: { id: true },
+      select: {
+        id: true,
+        title: true,
+        body: true,
+        ctaLabel: true,
+        ctaAction: true,
+        tone: true,
+        emoji: true,
+        startsAt: true,
+        endsAt: true,
+        sortOrder: true,
+        createdAt: true,
+      },
     });
 
     const values = uniqueUserIds.map((userId) =>
@@ -69,8 +83,11 @@ export async function deliverInAppNotifications(
       VALUES ${Prisma.join(values)}
       ON CONFLICT ("userId", "announcementId") DO NOTHING
     `;
-    return uniqueUserIds.length;
+    return { count: uniqueUserIds.length, announcement: mapDbAnnouncement(announcement) };
   });
+
+  await deliverAnnouncementToUsers(uniqueUserIds, result.announcement);
+  return result.count;
 }
 
 /**
