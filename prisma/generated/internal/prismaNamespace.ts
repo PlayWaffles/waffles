@@ -405,6 +405,7 @@ export const ModelName = {
   RoundEntry: 'RoundEntry',
   Announcement: 'Announcement',
   AnnouncementState: 'AnnouncementState',
+  AnnouncementRecipient: 'AnnouncementRecipient',
   QuestProgress: 'QuestProgress',
   League: 'League',
   LeagueCohort: 'LeagueCohort',
@@ -434,7 +435,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "announcement" | "announcementState" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "announcement" | "announcementState" | "announcementRecipient" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1992,6 +1993,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    AnnouncementRecipient: {
+      payload: Prisma.$AnnouncementRecipientPayload<ExtArgs>
+      fields: Prisma.AnnouncementRecipientFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.AnnouncementRecipientFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.AnnouncementRecipientFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>
+        }
+        findFirst: {
+          args: Prisma.AnnouncementRecipientFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.AnnouncementRecipientFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>
+        }
+        findMany: {
+          args: Prisma.AnnouncementRecipientFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>[]
+        }
+        create: {
+          args: Prisma.AnnouncementRecipientCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>
+        }
+        createMany: {
+          args: Prisma.AnnouncementRecipientCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.AnnouncementRecipientCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>[]
+        }
+        delete: {
+          args: Prisma.AnnouncementRecipientDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>
+        }
+        update: {
+          args: Prisma.AnnouncementRecipientUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>
+        }
+        deleteMany: {
+          args: Prisma.AnnouncementRecipientDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.AnnouncementRecipientUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.AnnouncementRecipientUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>[]
+        }
+        upsert: {
+          args: Prisma.AnnouncementRecipientUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$AnnouncementRecipientPayload>
+        }
+        aggregate: {
+          args: Prisma.AnnouncementRecipientAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateAnnouncementRecipient>
+        }
+        groupBy: {
+          args: Prisma.AnnouncementRecipientGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnnouncementRecipientGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.AnnouncementRecipientCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AnnouncementRecipientCountAggregateOutputType> | number
+        }
+      }
+    }
     QuestProgress: {
       payload: Prisma.$QuestProgressPayload<ExtArgs>
       fields: Prisma.QuestProgressFieldRefs
@@ -3460,6 +3535,16 @@ export const AnnouncementStateScalarFieldEnum = {
 export type AnnouncementStateScalarFieldEnum = (typeof AnnouncementStateScalarFieldEnum)[keyof typeof AnnouncementStateScalarFieldEnum]
 
 
+export const AnnouncementRecipientScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  announcementId: 'announcementId',
+  deliveredAt: 'deliveredAt'
+} as const
+
+export type AnnouncementRecipientScalarFieldEnum = (typeof AnnouncementRecipientScalarFieldEnum)[keyof typeof AnnouncementRecipientScalarFieldEnum]
+
+
 export const QuestProgressScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -4180,6 +4265,7 @@ export type GlobalOmitConfig = {
   roundEntry?: Prisma.RoundEntryOmit
   announcement?: Prisma.AnnouncementOmit
   announcementState?: Prisma.AnnouncementStateOmit
+  announcementRecipient?: Prisma.AnnouncementRecipientOmit
   questProgress?: Prisma.QuestProgressOmit
   league?: Prisma.LeagueOmit
   leagueCohort?: Prisma.LeagueCohortOmit

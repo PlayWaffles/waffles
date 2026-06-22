@@ -145,6 +145,11 @@ export type Announcement = Prisma.AnnouncementModel
  */
 export type AnnouncementState = Prisma.AnnouncementStateModel
 /**
+ * Model AnnouncementRecipient
+ * 
+ */
+export type AnnouncementRecipient = Prisma.AnnouncementRecipientModel
+/**
  * Model QuestProgress
  * 
  */

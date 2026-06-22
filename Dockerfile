@@ -56,8 +56,7 @@ RUN export AUTH_SECRET=build-time-auth-secret \
   NEXT_STATIC_GENERATION_MAX_CONCURRENCY=1 \
   NEXT_STATIC_GENERATION_MIN_PAGES_PER_WORKER=100 \
   NODE_OPTIONS=--max-old-space-size=1536 && \
-  bunx --bun prisma generate && \
-  bunx --bun next build --webpack
+  bun run build
 RUN cp -R public .next/standalone/public && \
   mkdir -p .next/standalone/.next && \
   cp -R .next/static .next/standalone/.next/static

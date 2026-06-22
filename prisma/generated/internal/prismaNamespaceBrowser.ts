@@ -72,6 +72,7 @@ export const ModelName = {
   RoundEntry: 'RoundEntry',
   Announcement: 'Announcement',
   AnnouncementState: 'AnnouncementState',
+  AnnouncementRecipient: 'AnnouncementRecipient',
   QuestProgress: 'QuestProgress',
   League: 'League',
   LeagueCohort: 'LeagueCohort',
@@ -495,6 +496,16 @@ export const AnnouncementStateScalarFieldEnum = {
 } as const
 
 export type AnnouncementStateScalarFieldEnum = (typeof AnnouncementStateScalarFieldEnum)[keyof typeof AnnouncementStateScalarFieldEnum]
+
+
+export const AnnouncementRecipientScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  announcementId: 'announcementId',
+  deliveredAt: 'deliveredAt'
+} as const
+
+export type AnnouncementRecipientScalarFieldEnum = (typeof AnnouncementRecipientScalarFieldEnum)[keyof typeof AnnouncementRecipientScalarFieldEnum]
 
 
 export const QuestProgressScalarFieldEnum = {

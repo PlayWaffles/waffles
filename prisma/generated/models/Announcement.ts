@@ -289,6 +289,7 @@ export type AnnouncementWhereInput = {
   sortOrder?: Prisma.IntFilter<"Announcement"> | number
   createdAt?: Prisma.DateTimeFilter<"Announcement"> | Date | string
   states?: Prisma.AnnouncementStateListRelationFilter
+  recipients?: Prisma.AnnouncementRecipientListRelationFilter
 }
 
 export type AnnouncementOrderByWithRelationInput = {
@@ -307,6 +308,7 @@ export type AnnouncementOrderByWithRelationInput = {
   sortOrder?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   states?: Prisma.AnnouncementStateOrderByRelationAggregateInput
+  recipients?: Prisma.AnnouncementRecipientOrderByRelationAggregateInput
 }
 
 export type AnnouncementWhereUniqueInput = Prisma.AtLeast<{
@@ -328,6 +330,7 @@ export type AnnouncementWhereUniqueInput = Prisma.AtLeast<{
   sortOrder?: Prisma.IntFilter<"Announcement"> | number
   createdAt?: Prisma.DateTimeFilter<"Announcement"> | Date | string
   states?: Prisma.AnnouncementStateListRelationFilter
+  recipients?: Prisma.AnnouncementRecipientListRelationFilter
 }, "id" | "slug">
 
 export type AnnouncementOrderByWithAggregationInput = {
@@ -388,6 +391,7 @@ export type AnnouncementCreateInput = {
   sortOrder?: number
   createdAt?: Date | string
   states?: Prisma.AnnouncementStateCreateNestedManyWithoutAnnouncementInput
+  recipients?: Prisma.AnnouncementRecipientCreateNestedManyWithoutAnnouncementInput
 }
 
 export type AnnouncementUncheckedCreateInput = {
@@ -406,6 +410,7 @@ export type AnnouncementUncheckedCreateInput = {
   sortOrder?: number
   createdAt?: Date | string
   states?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutAnnouncementInput
+  recipients?: Prisma.AnnouncementRecipientUncheckedCreateNestedManyWithoutAnnouncementInput
 }
 
 export type AnnouncementUpdateInput = {
@@ -424,6 +429,7 @@ export type AnnouncementUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   states?: Prisma.AnnouncementStateUpdateManyWithoutAnnouncementNestedInput
+  recipients?: Prisma.AnnouncementRecipientUpdateManyWithoutAnnouncementNestedInput
 }
 
 export type AnnouncementUncheckedUpdateInput = {
@@ -442,6 +448,7 @@ export type AnnouncementUncheckedUpdateInput = {
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   states?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutAnnouncementNestedInput
+  recipients?: Prisma.AnnouncementRecipientUncheckedUpdateManyWithoutAnnouncementNestedInput
 }
 
 export type AnnouncementCreateManyInput = {
@@ -573,6 +580,20 @@ export type AnnouncementUpdateOneRequiredWithoutStatesNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AnnouncementUpdateToOneWithWhereWithoutStatesInput, Prisma.AnnouncementUpdateWithoutStatesInput>, Prisma.AnnouncementUncheckedUpdateWithoutStatesInput>
 }
 
+export type AnnouncementCreateNestedOneWithoutRecipientsInput = {
+  create?: Prisma.XOR<Prisma.AnnouncementCreateWithoutRecipientsInput, Prisma.AnnouncementUncheckedCreateWithoutRecipientsInput>
+  connectOrCreate?: Prisma.AnnouncementCreateOrConnectWithoutRecipientsInput
+  connect?: Prisma.AnnouncementWhereUniqueInput
+}
+
+export type AnnouncementUpdateOneRequiredWithoutRecipientsNestedInput = {
+  create?: Prisma.XOR<Prisma.AnnouncementCreateWithoutRecipientsInput, Prisma.AnnouncementUncheckedCreateWithoutRecipientsInput>
+  connectOrCreate?: Prisma.AnnouncementCreateOrConnectWithoutRecipientsInput
+  upsert?: Prisma.AnnouncementUpsertWithoutRecipientsInput
+  connect?: Prisma.AnnouncementWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AnnouncementUpdateToOneWithWhereWithoutRecipientsInput, Prisma.AnnouncementUpdateWithoutRecipientsInput>, Prisma.AnnouncementUncheckedUpdateWithoutRecipientsInput>
+}
+
 export type AnnouncementCreateWithoutStatesInput = {
   id?: string
   slug: string
@@ -588,6 +609,7 @@ export type AnnouncementCreateWithoutStatesInput = {
   endsAt?: Date | string | null
   sortOrder?: number
   createdAt?: Date | string
+  recipients?: Prisma.AnnouncementRecipientCreateNestedManyWithoutAnnouncementInput
 }
 
 export type AnnouncementUncheckedCreateWithoutStatesInput = {
@@ -605,6 +627,7 @@ export type AnnouncementUncheckedCreateWithoutStatesInput = {
   endsAt?: Date | string | null
   sortOrder?: number
   createdAt?: Date | string
+  recipients?: Prisma.AnnouncementRecipientUncheckedCreateNestedManyWithoutAnnouncementInput
 }
 
 export type AnnouncementCreateOrConnectWithoutStatesInput = {
@@ -638,6 +661,7 @@ export type AnnouncementUpdateWithoutStatesInput = {
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  recipients?: Prisma.AnnouncementRecipientUpdateManyWithoutAnnouncementNestedInput
 }
 
 export type AnnouncementUncheckedUpdateWithoutStatesInput = {
@@ -655,6 +679,95 @@ export type AnnouncementUncheckedUpdateWithoutStatesInput = {
   endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  recipients?: Prisma.AnnouncementRecipientUncheckedUpdateManyWithoutAnnouncementNestedInput
+}
+
+export type AnnouncementCreateWithoutRecipientsInput = {
+  id?: string
+  slug: string
+  title: string
+  body: string
+  ctaLabel?: string | null
+  ctaAction?: string | null
+  kind?: string
+  tone?: string
+  emoji?: string
+  isActive?: boolean
+  startsAt?: Date | string | null
+  endsAt?: Date | string | null
+  sortOrder?: number
+  createdAt?: Date | string
+  states?: Prisma.AnnouncementStateCreateNestedManyWithoutAnnouncementInput
+}
+
+export type AnnouncementUncheckedCreateWithoutRecipientsInput = {
+  id?: string
+  slug: string
+  title: string
+  body: string
+  ctaLabel?: string | null
+  ctaAction?: string | null
+  kind?: string
+  tone?: string
+  emoji?: string
+  isActive?: boolean
+  startsAt?: Date | string | null
+  endsAt?: Date | string | null
+  sortOrder?: number
+  createdAt?: Date | string
+  states?: Prisma.AnnouncementStateUncheckedCreateNestedManyWithoutAnnouncementInput
+}
+
+export type AnnouncementCreateOrConnectWithoutRecipientsInput = {
+  where: Prisma.AnnouncementWhereUniqueInput
+  create: Prisma.XOR<Prisma.AnnouncementCreateWithoutRecipientsInput, Prisma.AnnouncementUncheckedCreateWithoutRecipientsInput>
+}
+
+export type AnnouncementUpsertWithoutRecipientsInput = {
+  update: Prisma.XOR<Prisma.AnnouncementUpdateWithoutRecipientsInput, Prisma.AnnouncementUncheckedUpdateWithoutRecipientsInput>
+  create: Prisma.XOR<Prisma.AnnouncementCreateWithoutRecipientsInput, Prisma.AnnouncementUncheckedCreateWithoutRecipientsInput>
+  where?: Prisma.AnnouncementWhereInput
+}
+
+export type AnnouncementUpdateToOneWithWhereWithoutRecipientsInput = {
+  where?: Prisma.AnnouncementWhereInput
+  data: Prisma.XOR<Prisma.AnnouncementUpdateWithoutRecipientsInput, Prisma.AnnouncementUncheckedUpdateWithoutRecipientsInput>
+}
+
+export type AnnouncementUpdateWithoutRecipientsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  body?: Prisma.StringFieldUpdateOperationsInput | string
+  ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  states?: Prisma.AnnouncementStateUpdateManyWithoutAnnouncementNestedInput
+}
+
+export type AnnouncementUncheckedUpdateWithoutRecipientsInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  slug?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  body?: Prisma.StringFieldUpdateOperationsInput | string
+  ctaLabel?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  ctaAction?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  kind?: Prisma.StringFieldUpdateOperationsInput | string
+  tone?: Prisma.StringFieldUpdateOperationsInput | string
+  emoji?: Prisma.StringFieldUpdateOperationsInput | string
+  isActive?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  startsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  endsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  sortOrder?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  states?: Prisma.AnnouncementStateUncheckedUpdateManyWithoutAnnouncementNestedInput
 }
 
 
@@ -664,10 +777,12 @@ export type AnnouncementUncheckedUpdateWithoutStatesInput = {
 
 export type AnnouncementCountOutputType = {
   states: number
+  recipients: number
 }
 
 export type AnnouncementCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   states?: boolean | AnnouncementCountOutputTypeCountStatesArgs
+  recipients?: boolean | AnnouncementCountOutputTypeCountRecipientsArgs
 }
 
 /**
@@ -687,6 +802,13 @@ export type AnnouncementCountOutputTypeCountStatesArgs<ExtArgs extends runtime.T
   where?: Prisma.AnnouncementStateWhereInput
 }
 
+/**
+ * AnnouncementCountOutputType without action
+ */
+export type AnnouncementCountOutputTypeCountRecipientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AnnouncementRecipientWhereInput
+}
+
 
 export type AnnouncementSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -704,6 +826,7 @@ export type AnnouncementSelect<ExtArgs extends runtime.Types.Extensions.Internal
   sortOrder?: boolean
   createdAt?: boolean
   states?: boolean | Prisma.Announcement$statesArgs<ExtArgs>
+  recipients?: boolean | Prisma.Announcement$recipientsArgs<ExtArgs>
   _count?: boolean | Prisma.AnnouncementCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["announcement"]>
 
@@ -761,6 +884,7 @@ export type AnnouncementSelectScalar = {
 export type AnnouncementOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "slug" | "title" | "body" | "ctaLabel" | "ctaAction" | "kind" | "tone" | "emoji" | "isActive" | "startsAt" | "endsAt" | "sortOrder" | "createdAt", ExtArgs["result"]["announcement"]>
 export type AnnouncementInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   states?: boolean | Prisma.Announcement$statesArgs<ExtArgs>
+  recipients?: boolean | Prisma.Announcement$recipientsArgs<ExtArgs>
   _count?: boolean | Prisma.AnnouncementCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AnnouncementIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -770,6 +894,7 @@ export type $AnnouncementPayload<ExtArgs extends runtime.Types.Extensions.Intern
   name: "Announcement"
   objects: {
     states: Prisma.$AnnouncementStatePayload<ExtArgs>[]
+    recipients: Prisma.$AnnouncementRecipientPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1181,6 +1306,7 @@ readonly fields: AnnouncementFieldRefs;
 export interface Prisma__AnnouncementClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   states<T extends Prisma.Announcement$statesArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Announcement$statesArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementStatePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  recipients<T extends Prisma.Announcement$recipientsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Announcement$recipientsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AnnouncementRecipientPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1633,6 +1759,30 @@ export type Announcement$statesArgs<ExtArgs extends runtime.Types.Extensions.Int
   take?: number
   skip?: number
   distinct?: Prisma.AnnouncementStateScalarFieldEnum | Prisma.AnnouncementStateScalarFieldEnum[]
+}
+
+/**
+ * Announcement.recipients
+ */
+export type Announcement$recipientsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AnnouncementRecipient
+   */
+  select?: Prisma.AnnouncementRecipientSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the AnnouncementRecipient
+   */
+  omit?: Prisma.AnnouncementRecipientOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AnnouncementRecipientInclude<ExtArgs> | null
+  where?: Prisma.AnnouncementRecipientWhereInput
+  orderBy?: Prisma.AnnouncementRecipientOrderByWithRelationInput | Prisma.AnnouncementRecipientOrderByWithRelationInput[]
+  cursor?: Prisma.AnnouncementRecipientWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AnnouncementRecipientScalarFieldEnum | Prisma.AnnouncementRecipientScalarFieldEnum[]
 }
 
 /**
