@@ -92,19 +92,6 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         </div>
       </div>
 
-      {round && (
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
-          <div style={{ borderRadius: 12, background: "rgba(255,201,49,.10)", border: "1px solid rgba(255,201,49,.25)", padding: "9px 10px", textAlign: "center" }}>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>PRIZE POOL</div>
-            <div style={{ marginTop: 2, fontFamily: "var(--font-display)", fontSize: 19, color: "var(--ink)" }}>{usd(round.prizePoolUsdc)}</div>
-          </div>
-          <div style={{ borderRadius: 12, background: "rgba(0,207,242,.08)", border: "1px solid rgba(0,207,242,.22)", padding: "9px 10px", textAlign: "center" }}>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--leaf)" }}>PLAYERS</div>
-            <div style={{ marginTop: 2, fontFamily: "var(--font-display)", fontSize: 19, color: "var(--ink)" }}>{round.playerCount.toLocaleString()}</div>
-          </div>
-        </div>
-      )}
-
       {/* Entry is a flat $0.05 for everyone, every round — the struck-through
           standardFee ($0.10) is the season anchor (never charged). The discount
           card shows for ALL players; only the framing is personalized: genuine
