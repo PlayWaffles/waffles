@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useActionState } from "react";
-import Link from "next/link";
 import {
     CurrencyDollarIcon,
     ChartPieIcon,
@@ -50,7 +49,7 @@ export default function ContractSettingsPage() {
         FormData
     >(withdrawProtocolFeesAction, null);
 
-    const fetchContractState = async () => {
+    const fetchContractState = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -67,17 +66,25 @@ export default function ContractSettingsPage() {
         } finally {
             setLoading(false);
         }
-    };
-
-    useEffect(() => {
-        fetchContractState();
     }, []);
 
     useEffect(() => {
-        if (withdrawState?.success) {
+        const timeout = window.setTimeout(() => {
             void fetchContractState();
+        }, 0);
+
+        return () => window.clearTimeout(timeout);
+    }, [fetchContractState]);
+
+    useEffect(() => {
+        if (withdrawState?.success) {
+            const timeout = window.setTimeout(() => {
+                void fetchContractState();
+            }, 0);
+
+            return () => window.clearTimeout(timeout);
         }
-    }, [withdrawState]);
+    }, [fetchContractState, withdrawState]);
 
     const truncateAddress = (addr: string) =>
         `${addr.slice(0, 6)}...${addr.slice(-4)}`;
@@ -301,7 +308,6 @@ export default function ContractSettingsPage() {
                         </p>
                     </div>
                     <form action={withdrawAction} className="shrink-0">
-                        <input type="hidden" name="platform" value="FARCASTER" />
                         <button
                             type="submit"
                             disabled={

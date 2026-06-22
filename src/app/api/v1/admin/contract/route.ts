@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { formatUnits } from "viem";
 import { waffleGameAbi } from "@/lib/chain/abi";
@@ -9,8 +9,9 @@ import {
   getWaffleContractAddress,
 } from "@/lib/chain";
 import { getPublicClient } from "@/lib/chain/client";
-import { assertChainPlatform } from "@/lib/chain/platform";
 import { trackServerEvent } from "@/lib/server-analytics";
+
+const ADMIN_CONTRACT_PLATFORM = "BASE_APP";
 
 /**
  * Admin Contract Management API
@@ -51,7 +52,7 @@ interface ContractState {
  *
  * Fetch current contract state
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   const startedAt = Date.now();
   // Auth check
   if (!(await isAuthorized())) {
@@ -63,10 +64,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const platform = assertChainPlatform(
-      searchParams.get("platform") ?? "FARCASTER",
-    );
+    const platform = ADMIN_CONTRACT_PLATFORM;
     const chain = getPlatformChain(platform);
     const contractAddress = getWaffleContractAddress(platform);
     const publicClient = getPublicClient(platform);

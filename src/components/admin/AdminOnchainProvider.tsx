@@ -4,7 +4,7 @@ import { OnchainKitProvider as OnchainKitProviderComponent } from "@coinbase/onc
 import { QueryClientProvider } from "@tanstack/react-query";
 import { WagmiProvider } from "wagmi";
 import { env } from "@/lib/env";
-import { farcasterChain } from "@/lib/chain";
+import { getPlatformChain } from "@/lib/chain";
 import { wagmiConfig, wagmiQueryClient } from "@/lib/wagmi/config";
 
 interface Props {
@@ -19,13 +19,14 @@ interface Props {
  * without the full minikit config used in the main app.
  */
 export function AdminOnchainProvider({ children }: Props) {
+    const adminChain = getPlatformChain("BASE_APP");
 
     return (
         <QueryClientProvider client={wagmiQueryClient}>
             <WagmiProvider config={wagmiConfig}>
                 <OnchainKitProviderComponent
                     apiKey={env.nextPublicOnchainkitApiKey}
-                    chain={farcasterChain}
+                    chain={adminChain}
                     config={{
                         appearance: {
                             mode: "dark",

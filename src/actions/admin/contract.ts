@@ -1,6 +1,5 @@
 "use server";
 
-import { z } from "zod";
 import { formatUnits } from "viem";
 import { requireAdminSession } from "@/lib/admin-auth";
 import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
@@ -13,12 +12,9 @@ import {
   PAYMENT_TOKEN_DECIMALS,
   getWaffleContractAddress,
 } from "@/lib/chain/config";
-import { assertChainPlatform } from "@/lib/chain/platform";
 import { getTreasuryWalletForPlatform } from "@/lib/env";
 
-const withdrawProtocolFeesSchema = z.object({
-  platform: z.string().optional(),
-});
+const ADMIN_CONTRACT_PLATFORM = "BASE_APP";
 
 export type WithdrawProtocolFeesResult =
   | {
@@ -34,23 +30,18 @@ export type WithdrawProtocolFeesResult =
     };
 
 export async function withdrawProtocolFeesAction(
-  _prevState: WithdrawProtocolFeesResult | null,
+  prevState: WithdrawProtocolFeesResult | null,
   formData: FormData,
 ): Promise<WithdrawProtocolFeesResult> {
+  void prevState;
+  void formData;
+
   const auth = await requireAdminSession();
   if (!auth.authenticated || !auth.session) {
     return { success: false, error: auth.error || "Unauthorized" };
   }
 
-  const validation = withdrawProtocolFeesSchema.safeParse({
-    platform: formData.get("platform")?.toString(),
-  });
-
-  if (!validation.success) {
-    return { success: false, error: "Invalid withdrawal request" };
-  }
-
-  const platform = assertChainPlatform(validation.data.platform ?? "FARCASTER");
+  const platform = ADMIN_CONTRACT_PLATFORM;
   const contractAddress = getWaffleContractAddress(platform);
   const treasuryWallet = getTreasuryWalletForPlatform(platform);
 
@@ -60,10 +51,7 @@ export async function withdrawProtocolFeesAction(
   ) {
     return {
       success: false,
-      error:
-        platform === "MINIPAY"
-          ? "NEXT_PUBLIC_TREASURY_WALLET_MINIPAY is not configured"
-          : "NEXT_PUBLIC_TREASURY_WALLET is not configured",
+      error: "NEXT_PUBLIC_TREASURY_WALLET is not configured",
     };
   }
 
