@@ -5,14 +5,13 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "duffel:check-nigeria-airlines": "node --import tsx scripts/check-duffel-nigeria-airlines.ts",
     "cloudinary:fetch": "node --import tsx scripts/fetch-cloudinary-images.ts",
     "celo:one-off-claim-game": "node --import tsx scripts/create-celo-one-off-claim-game.ts",
-    "base:one-off-claim-game": "ONE_OFF_PLATFORM=FARCASTER ONE_OFF_NETWORK=BASE_MAINNET ONE_OFF_CLAIM_AMOUNT=31.36 ONE_OFF_START_LIVE=true node --import tsx scripts/create-celo-one-off-claim-game.ts",
-    "postinstall": "prisma generate"
+    "base:one-off-claim-game": "ONE_OFF_PLATFORM=FARCASTER ONE_OFF_NETWORK=BASE_MAINNET ONE_OFF_CLAIM_AMOUNT=31.36 ONE_OFF_START_LIVE=true node --import tsx scripts/create-celo-one-off-claim-game.ts"
   },
   "dependencies": {
     "@coinbase/onchainkit": "^1.1.2",
@@ -36,7 +35,6 @@
     "cloudinary": "^2.9.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.27.1",
-    "frontend": "link:",
     "jose": "^6.1.3",
     "lenis": "^1.3.17",
     "lucide-react": "^0.562.0",
