@@ -9,7 +9,6 @@ import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, Sound
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
-import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const XP_PER_LEVEL = 500;
@@ -428,7 +427,6 @@ export const HomeScreen = () => {
     setGate("confirm");
   };
   const onCardTap = () => {
-    playSound("click");
     if (entered) {
       // Paid but not played → resume into the round; played → view standing.
       if (!board?.you?.played) {

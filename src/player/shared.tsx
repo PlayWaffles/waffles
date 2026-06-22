@@ -394,7 +394,6 @@ export const SoundToggle = ({ size = 30 }: { size?: number }) => {
 export const TabBar = ({ active = "home" }: { active?: string }) => {
   const proto = useProto();
   const onTab = (id: string) => {
-    playSound("click");
     const map: Record<string, string> = {
       home: "home",
       levels: "levels",
@@ -956,7 +955,7 @@ export const Button = ({
           ? { background: "linear-gradient(180deg, #FFD24D, #F5A91B)", border: 0, color: "#3a2a00" }
           : { background: accent, border: "2px solid var(--frame)", color: "var(--frame)", boxShadow: "0 4px 0 var(--frame)" };
   return (
-    <button type="button" className={isGold ? "btn-3d-gold" : undefined} onClick={onClick ? () => { playSound("click"); onClick(); } : undefined} disabled={disabled} aria-label={ariaLabel} style={{ ...base, ...variantStyle, ...style }}>
+    <button type="button" className={isGold ? "btn-3d-gold" : undefined} onClick={onClick} disabled={disabled} aria-label={ariaLabel} style={{ ...base, ...variantStyle, ...style }}>
       {children}
     </button>
   );

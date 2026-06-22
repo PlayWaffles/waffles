@@ -15,7 +15,7 @@ import type { LeagueResult } from "@/lib/player/leagues";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
 import { GameLoader, Phone } from "./shared";
-import { preloadSounds } from "./sound";
+import { preloadSounds, playSound } from "./sound";
 import { useUser } from "@/hooks/useUser";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -130,6 +130,22 @@ const Stage = () => {
   // latency between a trigger and the sound).
   useEffect(() => {
     preloadSounds();
+  }, []);
+
+  // One global click sound for every button/interactive element — fires on
+  // pointerdown (capture) so it's robust regardless of how each button wires its
+  // handler. Replaces the scattered per-button playSound("click") calls.
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      const el = (e.target as Element | null)?.closest?.(
+        'button, [role="button"], .pressable, .cta, .btn-3d-gold',
+      );
+      if (!el) return;
+      if (el.hasAttribute("disabled") || el.getAttribute("aria-disabled") === "true") return;
+      playSound("click");
+    };
+    window.addEventListener("pointerdown", onDown, true);
+    return () => window.removeEventListener("pointerdown", onDown, true);
   }, []);
 
   // One-time "welcome to v2" modal for migrated users — server-gated (migrated +

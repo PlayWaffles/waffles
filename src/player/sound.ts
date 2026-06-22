@@ -173,6 +173,7 @@ class SoundManager {
   // SFX always play; mute only silences the looping background track.
   play(name: SoundName) {
     this.init();
+    if (this._muted) return;
     playBuffer(name, this._volume);
   }
 
