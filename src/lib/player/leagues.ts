@@ -373,6 +373,43 @@ export async function loadLeagueLeaderboard(userId: string, limit = 50): Promise
   };
 }
 
+/** Top players in a whole tier (across ALL its cohorts), ranked by points — for
+ *  browsing other leagues by swiping the leaderboard. `you` is flagged only if
+ *  the viewer happens to be in this tier. Tier metadata comes from the ladder. */
+export async function loadTierLeaderboard(userId: string, tierKey: string, limit = 50): Promise<LeagueLeaderboard | null> {
+  const def = LEAGUE_TIERS.find((t) => t.key === tierKey);
+  if (!def) return null;
+  const league = await loadLeague(userId); // current season + seasonEndsAt
+  const tierLeague = await prisma.league.findUnique({ where: { tier: def.tier }, select: { id: true } });
+  const base = {
+    key: def.key,
+    label: def.label,
+    color: def.color,
+    season: league.season,
+    seasonEndsAt: league.seasonEndsAt,
+  };
+  if (!tierLeague) {
+    return { ...base, rank: null, points: 0, cohortSize: 0, standings: [], you: null };
+  }
+  const rows = await prisma.leagueMember.findMany({
+    where: { leagueId: tierLeague.id, season: league.season },
+    orderBy: [{ points: "desc" }, { updatedAt: "asc" }],
+    take: limit,
+    select: { userId: true, points: true, user: { select: { username: true, avatarId: true, pfpUrl: true } } },
+  });
+  const standings: LeagueLeaderboardRow[] = rows.map((row, i) => ({
+    rank: i + 1,
+    userId: row.userId,
+    name: row.user.username ?? "Player",
+    points: row.points,
+    avatarId: row.user.avatarId ?? null,
+    pfpUrl: row.user.pfpUrl ?? null,
+    you: row.userId === userId,
+  }));
+  const you = standings.find((s) => s.you) ?? null;
+  return { ...base, rank: you?.rank ?? null, points: you?.points ?? 0, cohortSize: rows.length, standings, you };
+}
+
 export function tierKeyForEnum(tier: LeagueTier): string {
   return TIER_BY_ENUM.get(tier)?.key ?? "apprentice1";
 }

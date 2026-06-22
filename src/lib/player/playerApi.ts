@@ -73,6 +73,13 @@ export async function loadLeagueLeaderboard(): Promise<leaguesSvc.LeagueLeaderbo
   return leaguesSvc.loadLeagueLeaderboard(user.id);
 }
 
+/** Top players in a given tier (across cohorts) — for swiping to other leagues. */
+export async function loadTierLeaderboard(tierKey: string): Promise<leaguesSvc.LeagueLeaderboard | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return leaguesSvc.loadTierLeaderboard(user.id, tierKey);
+}
+
 export async function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;

@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { type TouchEvent as ReactTouchEvent, useEffect, useRef, useState } from "react";
 import { useProto } from "../state";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton, useNow } from "../shared";
-import { loadLeagueLeaderboard } from "@/player/api";
+import { loadLeague, loadLeagueLeaderboard, loadTierLeaderboard } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const MEDAL_BY_COLOR: Record<string, string> = {
@@ -49,7 +49,33 @@ export const LeaderboardScreen = () => {
   const [tab, setTab] = useState<"league" | "friends">("league");
   const now = useNow(true, 60_000);
 
-  const { data: board } = useResilientAction(() => loadLeagueLeaderboard(), []);
+  // Swipe between league tiers. Load the ladder (+ the player's own tier key) so
+  // we know the order, then fetch the *viewed* tier's board: the player's own
+  // tier shows their cohort; other tiers show that tier's top players.
+  const { data: league } = useResilientAction(() => loadLeague(), []);
+  const ladder = league?.tiers ?? [];
+  const userKey = league?.key ?? null;
+  const [viewedKey, setViewedKey] = useState<string | null>(null);
+  const activeKey = viewedKey ?? userKey;
+  const viewingOwn = !activeKey || activeKey === userKey;
+  const { data: board } = useResilientAction(
+    () => (viewingOwn ? loadLeagueLeaderboard() : loadTierLeaderboard(activeKey as string)),
+    [activeKey, viewingOwn],
+  );
+
+  const activeIdx = activeKey ? ladder.findIndex((t) => t.key === activeKey) : -1;
+  const goTier = (dir: number) => {
+    const n = activeIdx + dir;
+    if (n >= 0 && n < ladder.length) setViewedKey(ladder[n].key);
+  };
+  const touchX = useRef<number | null>(null);
+  const onTouchStart = (e: ReactTouchEvent) => { touchX.current = e.touches[0]?.clientX ?? null; };
+  const onTouchEnd = (e: ReactTouchEvent) => {
+    if (touchX.current == null) return;
+    const dx = (e.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
+    touchX.current = null;
+    if (Math.abs(dx) > 50) goTier(dx < 0 ? 1 : -1); // swipe left → next (higher) tier
+  };
 
   const avatarFor = (row: { userId: string; avatarId: string | null; pfpUrl: string | null; you: boolean }) => {
     if (row.pfpUrl) return row.pfpUrl;
@@ -129,14 +155,29 @@ export const LeaderboardScreen = () => {
         ><InfoIcon size={16} /></button>
       </div>
 
-      <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
+      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
+        {/* Swipe the medal — or tap the chevrons — to browse other leagues. */}
+        {ladder.length > 1 && (
+          <>
+            <button aria-label="Previous league" onClick={() => goTier(-1)} disabled={activeIdx <= 0} style={{ position: "absolute", left: 16, top: 42, width: 34, height: 34, borderRadius: 99, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, opacity: activeIdx <= 0 ? 0.3 : 1, cursor: activeIdx <= 0 ? "default" : "pointer" }}>‹</button>
+            <button aria-label="Next league" onClick={() => goTier(1)} disabled={activeIdx >= ladder.length - 1} style={{ position: "absolute", right: 16, top: 42, width: 34, height: 34, borderRadius: 99, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, opacity: activeIdx >= ladder.length - 1 ? 0.3 : 1, cursor: activeIdx >= ladder.length - 1 ? "default" : "pointer" }}>›</button>
+          </>
+        )}
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
           <BigMedal color={board?.color ?? "#cd7f32"} size={120} />
         </div>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>{board?.label ?? "Loading league"}</div>
         <div style={{ display: "inline-flex", gap: 5, alignItems: "center", fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4 }}>
-          <span>⏱</span> Ends in {seasonEnd}
+          {viewingOwn ? <><span>⏱</span> Ends in {seasonEnd}</> : <span style={{ color: "var(--maple-500)" }}>Browsing — swipe back to your league</span>}
         </div>
+        {/* Tier dots — position in the ladder; ringed dot marks your own tier. */}
+        {ladder.length > 1 && (
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 5, marginTop: 8 }}>
+            {ladder.map((t, i) => (
+              <span key={t.key} style={{ width: i === activeIdx ? 7 : 5, height: i === activeIdx ? 7 : 5, borderRadius: 99, background: i === activeIdx ? "var(--maple-500)" : "rgba(255,255,255,.25)", border: t.key === userKey ? "1.5px solid var(--maple-500)" : "none", boxSizing: "border-box" }} />
+            ))}
+          </div>
+        )}
       </div>
 
       <div style={{ position: "absolute", top: 280, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>

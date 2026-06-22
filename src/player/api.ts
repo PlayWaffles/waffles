@@ -79,6 +79,10 @@ export function loadLeagueLeaderboard(): Promise<leaguesSvc.LeagueLeaderboard | 
   return callPlayerApi("loadLeagueLeaderboard");
 }
 
+export function loadTierLeaderboard(tierKey: string): Promise<leaguesSvc.LeagueLeaderboard | null> {
+  return callPlayerApi("loadTierLeaderboard", [tierKey]);
+}
+
 export function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
   return callPlayerApi("loadLeagueResult");
 }

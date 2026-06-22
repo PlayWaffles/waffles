@@ -785,13 +785,9 @@ export function ProtoProvider({
     return () => clearTimeout(t);
   }, [state.toast, update]);
 
-  // Auto-dismiss the pushed-announcement toast (longer than the plain toast so
-  // there's time to read the title + tap the CTA).
-  useEffect(() => {
-    if (!state.announcementToast) return;
-    const t = setTimeout(() => update({ announcementToast: null }), 6500);
-    return () => clearTimeout(t);
-  }, [state.announcementToast, update]);
+  // Note: the pushed-announcement toast owns its own show -> exit-animation ->
+  // clear lifecycle in <AnnouncementToast> so it can animate out, not just blink
+  // away. State here only holds the payload.
 
   // Fetch the live announcement feed (authored DB rows + per-user triggered
   // cards). Runs on mount for authored content and refetches once a session

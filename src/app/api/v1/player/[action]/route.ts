@@ -9,6 +9,7 @@ const handlers = {
   claimMission: playerApi.claimMission,
   loadLeague: playerApi.loadLeague,
   loadLeagueLeaderboard: playerApi.loadLeagueLeaderboard,
+  loadTierLeaderboard: playerApi.loadTierLeaderboard,
   loadLeagueResult: playerApi.loadLeagueResult,
   loadPartnerOffers: playerApi.loadPartnerOffers,
   claimPartnerOffer: playerApi.claimPartnerOffer,
