@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { TicketIcon } from "@/player/shared";
+import { TicketIcon, PixelImg, resolveAvatar } from "@/player/shared";
+import tactile from "./tactile.module.css";
 
 // ---------------------------------------------------------------------------
 // Tournament-card design lab — four directions, same mock data, side by side.
@@ -12,29 +13,33 @@ import { TicketIcon } from "@/player/shared";
 
 const MOCK = {
   title: "World Cup Royale #054",
-  format: "Football trivia · 6 questions",
-  poolHeadline: "Winner takes the pool",
-  prizeTickets: 25,
-  players: 2,
+  format: "Football trivia",
+  // The actual prize pool, computed (here mocked) in tickets. In the real card
+  // this is round.prizePoolUsdc / USDT_PER_TICKET — grows as players enter.
+  prizePool: 25,
+  // Capped field — drives the scarcity meter. 80/100 = 20 spots left.
+  spotsFilled: 80,
+  spotsTotal: 100,
   joinedToday: 23,
   entryCost: 1,
 };
 
-/** Shared ticking mm:ss countdown (starts at 44:42). */
-function useCountdown(initial = 44 * 60 + 42) {
+/** Shared ticking HH:MM:SS countdown (the ticket-window closing clock). */
+function useCountdown(initial = 3600 + 3 * 60 + 44) {
   const [secs, setSecs] = useState(initial);
   useEffect(() => {
     const id = setInterval(() => setSecs((s) => (s <= 0 ? initial : s - 1)), 1000);
     return () => clearInterval(id);
   }, [initial]);
-  const mm = String(Math.floor(secs / 60)).padStart(2, "0");
+  const hh = String(Math.floor(secs / 3600)).padStart(2, "0");
+  const mm = String(Math.floor((secs % 3600) / 60)).padStart(2, "0");
   const ss = String(secs % 60).padStart(2, "0");
-  return `${mm}:${ss}`;
+  return `${hh}:${mm}:${ss}`;
 }
 
-const ArrowIcon = ({ size = 15 }: { size?: number }) => (
+const BoltIcon = ({ size = 13 }: { size?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}>
-    <path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" />
   </svg>
 );
 
@@ -42,128 +47,147 @@ const LiveDot = ({ color = "#FC1919" }: { color?: string }) => (
   <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: color, boxShadow: `0 0 0 4px ${color}33`, animation: "waffles-v2-pulse 1.5s infinite" }} />
 );
 
+// The two restored accent lines: green skill cue + yellow first-game bonus.
+const Accents = ({ mt = 10 }: { mt?: number }) => (
+  <div style={{ marginTop: mt, display: "flex", flexDirection: "column", gap: 5 }}>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--leaf)" }}>
+      <BoltIcon />Fastest correct answers win
+    </span>
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
+      <BoltIcon />2× XP on your first game today
+    </span>
+  </div>
+);
+
+// Scarcity meter — colour heats up as the field fills so a near-full round
+// screams "get in now": healthy (leaf) → filling (amber) → almost gone (red).
+function spotsColor(ratio: number) {
+  if (ratio >= 0.85) return "#FC1919";
+  if (ratio >= 0.6) return "#F5A91B";
+  return "var(--leaf)";
+}
+
+/** Vertical capacity gauge — a slim bottom-up fill + label. */
+function SpotsBarV({ height = 62 }: { height?: number }) {
+  const { spotsFilled: f, spotsTotal: t } = MOCK;
+  const ratio = f / t;
+  const col = spotsColor(ratio);
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+      <div style={{ width: 9, height, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+        <div style={{ width: "100%", height: `${ratio * 100}%`, borderRadius: 99, background: col, boxShadow: `0 0 8px ${col}66` }} />
+      </div>
+      <div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "#fff", lineHeight: 1 }}>
+          {f}<span style={{ fontSize: 12, color: "rgba(255,255,255,.4)" }}>/{t}</span>
+        </div>
+        <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: "rgba(255,255,255,.45)", textTransform: "uppercase", marginTop: 3 }}>spots filled</div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: col, marginTop: 3 }}>{t - f} left</div>
+      </div>
+    </div>
+  );
+}
+
 const CARD_BG = "#0F0F10";
 const CARD_SHADOW = "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)";
 
-// ===========================================================================
-// V1 — Lean Hook (current production build)
-// ===========================================================================
-function LeanHook({ timer }: { timer: string }) {
+// Stacked join PFPs. Uses the real avatar set (resolveAvatar → 1 of 8 animal
+// pfps, deterministic per seed) — swap seeds for real userIds/usernames when
+// wired to live data. Overlapping circles + "<n> joined today".
+const JOIN_SEEDS = ["maya", "leo", "ada", "kai", "zoe", "sam"];
+function JoinedAvatars({ show = 4, size = 26 }: { show?: number; size?: number }) {
+  const seeds = JOIN_SEEDS.slice(0, show);
   return (
-    <div style={{ background: CARD_BG, borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW, cursor: "pointer" }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 11 }}>
-        <LiveDot />
-        <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>KICKOFF IN {timer}</div>
+    <div style={{ display: "inline-flex", alignItems: "center", gap: 9 }}>
+      <div style={{ display: "flex" }}>
+        {seeds.map((seed, i) => (
+          <PixelImg
+            key={seed}
+            src={resolveAvatar(null, seed)}
+            size={size}
+            alt=""
+            style={{ borderRadius: 99, border: `2px solid ${CARD_BG}`, objectFit: "cover", background: "#1c1c1f", marginLeft: i === 0 ? 0 : -size * 0.34, position: "relative", zIndex: show - i }}
+          />
+        ))}
       </div>
-      <div style={{ fontFamily: "var(--font-display)", fontSize: 25, lineHeight: 1.05, color: "#fff" }}>{MOCK.title}</div>
-      <div style={{ fontSize: 13, color: "rgba(255,255,255,.55)", fontWeight: 600, marginTop: 2 }}>{MOCK.format} · 60s</div>
-      <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 9 }}>
-        <TicketIcon size={20} />
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", lineHeight: 1 }}>{MOCK.poolHeadline}</span>
-      </div>
-      <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
-          <LiveDot color="var(--leaf)" />
-          {MOCK.players} playing now
-        </span>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-display)", fontSize: 13, color: "var(--maple-500)" }}>
-          <TicketIcon size={14} />{MOCK.entryCost} to enter
-          <ArrowIcon />
-        </span>
-      </div>
-      <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
-        <div className="waffle-mark" style={{ width: 120, height: 120, borderRadius: 24 }} />
-      </div>
+      <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.6)" }}>
+        <span style={{ color: "#fff" }}>{MOCK.spotsFilled}</span> joined today
+      </span>
     </div>
   );
 }
 
 // ===========================================================================
-// V2 — Ticket Stub (physical admission-ticket aesthetic, horizontal)
-// ===========================================================================
-function TicketStub({ timer }: { timer: string }) {
-  const notch = (side: "left" | "right") => (
-    <div style={{ position: "absolute", [side]: -9, top: "50%", width: 18, height: 18, marginTop: -9, borderRadius: 99, background: "#000" }} />
-  );
-  return (
-    <div style={{ position: "relative", display: "flex", borderRadius: 18, overflow: "hidden", border: "1px solid rgba(255,201,49,.35)", boxShadow: CARD_SHADOW, cursor: "pointer", minHeight: 150 }}>
-      {/* Left stub */}
-      <div style={{ width: 104, flexShrink: 0, background: "linear-gradient(160deg, #FFC931, #F5A91B)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, padding: 12, color: "#3a2a00" }}>
-        <TicketIcon size={34} />
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 1, textTransform: "uppercase", opacity: 0.85 }}>Admit one</div>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, lineHeight: 1, display: "inline-flex", alignItems: "center", gap: 3 }}>{MOCK.entryCost}</div>
-      </div>
-      {/* Perforation */}
-      <div style={{ position: "relative", width: 0, borderLeft: "2px dashed rgba(255,201,49,.4)" }}>
-        {notch("left")}
-        {notch("right")}
-      </div>
-      {/* Right body */}
-      <div style={{ flex: 1, background: CARD_BG, padding: "14px 16px", display: "flex", flexDirection: "column", justifyContent: "center", gap: 6 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-          <LiveDot />
-          <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1, color: "#FC1919", textTransform: "uppercase" }}>Kickoff in {timer}</span>
-        </div>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1.05, color: "#fff" }}>{MOCK.title}</div>
-        <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>{MOCK.format}</div>
-        <div style={{ marginTop: 2, display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-display)", fontSize: 14, color: "var(--maple-500)" }}>
-          <TicketIcon size={15} />{MOCK.poolHeadline}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// ===========================================================================
-// V3 — Compact Banner (two rows, explicit pill button)
+// V3 — Compact Banner
 // ===========================================================================
 function CompactBanner({ timer }: { timer: string }) {
   return (
     <div style={{ background: CARD_BG, borderRadius: 16, padding: "13px 14px", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
         <LiveDot />
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#fff", lineHeight: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{MOCK.title}</span>
-        <div style={{ flex: 1 }} />
-        <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "2px 8px", fontSize: 10, fontWeight: 800, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>{timer}</span>
+        <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.7, color: "#FC1919", textTransform: "uppercase" }}>Tickets closing in</span>
+        <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#FC1919", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span>
       </div>
-      <div style={{ marginTop: 11, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 800, color: "rgba(255,255,255,.75)" }}>
-          <TicketIcon size={15} />{MOCK.poolHeadline}
-        </span>
-        <button type="button" style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", border: "none", borderRadius: 99, padding: "7px 14px", fontFamily: "var(--font-display)", fontSize: 13, boxShadow: "0 3px 0 rgba(0,0,0,.3)", cursor: "pointer", flexShrink: 0 }}>
-          Enter <TicketIcon size={14} />{MOCK.entryCost}
-        </button>
+      {/* Title (prominent) on the left, prize pool as a right-aligned stat
+          using the open space on that side. */}
+      <div style={{ marginTop: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <span style={{ flex: 1, fontFamily: "var(--font-display)", fontSize: 23, color: "#fff", lineHeight: 1.05 }}>{MOCK.title}</span>
+        <div style={{ textAlign: "right", flexShrink: 0 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <TicketIcon size={18} />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 23, color: "#fff", lineHeight: 1 }}>{MOCK.prizePool}</span>
+          </div>
+          <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)", textTransform: "uppercase", marginTop: 2 }}>prize pool</div>
+        </div>
       </div>
+      <Accents mt={9} />
+      {/* Joined PFPs (the "filled" label) + scarcity bar + spots-left */}
+      <div style={{ marginTop: 11 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 7 }}>
+          <JoinedAvatars show={4} size={24} />
+          <span style={{ fontSize: 11, fontWeight: 800, color: spotsColor(MOCK.spotsFilled / MOCK.spotsTotal) }}>{MOCK.spotsTotal - MOCK.spotsFilled} spots left</span>
+        </div>
+        <div style={{ height: 7, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
+          <div style={{ height: "100%", width: `${(MOCK.spotsFilled / MOCK.spotsTotal) * 100}%`, borderRadius: 99, background: spotsColor(MOCK.spotsFilled / MOCK.spotsTotal), boxShadow: `0 0 8px ${spotsColor(MOCK.spotsFilled / MOCK.spotsTotal)}66` }} />
+        </div>
+      </div>
+      <button type="button" className={tactile.cta} style={{ marginTop: 11, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", border: "none", borderRadius: 12, padding: "11px", fontFamily: "var(--font-display)", fontSize: 14, cursor: "pointer" }}>
+        Enter <TicketIcon size={14} />{MOCK.entryCost}
+      </button>
     </div>
   );
 }
 
 // ===========================================================================
-// V4 — Prize-Forward Bold (big number hero + full-width button)
+// V4 — Prize-Forward Bold
 // ===========================================================================
 function PrizeForward({ timer }: { timer: string }) {
   return (
     <div style={{ background: CARD_BG, borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <LiveDot />
-        <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>KICKOFF IN {timer}</span>
+        <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>TICKETS CLOSING IN {timer}</span>
         <div style={{ flex: 1 }} />
-        <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.5)", display: "inline-flex", alignItems: "center", gap: 5 }}>
-          <LiveDot color="var(--leaf)" />{MOCK.players} in
-        </span>
       </div>
       <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, color: "#fff" }}>{MOCK.title}</div>
       <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 600, marginTop: 2 }}>{MOCK.format}</div>
-      {/* Prize hero */}
-      <div style={{ marginTop: 14, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px" }}>
-        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "var(--maple-500)", textTransform: "uppercase" }}>Top prize</div>
-        <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
-          <TicketIcon size={34} />
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: "#fff", lineHeight: 0.9 }}>{MOCK.prizeTickets}</span>
+      <Accents mt={9} />
+      {/* Prize-pool hero + vertical scarcity gauge beside it */}
+      <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "var(--maple-500)", textTransform: "uppercase" }}>Prize pool</div>
+          <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
+            <TicketIcon size={34} />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: "#fff", lineHeight: 0.9 }}>{MOCK.prizePool}</span>
+          </div>
         </div>
-        <div style={{ marginTop: 5, fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.5)" }}>{MOCK.poolHeadline} · {MOCK.joinedToday} joined today</div>
+        <SpotsBarV />
       </div>
-      <button type="button" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", border: "none", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.3)", cursor: "pointer" }}>
+      {/* Joined PFPs — who's already in */}
+      <div style={{ marginTop: 12 }}>
+        <JoinedAvatars show={5} size={27} />
+      </div>
+      <button type="button" className={tactile.cta} style={{ marginTop: 12, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", border: "none", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, cursor: "pointer" }}>
         <TicketIcon size={18} />Buy ticket · {MOCK.entryCost}
       </button>
     </div>
@@ -197,16 +221,10 @@ export default function TournamentCardPreview() {
         </p>
       </header>
       <div style={{ maxWidth: 1080, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 28, justifyItems: "center" }}>
-        <Slot tag="V1" name="Lean Hook" note="Current build. Minimal: status+countdown, title, one prize promise, footer CTA. Detail lives in the sheet.">
-          <LeanHook timer={timer} />
-        </Slot>
-        <Slot tag="V2" name="Ticket Stub" note="Physical admission-ticket look. Gold stub (cost) + perforation + event body. Most branded.">
-          <TicketStub timer={timer} />
-        </Slot>
-        <Slot tag="V3" name="Compact Banner" note="Two rows, shortest of all. Explicit pill button instead of whole-card tap. Densest.">
+        <Slot tag="V3" name="Compact Banner" note="Shortest layout. Explicit pill button instead of whole-card tap. Densest.">
           <CompactBanner timer={timer} />
         </Slot>
-        <Slot tag="V4" name="Prize-Forward" note="Marketing-led: big prize number hero + full-width Buy button. Shows the number; tallest.">
+        <Slot tag="V4" name="Prize-Forward" note="Marketing-led: big prize-pool number hero + full-width Buy button. Tallest.">
           <PrizeForward timer={timer} />
         </Slot>
       </div>
