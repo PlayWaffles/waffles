@@ -51,7 +51,7 @@ migrations in order), and tells you how to re-seed the shop.
 ## After migrating
 
 ```bash
-pnpm prisma migrate status                 # should show "up to date"
+bunx --bun prisma migrate status                 # should show "up to date"
 # re-seed the shop (ShopItem is created empty):
 DATABASE_URL="$DATABASE_URL" node --env-file=.env.production --import tsx scripts/seed-v2-shop.ts
 ```

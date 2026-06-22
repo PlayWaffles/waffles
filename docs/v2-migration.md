@@ -7,7 +7,7 @@
 **Decisions locked:**
 - Port `waffles_v2/src/app/styles.css` as-is, scoped under `.waffles-v2`. Tailwind stays for admin/non-game.
 - Full replacement of the player-facing `(app)/(game)` UI.
-- New DB URL, baselined to current schema, then per-phase migrations. ✅ done — DB in `.env` (old DB commented). **Note:** Prisma 7 + `prisma.config.ts` does NOT auto-load `.env` here; prefix Prisma commands with `DATABASE_URL='…' pnpm exec prisma …`, or `next dev` loads it fine.
+- New DB URL, baselined to current schema, then per-phase migrations. ✅ done — DB in `.env` (old DB commented). **Note:** Prisma 7 + `prisma.config.ts` does NOT auto-load `.env` under Node; run Prisma commands with `bunx --bun prisma …`, or prefix `DATABASE_URL` explicitly.
 - Verify via: this ledger + `tsc`/`build`/`eslint` + `prisma migrate status` + the existing test suites + driving every screen on the dev server (`:3001`) + side-by-side parity with the prototype.
 
 Source of truth for "what data a screen needs": `waffles_v2/src/app/state.tsx` (the in-memory `Proto` contract) + each screen file.

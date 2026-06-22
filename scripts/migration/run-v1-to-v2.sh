@@ -44,15 +44,15 @@ pg_dump --format=custom --no-owner --no-privileges --file "${BACKUP}" "${DATABAS
 echo "    Backup written: ${BACKUP} ($(du -h "${BACKUP}" | cut -f1))"
 
 echo "==> 2/4  Pending migrations:"
-pnpm prisma migrate status || true
+bunx --bun prisma migrate status || true
 
 echo "==> 3/4  Applying migrations (prisma migrate deploy) …"
-pnpm prisma migrate deploy
+bunx --bun prisma migrate deploy
 
 echo "==> 4/4  Re-seeding the shop catalog (ShopItem is created empty) …"
 echo "    NOTE: run in an env with the full app env vars. Example:"
 echo "      DATABASE_URL=\"\$DATABASE_URL\" node --env-file=.env.production --import tsx scripts/seed-v2-shop.ts"
 
 echo
-echo "Done. Verify with:  pnpm prisma migrate status"
+echo "Done. Verify with:  bunx --bun prisma migrate status"
 echo "Rollback (if needed):  pg_restore --clean --no-owner -d \"\$DATABASE_URL\" ${BACKUP}"

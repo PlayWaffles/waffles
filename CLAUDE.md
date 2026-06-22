@@ -11,12 +11,12 @@ Waffles is a real-time multiplayer trivia platform. Players buy tickets (USDC on
 ## Commands
 
 ```bash
-pnpm dev              # Start Next.js dev server (port 3000)
-pnpm build            # Production build
-pnpm lint             # ESLint
-pnpm prisma migrate dev --name <name>  # Create a new migration
-pnpm prisma generate  # Regenerate Prisma client (also runs on postinstall)
-pnpm prisma studio    # Database GUI
+bun run dev              # Start Next.js dev server (port 3000)
+bun run build            # Production build
+bun run lint             # ESLint
+bunx --bun prisma migrate dev --name <name>  # Create a new migration
+bunx --bun prisma generate     # Regenerate Prisma client
+bunx --bun prisma studio       # Database GUI
 ```
 
 ## Architecture

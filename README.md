@@ -14,14 +14,14 @@ A real-time multiplayer trivia platform built on Farcaster, where players compet
 - **Web3**: Coinbase OnchainKit, Wagmi, Viem
 - **Social**: Farcaster MiniKit, Neynar SDK
 - **Styling**: Tailwind CSS v4
-- **Package Manager**: pnpm
+- **Package Manager**: Bun
 
 ---
 
 ## 📋 Prerequisites
 
 - **Node.js** ≥ 20.19
-- **pnpm** 9.15+
+- **Bun** 1.3.4+
 - **Docker** (for PostgreSQL)
 
 ---
@@ -31,7 +31,7 @@ A real-time multiplayer trivia platform built on Farcaster, where players compet
 ### 1. Install Dependencies
 
 ```bash
-pnpm install
+bun install
 ```
 
 ### 2. Start PostgreSQL
@@ -61,13 +61,13 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/waffles"
 ### 4. Run Migrations
 
 ```bash
-pnpm prisma migrate dev
+bunx --bun prisma migrate dev
 ```
 
 ### 5. Seed Database
 
 ```bash
-pnpm prisma db seed
+bunx --bun prisma db seed
 ```
 
 ---
@@ -77,7 +77,7 @@ pnpm prisma db seed
 ### Start Dev Server
 
 ```bash
-pnpm dev
+bun run dev
 ```
 
 The app will be available at [http://localhost:3000](http://localhost:3000)
@@ -86,22 +86,22 @@ The app will be available at [http://localhost:3000](http://localhost:3000)
 
 ```bash
 # Build for production
-pnpm build
+bun run build
 
 # Start production server
-pnpm start
+bun run start
 
 # Open Prisma Studio (database GUI)
-pnpm prisma studio
+bunx --bun prisma studio
 
 # Generate Prisma Client
-pnpm prisma generate
+bunx --bun prisma generate
 
 # Run migrations
-pnpm prisma migrate dev
+bunx --bun prisma migrate dev
 
 # Lint code
-pnpm lint
+bun run lint
 ```
 
 ---
@@ -131,16 +131,16 @@ docker rm -f waffles-postgres
 
 ```bash
 # Create a new migration
-pnpm prisma migrate dev --name migration_name
+bunx --bun prisma migrate dev --name migration_name
 
 # Reset database (⚠️ deletes all data)
-pnpm prisma migrate reset
+bunx --bun prisma migrate reset
 
 # Pull schema from database
-pnpm prisma db pull
+bunx --bun prisma db pull
 
 # Push schema to database (without migrations)
-pnpm prisma db push
+bunx --bun prisma db push
 ```
 
 ---
@@ -223,13 +223,13 @@ Ensure all required environment variables are set in your production environment
 ### Build
 
 ```bash
-pnpm build
+bun run build
 ```
 
 ### Run Production
 
 ```bash
-pnpm start
+bun run start
 ```
 
 ---
