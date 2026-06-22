@@ -188,11 +188,11 @@ function PrizeForward({ timer }: { timer: string }) {
       <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
         <div>
           <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "var(--maple-500)", textTransform: "uppercase" }}>Prize pool</div>
-          <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{ marginTop: 4, display: "flex", alignItems: "flex-end", gap: 8 }}>
             <TicketIcon size={34} />
             <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: "#fff", lineHeight: 0.9 }}>{MOCK.prizePool}</span>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.45)", lineHeight: 1 }}>≈ {usdtFor(MOCK.prizePool)}</span>
           </div>
-          <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>≈ {usdtFor(MOCK.prizePool)}</div>
         </div>
         <SpotsBarV />
       </div>
