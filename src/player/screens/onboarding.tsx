@@ -238,7 +238,7 @@ export const OnboardingScreen = ({
     if (accountStep) {
       // The account step authenticates the wallet FIRST (establishing the real
       // session), THEN persists the chosen username — order matters: the
-      // setUsername server action needs the session cookie, so saving it before
+      // setUsername API call needs the session cookie, so saving it before
       // sign-in would silently no-op. On success we show a confirmation moment;
       // on failure we surface a retry instead of pretending the account exists.
       const name = username.trim();

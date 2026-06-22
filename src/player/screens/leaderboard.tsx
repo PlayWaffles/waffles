@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton } from "../shared";
-import { loadTournamentLeaderboard } from "@/actions/player";
+import { loadTournamentLeaderboard } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // Pre-generated medal art replaces the synthesized SVG medal.

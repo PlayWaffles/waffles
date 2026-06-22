@@ -15,7 +15,7 @@ import {
   loadState,
   advanceLevel,
   // Aliased: these collide with same-named local proto methods below whose
-  // bodies call the server action (e.g. local `refillLives` → `refillLivesAction`).
+  // bodies call the player API (e.g. local `refillLives` → `refillLivesAction`).
   dismissAnnouncement as dismissAnnouncementAction,
   getLevelQuestions,
   recordLevelPlay,
@@ -34,7 +34,7 @@ import {
   loadResults,
   setUsername as setUsernameAction,
   logClient,
-} from "@/actions/player";
+} from "@/player/api";
 import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
 import { type Announcement } from "./announcements";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
@@ -383,7 +383,7 @@ function markDailyBonusUsed(): void {
 }
 
 // Announcement read/dismissed state is DB-backed (AnnouncementState): loaded via
-// loadState() and written through the server actions, so it's authoritative and
+// loadState() and written through the player API, so it's authoritative and
 // cross-device. Triggered ("auto:") cards are session-only (no DB row), so their
 // dismissal lives in proto state for the session and re-evaluates on reload.
 

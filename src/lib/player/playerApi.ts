@@ -1,7 +1,5 @@
-"use server";
-
 /**
- * Server actions for the ported v2 client (`ProtoProvider`). Each resolves the
+ * Server-side player API handlers. Each resolves the
  * current authenticated user and delegates to the player-state service.
  *
  * When there is no authenticated user (e.g. the `/v2` preview route outside the
@@ -9,8 +7,8 @@
  * its local/optimistic state so the screens still render and demo cleanly.
  */
 import { getCurrentUser } from "@/lib/auth";
-// Each lib module is namespace-imported as a `*Svc` so the action wrappers can
-// share the service's name (e.g. action `loseLife` delegates to `playerSvc.loseLife`).
+// Each lib module is namespace-imported as a `*Svc` so the API wrappers can
+// share the service's name (e.g. handler `loseLife` delegates to `playerSvc.loseLife`).
 import * as playerSvc from "@/lib/player/playerState";
 import type { PlayerState, Track } from "@/lib/player/playerState";
 import { getLevelClientQuestions, recordLevelQuestionStats, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
@@ -167,6 +165,10 @@ export type TournamentRound = {
   playerCount: number;
   prizePoolUsdc: number;
   topPrizeUsdc: number;
+  todayEntryCount: number;
+  todayPlayerCount: number;
+  todayPrizePoolUsdc: number;
+  recentEntryCount: number;
   /** True for the migrated v1 24h game; false once hourly v2 rounds take over. */
   legacyV1: boolean;
 };
@@ -218,6 +220,10 @@ export async function getTournament(): Promise<
       playerCount: game.playerCount,
       prizePoolUsdc: game.prizePool,
       topPrizeUsdc: game.prizePool * topWinnerShare(game.playerCount),
+      todayEntryCount: game.todayEntryCount,
+      todayPlayerCount: game.todayPlayerCount,
+      todayPrizePoolUsdc: game.todayPrizePool,
+      recentEntryCount: game.recentEntryCount,
       // v2 tournaments run a 1-hour window; the migrated v1 game runs ~24h.
       legacyV1: game.endsAt.getTime() - game.startsAt.getTime() > 2 * 60 * 60 * 1000,
     },

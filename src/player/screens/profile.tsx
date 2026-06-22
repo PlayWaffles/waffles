@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { syrupLabel, USDT_PER_TICKET, useProto } from "../state";
-import { loadTournamentClaims, deleteMyAccount } from "@/actions/player";
+import { loadTournamentClaims, deleteMyAccount } from "@/player/api";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, resolveAvatar, SyrupIcon, TabBar, TopHeader } from "../shared";

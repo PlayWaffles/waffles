@@ -5,7 +5,7 @@ import { displayFieldSize, FIELD_REVEAL_MIN, TOURNAMENT_PRIZES, TOURNAMENT_TOP_P
 import { ASSETS, Confetti, Phone, PixelImg, TicketIcon, TopHeader } from "../shared";
 import { useTheme } from "../theme";
 import { playSound } from "../sound";
-import { loadCurrentTournamentBoard } from "@/actions/player";
+import { loadCurrentTournamentBoard } from "@/player/api";
 
 export const LobbyScreen = () => {
   const proto = useProto();

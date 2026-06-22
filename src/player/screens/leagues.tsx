@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, BackButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { loadLeague } from "@/actions/player";
+import { loadLeague } from "@/player/api";
 import type { League } from "@/lib/player/leagues";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 

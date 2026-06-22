@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_FIELD_SIZE, TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, tournamentSyrupReward, useProto } from "../state";
-import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/actions/player";
+import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/player/api";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, SyrupIcon, TicketIcon } from "../shared";
 import { playSound } from "../sound";

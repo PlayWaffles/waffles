@@ -6,7 +6,7 @@ import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../share
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { Illustration } from "../world-cup/components/parts";
-import { loadCurrentTournamentBoard, loadPowerUps } from "@/actions/player";
+import { loadCurrentTournamentBoard, loadPowerUps } from "@/player/api";
 import type { PowerUpName } from "../state";
 
 // Power-ups available to activate during a question (icon + label per kind).

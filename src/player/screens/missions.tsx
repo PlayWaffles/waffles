@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { syrupLabel, useProto } from "../state";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { loadMissions, loadPartnerOffers, claimPartnerOffer, claimMission } from "@/actions/player";
+import { loadMissions, loadPartnerOffers, claimPartnerOffer, claimMission } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import type { Mission } from "@/lib/player/missions";
 import type { PartnerOffer } from "@/lib/player/partnerOffers";

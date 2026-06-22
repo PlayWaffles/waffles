@@ -166,6 +166,10 @@ export type TournamentGame = {
   entryFee: number;
   prizePool: number;
   playerCount: number;
+  todayEntryCount: number;
+  todayPlayerCount: number;
+  todayPrizePool: number;
+  recentEntryCount: number;
 };
 
 /** The platform's current tournament round — the soonest game that hasn't ended.
@@ -174,8 +178,9 @@ export type TournamentGame = {
 export async function currentTournamentGame(
   platform: UserPlatform,
 ): Promise<TournamentGame | null> {
+  const now = new Date();
   const game = await prisma.game.findFirst({
-    where: { platform, endsAt: { gt: new Date() }, onchainId: { not: null } },
+    where: { platform, endsAt: { gt: now }, onchainId: { not: null } },
     orderBy: { startsAt: "asc" },
     select: {
       id: true,
@@ -193,6 +198,45 @@ export async function currentTournamentGame(
     },
   });
   if (!game) return null;
+
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
+  const todayEnd = new Date(todayStart);
+  todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
+  const recentStart = new Date(now.getTime() - 15 * 60 * 1000);
+
+  const [todayEntries, todayPrizePool, recentEntryCount] = await Promise.all([
+    prisma.gameEntry.findMany({
+      where: {
+        paidAt: { not: null },
+        game: {
+          platform,
+          onchainId: { not: null },
+          startsAt: { gte: todayStart, lt: todayEnd },
+        },
+      },
+      select: { userId: true },
+    }),
+    prisma.game.aggregate({
+      where: {
+        platform,
+        onchainId: { not: null },
+        startsAt: { gte: todayStart, lt: todayEnd },
+      },
+      _sum: { prizePool: true },
+    }),
+    prisma.gameEntry.count({
+      where: {
+        paidAt: { gte: recentStart },
+        game: {
+          platform,
+          onchainId: { not: null },
+          startsAt: { gte: todayStart, lt: todayEnd },
+        },
+      },
+    }),
+  ]);
+
   return {
     id: game.id,
     onchainId: game.onchainId,
@@ -206,6 +250,10 @@ export async function currentTournamentGame(
     entryFee: game.tierPrices[0] ?? 0,
     prizePool: game.prizePool,
     playerCount: game.playerCount,
+    todayEntryCount: todayEntries.length,
+    todayPlayerCount: new Set(todayEntries.map((entry) => entry.userId)).size,
+    todayPrizePool: todayPrizePool._sum.prizePool ?? 0,
+    recentEntryCount,
   };
 }
 

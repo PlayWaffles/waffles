@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { FIRST_TICKET_DISCOUNT, isFirstTicketOfferAvailable, markFirstTicketOfferUsed, syrupLabel, TOURNAMENT_TICKET_COST, usdtLabel, useProto, USDT_PER_TICKET } from "../state";
 import { ASSETS, AssetWell, Button, Card, Confetti, GameLoader, InfoButton, Phone, PixelImg, Sheet, SyrupIcon, TabBar, TicketIcon, TopHeader } from "../shared";
 import { playSound } from "../sound";
-import { buyBundle, getShopCatalog, purchase } from "@/actions/player";
+import { buyBundle, getShopCatalog, purchase } from "@/player/api";
 import type { ShopCatalog } from "@/lib/player/economy";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { useUser } from "@/hooks/useUser";
@@ -124,7 +124,7 @@ export const ShopScreen = () => {
   // Built into the render shapes once loaded; empty while fetching (the screen
   // shows a loader until `catalog` resolves, below).
   const [catalog, setCatalog] = useState<ShopCatalog | null>(null);
-  // Wait for the shared user query before fetching. Calling the server action
+  // Wait for the shared user query before fetching. Calling the player API
   // before the session cookie is ready returns null, which created a visible
   // retry delay on first Shop navigation.
   const [loadError, setLoadError] = useState(false);

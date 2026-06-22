@@ -15,7 +15,7 @@ import {
   useProto,
 } from "../state";
 import { ASSETS, Confetti, Phone, PixelImg, Sheet, SyrupIcon, TicketIcon, useNow } from "../shared";
-import { getTournament, type TournamentRound } from "@/actions/player";
+import { getTournament, type TournamentRound } from "@/player/api";
 import { txStepLabel } from "../useTournamentWallet";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { playSound } from "../sound";

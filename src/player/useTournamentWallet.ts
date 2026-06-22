@@ -25,7 +25,7 @@ import { defaultNetworkForPlatform } from "@/lib/chain/network";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import { ERC20_ABI } from "@/lib/constants";
 import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
-import { logClient } from "@/actions/player";
+import { logClient } from "@/player/api";
 
 // Forward the wallet-flow trace to the SERVER terminal (the wallet steps run in
 // the browser, so plain console.log would only land in the device console).

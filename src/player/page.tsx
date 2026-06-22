@@ -10,7 +10,7 @@ import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-rewar
 import { WorldCupTakeover } from "./screens/world-cup-takeover";
 import { MigrationTakeover } from "./screens/migration-takeover";
 import { LeagueResultTakeover, hasSeenLeagueResult } from "./screens/league-result";
-import { getMigrationNotice, dismissMigrationNotice, getWorldCupTakeover, dismissWorldCupTakeover, loadLeagueResult, logClient } from "@/actions/player";
+import { getMigrationNotice, dismissMigrationNotice, getWorldCupTakeover, dismissWorldCupTakeover, loadLeagueResult, logClient } from "@/player/api";
 import type { LeagueResult } from "@/lib/player/leagues";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";

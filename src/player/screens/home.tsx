@@ -1,9 +1,9 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { displayFieldSize, isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
+import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/actions/player";
+import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/player/api";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
@@ -91,6 +91,19 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
           <TicketIcon size={14} />Win up to {prizeTickets}{prizeGuaranteed ? " guaranteed" : ""} — top finishers split the pool
         </div>
       </div>
+
+      {round && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 12 }}>
+          <div style={{ borderRadius: 12, background: "rgba(255,201,49,.10)", border: "1px solid rgba(255,201,49,.25)", padding: "9px 10px", textAlign: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>PRIZE POOL</div>
+            <div style={{ marginTop: 2, fontFamily: "var(--font-display)", fontSize: 19, color: "var(--ink)" }}>{usd(round.prizePoolUsdc)}</div>
+          </div>
+          <div style={{ borderRadius: 12, background: "rgba(0,207,242,.08)", border: "1px solid rgba(0,207,242,.22)", padding: "9px 10px", textAlign: "center" }}>
+            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--leaf)" }}>PLAYERS</div>
+            <div style={{ marginTop: 2, fontFamily: "var(--font-display)", fontSize: 19, color: "var(--ink)" }}>{round.playerCount.toLocaleString()}</div>
+          </div>
+        </div>
+      )}
 
       {/* Entry is a flat $0.05 for everyone, every round — the struck-through
           standardFee ($0.10) is the season anchor (never charged). The discount
@@ -329,7 +342,7 @@ export const HomeScreen = () => {
   const [entering, setEntering] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
   // Live, DB-backed details for the hero card (entry fee, close time, title /
-  // format / prize). Resilient fetch: `getTournament` is a server action whose
+  // format / prize). Resilient fetch: `getTournament` is an API call whose
   // auth is the session cookie set async by AuthBootstrap (which can lag the
   // client mount), and it returns null in the brief gap between hourly rounds —
   // so retry rather than leave the card empty on a one-shot miss. Until it lands,
@@ -415,10 +428,10 @@ export const HomeScreen = () => {
   // charge). Once they've played (or it's settled), it's view-standing only.
   const canResume = entered && !(board?.you?.played ?? false);
   // Real entrant count — board standings first, then the game's stored
-  // playerCount — but a near-empty round shows the simulated field instead of a
-  // lonely "1 in" (see displayFieldSize).
+  // playerCount. For social proof we keep this real and pair it with today's
+  // aggregate activity instead of inflating a sparse hourly round.
   const realEntrants = board && board.fieldSize > 0 ? board.fieldSize : (round?.playerCount ?? 0);
-  const fieldSize = displayFieldSize(realEntrants);
+  const fieldSize = realEntrants;
 
   // Headline prize: the #1 finisher's projected cut of the *live* pool (server
   // computes it with the real bracket math), floored at the advertised
@@ -428,6 +441,10 @@ export const HomeScreen = () => {
   const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
   const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
   const prizeGuaranteed = round != null && prizeTickets > liveTopTickets;
+  const prizePoolLabel = round ? `$${round.prizePoolUsdc.toFixed(2)}` : "$--";
+  const todayPoolLabel = round ? `$${round.todayPrizePoolUsdc.toFixed(2)}` : "$--";
+  const currentPlayersLabel = `${realEntrants.toLocaleString()} player${realEntrants === 1 ? "" : "s"}`;
+  const recentEntryLabel = round && round.recentEntryCount > 0 ? `+${round.recentEntryCount.toLocaleString()} joined recently` : "Round is open";
 
   const lastPct = lastRank && fieldSize > 0 ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
 
@@ -506,6 +523,30 @@ export const HomeScreen = () => {
             </div>
           )}
 
+          {round && (
+            <div style={{ marginTop: 12, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+              <div style={{ borderRadius: 12, border: "1px solid rgba(255,201,49,.2)", background: "rgba(255,201,49,.08)", padding: "10px 11px" }}>
+                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>PRIZE POOL</div>
+                <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1 }}>{prizePoolLabel}</div>
+                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>Top prize up to <TicketIcon size={11} /> {prizeTickets}</div>
+              </div>
+              <div style={{ borderRadius: 12, border: "1px solid rgba(0,207,242,.18)", background: "rgba(0,207,242,.07)", padding: "10px 11px" }}>
+                <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--leaf)" }}>PLAYING NOW</div>
+                <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1 }}>{currentPlayersLabel}</div>
+                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>{recentEntryLabel}</div>
+              </div>
+            </div>
+          )}
+
+          {round && (
+            <div style={{ marginTop: 8, borderRadius: 10, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.06)", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+              <span style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,.45)", letterSpacing: 0.8 }}>TODAY</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.75)", textAlign: "right" }}>
+                {round.todayEntryCount.toLocaleString()} entries · {round.todayPlayerCount.toLocaleString()} players · {todayPoolLabel} in pools
+              </span>
+            </div>
+          )}
+
           {/* Accent lines: the personal "beat your last finish" hook, plus the
               conditional 2× XP first-game bonus (relocated off the chip row). */}
           <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
@@ -534,13 +575,13 @@ export const HomeScreen = () => {
               </Fragment>
             ))}
             <div style={{ flex: 1 }} />
-            {/* Prize hook — what you're playing for, set against the 🎟1 entry. */}
+            {/* Compact payoff beside the countdown for the repeated scan case. */}
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>WIN UP TO</div>
+              <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>TOP PRIZE</div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 23, color: "#fff", display: "inline-flex", alignItems: "center", gap: 4, lineHeight: 1.1 }}>
                 <TicketIcon size={18} />{prizeTickets}
               </div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(prizeTickets)}{prizeGuaranteed ? " guaranteed" : ""} · {fieldSize.toLocaleString()} in</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.4)" }}>≈ {usdtLabel(prizeTickets)}{prizeGuaranteed ? " guaranteed" : ""}</div>
             </div>
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>

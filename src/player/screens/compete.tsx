@@ -3,7 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useProto } from "../state";
 import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
-import { loadLeague, loadSeasonPass, claimSeasonReward, loadMissions, loadPartnerOffers } from "@/actions/player";
+import { loadLeague, loadSeasonPass, claimSeasonReward, loadMissions, loadPartnerOffers } from "@/player/api";
 import type { League } from "@/lib/player/leagues";
 import type { SeasonPass } from "@/lib/player/seasonPass";
 import { SEASON_PASS_TIERS, type SeasonReward as PassReward } from "@/lib/player/seasonPassTiers";

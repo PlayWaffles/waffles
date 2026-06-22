@@ -9,10 +9,10 @@ import {
 type Options = { retries?: number; delayMs?: number };
 
 /**
- * Run a one-shot server action on mount (and whenever `deps` change), retrying
+ * Run a one-shot player API call on mount (and whenever `deps` change), retrying
  * when it resolves null/undefined or throws.
  *
- * Why this exists: v2 server actions authenticate via a session cookie set
+ * Why this exists: v2 player API calls authenticate via a session cookie set
  * asynchronously by AuthBootstrap, which can lag the client mount that the page
  * gates on. A plain fire-once `useEffect(...).catch(() => {})` left screens
  * permanently empty whenever it raced that cookie (or a transient gap, e.g. the

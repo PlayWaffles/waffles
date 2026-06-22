@@ -5,7 +5,7 @@ import { useProto } from "./state";
 import { badgeById, deriveBadgeStats, earnedBadgeIds, type Badge } from "./data/badges";
 import { Confetti, PixelImg } from "./shared";
 import { playSound } from "./sound";
-import { recordBadge } from "@/actions/player";
+import { recordBadge } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 // "Badge unlocked!" celebration.
