@@ -75,6 +75,10 @@ export function loadLeague(): Promise<League | null> {
   return callPlayerApi("loadLeague");
 }
 
+export function loadLeagueLeaderboard(): Promise<leaguesSvc.LeagueLeaderboard | null> {
+  return callPlayerApi("loadLeagueLeaderboard");
+}
+
 export function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
   return callPlayerApi("loadLeagueResult");
 }

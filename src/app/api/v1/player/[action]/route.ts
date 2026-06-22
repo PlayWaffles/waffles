@@ -8,6 +8,7 @@ const handlers = {
   recordMissionEvent: playerApi.recordMissionEvent,
   claimMission: playerApi.claimMission,
   loadLeague: playerApi.loadLeague,
+  loadLeagueLeaderboard: playerApi.loadLeagueLeaderboard,
   loadLeagueResult: playerApi.loadLeagueResult,
   loadPartnerOffers: playerApi.loadPartnerOffers,
   claimPartnerOffer: playerApi.claimPartnerOffer,

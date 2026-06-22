@@ -2,9 +2,9 @@
  * v2 leagues — seasonal tier ladder with weekly cohort competition. Tier
  * definitions live in `League`; per-user, per-season standing in `LeagueMember`,
  * grouped into `LeagueCohort` rooms of ~30. Season points accrue from games
- * played that week (see `accrueLeaguePoints`); a player's tier carries over
- * season-to-season, shifted up/down by the prior season's promotion/demotion
- * outcome (XP only seeds a brand-new player's first placement).
+ * played that week (see `accrueLeaguePoints`); a player's XP is the source of
+ * truth for their current tier, and the season member is kept in that tier's
+ * cohort.
  */
 import { prisma } from "@/lib/db";
 import { BoostKind, LeagueOutcome, LeagueTier, PowerUpKind, Prisma } from "@prisma";
@@ -137,6 +137,29 @@ export type League = {
   tiers: LeagueTierInfo[];
 };
 
+export type LeagueLeaderboardRow = {
+  rank: number;
+  userId: string;
+  name: string;
+  points: number;
+  avatarId: string | null;
+  pfpUrl: string | null;
+  you: boolean;
+};
+
+export type LeagueLeaderboard = {
+  key: string;
+  label: string;
+  color: string;
+  rank: number | null;
+  points: number;
+  cohortSize: number;
+  season: string;
+  seasonEndsAt: number;
+  standings: LeagueLeaderboardRow[];
+  you: LeagueLeaderboardRow | null;
+};
+
 // Players compete in rooms of up to this many; a new room opens when full.
 export const COHORT_SIZE = 30;
 
@@ -168,20 +191,32 @@ async function assignCohort(tx: Prisma.TransactionClient, leagueId: string, seas
   return created.id;
 }
 
-/** Resolve (creating if needed) the player's standing for `season`: tier carried
- *  from their last season (shifted by that season's outcome), else seeded from XP
- *  for a first-timer; then assigned to an open cohort. Returns null only if the
- *  League ladder hasn't been seeded. */
+/** Resolve (creating if needed) the player's standing for `season`, assigning
+ *  them to the cohort for their XP-derived tier. Returns null only if the League
+ *  ladder hasn't been seeded. */
 async function ensureSeasonMember(
   tx: Prisma.TransactionClient,
   userId: string,
   season: string,
 ): Promise<SeasonMember | null> {
+  const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xp: true } });
+  const desiredTier = tierForXp(user.xp).tier;
+  const desiredLeague = await tx.league.findUnique({ where: { tier: desiredTier }, select: { id: true } });
+  if (!desiredLeague) return null;
+
   const existing = await tx.leagueMember.findUnique({
     where: { userId_season: { userId, season } },
     select: { id: true, leagueId: true, cohortId: true, points: true },
   });
   if (existing) {
+    if (existing.leagueId !== desiredLeague.id) {
+      const cohortId = await assignCohort(tx, desiredLeague.id, season);
+      await tx.leagueMember.update({
+        where: { id: existing.id },
+        data: { leagueId: desiredLeague.id, cohortId },
+      });
+      return { ...existing, leagueId: desiredLeague.id, cohortId };
+    }
     if (existing.cohortId) return existing;
     // Backfill a cohort for a member that predates cohort assignment.
     const cohortId = await assignCohort(tx, existing.leagueId, season);
@@ -189,24 +224,9 @@ async function ensureSeasonMember(
     return { ...existing, cohortId };
   }
 
-  const prior = await tx.leagueMember.findFirst({
-    where: { userId, season: { not: season } },
-    orderBy: { season: "desc" },
-    select: { outcome: true, league: { select: { tier: true } } },
-  });
-  let tier: LeagueTier;
-  if (prior) {
-    tier = shiftedTier(prior.league.tier, prior.outcome);
-  } else {
-    const user = await tx.user.findUniqueOrThrow({ where: { id: userId }, select: { xp: true } });
-    tier = tierForXp(user.xp).tier;
-  }
-
-  const league = await tx.league.findUnique({ where: { tier }, select: { id: true } });
-  if (!league) return null; // ladder not seeded — accrual is a no-op
-  const cohortId = await assignCohort(tx, league.id, season);
+  const cohortId = await assignCohort(tx, desiredLeague.id, season);
   return tx.leagueMember.create({
-    data: { userId, season, leagueId: league.id, cohortId, points: 0 },
+    data: { userId, season, leagueId: desiredLeague.id, cohortId, points: 0 },
     select: { id: true, leagueId: true, cohortId: true, points: true },
   });
 }
@@ -281,6 +301,75 @@ export async function loadLeague(userId: string): Promise<League> {
     season,
     seasonEndsAt: seasonEndsAt(),
     tiers,
+  };
+}
+
+export async function loadLeagueLeaderboard(userId: string, limit = 50): Promise<LeagueLeaderboard | null> {
+  const league = await loadLeague(userId);
+  const member = await prisma.leagueMember.findUnique({
+    where: { userId_season: { userId, season: league.season } },
+    select: { cohortId: true, points: true },
+  });
+  if (!member?.cohortId) {
+    return {
+      key: league.key,
+      label: league.label,
+      color: league.color,
+      rank: league.rank,
+      points: league.points,
+      cohortSize: league.cohortSize,
+      season: league.season,
+      seasonEndsAt: league.seasonEndsAt,
+      standings: [],
+      you: null,
+    };
+  }
+
+  const rows = await prisma.leagueMember.findMany({
+    where: { cohortId: member.cohortId },
+    orderBy: [{ points: "desc" }, { updatedAt: "asc" }],
+    take: limit,
+    select: {
+      userId: true,
+      points: true,
+      user: { select: { username: true, avatarId: true, pfpUrl: true } },
+    },
+  });
+  const allRowsForRank = await prisma.leagueMember.findMany({
+    where: { cohortId: member.cohortId },
+    orderBy: [{ points: "desc" }, { updatedAt: "asc" }],
+    select: {
+      userId: true,
+      points: true,
+      user: { select: { username: true, avatarId: true, pfpUrl: true } },
+    },
+  });
+
+  const toRow = (row: (typeof allRowsForRank)[number], index: number): LeagueLeaderboardRow => ({
+    rank: index + 1,
+    userId: row.userId,
+    name: row.user.username ?? "Player",
+    points: row.points,
+    avatarId: row.user.avatarId ?? null,
+    pfpUrl: row.user.pfpUrl ?? null,
+    you: row.userId === userId,
+  });
+
+  const ranked = allRowsForRank.map(toRow);
+  const standings = rows.map((row) => ranked.find((rankedRow) => rankedRow.userId === row.userId) ?? toRow(row, 0));
+  const you = ranked.find((row) => row.you) ?? null;
+
+  return {
+    key: league.key,
+    label: league.label,
+    color: league.color,
+    rank: league.rank,
+    points: league.points,
+    cohortSize: league.cohortSize,
+    season: league.season,
+    seasonEndsAt: league.seasonEndsAt,
+    standings,
+    you,
   };
 }
 

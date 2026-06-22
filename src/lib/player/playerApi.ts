@@ -67,6 +67,12 @@ export async function loadLeague(): Promise<League | null> {
   return leaguesSvc.loadLeague(user.id);
 }
 
+export async function loadLeagueLeaderboard(): Promise<leaguesSvc.LeagueLeaderboard | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return leaguesSvc.loadLeagueLeaderboard(user.id);
+}
+
 export async function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;

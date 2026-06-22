@@ -3,13 +3,20 @@
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { useResilientAction } from "../useResilientAction";
-import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton } from "../shared";
-import { loadTournamentLeaderboard } from "@/player/api";
+import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton, useNow } from "../shared";
+import { loadLeagueLeaderboard } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
-// Pre-generated medal art replaces the synthesized SVG medal.
-const BigMedal = ({ size = 78 }: { color?: string; size?: number }) => (
-  <PixelImg src={ASSETS.medalApprentice} size={size} alt="medal" />
+const MEDAL_BY_COLOR: Record<string, string> = {
+  "#cd7f32": ASSETS.medalApprentice,
+  "#bfc7d0": ASSETS.medalSilver,
+  "#9aa6b3": ASSETS.medalAdvanced,
+  "#3ddbb8": ASSETS.medalGenius,
+  "#FFC931": ASSETS.medalMaster,
+};
+
+const BigMedal = ({ color = "#cd7f32", size = 78 }: { color?: string; size?: number }) => (
+  <PixelImg src={MEDAL_BY_COLOR[color] ?? ASSETS.medalApprentice} size={size} alt="medal" />
 );
 
 const ChestGlyph = ({ rank }: { rank: number }) => {
@@ -17,22 +24,16 @@ const ChestGlyph = ({ rank }: { rank: number }) => {
   return <PixelImg src={src} size={24} alt="chest" />;
 };
 
-type Player = { rank: number; name: string; pts: number; color: string; avatar?: string; you?: boolean };
-
-const AVATAR_BY_RANK = [
-  ASSETS.avatarFox, ASSETS.avatarBear, ASSETS.avatarFrog, ASSETS.avatarPanda,
-  ASSETS.avatarOwl, ASSETS.avatarCat, ASSETS.avatarDog, ASSETS.avatarRabbit,
-];
+type Player = { rank: number; name: string; pts: number; avatar: string; you?: boolean };
 
 const LeaderRow = ({ p }: { p: Player }) => {
-  const av = p.you ? (p.avatar ?? ASSETS.wally) : AVATAR_BY_RANK[(p.rank - 1) % AVATAR_BY_RANK.length];
   // Top-3 ranks get the brand maple gold, everyone else uses the muted-ink ramp.
   const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
   const ptsColor = p.you ? "var(--maple-500)" : "var(--ink)";
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 16px", color: "var(--ink)" }}>
       <div style={{ width: 22, fontFamily: "var(--font-display)", fontSize: 13, color: rankColor, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{p.rank}</div>
-      <PixelImg src={av} size={40} alt="" />
+      <PixelImg src={p.avatar} size={40} alt="" style={{ borderRadius: 99, objectFit: "cover" }} />
       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
         {!p.you && <ChestGlyph rank={p.rank} />}
@@ -46,25 +47,30 @@ const LeaderRow = ({ p }: { p: Player }) => {
 export const LeaderboardScreen = () => {
   const proto = useProto();
   const [tab, setTab] = useState<"league" | "friends">("league");
+  const now = useNow(true, 60_000);
 
-  // Real tournament standings only — no mock fallback. Resilient fetch (retries
-  // through the auth-cookie / between-rounds race); until a real board loads (or
-  // if none has run yet) the league tab shows an empty state, not fake players.
-  const { data: rawBoard } = useResilientAction(() => loadTournamentLeaderboard(), []);
-  const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
+  const { data: board } = useResilientAction(() => loadLeagueLeaderboard(), []);
 
-  const youAvatar = resolveAvatar(proto.avatarId, proto.username);
+  const avatarFor = (row: { userId: string; avatarId: string | null; pfpUrl: string | null; you: boolean }) => {
+    if (row.pfpUrl) return row.pfpUrl;
+    return resolveAvatar(row.you ? proto.avatarId ?? row.avatarId : row.avatarId, row.userId);
+  };
   const leaders: Player[] = board
-    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, color: "#3dd17a", you: s.you, avatar: s.you ? youAvatar : undefined }))
+    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.points, you: s.you, avatar: avatarFor(s) }))
     : [];
   const you: Player | null = board?.you
-    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, color: "#3dd17a", you: true, avatar: youAvatar }
+    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.points, you: true, avatar: avatarFor(board.you) }
     : null;
+  const seasonMs = Math.max(0, (board?.seasonEndsAt ?? now) - now);
+  const days = Math.floor(seasonMs / 86_400_000);
+  const hours = Math.floor((seasonMs % 86_400_000) / 3_600_000);
+  const seasonEnd = board ? `${days}d ${hours}h` : "Loading";
+
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
       screen: "leaderboard",
       leaderboard_tab: tab,
-      field_size: board?.fieldSize ?? leaders.length,
+      field_size: board?.cohortSize ?? leaders.length,
       rank: you?.rank ?? 0,
       score_after: you?.pts ?? 0,
       has_live_board: Boolean(board),
@@ -125,11 +131,11 @@ export const LeaderboardScreen = () => {
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 201, 49, 0.35))" }}>
-          <BigMedal color="#cd7f32" size={120} />
+          <BigMedal color={board?.color ?? "#cd7f32"} size={120} />
         </div>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>APPRENTICE I</div>
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>{board?.label ?? "Loading league"}</div>
         <div style={{ display: "inline-flex", gap: 5, alignItems: "center", fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4 }}>
-          <span>⏱</span> Ends in 1d 15h
+          <span>⏱</span> Ends in {seasonEnd}
         </div>
       </div>
 
@@ -160,13 +166,13 @@ export const LeaderboardScreen = () => {
 
         {tab === "league" ? (
           leaders.length === 0 ? (
-            // No real standings yet (no tournament has run / settled). Show an
-            // empty state instead of fabricated players.
+            // No real standings yet. Show an empty state instead of fabricated
+            // players.
             <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
               <PixelImg src={ASSETS.trophy} size={64} alt="" style={{ opacity: 0.85, marginBottom: 16 }} />
               <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No standings yet</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
-                Play a tournament to claim your spot — the league board fills up once scores are in.
+                Earn points to claim your spot — the league board fills up once this cohort starts scoring.
               </div>
             </div>
           ) : (
