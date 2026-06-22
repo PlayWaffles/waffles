@@ -24,6 +24,10 @@ const MOCK = {
   entryCost: 1,
 };
 
+// Peg: 1 ticket = 0.05 USDT (matches the real app's USDT_PER_TICKET).
+const USDT_PER_TICKET = 0.05;
+const usdtFor = (tickets: number) => `${(tickets * USDT_PER_TICKET).toFixed(2)} USDT`;
+
 /** Shared ticking HH:MM:SS countdown (the ticket-window closing clock). */
 function useCountdown(initial = 3600 + 3 * 60 + 44) {
   const [secs, setSecs] = useState(initial);
@@ -131,19 +135,17 @@ function JoinedAvatars({ show = 4, size = 26, others = false }: { show?: number;
 function CompactBanner({ timer }: { timer: string }) {
   return (
     <div style={{ background: CARD_BG, borderRadius: 16, padding: "13px 14px", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW }}>
-      {/* Left column: closing (red) + title + accents (green). Right column:
-          prize pool in the open space alongside that red/green text, vertically
-          centred — so it no longer shares the title's row and competes with it. */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <LiveDot />
-            <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.7, color: "#FC1919", textTransform: "uppercase" }}>Tickets closing in</span>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#FC1919", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span>
-          </div>
-          <div style={{ marginTop: 9, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1.03 }}>{MOCK.title}</div>
-          <Accents mt={9} />
-        </div>
+      {/* Closing (red) → full-width title (kept big) → accents (green/yellow)
+          with the prize pool in the open space to their right, i.e. alongside
+          the green/red text rather than on the title's row. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <LiveDot />
+        <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.7, color: "#FC1919", textTransform: "uppercase" }}>Tickets closing in</span>
+        <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#FC1919", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span>
+      </div>
+      <div style={{ marginTop: 9, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1.03 }}>{MOCK.title}</div>
+      <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <Accents mt={0} />
         <div style={{ flexShrink: 0, textAlign: "right" }}>
           <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 3 }}>prize pool</div>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
@@ -180,8 +182,7 @@ function PrizeForward({ timer }: { timer: string }) {
         <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>TICKETS CLOSING IN {timer}</span>
         <div style={{ flex: 1 }} />
       </div>
-      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, color: "#fff" }}>{MOCK.title}</div>
-      <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 600, marginTop: 2 }}>{MOCK.format}</div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 24, lineHeight: 1.04, color: "#fff" }}>{MOCK.title}</div>
       <Accents mt={9} />
       {/* Prize-pool hero + vertical scarcity gauge beside it */}
       <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -191,6 +192,7 @@ function PrizeForward({ timer }: { timer: string }) {
             <TicketIcon size={34} />
             <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: "#fff", lineHeight: 0.9 }}>{MOCK.prizePool}</span>
           </div>
+          <div style={{ marginTop: 4, fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>≈ {usdtFor(MOCK.prizePool)}</div>
         </div>
         <SpotsBarV />
       </div>
