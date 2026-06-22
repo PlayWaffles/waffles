@@ -943,14 +943,20 @@ export const Button = ({
     gap: 6,
     opacity: disabled ? 0.5 : 1,
   };
+  // The default yellow primary matches the Home gold CTA exactly (gradient +
+  // dark-brown text + the .btn-3d-gold press ledge). A custom `accent` (e.g. the
+  // shop's per-bundle colour) keeps its solid look.
+  const isGold = variant === "primary" && accent === "var(--maple-500)";
   const variantStyle: CSSProperties =
     variant === "ghost"
       ? { background: "transparent", border: "2px solid var(--frame)", color: "var(--ink)" }
       : variant === "danger"
         ? { background: "var(--live-red)", border: "2px solid var(--frame)", color: "#fff", boxShadow: "0 4px 0 var(--frame)" }
-        : { background: accent, border: "2px solid var(--frame)", color: "var(--frame)", boxShadow: "0 4px 0 var(--frame)" };
+        : isGold
+          ? { background: "linear-gradient(180deg, #FFD24D, #F5A91B)", border: 0, color: "#3a2a00" }
+          : { background: accent, border: "2px solid var(--frame)", color: "var(--frame)", boxShadow: "0 4px 0 var(--frame)" };
   return (
-    <button type="button" onClick={onClick ? () => { playSound("click"); onClick(); } : undefined} disabled={disabled} aria-label={ariaLabel} style={{ ...base, ...variantStyle, ...style }}>
+    <button type="button" className={isGold ? "btn-3d-gold" : undefined} onClick={onClick ? () => { playSound("click"); onClick(); } : undefined} disabled={disabled} aria-label={ariaLabel} style={{ ...base, ...variantStyle, ...style }}>
       {children}
     </button>
   );

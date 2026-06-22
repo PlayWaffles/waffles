@@ -505,7 +505,19 @@
    CTA that edge used --frame (near-black), which vanishes on the dark screens
    this button lives on (results, level-up). A darker amber — a shade of the
    button's own colour — reads as depth on any background. */
-.waffles-v2 .cta.maple { background: var(--maple-500); color: #191919; border-color: #9c6608; }
+/* Canonical yellow CTA — matches the Home gold button exactly: gradient face,
+   dark-brown text, and a darker-amber ledge that collapses on press. */
+.waffles-v2 .cta.maple {
+  background: linear-gradient(180deg, #FFD24D, #F5A91B);
+  color: #3a2a00;
+  border: 0;
+  box-shadow: 0 4px 0 #b0750f;
+}
+.waffles-v2 .cta.maple:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #b0750f;
+  filter: brightness(0.97);
+}
 .waffles-v2 .cta.berry { background: var(--berry); color: var(--frame); border-color: var(--frame); }
 .waffles-v2 .cta.icon-btn { flex: 0 0 54px; background: var(--cream-pure); color: #191919; }
 
