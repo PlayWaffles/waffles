@@ -9,6 +9,8 @@ import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
 import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
 import { env } from "@/lib/env";
 
+let cronJobsStarted = false;
+
 /**
  * Roundup ended games that haven't been settled yet. Finds games where
  * endsAt < now AND rankedAt is null, then ranks + publishes on-chain.
@@ -139,10 +141,17 @@ async function closeLeagueSeasonJob() {
  * Start all cron jobs. Called once on server startup via instrumentation.ts.
  */
 export function startCronJobs() {
+  if (cronJobsStarted) {
+    console.log("[Cron] Already scheduled");
+    return;
+  }
+
   if (!env.isProduction) {
     console.log("[Cron] Skipped: cron jobs only run in production");
     return;
   }
+
+  cronJobsStarted = true;
 
   // Every 5 minutes: roundup unranked ended games
   cron.schedule("*/5 * * * *", roundupGames);
