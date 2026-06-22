@@ -131,26 +131,27 @@ function JoinedAvatars({ show = 4, size = 26, others = false }: { show?: number;
 function CompactBanner({ timer }: { timer: string }) {
   return (
     <div style={{ background: CARD_BG, borderRadius: 16, padding: "13px 14px", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-        <LiveDot />
-        <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.7, color: "#FC1919", textTransform: "uppercase" }}>Tickets closing in</span>
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#FC1919", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span>
-      </div>
-      {/* Title (prominent) on the left, prize pool as a right-aligned stat
-          using the open space on that side. */}
-      <div style={{ marginTop: 10, display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-        <span style={{ flex: 1, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1.03 }}>{MOCK.title}</span>
-        {/* Prize pool as a quiet supporting stat (label over number) so it
-            doesn't compete with the title for the eye. */}
-        <div style={{ textAlign: "right", flexShrink: 0, paddingTop: 2 }}>
+      {/* Left column: closing (red) + title + accents (green). Right column:
+          prize pool in the open space alongside that red/green text, vertically
+          centred — so it no longer shares the title's row and competes with it. */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12, justifyContent: "space-between" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+            <LiveDot />
+            <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.7, color: "#FC1919", textTransform: "uppercase" }}>Tickets closing in</span>
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 15, color: "#FC1919", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span>
+          </div>
+          <div style={{ marginTop: 9, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1.03 }}>{MOCK.title}</div>
+          <Accents mt={9} />
+        </div>
+        <div style={{ flexShrink: 0, textAlign: "right" }}>
           <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 3 }}>prize pool</div>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
-            <TicketIcon size={15} />
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "rgba(255,255,255,.92)", lineHeight: 1 }}>{MOCK.prizePool}</span>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+            <TicketIcon size={18} />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 22, color: "#fff", lineHeight: 1 }}>{MOCK.prizePool}</span>
           </div>
         </div>
       </div>
-      <Accents mt={9} />
       {/* Joined PFPs (the "filled" label) + scarcity bar + spots-left */}
       <div style={{ marginTop: 11 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, marginBottom: 7 }}>
@@ -174,32 +175,27 @@ function CompactBanner({ timer }: { timer: string }) {
 function PrizeForward({ timer }: { timer: string }) {
   return (
     <div style={{ background: CARD_BG, borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW }}>
-      {/* Two columns: info (closing + title + accents) left, prize pool +
-          scarcity occupying the open space on the right. */}
-      <div style={{ display: "flex", gap: 14, justifyContent: "space-between" }}>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-            <LiveDot />
-            <span style={{ fontSize: 10.5, fontWeight: 900, letterSpacing: 0.7, color: "#FC1919", textTransform: "uppercase" }}>Tickets closing in</span>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FC1919", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <LiveDot />
+        <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>TICKETS CLOSING IN {timer}</span>
+        <div style={{ flex: 1 }} />
+      </div>
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.05, color: "#fff" }}>{MOCK.title}</div>
+      <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 600, marginTop: 2 }}>{MOCK.format}</div>
+      <Accents mt={9} />
+      {/* Prize-pool hero + vertical scarcity gauge beside it */}
+      <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "var(--maple-500)", textTransform: "uppercase" }}>Prize pool</div>
+          <div style={{ marginTop: 4, display: "flex", alignItems: "center", gap: 8 }}>
+            <TicketIcon size={34} />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: "#fff", lineHeight: 0.9 }}>{MOCK.prizePool}</span>
           </div>
-          <div style={{ marginTop: 9, fontFamily: "var(--font-display)", fontSize: 21, lineHeight: 1.05, color: "#fff" }}>{MOCK.title}</div>
-          <div style={{ fontSize: 12, color: "rgba(255,255,255,.5)", fontWeight: 600, marginTop: 2 }}>{MOCK.format}</div>
-          <Accents mt={9} />
         </div>
-        <div style={{ flexShrink: 0, display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 13 }}>
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 3 }}>prize pool</div>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-              <TicketIcon size={28} />
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 34, color: "#fff", lineHeight: 0.9 }}>{MOCK.prizePool}</span>
-            </div>
-          </div>
-          <SpotsBarV height={46} compact />
-        </div>
+        <SpotsBarV />
       </div>
       {/* Joined PFPs — faces first, then the "and N others" social proof */}
-      <div style={{ marginTop: 14 }}>
+      <div style={{ marginTop: 12 }}>
         <JoinedAvatars show={5} size={27} others />
       </div>
       <button type="button" className={tactile.cta} style={{ marginTop: 12, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", border: "none", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, cursor: "pointer" }}>
