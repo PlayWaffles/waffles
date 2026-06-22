@@ -97,6 +97,7 @@ async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
 
 export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000; // hourly
 const TICKETS_LEAD_MS = 5 * 60 * 1000; // sales open 5m before the hour
+export const TOURNAMENT_MAX_PLAYERS = 50;
 
 // Entry pricing. The contract requires the entry payment to EXACTLY equal the
 // game's on-chain price, so there is ONE flat price for everyone — the game
@@ -128,11 +129,11 @@ export async function ensureHourlyTournamentGame(
   const startsAt = new Date(Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS);
   const endsAt = new Date(startsAt.getTime() + TOURNAMENT_ROUND_MS);
 
-  // Inherit sane play params from the platform's most recent game.
+  // Inherit non-cap play params from the platform's most recent game.
   const recent = await prisma.game.findFirst({
     where: { platform },
     orderBy: { startsAt: "desc" },
-    select: { roundBreakSec: true, maxPlayers: true },
+    select: { roundBreakSec: true },
   });
 
   const created = await createAutoScheduledGame({
@@ -144,7 +145,7 @@ export async function ensureHourlyTournamentGame(
     // standard fee is enforced per-user server-side, not by the contract.
     ticketPrice: DEFAULT_ENTRY_FEE_USDC,
     roundBreakSec: recent?.roundBreakSec ?? 0,
-    maxPlayers: recent?.maxPlayers ?? 0,
+    maxPlayers: TOURNAMENT_MAX_PLAYERS,
   });
   return { created: true, gameId: created.gameId };
 }
@@ -152,6 +153,13 @@ export async function ensureHourlyTournamentGame(
 // ---------------------------------------------------------------------------
 // Current tournament round (a live/upcoming on-chain Game)
 // ---------------------------------------------------------------------------
+
+export type TournamentParticipantAvatar = {
+  userId: string;
+  name: string;
+  avatarId: string | null;
+  pfpUrl: string | null;
+};
 
 export type TournamentGame = {
   id: string;
@@ -171,7 +179,77 @@ export type TournamentGame = {
   todayPlayerCount: number;
   todayPrizePool: number;
   recentEntryCount: number;
+  participantAvatars: TournamentParticipantAvatar[];
 };
+
+async function participantAvatarsForGame(
+  gameId: string,
+  platform: UserPlatform,
+  now: Date,
+  limit = 6,
+): Promise<TournamentParticipantAvatar[]> {
+  const currentEntries = await prisma.gameEntry.findMany({
+    where: { gameId, paidAt: { not: null } },
+    orderBy: { paidAt: "desc" },
+    take: limit,
+    select: {
+      userId: true,
+      user: { select: { username: true, avatarId: true, pfpUrl: true } },
+    },
+  });
+
+  const seen = new Set<string>();
+  const avatars: TournamentParticipantAvatar[] = [];
+  for (const entry of currentEntries) {
+    seen.add(entry.userId);
+    avatars.push({
+      userId: entry.userId,
+      name: entry.user.username ?? "Player",
+      avatarId: entry.user.avatarId ?? null,
+      pfpUrl: entry.user.pfpUrl ?? null,
+    });
+  }
+
+  if (avatars.length >= limit) return avatars;
+
+  const lastGame = await prisma.game.findFirst({
+    where: {
+      platform,
+      id: { not: gameId },
+      onchainId: { not: null },
+      endsAt: { lte: now },
+      entries: { some: { paidAt: { not: null } } },
+    },
+    orderBy: { endsAt: "desc" },
+    select: { id: true },
+  });
+  if (!lastGame) return avatars;
+
+  const previousEntries = await prisma.gameEntry.findMany({
+    where: {
+      gameId: lastGame.id,
+      paidAt: { not: null },
+      userId: seen.size > 0 ? { notIn: [...seen] } : undefined,
+    },
+    orderBy: { paidAt: "desc" },
+    take: limit - avatars.length,
+    select: {
+      userId: true,
+      user: { select: { username: true, avatarId: true, pfpUrl: true } },
+    },
+  });
+
+  for (const entry of previousEntries) {
+    avatars.push({
+      userId: entry.userId,
+      name: entry.user.username ?? "Player",
+      avatarId: entry.user.avatarId ?? null,
+      pfpUrl: entry.user.pfpUrl ?? null,
+    });
+  }
+
+  return avatars;
+}
 
 /** The platform's current tournament round — the soonest game that hasn't ended.
  *  Scheduling/creation is handled by the existing v1 auto-scheduler; here we
@@ -207,7 +285,7 @@ export async function currentTournamentGame(
   todayEnd.setUTCDate(todayEnd.getUTCDate() + 1);
   const recentStart = new Date(now.getTime() - 15 * 60 * 1000);
 
-  const [todayEntries, todayPrizePool, recentEntryCount] = await Promise.all([
+  const [todayEntries, todayPrizePool, recentEntryCount, participantAvatars] = await Promise.all([
     prisma.gameEntry.findMany({
       where: {
         paidAt: { not: null },
@@ -237,6 +315,7 @@ export async function currentTournamentGame(
         },
       },
     }),
+    participantAvatarsForGame(game.id, platform, now, 6),
   ]);
 
   return {
@@ -257,6 +336,7 @@ export async function currentTournamentGame(
     todayPlayerCount: new Set(todayEntries.map((entry) => entry.userId)).size,
     todayPrizePool: todayPrizePool._sum.prizePool ?? 0,
     recentEntryCount,
+    participantAvatars,
   };
 }
 

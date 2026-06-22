@@ -14,7 +14,7 @@ import type { PlayerState, Track } from "@/lib/player/playerState";
 import { getLevelClientQuestions, recordLevelQuestionStats, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
 import { topWinnerShare, winnersForField } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
-import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentEntrySource, TournamentGame } from "@/lib/player/tournamentGames";
+import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentEntrySource, TournamentGame, TournamentParticipantAvatar } from "@/lib/player/tournamentGames";
 import * as migrationSvc from "@/lib/player/migrationNotice";
 import * as wcTakeoverSvc from "@/lib/player/worldCupTakeover";
 import type { RoundAnswer } from "@/lib/player/scoring";
@@ -176,6 +176,7 @@ export type TournamentRound = {
   todayPlayerCount: number;
   todayPrizePoolUsdc: number;
   recentEntryCount: number;
+  participantAvatars: TournamentParticipantAvatar[];
   /** True for the migrated v1 24h game; false once hourly v2 rounds take over. */
   legacyV1: boolean;
 };
@@ -233,6 +234,7 @@ export async function getTournament(): Promise<
       todayPlayerCount: game.todayPlayerCount,
       todayPrizePoolUsdc: game.todayPrizePool,
       recentEntryCount: game.recentEntryCount,
+      participantAvatars: game.participantAvatars,
       // v2 tournaments run a 1-hour window; the migrated v1 game runs ~24h.
       legacyV1: game.endsAt.getTime() - game.startsAt.getTime() > 2 * 60 * 60 * 1000,
     },

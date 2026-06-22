@@ -489,9 +489,9 @@ export const HomeScreen = () => {
   const spotsLeft = Math.max(0, spotsTotal - realEntrants);
   const spotsRatio = spotsTotal > 0 ? Math.min(1, realEntrants / spotsTotal) : 0;
   const spotsCol = spotsRatio >= 0.85 ? "#FC1919" : spotsRatio >= 0.6 ? "#F5A91B" : "var(--leaf)";
-  // Real faces of this round's entrants for the join stack (deterministic avatar
-  // per real userId; their assigned pfp once we select avatarId in standings).
-  const joiners = board?.standings?.slice(0, 5) ?? [];
+  // Real paid participants for the join stack: current round first, then the
+  // previous game's entrants if this round has fewer than six buyers.
+  const joiners = round?.participantAvatars ?? [];
 
   // Game-card impression — the Top-of-the-Hour tournament is the home hero, so
   // log that the player saw it (one per mount) with the entry state that drives
@@ -602,7 +602,7 @@ export const HomeScreen = () => {
                 {joiners.length > 0 && (
                   <div style={{ display: "flex" }}>
                     {joiners.map((s, idx) => (
-                      <PixelImg key={s.userId} src={resolveAvatar(null, s.userId)} size={26} alt="" style={{ borderRadius: 99, objectFit: "cover", background: "#1c1c1f", border: "2px solid #0F0F10", marginLeft: idx === 0 ? 0 : -9 }} />
+                      <PixelImg key={s.userId} src={s.pfpUrl ?? resolveAvatar(s.avatarId, s.userId)} size={26} alt="" style={{ borderRadius: 99, objectFit: "cover", background: "#1c1c1f", border: "2px solid #0F0F10", marginLeft: idx === 0 ? 0 : -9 }} />
                     ))}
                   </div>
                 )}
