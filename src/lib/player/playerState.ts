@@ -13,6 +13,7 @@ import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics"
 import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isTriggeredId } from "@/lib/player/announcements";
+import { scoreToXp } from "@/lib/player/xp";
 
 // Peg used to value an on-chain prize as in-app Syrup: 1 ticket = 0.05 USDT
 // (matches the ticket buy price). merkleAmount is in payment-token base units
@@ -231,8 +232,9 @@ export async function adjustTickets(
 export async function advanceLevel(
   userId: string,
   track: Track,
-  xpGain: number,
+  score: number,
 ): Promise<{ level: number; ticketAwarded: boolean }> {
+  const xpGain = scoreToXp(score);
   const result = await prisma.$transaction(async (tx) => {
     const updated = await tx.levelProgress.update({
       where: { userId_track: { userId, track: TRACK_TO_ENUM[track] } },
@@ -254,6 +256,7 @@ export async function advanceLevel(
       properties: {
         level_track: track,
         level_number: updated.level,
+        score,
         xp_delta: xpGain,
         ticket_delta: ticketAwarded ? 1 : 0,
       },

@@ -12,6 +12,7 @@ import {
 import PartySocket from "partysocket";
 import { type VMedia } from "./world-cup/data";
 import { THEMES, resolveThemeId } from "./theme";
+import { scoreToXp } from "@/lib/player/xp";
 import {
   loadState,
   advanceLevel,
@@ -1049,6 +1050,7 @@ export function ProtoProvider({
         if (state.qIdx + 1 >= totalQs) {
           const track = state.levelTrack;
           const newLevel = state.levelByTrack[track] + 1;
+          const xpGain = scoreToXp(state.score);
           // Curved free-ticket milestone — actually credited now (was previously
           // only promised in the UI). Advances only the active track.
           const milestoneTicket = isLevelTicketMilestone(newLevel) ? 1 : 0;
@@ -1063,8 +1065,8 @@ export function ProtoProvider({
             tickets_after: state.tickets + milestoneTicket,
             ticket_delta: milestoneTicket,
             xp_before: state.xp,
-            xp_after: state.xp + state.score,
-            xp_delta: state.score,
+            xp_after: state.xp + xpGain,
+            xp_delta: xpGain,
           });
           if (state.levelByTrack[track] === 1) {
             trackClientEvent(AnalyticsEvent.FirstLevelCompleted, {
@@ -1078,8 +1080,8 @@ export function ProtoProvider({
               tickets_after: state.tickets + milestoneTicket,
               ticket_delta: milestoneTicket,
               xp_before: state.xp,
-              xp_after: state.xp + state.score,
-              xp_delta: state.score,
+              xp_after: state.xp + xpGain,
+              xp_delta: xpGain,
             });
           }
           trackClientEvent(AnalyticsEvent.LevelAdvanced, {
@@ -1094,10 +1096,10 @@ export function ProtoProvider({
             tickets_after: state.tickets + milestoneTicket,
             ticket_delta: milestoneTicket,
             xp_before: state.xp,
-            xp_after: state.xp + state.score,
-            xp_delta: state.score,
+            xp_after: state.xp + xpGain,
+            xp_delta: xpGain,
           });
-          update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + state.score, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
+          update({ hearts: newHearts, levelByTrack: { ...state.levelByTrack, [track]: newLevel }, xp: state.xp + xpGain, tickets: state.tickets + milestoneTicket, levelJustUnlocked: newLevel });
           // Persist: advanceLevel credits the same milestone ticket + xp server-side.
           void advanceLevel(track, state.score);
           // Daily mission accrual — a completed solo level counts as a played
@@ -1131,6 +1133,7 @@ export function ProtoProvider({
         // XP is score-based (not rank-dependent), so it's the instant reward and
         // is credited now along with the 2× bonus consumption.
         const xpMult = state.tournamentBonus ? 2 : 1;
+        const xpGain = scoreToXp(state.score, xpMult);
         if (state.tournamentBonus) markDailyBonusUsed();
         const provisionalRank = tournamentRank(state.score, totalQs);
         if (state.tournamentGameId) {
@@ -1167,7 +1170,7 @@ export function ProtoProvider({
         void recordMissionEvent("tournaments_played", 1);
         goto("results");
         update((s) => ({
-          xp: s.xp + s.score * xpMult,
+          xp: s.xp + xpGain,
           roundAnswers: nextAnswers,
         }));
       } else {
