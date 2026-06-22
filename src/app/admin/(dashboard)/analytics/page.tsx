@@ -33,7 +33,7 @@ import {
     buildProductionGameWhere,
     calculateProtocolRevenue,
 } from "@/lib/admin-utils";
-import { getUmamiOverviewMetrics } from "@/lib/umami";
+import { getUmamiOverviewMetrics, UmamiAnalyticsError } from "@/lib/umami";
 import type { GameNetwork, UserPlatform } from "@prisma";
 
 // ============================================================
@@ -1759,11 +1759,11 @@ async function AnalyticsContent({
     gameFilter: AnalyticsGameFilterData;
 }) {
     if (activeTab === "overview") {
-        const [data, retention] = await Promise.all([
-            getCoreDashboard(start, end, platform, gameId, gameFilter),
-            getRetentionData(start, end, platform, range, gameId),
-        ]);
-        return <OverviewTab data={data} retention={retention} />;
+        const overview = await getOverviewTabData(start, end, platform, range, gameId, gameFilter);
+        if (!overview.ok) {
+            return <AnalyticsProviderError message={overview.error.message} />;
+        }
+        return <OverviewTab data={overview.data} retention={overview.retention} />;
     }
     if (activeTab === "games") {
         const gameplay = await getGameplayData(start, end, platform, gameId, gameFilter);
@@ -1778,6 +1778,52 @@ async function AnalyticsContent({
         return <RevenueRetentionTab revenue={revenue} retention={retention} levels={levels} />;
     }
     return null;
+}
+
+async function getOverviewTabData(
+    start: Date,
+    end: Date,
+    platform: string | undefined,
+    range: string,
+    gameId: string | undefined,
+    gameFilter: AnalyticsGameFilterData,
+) {
+    try {
+        const [data, retention] = await Promise.all([
+            getCoreDashboard(start, end, platform, gameId, gameFilter),
+            getRetentionData(start, end, platform, range, gameId),
+        ]);
+        return { ok: true as const, data, retention };
+    } catch (error) {
+        if (error instanceof UmamiAnalyticsError) {
+            return { ok: false as const, error };
+        }
+        throw error;
+    }
+}
+
+function AnalyticsProviderError({ message }: { message: string }) {
+    return (
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-white shadow-[0_20px_60px_rgba(0,0,0,0.25)]">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                    <h2 className="font-display text-xl font-bold">Analytics provider unavailable</h2>
+                    <p className="mt-2 max-w-3xl text-sm leading-6 text-red-100/85">
+                        The overview depends on Umami for visitor and session metrics. Fix the Umami configuration or API response, then reload this page.
+                    </p>
+                    <p className="mt-4 rounded-xl border border-red-300/20 bg-black/20 px-4 py-3 font-mono text-xs text-red-50">
+                        {message}
+                    </p>
+                </div>
+                <Link
+                    href="/admin/analytics?tab=games&range=7d"
+                    className="inline-flex shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/10 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/15"
+                >
+                    View game analytics
+                </Link>
+            </div>
+        </div>
+    );
 }
 
 // ============================================================

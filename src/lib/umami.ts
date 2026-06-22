@@ -34,10 +34,27 @@ type UmamiMetricScope = {
   platform?: string | null;
 };
 
+export class UmamiAnalyticsError extends Error {
+  constructor(message: string, options?: ErrorOptions) {
+    super(message, options);
+    this.name = "UmamiAnalyticsError";
+  }
+}
+
+function toUmamiAnalyticsError(error: unknown) {
+  if (error instanceof UmamiAnalyticsError) return error;
+
+  const message = error instanceof Error
+    ? error.message
+    : "Umami analytics request failed.";
+
+  return new UmamiAnalyticsError(message, error instanceof Error ? { cause: error } : undefined);
+}
+
 function getUmamiBaseUrl() {
   const host = process.env.UMAMI_HOST ?? process.env.NEXT_PUBLIC_UMAMI_HOST;
   if (!host) {
-    throw new Error("UMAMI_HOST or NEXT_PUBLIC_UMAMI_HOST is required for admin analytics.");
+    throw new UmamiAnalyticsError("UMAMI_HOST or NEXT_PUBLIC_UMAMI_HOST is required for admin analytics.");
   }
   return host.replace(/\/$/, "");
 }
@@ -45,7 +62,7 @@ function getUmamiBaseUrl() {
 function getUmamiWebsiteId() {
   const websiteId = process.env.UMAMI_WEBSITE_ID ?? process.env.NEXT_PUBLIC_UMAMI_WEBSITE_ID;
   if (!websiteId) {
-    throw new Error("UMAMI_WEBSITE_ID or NEXT_PUBLIC_UMAMI_WEBSITE_ID is required for admin analytics.");
+    throw new UmamiAnalyticsError("UMAMI_WEBSITE_ID or NEXT_PUBLIC_UMAMI_WEBSITE_ID is required for admin analytics.");
   }
   return websiteId;
 }
@@ -58,7 +75,7 @@ async function getUmamiAuthToken(baseUrl: string) {
   const password = process.env.UMAMI_PASSWORD ?? (process.env.NODE_ENV === "production" ? undefined : "umami");
 
   if (!username || !password) {
-    throw new Error("UMAMI_API_KEY or UMAMI_USERNAME/UMAMI_PASSWORD is required for admin analytics.");
+    throw new UmamiAnalyticsError("UMAMI_API_KEY or UMAMI_USERNAME/UMAMI_PASSWORD is required for admin analytics.");
   }
 
   const response = await fetch(`${baseUrl}/api/auth/login`, {
@@ -72,12 +89,12 @@ async function getUmamiAuthToken(baseUrl: string) {
   });
 
   if (!response.ok) {
-    throw new Error(`Umami login failed with status ${response.status}.`);
+    throw new UmamiAnalyticsError(`Umami login failed with status ${response.status}.`);
   }
 
   const body = await response.json() as UmamiLoginResponse;
   if (!body.token) {
-    throw new Error("Umami login response did not include a token.");
+    throw new UmamiAnalyticsError("Umami login response did not include a token.");
   }
 
   return body.token;
@@ -146,7 +163,7 @@ async function getUmamiPageviews(
   });
 
   if (!response.ok) {
-    throw new Error(`Umami pageviews request failed with status ${response.status}.`);
+    throw new UmamiAnalyticsError(`Umami pageviews request failed with status ${response.status}.`);
   }
 
   return await response.json() as UmamiPageviewsResponse;
@@ -172,7 +189,7 @@ async function getUmamiStats(
   });
 
   if (!response.ok) {
-    throw new Error(`Umami stats request failed with status ${response.status}.`);
+    throw new UmamiAnalyticsError(`Umami stats request failed with status ${response.status}.`);
   }
 
   return await response.json() as UmamiStatsResponse;
@@ -200,7 +217,7 @@ async function getUmamiEventMetrics(
   });
 
   if (!response.ok) {
-    throw new Error(`Umami event metrics request failed with status ${response.status}.`);
+    throw new UmamiAnalyticsError(`Umami event metrics request failed with status ${response.status}.`);
   }
 
   return await response.json() as UmamiExpandedMetricRow[];
@@ -229,26 +246,30 @@ export async function getUmamiOverviewMetrics(
   end: Date,
   scope?: UmamiMetricScope,
 ) {
-  const context = await getUmamiRequestContext();
-  const periodMs = end.getTime() - start.getTime();
-  const previousStart = new Date(start.getTime() - periodMs);
-  const last24hStart = new Date(end.getTime() - 24 * 60 * 60 * 1000);
-  const [pageviews, currentStats, previousStats, dailyStats, eventMetrics] = await Promise.all([
-    getUmamiPageviews(context, start, end),
-    getUmamiStats(context, start, end, scope),
-    getUmamiStats(context, previousStart, start, scope),
-    getUmamiStats(context, last24hStart, end, scope),
-    getUmamiEventMetrics(context, start, end, scope),
-  ]);
-  const activeVisitors = currentStats.visitors ?? 0;
-  const levelCompletedVisitors = eventMetrics.find((row) => row.name === "level_completed")?.visitors ?? 0;
+  try {
+    const context = await getUmamiRequestContext();
+    const periodMs = end.getTime() - start.getTime();
+    const previousStart = new Date(start.getTime() - periodMs);
+    const last24hStart = new Date(end.getTime() - 24 * 60 * 60 * 1000);
+    const [pageviews, currentStats, previousStats, dailyStats, eventMetrics] = await Promise.all([
+      getUmamiPageviews(context, start, end),
+      getUmamiStats(context, start, end, scope),
+      getUmamiStats(context, previousStart, start, scope),
+      getUmamiStats(context, last24hStart, end, scope),
+      getUmamiEventMetrics(context, start, end, scope),
+    ]);
+    const activeVisitors = currentStats.visitors ?? 0;
+    const levelCompletedVisitors = eventMetrics.find((row) => row.name === "level_completed")?.visitors ?? 0;
 
-  return {
-    sessionsByHour: hourlySessionsFromPageviews(pageviews, context.timezone),
-    activeVisitors,
-    previousActiveVisitors: previousStats.visitors ?? 0,
-    dailyVisitors: dailyStats.visitors ?? 0,
-    levelCompletedVisitors,
-    onboardingRate: activeVisitors > 0 ? (levelCompletedVisitors / activeVisitors) * 100 : 0,
-  };
+    return {
+      sessionsByHour: hourlySessionsFromPageviews(pageviews, context.timezone),
+      activeVisitors,
+      previousActiveVisitors: previousStats.visitors ?? 0,
+      dailyVisitors: dailyStats.visitors ?? 0,
+      levelCompletedVisitors,
+      onboardingRate: activeVisitors > 0 ? (levelCompletedVisitors / activeVisitors) * 100 : 0,
+    };
+  } catch (error) {
+    throw toUmamiAnalyticsError(error);
+  }
 }
