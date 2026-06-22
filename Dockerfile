@@ -51,7 +51,7 @@ RUN AUTH_SECRET=build-time-auth-secret \
   CLOUDINARY_CLOUD_NAME=build-time-cloudinary-cloud \
   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/waffles_build \
   NEYNAR_API_KEY=build-time-neynar-key \
-  NEXT_DEPLOYMENT_ID=${NEXT_DEPLOYMENT_ID:-${GIT_SHA:-${GIT_COMMIT_SHA:-${SOURCE_COMMIT:-${DEPLOYMENT_VERSION:-docker-build}}}} \
+  NEXT_DEPLOYMENT_ID=docker-build \
   bun run build
 RUN cp -R public .next/standalone/public && \
   mkdir -p .next/standalone/.next && \
