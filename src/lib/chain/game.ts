@@ -73,7 +73,7 @@ export async function createGameOnChain(
         abi: waffleGameAbi,
         functionName: "createGame",
         args: [onchainId, minimumTicketPrice],
-      }),
+      }, chainTarget),
     );
 
     console.log(`[Chain] Created game ${onchainId}. TX: ${hash}`);
@@ -119,7 +119,7 @@ export async function closeSalesOnChain(
       abi: waffleGameAbi,
       functionName: "closeSales",
       args: [onchainId],
-    }),
+    }, chainTarget),
   );
 
   console.log(`[Chain] Closed sales for game ${onchainId}. TX: ${hash}`);

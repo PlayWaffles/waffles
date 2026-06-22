@@ -3,7 +3,7 @@
 /**
  * Client wallet wiring for on-chain tournaments. Promise-based wrappers around
  * the exact same contract config the v1 player used (`waffleGameAbi`, the
- * payment token, the builder-code data suffix) — so entry (`buyTicket`) and
+ * payment token, platform-specific transaction metadata) — so entry (`buyTicket`) and
  * prize `claimPrize` reuse v1's chain layer verbatim, just exposed as awaitable
  * functions the ProtoProvider's async actions can call.
  *
@@ -190,7 +190,7 @@ export function useTournamentWallet() {
               abi: ERC20_ABI,
               functionName: "approve",
               args: [contractAddress, approveAmount],
-            }),
+            }, target),
           );
           onStep?.("approveConfirm");
           blog("[buy-ticket] approve tx sent, waiting", { approveHash });
@@ -208,7 +208,7 @@ export function useTournamentWallet() {
             abi: waffleGameAbi,
             functionName: "buyTicket",
             args: [onchainId, amount],
-          }),
+          }, target),
         );
         onStep?.("confirming");
         blog("[buy-ticket] buyTicket tx sent, waiting", { buyHash });
@@ -254,7 +254,7 @@ export function useTournamentWallet() {
             abi: waffleGameAbi,
             functionName: "claimPrize",
             args: [onchainId, amount, proof],
-          }),
+          }, target),
         );
         onStep?.("confirming");
         await publicClient.waitForTransactionReceipt({ hash });

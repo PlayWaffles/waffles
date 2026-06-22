@@ -248,7 +248,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
     const formattedProjectedPrizePool = formatUsdAmount(
         formatUnits(projectedPrizePoolUnits, PAYMENT_TOKEN_DECIMALS),
     );
-    const effectiveChainId = liveWalletChainId ?? wagmiChainId;
+    const effectiveChainId = isConnected ? (liveWalletChainId ?? wagmiChainId) : null;
     const isOnCorrectChain = isConnected && effectiveChainId === targetChain.id;
     const needsApproval = amountInUnits > BigInt(0) && allowanceBigInt < amountInUnits;
     const isWorking = step !== "idle" && step !== "success" && step !== "error";
@@ -260,12 +260,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
     }, []);
 
     useEffect(() => {
-        if (!isConnected) {
-            setLiveWalletChainId(null);
-            return;
-        }
-
-        void refreshLiveChainId();
+        if (isConnected) void refreshLiveChainId();
     }, [isConnected, refreshLiveChainId, wagmiChainId]);
 
     useEffect(() => {
@@ -494,7 +489,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                         abi: ERC20_ABI,
                         functionName: "approve",
                         args: [contractAddress, amountInUnits],
-                    }),
+                    }, target),
                 );
 
                 setTxHash(approvalHash);
@@ -547,7 +542,7 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
                     abi: waffleGameAbi,
                     functionName: "sponsorPrizePool",
                     args: [onchainId, amountInUnits],
-                }),
+                }, target),
             );
 
             setTxHash(sponsorshipHash);

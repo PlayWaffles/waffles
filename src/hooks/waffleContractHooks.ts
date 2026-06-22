@@ -155,7 +155,7 @@ export function useApproveToken(
         abi: ERC20_ABI,
         functionName: "approve",
         args: [contractAddress, amountInUnits],
-      }),
+      }, target),
     );
   };
 
@@ -182,7 +182,7 @@ export function useBuyTicket(target: ChainTarget) {
         abi: waffleGameAbi,
         functionName: "buyTicket",
         args: [onchainId, amountInUnits],
-      }),
+      }, target),
     );
   };
 
@@ -212,7 +212,7 @@ export function useClaimPrize(target: ChainTarget) {
         abi: waffleGameAbi,
         functionName: "claimPrize",
         args: [onchainId, amount, proof],
-      }),
+      }, target),
     );
   };
 
@@ -239,7 +239,7 @@ export function useSponsorPrizePool(target: ChainTarget) {
         abi: waffleGameAbi,
         functionName: "sponsorPrizePool",
         args: [onchainId, amountInUnits],
-      }),
+      }, target),
     );
   };
 

@@ -318,7 +318,7 @@ export async function publishResults(gameId: string): Promise<PublishResult> {
       abi: waffleGameAbi,
       functionName: "submitResults",
       args: [onchainId, merkleRoot],
-    }),
+    }, chainTarget),
   );
 
   await publicClient.waitForTransactionReceipt({ hash: txHash });
