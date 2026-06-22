@@ -546,31 +546,26 @@ export const HomeScreen = () => {
                 </div>
                 <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.8, color: "var(--maple-500)", textTransform: "uppercase", flexShrink: 0 }}>{fillStatus}</span>
               </div>
-              {/* Live momentum line — replaces the standalone "1 player" stat. */}
+              {/* Live momentum line — carries both the live count and the day's
+                  social proof (folded in from the old separate TODAY band), so
+                  the hero owns the "people are here" story in one place. */}
               <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
                 <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(0,207,242,.18)", flexShrink: 0, animation: "waffles-v2-pulse 1.5s infinite" }} />
-                {realEntrants.toLocaleString()} playing · every entry grows the pot
+                {realEntrants.toLocaleString()} playing now · {round.todayPlayerCount.toLocaleString()} joined today
               </div>
             </div>
           )}
 
-          {round && (
-            <div style={{ marginTop: 8, borderRadius: 10, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.06)", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-              <span style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,.45)", letterSpacing: 0.8 }}>TODAY</span>
-              <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.75)", textAlign: "right" }}>
-                {round.todayPlayerCount.toLocaleString()} players joined
-              </span>
-            </div>
-          )}
-
-          {/* Accent lines: the personal "beat your last finish" hook, plus the
-              conditional 2× XP first-game bonus (relocated off the chip row). */}
-          <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 5 }}>
+          {/* "Act" tier: the personal status/hook (entered → resume, returning →
+              beat your last finish, first-timer → welcome) plus the conditional
+              2× XP bonus. The first-timer copy stays off the prize (the hero
+              already owns "winner takes the pool") so nothing repeats. */}
+          <div style={{ marginTop: 13, display: "flex", flexDirection: "column", gap: 5 }}>
             <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--leaf)", fontVariantNumeric: "tabular-nums" }}>
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M4 12a8 8 0 1 1 2.3 5.6M4 12V7m0 5h5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {entered
                 ? (canResume ? "You're in — tap to play your round" : `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}tap to view`)
-                : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : `Your first tournament — ${winnerCount <= 1 ? "win it to take the pool" : `top ${winnerCount} win tickets`}`}
+                : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : "Your first tournament — climb the leaderboard"}
             </div>
             {bonusAvailable && (
               <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>

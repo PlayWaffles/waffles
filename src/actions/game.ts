@@ -1,7 +1,7 @@
 "use server";
 
 import { prisma } from "@/lib/db";
-import { Prisma, type UserPlatform } from "@prisma";
+import { Prisma } from "@prisma";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getScore } from "@/lib/game/scoring";
 import { safeRevalidateGamePaths } from "@/lib/game/cache";
