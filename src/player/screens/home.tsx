@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, TOURNAMENT_TOP_PRIZE, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
+import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/player/api";
 import { useResilientAction } from "../useResilientAction";
@@ -68,7 +68,7 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 // sheet (with both the free earn-by-playing route and a buy route) when they
 // can't. Both share the shop's sheet visual language.
 
-const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, prizeGuaranteed }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null; round: TournamentRound | null; prizeTickets: number; prizeGuaranteed: boolean }) => {
+const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, winnersLabel }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null; round: TournamentRound | null; prizeTickets: number; winnersLabel: string }) => {
   const usd = (n: number) => `$${n.toFixed(2)}`;
   // MiniPay: if the wallet can't cover the entry, swap JOIN for a one-tap
   // "Add Cash" deeplink instead of dead-ending at an insufficient-balance error.
@@ -88,7 +88,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
           {round ? `${round.title} · ${round.category} · ${round.questionCount} Q` : "Top of the Hour · Mixed · 6 Q"}
         </div>
         <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-          <TicketIcon size={14} />Win up to {prizeTickets}{prizeGuaranteed ? " guaranteed" : ""} — top finishers split the pool
+          <TicketIcon size={14} />Win up to {prizeTickets} — {winnersLabel.toLowerCase()}
         </div>
       </div>
 
@@ -144,8 +144,12 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         {needsTopUp ? (
           <Button flex={1.4} onClick={openAddCash} ariaLabel="Add cash in MiniPay to play">ADD CASH TO PLAY</Button>
         ) : (
-          <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Confirm tournament entry in your wallet">
-            {pending ? (stepLabel ?? "Working…") : fee ? `JOIN · ${usd(fee.entryFee)}` : "JOIN"}
+          <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Buy a ticket to enter the tournament">
+            {pending ? (stepLabel ?? "Working…") : (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <TicketIcon size={18} />Buy ticket
+              </span>
+            )}
           </Button>
         )}
       </div>
@@ -425,9 +429,15 @@ export const HomeScreen = () => {
   // guarantee so a near-empty round still reads as a deal. Once the live cut
   // overtakes the floor, the number tracks the pool exactly. Falls back to the
   // advertised top prize until the round loads.
-  const liveTopTickets = round ? Math.round(round.topPrizeUsdc / USDT_PER_TICKET) : 0;
-  const prizeTickets = Math.max(TOURNAMENT_TOP_PRIZE, liveTopTickets);
-  const prizeGuaranteed = round != null && prizeTickets > liveTopTickets;
+  // Headline top prize = the #1 finisher's cut of the *live* pool, straight from
+  // the settlement bracket (topPrizeUsdc = pool × topWinnerShare), valued in
+  // tickets. No hardcoded floor — it's the real algo, so it grows as the pool
+  // fills. Floored at 1 ticket only so a near-empty round never renders "🎫 0".
+  const prizeTickets = round ? Math.max(1, Math.round(round.topPrizeUsdc / USDT_PER_TICKET)) : 0;
+  // Winner count from the same bracket → "Winner takes all" vs "Top N split the
+  // pool" (replaces the static, almost-always-wrong "Top 100").
+  const winnerCount = round?.winnerCount ?? 1;
+  const winnersLabel = winnerCount <= 1 ? "Winner takes all" : `Top ${winnerCount} split the pool`;
   const currentPlayersLabel = `${realEntrants.toLocaleString()} player${realEntrants === 1 ? "" : "s"}`;
   const recentEntryLabel = round && round.recentEntryCount > 0 ? `+${round.recentEntryCount.toLocaleString()} joined recently` : "Round is open";
 
@@ -502,6 +512,12 @@ export const HomeScreen = () => {
               ? `${round.category} trivia · ${round.questionCount} question${round.questionCount === 1 ? "" : "s"} · ${round.roundSeconds}s`
               : theme.copy.liveTagline}
           </div>
+          {/* Skill cue — this is a game of speed + accuracy, not a raffle. Says
+              up front how you win so the prize reads as earned. */}
+          <div style={{ marginTop: 5, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 800, color: "var(--leaf)" }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" /></svg>
+            Fastest correct answers win
+          </div>
           {round?.legacyV1 && (
             <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 5, lineHeight: 1.35 }}>
               This is a game from v1 — games after this one run hourly.
@@ -513,7 +529,7 @@ export const HomeScreen = () => {
               <div style={{ borderRadius: 12, border: "1px solid rgba(255,201,49,.2)", background: "rgba(255,201,49,.08)", padding: "10px 11px" }}>
                 <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--maple-500)" }}>TOP PRIZE</div>
                 <div style={{ marginTop: 3, fontFamily: "var(--font-display)", fontSize: 25, color: "#fff", lineHeight: 1, display: "inline-flex", alignItems: "center", gap: 5 }}><TicketIcon size={20} />{prizeTickets}</div>
-                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>{prizeGuaranteed ? "Guaranteed" : "Top finisher's cut"}</div>
+                <div style={{ marginTop: 3, fontSize: 10, fontWeight: 800, color: "rgba(255,255,255,.45)" }}>{winnersLabel}</div>
               </div>
               <div style={{ borderRadius: 12, border: "1px solid rgba(0,207,242,.18)", background: "rgba(0,207,242,.07)", padding: "10px 11px" }}>
                 <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 1, color: "var(--leaf)" }}>PLAYING NOW</div>
@@ -527,7 +543,7 @@ export const HomeScreen = () => {
             <div style={{ marginTop: 8, borderRadius: 10, background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.06)", padding: "8px 10px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
               <span style={{ fontSize: 10, fontWeight: 900, color: "rgba(255,255,255,.45)", letterSpacing: 0.8 }}>TODAY</span>
               <span style={{ fontSize: 11, fontWeight: 800, color: "rgba(255,255,255,.75)", textAlign: "right" }}>
-                {round.todayPlayerCount.toLocaleString()} players
+                {round.todayPlayerCount.toLocaleString()} players joined
               </span>
             </div>
           )}
@@ -539,7 +555,7 @@ export const HomeScreen = () => {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M4 12a8 8 0 1 1 2.3 5.6M4 12V7m0 5h5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
               {entered
                 ? (canResume ? "You're in — tap to play your round" : `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}tap to view`)
-                : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : "Your first tournament — Top 100 win tickets"}
+                : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : `Your first tournament — ${winnerCount <= 1 ? "win it to take the pool" : `top ${winnerCount} win tickets`}`}
             </div>
             {bonusAvailable && (
               <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
@@ -617,7 +633,7 @@ export const HomeScreen = () => {
           fee={fee}
           round={round}
           prizeTickets={prizeTickets}
-          prizeGuaranteed={prizeGuaranteed}
+          winnersLabel={winnersLabel}
           pending={entering}
           stepLabel={proto.tournamentStep ? txStepLabel(proto.tournamentStep) : null}
           error={entryError}

@@ -209,6 +209,17 @@ export function topWinnerShare(paidEntrants: number): number {
   return normalizeShares(schedule)[0] ?? 1;
 }
 
+/** How many finishers get paid for a field of this size — the live bracket's
+ *  schedule length, capped at the field. Lets the lobby say "Top N split the
+ *  pool" / "Winner takes all" using the same bracket the settlement uses,
+ *  instead of a static "Top 100" that never matches a real (small) field.
+ *  Empty/solo field → 1 winner. (Pre-tail-drop: a near-empty pool can pay
+ *  fewer at settlement, but this is the advertised ceiling.) */
+export function winnersForField(paidEntrants: number): number {
+  if (paidEntrants <= 1) return 1;
+  return Math.min(paidEntrants, getScheduleForPaidEntrants(paidEntrants).length);
+}
+
 // ============================================================================
 // Validation & Debug Utilities
 // ============================================================================
