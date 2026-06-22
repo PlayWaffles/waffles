@@ -260,10 +260,6 @@ export function SponsorGameCard({ gameId, onchainId, gameTitle, platform, networ
     }, []);
 
     useEffect(() => {
-        if (isConnected) void refreshLiveChainId();
-    }, [isConnected, refreshLiveChainId, wagmiChainId]);
-
-    useEffect(() => {
         console.log("[Sponsor]", {
             stage: "state",
             gameId,
