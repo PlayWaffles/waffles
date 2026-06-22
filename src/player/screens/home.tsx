@@ -144,10 +144,10 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         {needsTopUp ? (
           <Button flex={1.4} onClick={openAddCash} ariaLabel="Add cash in MiniPay to play">ADD CASH TO PLAY</Button>
         ) : (
-          <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Buy a ticket to enter the tournament">
+          <Button flex={1.4} onClick={pending ? () => {} : onConfirm} ariaLabel="Join the tournament">
             {pending ? (stepLabel ?? "Working…") : (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <TicketIcon size={18} />Buy ticket
+                <TicketIcon size={18} />Join game
               </span>
             )}
           </Button>
@@ -530,7 +530,7 @@ export const HomeScreen = () => {
               your-entry badge. */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
-            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0 }}>TICKETS CLOSING IN <span style={{ fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</span></div>
+            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "var(--font-display)" }}>TICKETS CLOSING IN <span style={{ fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</span></div>
             <div style={{ flex: 1 }} />
             {entered && (
               <div className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(0,207,242,.4)", whiteSpace: "nowrap", flexShrink: 0 }}>YOU&apos;RE IN</div>
@@ -600,10 +600,10 @@ export const HomeScreen = () => {
 
           {/* CTA — looks like a button but is part of the card's tap (avoids
               nesting interactives); state-aware: resume / view / buy. */}
-          <div style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.28)" }}>
+          <div className="pressable" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.28)" }}>
             {entered
               ? (canResume ? "Play your round" : "View standing")
-              : (<><TicketIcon size={18} />Buy ticket · {TOURNAMENT_TICKET_COST}</>)}
+              : (<><TicketIcon size={18} />Join game</>)}
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
             <div className="waffle-mark" style={{ width: 120, height: 120, borderRadius: 24 }} />

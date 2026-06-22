@@ -11,6 +11,8 @@ function cleanEnvString(value: unknown) {
   if (typeof value !== "string") return value;
 
   const trimmed = value.trim();
+  if (!trimmed) return undefined;
+
   if (
     (trimmed.startsWith("\"") && trimmed.endsWith("\"")) ||
     (trimmed.startsWith("'") && trimmed.endsWith("'"))
@@ -24,6 +26,11 @@ function cleanEnvString(value: unknown) {
 const addressSchema = z.preprocess(
   cleanEnvString,
   z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
+);
+
+const optionalUrlSchema = z.preprocess(
+  cleanEnvString,
+  z.string().url().optional(),
 );
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
@@ -93,10 +100,10 @@ const envSchema = z.object({
   NEXT_PUBLIC_ONCHAINKIT_API_KEY: z
     .string()
     .min(1, "NEXT_PUBLIC_ONCHAINKIT_API_KEY is required"),
-  NEXT_PUBLIC_BASE_MAINNET_RPC_URL: z.string().url().optional(),
-  NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: z.string().url().optional(),
-  NEXT_PUBLIC_CELO_MAINNET_RPC_URL: z.string().url().optional(),
-  NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL: z.string().url().optional(),
+  NEXT_PUBLIC_BASE_MAINNET_RPC_URL: optionalUrlSchema,
+  NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: optionalUrlSchema,
+  NEXT_PUBLIC_CELO_MAINNET_RPC_URL: optionalUrlSchema,
+  NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL: optionalUrlSchema,
   NEXT_PUBLIC_CHAIN_NETWORK: z.enum(["mainnet", "testnet"]).optional(),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: addressSchema,
@@ -109,7 +116,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER: addressSchema,
   NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_APP: addressSchema,
   NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY: addressSchema,
-  NEXT_PUBLIC_BLOCK_EXPLORER_URL: z.string().url().optional(),
+  NEXT_PUBLIC_BLOCK_EXPLORER_URL: optionalUrlSchema,
   NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE: z.coerce
     .number()
     .int()
@@ -133,8 +140,8 @@ const envSchema = z.object({
   NEXT_PUBLIC_ACCOUNT_ASSOCIATION_SIGNATURE: z.string().optional(),
 
   // URLs
-  NEXT_PUBLIC_URL: z.string().url().optional(),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  NEXT_PUBLIC_URL: optionalUrlSchema,
+  NEXT_PUBLIC_APP_URL: optionalUrlSchema,
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   VERCEL_URL: z.string().optional(),
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
