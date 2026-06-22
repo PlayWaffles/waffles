@@ -88,17 +88,14 @@
    A theme is a CSS-variable override on the root, toggled by [data-theme]
    (set in page.tsx from the active Theme). Every screen reskins automatically
    because they all read these tokens. Add an event by adding a block here. */
-.waffles-v2[data-theme="world-cup"] {
-  /* Pitch-green surfaces; keep the maple gold for CTAs/prizes (trophy gold). */
-  --leaf: #2bbf5b;
-  --leaf-dark: #1f8f44;
-  --sky: #2bbf5b;
-  --sky-dark: #1f8f44;
-  --surface-deep: #05130b;
-  --surface-1: #0b1d12;
-  --surface-2: #112a1b;
-  --surface-3: #1c3a27;
-}
+/* World Cup runs as a campaign only now (copy, titles, football questions via
+   theme.ts + game data, plus the takeover). Its colour skin is intentionally
+   removed, so it renders on the default Waffles palette. To bring the pitch-green
+   look back, restore this block:
+   .waffles-v2[data-theme="world-cup"] {
+     --leaf: #2bbf5b; --leaf-dark: #1f8f44; --sky: #2bbf5b; --sky-dark: #1f8f44;
+     --surface-deep: #05130b; --surface-1: #0b1d12; --surface-2: #112a1b; --surface-3: #1c3a27;
+   } */
 
 .waffles-v2-frame {
   position: relative;

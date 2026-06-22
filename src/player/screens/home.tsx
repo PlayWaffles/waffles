@@ -538,11 +538,6 @@ export const HomeScreen = () => {
           </div>
 
           <div style={{ fontFamily: "var(--font-display)", fontSize: 24, lineHeight: 1.04, color: "#fff" }}>{round?.title || theme.copy.liveTitle}</div>
-          {round?.legacyV1 && (
-            <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 5, lineHeight: 1.35 }}>
-              This is a game from v1 — games after this one run hourly.
-            </div>
-          )}
 
           {/* Accents — skill cue (always) + first-game 2× XP (conditional). */}
           <div style={{ marginTop: 9, display: "flex", flexDirection: "column", gap: 5 }}>
