@@ -26,6 +26,32 @@ const addressSchema = z.preprocess(
   z.string().regex(/^0x[a-fA-F0-9]{40}$/).optional(),
 );
 
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
+
+function formatEnvErrors(error: z.ZodError) {
+  return Object.entries(error.flatten().fieldErrors)
+    .map(([name, messages]) => `${name}: ${messages?.join(", ")}`)
+    .join("; ");
+}
+
+function requireAddress(
+  name: string,
+  value: `0x${string}` | undefined,
+): `0x${string}` {
+  if (!value || value.toLowerCase() === ZERO_ADDRESS) {
+    throw new Error(`${name} is not configured`);
+  }
+
+  return value;
+}
+
+function resolveAddress(
+  name: string,
+  ...values: (`0x${string}` | undefined)[]
+): `0x${string}` {
+  return requireAddress(name, values.find(Boolean));
+}
+
 const envSchema = z.object({
   // Server-only (optional on client, required on server)
   NEYNAR_API_KEY: isServer
@@ -174,73 +200,12 @@ const getEnv = () => {
   });
 
   if (!parsed.success) {
-    // Only log on server to avoid exposing errors to client
+    const message = formatEnvErrors(parsed.error);
     if (typeof window === "undefined") {
-      console.error(
-        "❌ Invalid environment variables:",
-        JSON.stringify(parsed.error.flatten().fieldErrors, null, 2)
-      );
-      throw new Error("Invalid environment variables");
-    } else {
-      // On client, just log to console but don't crash
-      console.warn(
-        "⚠️ Environment validation failed (non-fatal on client):",
-        parsed.error.flatten().fieldErrors
-      );
-      // Return defaults for client
-      return {
-        rootUrl: "http://localhost:3000",
-        neynarApiKey: "",
-        databaseUrl: "",
-        authSecret: undefined,
-        defaultAdminPrivateKey: undefined,
-        operatorPrivateKey: undefined,
-        settlerPrivateKey: undefined,
-        cloudinaryCloudName: "",
-        cloudinaryApiKey: "",
-        cloudinaryApiSecret: "",
-        nextPublicOnchainkitApiKey: "",
-        nextPublicBaseMainnetRpcUrl: "https://mainnet.base.org",
-        nextPublicBaseSepoliaRpcUrl: "https://sepolia.base.org",
-        nextPublicCeloMainnetRpcUrl: "https://forno.celo.org",
-        nextPublicCeloSepoliaRpcUrl:
-          "https://forno.celo-sepolia.celo-testnet.org",
-        nextPublicChainNetwork: "mainnet" as const,
-        nextPublicBaseBuilderCode: undefined,
-        nextPublicWaffleContractAddress:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicWaffleContractAddressFarcaster:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicWaffleContractAddressBaseApp:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicPaymentTokenAddressBaseMainnet:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicPaymentTokenAddressBaseSepolia:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicWaffleContractAddressMiniPay:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicPaymentTokenAddress:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicPaymentTokenAddressFarcaster:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicPaymentTokenAddressBaseApp:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicPaymentTokenAddressMiniPay:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicBlockExplorerUrl: "https://celo-sepolia.blockscout.com",
-        nextPublicLeaderboardPageSize: 25,
-        homeUrlPath: "",
-        nextPublicTreasuryWallet:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        nextPublicTreasuryWalletMiniPay:
-          "0x0000000000000000000000000000000000000000" as `0x${string}`,
-        accountAssociation: {
-          header: undefined,
-          payload: undefined,
-          signature: undefined,
-        },
-      };
+      console.error("❌ Invalid environment variables:", message);
     }
+
+    throw new Error(`Invalid environment variables: ${message}`);
   }
 
   const data = parsed.data;
@@ -287,45 +252,67 @@ const getEnv = () => {
       "https://forno.celo-sepolia.celo-testnet.org",
     nextPublicChainNetwork: data.NEXT_PUBLIC_CHAIN_NETWORK || "mainnet",
     nextPublicBaseBuilderCode: data.NEXT_PUBLIC_BASE_BUILDER_CODE,
-    nextPublicWaffleContractAddress: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicWaffleContractAddressFarcaster: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER ||
+    nextPublicWaffleContractAddress: data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
+    nextPublicWaffleContractAddressFarcaster: resolveAddress(
+      "NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER",
+      data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER,
       data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicWaffleContractAddressBaseApp: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_BASE_APP ||
+        undefined,
+    ),
+    nextPublicWaffleContractAddressBaseApp: resolveAddress(
+      "NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_BASE_APP",
+      data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_BASE_APP,
       data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER ||
-      data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicPaymentTokenAddressBaseMainnet: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicPaymentTokenAddressBaseSepolia: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA ||
+        data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
+        undefined,
+    ),
+    nextPublicPaymentTokenAddressBaseMainnet: requireAddress(
+      "NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET",
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET,
+    ),
+    nextPublicPaymentTokenAddressBaseSepolia: resolveAddress(
+      "NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA",
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_SEPOLIA,
       data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicWaffleContractAddressMiniPay: (data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY ||
+        undefined,
+    ),
+    nextPublicWaffleContractAddressMiniPay: resolveAddress(
+      "NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY",
+      data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_MINIPAY,
       data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicPaymentTokenAddress: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicPaymentTokenAddressFarcaster: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER ||
+        undefined,
+    ),
+    nextPublicPaymentTokenAddress: data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS,
+    nextPublicPaymentTokenAddressFarcaster: resolveAddress(
+      "NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER",
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER,
       data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicPaymentTokenAddressBaseApp: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_APP ||
+        undefined,
+    ),
+    nextPublicPaymentTokenAddressBaseApp: resolveAddress(
+      "NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_APP",
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_APP,
       data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_BASE_MAINNET ||
-      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER ||
+        data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_FARCASTER ||
+        data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
+        undefined,
+    ),
+    nextPublicPaymentTokenAddressMiniPay: resolveAddress(
+      "NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY",
+      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY,
       data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicPaymentTokenAddressMiniPay: (data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS_MINIPAY ||
-      data.NEXT_PUBLIC_PAYMENT_TOKEN_ADDRESS ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+        undefined,
+    ),
     nextPublicBlockExplorerUrl:
       data.NEXT_PUBLIC_BLOCK_EXPLORER_URL ||
       "https://celo-sepolia.blockscout.com",
     nextPublicLeaderboardPageSize: data.NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE,
     homeUrlPath: data.NEXT_PUBLIC_HOME_URL_PATH,
-    nextPublicTreasuryWallet: (data.NEXT_PUBLIC_TREASURY_WALLET ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
-    nextPublicTreasuryWalletMiniPay: (data.NEXT_PUBLIC_TREASURY_WALLET_MINIPAY ||
-      "0x0000000000000000000000000000000000000000") as `0x${string}`,
+    nextPublicTreasuryWallet: data.NEXT_PUBLIC_TREASURY_WALLET,
+    nextPublicTreasuryWalletMiniPay: requireAddress(
+      "NEXT_PUBLIC_TREASURY_WALLET_MINIPAY",
+      data.NEXT_PUBLIC_TREASURY_WALLET_MINIPAY,
+    ),
     accountAssociation: {
       header: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_HEADER,
       payload: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_PAYLOAD,
