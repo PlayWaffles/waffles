@@ -179,7 +179,7 @@ function PrizeForward({ timer }: { timer: string }) {
     <div style={{ background: CARD_BG, borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: CARD_SHADOW }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
         <LiveDot />
-        <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>TICKETS CLOSING IN {timer}</span>
+        <span className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap" }}>TICKETS CLOSING IN <span style={{ fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{timer}</span></span>
         <div style={{ flex: 1 }} />
       </div>
       <div style={{ fontFamily: "var(--font-display)", fontSize: 24, lineHeight: 1.04, color: "#fff" }}>{MOCK.title}</div>
@@ -226,7 +226,7 @@ function Slot({ tag, name, note, children }: { tag: string; name: string; note: 
 export default function TournamentCardPreview() {
   const timer = useCountdown();
   return (
-    <div className="waffles-v2" data-theme="world-cup" style={{ minHeight: "100dvh", background: "#000", padding: "32px 20px 80px" }}>
+    <div className="waffles-v2" data-theme="world-cup" style={{ minHeight: "100dvh", background: "#000", padding: "32px 20px 80px", fontFamily: "var(--font-fredoka), Fredoka, ui-rounded, system-ui, sans-serif" }}>
       <header style={{ maxWidth: 1080, margin: "0 auto 28px" }}>
         <h1 style={{ fontFamily: "var(--font-display)", fontSize: 30, color: "#fff", margin: 0 }}>Tournament card — 4 directions</h1>
         <p style={{ margin: "8px 0 0", fontSize: 13, color: "rgba(255,255,255,.5)", fontWeight: 600 }}>
