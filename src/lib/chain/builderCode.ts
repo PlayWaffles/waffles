@@ -1,6 +1,6 @@
 import { concatHex, numberToHex, size, stringToHex, type Hex } from "viem";
 import { env } from "@/lib/env";
-import type { ChainTarget } from "./network";
+import { resolveChainTarget, type ChainTarget } from "./network";
 
 const ERC_8021_SUFFIX = "0x80218021802180218021802180218021" as const;
 const MAX_CODES_SIZE_BYTES = 0xff;
@@ -49,8 +49,8 @@ export const builderCodeSendCallsCapability = builderCodeDataSuffix
 
 export function withBuilderCodeDataSuffix<
   T extends Record<string, unknown> & { dataSuffix?: Hex },
->(request: T, target: Pick<ChainTarget, "platform">): T {
-  if (target.platform !== "BASE_APP") return request;
+>(request: T, target: ChainTarget): T {
+  if (resolveChainTarget(target).platform !== "BASE_APP") return request;
   if (!builderCodeDataSuffix) return request;
   return { ...request, dataSuffix: builderCodeDataSuffix };
 }
