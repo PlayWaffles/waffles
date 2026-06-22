@@ -1,8 +1,11 @@
-FROM oven/bun:1.3.4-debian AS deps
+FROM oven/bun:1.3.4-debian AS bun
+
+FROM node:22-bookworm-slim AS deps
 WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 COPY package.json bun.lock ./
 COPY prisma ./prisma
 RUN bun install --frozen-lockfile
@@ -56,7 +59,8 @@ RUN export AUTH_SECRET=build-time-auth-secret \
   NEXT_STATIC_GENERATION_MAX_CONCURRENCY=1 \
   NEXT_STATIC_GENERATION_MIN_PAGES_PER_WORKER=100 \
   NODE_OPTIONS=--max-old-space-size=1536 && \
-  bun run build
+  node ./node_modules/prisma/build/index.js generate && \
+  node ./node_modules/next/dist/bin/next build --webpack
 RUN cp -R public .next/standalone/public && \
   mkdir -p .next/standalone/.next && \
   cp -R .next/static .next/standalone/.next/static
