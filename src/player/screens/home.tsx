@@ -322,7 +322,7 @@ const HomeContinueRun = () => {
       data-coach="home-continue"
       onClick={() => proto.goto("levels")}
       aria-label={`Continue to level ${next}`}
-      style={{ width: "100%", background: "linear-gradient(135deg, #1a2a1a 0%, var(--surface-1) 60%)", border: "1px solid rgba(255,159,28,.2)", borderRadius: 16, padding: "12px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 124 }}
+      style={{ width: "100%", background: "linear-gradient(135deg, #241b0d 0%, var(--surface-1) 60%)", border: "1px solid rgba(255,159,28,.2)", borderRadius: 16, padding: "12px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 124 }}
     >
       <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
         <div style={{ fontSize: 10, fontWeight: 800, color: "var(--leaf)", letterSpacing: 1, textTransform: "uppercase" }}>Next Level · Forest</div>

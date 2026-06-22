@@ -3,32 +3,24 @@ import { prisma } from "@/lib/db";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 
 const ONE_HOUR_MS = 60 * 60 * 1000;
-const ONE_DAY_MS = 24 * ONE_HOUR_MS;
-const ALLOWED_WEEKDAYS = new Set([1, 3, 5]); // Mon, Wed, Fri in Africa/Lagos
-const AUTO_START_HOUR_UTC = 14;
 // Default spots (entry cap) for an auto-scheduled game. Set here rather than
 // carried forward so the cap is a deliberate default, not whatever the last
 // game happened to use.
 const DEFAULT_MAX_PLAYERS = 100;
 
+// Continuous hourly cadence: a new 1-hour game starts the moment the last one
+// ends, back-to-back, 24/7 (no weekday/time gating). Kept back-to-back even if
+// `now` is a touch past that end (cron ran a beat late) so there's no gap, as
+// long as the resulting hour-long game would still be ongoing. If a whole hour
+// or more was missed, re-align to the top of the current hour so a fresh game
+// covers `now`.
 export function getNextAutoGameStart(lastEndsAt: Date, now = new Date()) {
-  const earliestStart = new Date(lastEndsAt.getTime() + ONE_HOUR_MS);
-  const candidate = new Date(earliestStart);
-  candidate.setUTCHours(AUTO_START_HOUR_UTC, 0, 0, 0);
-
-  if (candidate.getTime() < earliestStart.getTime()) {
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
+  if (lastEndsAt.getTime() + ONE_HOUR_MS > now.getTime()) {
+    return new Date(lastEndsAt);
   }
-
-  while (
-    !ALLOWED_WEEKDAYS.has(candidate.getUTCDay()) ||
-    candidate.getTime() <= now.getTime()
-  ) {
-    candidate.setUTCDate(candidate.getUTCDate() + 1);
-    candidate.setUTCHours(AUTO_START_HOUR_UTC, 0, 0, 0);
-  }
-
-  return candidate;
+  const aligned = new Date(now);
+  aligned.setUTCMinutes(0, 0, 0);
+  return aligned;
 }
 
 interface ScheduleSeed {
@@ -39,7 +31,7 @@ interface ScheduleSeed {
 
 export function buildNextAutoGameSchedule(seed: ScheduleSeed, now = new Date()) {
   const nextStartsAt = getNextAutoGameStart(seed.endsAt, now);
-  const nextEndsAt = new Date(nextStartsAt.getTime() + ONE_DAY_MS);
+  const nextEndsAt = new Date(nextStartsAt.getTime() + ONE_HOUR_MS);
 
   let nextTicketsOpenAt: Date | null = null;
   if (seed.ticketsOpenAt) {
