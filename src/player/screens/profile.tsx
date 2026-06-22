@@ -196,7 +196,7 @@ export const ProfileScreen = () => {
             { l: "LEVEL", v: String(level), c: "#FFC931" },
             { l: "WINS", v: String(badgeStats.prizesWon), c: "#fff" },
             { l: "STREAK", v: `${streak}`, c: "#FB72FF" },
-            { l: "BEST", v: badgeStats.bestRank != null ? `#${badgeStats.bestRank}` : "—", c: "#00CFF2" },
+            { l: "BEST", v: badgeStats.bestRank != null ? `#${badgeStats.bestRank}` : "—", c: "#FF9F1C" },
           ].map((s) => {
             // The streak tile opens the daily-reward sheet (manual entry point).
             const isStreak = s.l === "STREAK";
@@ -278,7 +278,7 @@ export const ProfileScreen = () => {
 
         {/* Prize Wallet — tournament winnings (USDT-backed) the player resolves
             per prize: claim the USDT value or convert into spendable Syrup. */}
-        <div style={{ background: "#0F0F10", border: "1px solid rgba(0,207,242,.22)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(0,207,242,.05)" }}>
+        <div style={{ background: "#0F0F10", border: "1px solid rgba(255,159,28,.22)", borderRadius: 14, padding: 14, marginBottom: 10, boxShadow: "0 0 24px rgba(255,159,28,.05)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: onchainClaims.length ? 12 : 0 }}>
             <div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", letterSpacing: 0.4 }}>PRIZE WALLET</div>
@@ -286,16 +286,16 @@ export const ProfileScreen = () => {
               <div style={{ fontSize: 11, fontWeight: 800, color: "var(--maple-500)", marginTop: 3 }}>1 ticket = $0.05</div>
             </div>
             <div style={{ textAlign: "right" }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#00CFF2", lineHeight: 1 }}>{claimableUsdt.toFixed(2)} USDT</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#FF9F1C", lineHeight: 1 }}>{claimableUsdt.toFixed(2)} USDT</div>
               <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.4)", letterSpacing: 0.6, textTransform: "uppercase", marginTop: 3 }}>claimable</div>
             </div>
           </div>
 
           {/* On-chain tournament prizes — claimed from the pool via merkle proof. */}
           {onchainClaims.map((c) => (
-            <div key={c.gameId} style={{ background: "#1a1a1c", border: "1px solid rgba(0,207,242,.18)", borderRadius: 12, padding: "10px 12px", marginTop: 12, marginBottom: 8 }}>
+            <div key={c.gameId} style={{ background: "#1a1a1c", border: "1px solid rgba(255,159,28,.18)", borderRadius: 12, padding: "10px 12px", marginTop: 12, marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 10 }}>
-                <div style={{ width: 42, height: 42, borderRadius: 11, background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                <div style={{ width: 42, height: 42, borderRadius: 11, background: "rgba(255,159,28,.12)", border: "1px solid rgba(255,159,28,.3)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                   <PixelImg src={ASSETS.trophy} size={28} alt="" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -303,13 +303,13 @@ export const ProfileScreen = () => {
                   <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3 }}>{timeAgo(c.wonAt)} · on-chain</div>
                 </div>
                 <div style={{ textAlign: "right" }}>
-                  <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#00CFF2", lineHeight: 1 }}>{c.amount.toFixed(2)} USDT</div>
+                  <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#FF9F1C", lineHeight: 1 }}>{c.amount.toFixed(2)} USDT</div>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => claimingGameId ? undefined : void onClaimOnchain(c)}
-                style={{ width: "100%", background: "#00CFF2", border: "1.5px solid var(--frame)", color: "var(--frame)", borderRadius: 10, padding: "9px 0", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer", boxShadow: "0 3px 0 var(--frame)" }}
+                style={{ width: "100%", background: "#FF9F1C", border: "1.5px solid var(--frame)", color: "var(--frame)", borderRadius: 10, padding: "9px 0", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.3, cursor: "pointer", boxShadow: "0 3px 0 var(--frame)" }}
               >
                 {claimingGameId === c.gameId ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Claiming…") : `Claim ${c.amount.toFixed(2)} USDT`}
               </button>
@@ -410,7 +410,7 @@ export const ProfileScreen = () => {
             right: 16,
             background: "var(--frame)",
             color: "var(--ink)",
-            border: "1.5px solid #00CFF2",
+            border: "1.5px solid #FF9F1C",
             borderRadius: 12,
             padding: "11px 14px",
             fontFamily: "var(--font-display)",

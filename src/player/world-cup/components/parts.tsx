@@ -8,7 +8,7 @@ import type { VMedia } from "../data";
 export const ACCENT: Record<string, string> = {
   gold: "#FFC931",
   purple: "#FB72FF",
-  cyan: "#00CFF2",
+  cyan: "#FF9F1C",
   green: "#7BE57E",
 };
 

@@ -48,7 +48,7 @@ function buildCatalog(cat: ShopCatalog): BuiltCatalog {
   let featured: Featured | null = null;
   for (const it of cat.items) {
     if (it.kind === "POWERUP") {
-      powerUps.push({ id: it.slug.replace(/^pu-/, ""), label: it.label, sub: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#00CFF2", icon: POWERUP_ICON[it.slug] ?? ASSETS.powerup5050 });
+      powerUps.push({ id: it.slug.replace(/^pu-/, ""), label: it.label, sub: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#FF9F1C", icon: POWERUP_ICON[it.slug] ?? ASSETS.powerup5050 });
     } else if (it.kind === "COSMETIC") {
       cosmetics.push({ id: it.slug, label: it.label, type: it.sub ?? "", price: it.priceTickets ?? 0, color: it.color ?? "#FFC931", owned: cat.ownedCosmetics.includes(it.slug) });
     } else if (it.kind === "BUNDLE") {
@@ -754,7 +754,7 @@ const PriceTag = ({ price, affordable, committed = false, block = false }: {
 }) => (
   <div
     style={{
-      background: committed ? "rgba(0,207,242,.25)" : affordable ? "rgba(255,201,49,.1)" : "rgba(253,251,246,0.04)",
+      background: committed ? "rgba(255,159,28,.25)" : affordable ? "rgba(255,201,49,.1)" : "rgba(253,251,246,0.04)",
       border: `1px solid ${committed ? "var(--leaf)" : affordable ? "rgba(255,201,49,.3)" : "rgba(253,251,246,0.08)"}`,
       color: committed ? "var(--leaf)" : affordable ? "#FFC931" : "var(--ink-faint)",
       borderRadius: 8,
@@ -834,7 +834,7 @@ const CosmeticRow = ({ item, affordable, onOpen }: { item: Cosmetic; affordable:
       <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>{item.type}</div>
     </div>
     {item.owned ? (
-      <div style={{ background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", borderRadius: 8, padding: "6px 12px", fontFamily: "var(--font-display)", fontSize: 11 }}>OWNED</div>
+      <div style={{ background: "rgba(255,159,28,.12)", border: "1px solid rgba(255,159,28,.35)", color: "#FF9F1C", borderRadius: 8, padding: "6px 12px", fontFamily: "var(--font-display)", fontSize: 11 }}>OWNED</div>
     ) : (
       <PriceTag price={item.price} affordable={affordable} />
     )}
@@ -849,7 +849,7 @@ const BundleCard = ({ bundle, onBuy }: { bundle: Bundle; onBuy: () => void }) =>
       <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff" }}>{bundle.count}</span>
     </div>
     {bundle.bonus > 0 ? (
-      <div style={{ fontSize: 9, fontWeight: 800, color: "#00CFF2", marginTop: 1 }}>+{bundle.bonus} BONUS</div>
+      <div style={{ fontSize: 9, fontWeight: 800, color: "#FF9F1C", marginTop: 1 }}>+{bundle.bonus} BONUS</div>
     ) : (
       <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.3)", marginTop: 1 }}>—</div>
     )}

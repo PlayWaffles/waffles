@@ -22,10 +22,10 @@
   --butter-300: #ffe07a;
 
   --berry: #FB72FF;
-  --leaf: #00CFF2;
-  --leaf-dark: #00a3c2;
-  --sky: #00CFF2;
-  --sky-dark: #00a3c2;
+  --leaf: #FF9F1C;
+  --leaf-dark: #D97706;
+  --sky: #FF9F1C;
+  --sky-dark: #D97706;
   --live-red: #FC1919;
   --frame: #1e1e1e;
 
@@ -122,6 +122,19 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
 }
+/* Raised gold CTA — a solid darker-amber ledge gives real depth (visible on the
+   dark backdrop, unlike a black shadow), and it collapses as the face sinks on
+   press. Pair with an inline gold background. */
+.waffles-v2 .btn-3d-gold {
+  box-shadow: 0 4px 0 #b0750f;
+  transition: transform 0.08s var(--ease-out-quart), box-shadow 0.08s ease, filter 0.15s ease;
+}
+.waffles-v2 .btn-3d-gold:active {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #b0750f;
+  filter: brightness(0.97);
+}
+
 /* Live-buying strip: avatar pops into the stack, message rises in. */
 @keyframes waffles-v2-buyer-pop {
   0% { opacity: 0; transform: translateX(12px) scale(0.6); }

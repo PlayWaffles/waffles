@@ -53,7 +53,7 @@ export const LobbyScreen = () => {
           <div style={{ fontFamily: "var(--font-display)", fontSize: 18, marginTop: 8, letterSpacing: 0.5, color: "#fff" }}>{theme.copy.liveTitle.toUpperCase()}</div>
           <div style={{ fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Mixed · 6 Q · 90s</div>
           {proto.tournamentBonus && (
-            <div className="chip" style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(0,207,242,.35)" }}>⚡ 2× XP first-game bonus active</div>
+            <div className="chip" style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,159,28,.14)", color: "var(--leaf)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(255,159,28,.35)" }}>⚡ 2× XP first-game bonus active</div>
           )}
         </div>
 
@@ -73,8 +73,8 @@ export const LobbyScreen = () => {
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.6)" }}>
-            <div style={{ flex: 1, padding: "8px 10px", background: "rgba(0,207,242,.06)", border: "1px solid rgba(0,207,242,.15)", borderRadius: 10, textAlign: "center" }}>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#00CFF2" }}>+80 XP</div>
+            <div style={{ flex: 1, padding: "8px 10px", background: "rgba(255,159,28,.06)", border: "1px solid rgba(255,159,28,.15)", borderRadius: 10, textAlign: "center" }}>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FF9F1C" }}>+80 XP</div>
               <div>per win</div>
             </div>
             <div style={{ flex: 1, padding: "8px 10px", background: "rgba(255,201,49,.06)", border: "1px solid rgba(255,201,49,.15)", borderRadius: 10, textAlign: "center" }}>

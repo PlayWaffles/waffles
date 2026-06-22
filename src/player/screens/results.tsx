@@ -213,7 +213,7 @@ export const ResultsScreen = () => {
       {/* Celebration burst — top-3 finishes get a richer confetti shower. */}
       <Confetti pieces={rank <= 3 ? 60 : 36} />
       <div className="glow-top" style={{ height: 360, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.25), transparent 60%)" }} />
-      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.55 }} />
+      <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 300, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.55 }} />
 
       {/* Single flex column from the top down to the sticky bottom bar so the
           leaderboard fills the slack instead of leaving dead space below. */}
@@ -224,7 +224,7 @@ export const ResultsScreen = () => {
           <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 68, letterSpacing: 1, lineHeight: 1, marginTop: 6, color: "#FFC931", textShadow: "0 0 32px rgba(255,201,49,.5)", fontVariantNumeric: "tabular-nums", animation: "waffles-v2-lvl-pop .55s cubic-bezier(0.34,1.56,0.64,1) .3s both" }}>#<CountUp from={fieldSize} to={rank} /></div>
           <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.7)", marginTop: 4, animation: "waffles-v2-lvl-rise .4s ease-out 1.5s both" }}>of {fieldSize.toLocaleString()} · Top {pct}%</div>
           {provisional && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "5px 12px", borderRadius: 999, background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", color: "#fff", fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 10, padding: "5px 12px", borderRadius: 999, background: "rgba(255,159,28,.12)", border: "1px solid rgba(255,159,28,.35)", color: "#fff", fontSize: 12, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>
               Standings update live
             </div>
           )}
@@ -268,7 +268,7 @@ export const ResultsScreen = () => {
             <div style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "#1e1e1e", lineHeight: 1, marginTop: 2 }}>+{xpEarned}</div>
             <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75, marginTop: 3 }}>{proto.tournamentBonus ? "XP (2× BONUS)" : "XP EARNED"}</div>
           </div>
-          <div style={{ flex: 1, background: wonTicket ? "linear-gradient(180deg, #00CFF2, #00a3c2)" : "linear-gradient(180deg, #FFB347, #E8902B)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .65s both" }}>
+          <div style={{ flex: 1, background: wonTicket ? "linear-gradient(180deg, #FF9F1C, #D97706)" : "linear-gradient(180deg, #FFB347, #E8902B)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .65s both" }}>
             <AssetWell size={58} accent="var(--frame)" radius={14} style={{ margin: "0 auto 6px", background: "rgba(30, 30, 30, 0.16)" }}>
               {wonTicket ? <TicketIcon size={38} /> : <SyrupIcon size={38} />}
             </AssetWell>
@@ -301,14 +301,14 @@ export const ResultsScreen = () => {
               });
               proto.goto("profile");
             }}
-            style={{ marginTop: 12, flexShrink: 0, width: "100%", background: "rgba(0,207,242,.1)", border: "1px solid rgba(0,207,242,.3)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", textAlign: "left", animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) .9s both" }}
+            style={{ marginTop: 12, flexShrink: 0, width: "100%", background: "rgba(255,159,28,.1)", border: "1px solid rgba(255,159,28,.3)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", gap: 10, cursor: "pointer", textAlign: "left", animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) .9s both" }}
           >
             <TicketIcon size={22} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", lineHeight: 1 }}>Claim {usdtLabel(won)} in your Prize Wallet</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Withdraw as USDT, or keep as {won} tickets</div>
             </div>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "#00CFF2", flexShrink: 0 }}><path d="M9 5l8 7-8 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" style={{ color: "#FF9F1C", flexShrink: 0 }}><path d="M9 5l8 7-8 7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         )}
 

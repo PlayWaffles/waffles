@@ -9,6 +9,7 @@ import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, Sound
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
+import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const XP_PER_LEVEL = 500;
@@ -265,7 +266,7 @@ const HomeMissions = () => {
           const done = m.cur >= m.tgt;
           return (
             <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ width: 30, height: 30, borderRadius: 8, background: done ? "rgba(0,207,242,.15)" : "rgba(255,255,255,.04)", border: `1px solid ${done ? "rgba(0,207,242,.4)" : "rgba(255,255,255,.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", color: done ? "#00CFF2" : "rgba(255,255,255,.4)", flexShrink: 0 }}>
+              <div style={{ width: 30, height: 30, borderRadius: 8, background: done ? "rgba(255,159,28,.15)" : "rgba(255,255,255,.04)", border: `1px solid ${done ? "rgba(255,159,28,.4)" : "rgba(255,255,255,.06)"}`, display: "flex", alignItems: "center", justifyContent: "center", color: done ? "#FF9F1C" : "rgba(255,255,255,.4)", flexShrink: 0 }}>
                 {done ? (
                   <svg width="16" height="16" viewBox="0 0 24 24"><path d="M5 12l5 5 9-11" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
                 ) : m.icon === "xp" ? (
@@ -279,13 +280,13 @@ const HomeMissions = () => {
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
                   <span style={{ fontSize: 12, fontWeight: 800, color: "#fff" }}>{m.label}</span>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: done ? "#00CFF2" : "rgba(255,255,255,.5)", fontFamily: "var(--font-display)" }}>{m.cur}/{m.tgt}</span>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: done ? "#FF9F1C" : "rgba(255,255,255,.5)", fontFamily: "var(--font-display)" }}>{m.cur}/{m.tgt}</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,.05)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: done ? "linear-gradient(90deg,#00CFF2,#5DDDF0)" : "linear-gradient(90deg, #FFC931, #F5BB1B)", transition: "width .4s" }} />
+                  <div style={{ width: `${pct}%`, height: "100%", background: done ? "linear-gradient(90deg,#FF9F1C,#5DDDF0)" : "linear-gradient(90deg, #FFC931, #F5BB1B)", transition: "width .4s" }} />
                 </div>
               </div>
-              <div style={{ fontSize: 10, fontWeight: 800, color: done ? "#00CFF2" : "rgba(255,255,255,.55)", letterSpacing: 0.4, minWidth: 40, textAlign: "right" }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: done ? "#FF9F1C" : "rgba(255,255,255,.55)", letterSpacing: 0.4, minWidth: 40, textAlign: "right" }}>
                 {m.reward === "syrup" ? <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}>+1 <SyrupIcon size={12} /></span> : m.reward}
               </div>
             </div>
@@ -315,7 +316,7 @@ const HomeContinueRun = () => {
       data-coach="home-continue"
       onClick={() => proto.goto("levels")}
       aria-label={`Continue to level ${next}`}
-      style={{ width: "100%", background: "linear-gradient(135deg, #1a2a1a 0%, var(--surface-1) 60%)", border: "1px solid rgba(0,207,242,.2)", borderRadius: 16, padding: "12px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 124 }}
+      style={{ width: "100%", background: "linear-gradient(135deg, #1a2a1a 0%, var(--surface-1) 60%)", border: "1px solid rgba(255,159,28,.2)", borderRadius: 16, padding: "12px 14px", display: "flex", gap: 8, alignItems: "center", position: "relative", overflow: "hidden", minHeight: 124 }}
     >
       <div style={{ flex: 1, minWidth: 0, textAlign: "left" }}>
         <div style={{ fontSize: 10, fontWeight: 800, color: "var(--leaf)", letterSpacing: 1, textTransform: "uppercase" }}>Next Level · Forest</div>
@@ -336,7 +337,7 @@ const HomeContinueRun = () => {
           animation: "waffles-v2-wally-idle 5s ease-in-out infinite",
         }}
       />
-      <div aria-hidden="true" style={{ position: "absolute", right: 12, bottom: 12, display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 99, background: "var(--leaf)", color: "var(--frame)", boxShadow: "0 3px 0 rgba(0,207,242,.3)" }}>
+      <div aria-hidden="true" style={{ position: "absolute", right: 12, bottom: 12, display: "flex", alignItems: "center", justifyContent: "center", width: 32, height: 32, borderRadius: 99, background: "var(--leaf)", color: "var(--frame)", boxShadow: "0 3px 0 rgba(255,159,28,.3)" }}>
         <svg width="14" height="14" viewBox="0 0 24 24"><path d="M9 5l8 7-8 7" stroke="currentColor" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" /></svg>
       </div>
     </button>
@@ -422,6 +423,7 @@ export const HomeScreen = () => {
     setGate("confirm");
   };
   const onCardTap = () => {
+    playSound("click");
     if (entered) {
       // Paid but not played → resume into the round; played → view standing.
       if (!board?.you?.played) {
@@ -521,7 +523,7 @@ export const HomeScreen = () => {
       </div>
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 84, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
-        <div style={{ padding: "0 18px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
         {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} />}
         <div
           role="button"
@@ -544,7 +546,7 @@ export const HomeScreen = () => {
             <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0, fontFamily: "var(--font-display)" }}>TICKETS CLOSING IN <span style={{ fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</span></div>
             <div style={{ flex: 1 }} />
             {entered && (
-              <div className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(0,207,242,.4)", whiteSpace: "nowrap", flexShrink: 0 }}>YOU&apos;RE IN</div>
+              <div className="chip" style={{ background: "rgba(255,159,28,.14)", color: "var(--leaf)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(255,159,28,.4)", whiteSpace: "nowrap", flexShrink: 0 }}>YOU&apos;RE IN</div>
             )}
           </div>
 
@@ -611,7 +613,7 @@ export const HomeScreen = () => {
 
           {/* CTA — looks like a button but is part of the card's tap (avoids
               nesting interactives); state-aware: resume / view / buy. */}
-          <div className="pressable" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, letterSpacing: 0.3, fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.28)" }}>
+          <div className="btn-3d-gold" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, letterSpacing: 0.3, fontSize: 16 }}>
             {entered
               ? (canResume ? "Play your round" : "View standing")
               : (<><TicketIcon size={18} />Join game</>)}

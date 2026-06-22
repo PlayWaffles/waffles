@@ -98,7 +98,7 @@ export const LeaderboardScreen = () => {
           right: 0,
           height: 280,
           backgroundImage:
-            "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)",
+            "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
           backgroundSize: "80px 80px, 100px 100px, 70px 70px",
           backgroundPosition: "0 0, 30px 40px, 50px 20px",
           opacity: 0.35,

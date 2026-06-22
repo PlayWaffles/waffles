@@ -158,7 +158,7 @@ const TournamentUpsellSheet = ({
 
         {bonus && (
           <div style={{ textAlign: "center", marginBottom: 12 }}>
-            <span className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(0,207,242,.35)" }}>⚡ Your first tournament today earns 2× XP</span>
+            <span className="chip" style={{ background: "rgba(255,159,28,.14)", color: "var(--leaf)", padding: "4px 10px", fontSize: 11, border: "1px solid rgba(255,159,28,.35)" }}>⚡ Your first tournament today earns 2× XP</span>
           </div>
         )}
 
@@ -249,7 +249,7 @@ export const LevelWinScreen = () => {
       <div aria-hidden style={{ position: "absolute", inset: 0, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.9), transparent 70%)", zIndex: 60, pointerEvents: "none", animation: "waffles-v2-lvl-flash .7s ease-out forwards" }} />
       <Confetti pieces={48} />
       <div style={{ position: "absolute", top: -60, left: -40, right: -40, height: 380, background: "radial-gradient(ellipse at center top, rgba(255,201,49,.3), transparent 60%)" }} />
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #00CFF2 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.6 }} />
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 400, backgroundImage: "radial-gradient(circle, #FFC931 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.6 }} />
 
       {/* Rotating sunburst + one-shot shockwave bloom behind the trophy. */}
       <div aria-hidden style={{ position: "absolute", top: 150, left: "50%", transform: "translateX(-50%)", width: 280, height: 280, pointerEvents: "none" }}>
@@ -297,7 +297,7 @@ export const LevelWinScreen = () => {
       {(() => {
         const info = levelTicketMilestoneInfo(justCompleted);
         return (
-          <div style={{ position: "absolute", top: 430, left: 18, right: 18, background: info.earned ? "rgba(0,207,242,.16)" : "rgba(0,207,242,.1)", border: `1px solid rgba(0,207,242,${info.earned ? ".4" : ".25"})`, borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) 1.15s both" }}>
+          <div style={{ position: "absolute", top: 430, left: 18, right: 18, background: info.earned ? "rgba(255,159,28,.16)" : "rgba(255,159,28,.1)", border: `1px solid rgba(255,159,28,${info.earned ? ".4" : ".25"})`, borderRadius: 14, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10, animation: "waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) 1.15s both" }}>
             <SyrupIcon size={26} />
             {info.earned ? (
               <div style={{ flex: 1 }}>

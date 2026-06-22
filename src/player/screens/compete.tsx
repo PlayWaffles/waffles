@@ -33,7 +33,7 @@ type Reward = { type: RewardType; label: string };
 
 const REWARD_PALETTE: Record<RewardType, { bg: string; fg: string }> = {
   xp:       { bg: "rgba(255, 201, 49, 0.10)", fg: "var(--maple-500)" },
-  ticket:   { bg: "rgba(0, 207, 242, 0.10)",  fg: "var(--leaf)" },
+  ticket:   { bg: "rgba(255,159,28, 0.10)",  fg: "var(--leaf)" },
   cosmetic: { bg: "rgba(251, 114, 255, 0.10)", fg: "var(--berry)" },
 };
 
@@ -352,7 +352,7 @@ export const CompeteScreen = () => {
         </div>
 
         <div style={{ margin: "0 16px", background: "rgba(168,63,184,.65)", borderRadius: 10, padding: "8px 12px", display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontWeight: 800, color: "#fff" }}>
-          <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "#00CFF2" }}>↓{safeZone}</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "#FF9F1C" }}>↓{safeZone}</span>
           <span>You are currently in the safe zone.</span>
         </div>
 

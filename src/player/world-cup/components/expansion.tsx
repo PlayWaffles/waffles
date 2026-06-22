@@ -148,7 +148,7 @@ export function MapClick({ deepLinked = false, onExit }: ExpansionProps) {
                   });
                   setPicked(t.id);
                 }}
-                style={{ gridColumn: t.col, gridRow: t.row, aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 12, font: "inherit", cursor: finished ? "default" : "pointer", border: `2px solid ${reveal ? LEAF : wrong ? RED : "rgba(255,255,255,.14)"}`, background: reveal ? "rgba(0,207,242,.2)" : wrong ? "rgba(252,25,25,.16)" : "rgba(255,255,255,.05)", color: reveal || wrong ? "#fff" : "rgba(255,255,255,.6)", transition: "all .25s" }}
+                style={{ gridColumn: t.col, gridRow: t.row, aspectRatio: "1", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4, borderRadius: 12, font: "inherit", cursor: finished ? "default" : "pointer", border: `2px solid ${reveal ? LEAF : wrong ? RED : "rgba(255,255,255,.14)"}`, background: reveal ? "rgba(255,159,28,.2)" : wrong ? "rgba(252,25,25,.16)" : "rgba(255,255,255,.05)", color: reveal || wrong ? "#fff" : "rgba(255,255,255,.6)", transition: "all .25s" }}
               >
                 <span style={{ fontSize: 22 }}>{t.flag}</span>
                 <span style={{ fontSize: 10, fontWeight: 800 }}>{t.label}</span>
@@ -370,7 +370,7 @@ export function Bingo({ deepLinked = false, onExit }: ExpansionProps) {
           const bad = finished && isSel && !cell.truth;
           const missed = finished && !isSel && cell.truth;
           const border = inBingo ? "#FFC931" : ok ? LEAF : bad ? RED : missed ? "rgba(252,25,25,.4)" : isSel ? "#FFC931" : "rgba(255,255,255,.12)";
-          const bg = inBingo ? "rgba(255,201,49,.24)" : ok ? "rgba(0,207,242,.18)" : bad ? "rgba(252,25,25,.16)" : isSel ? "rgba(255,201,49,.12)" : "rgba(255,255,255,.04)";
+          const bg = inBingo ? "rgba(255,201,49,.24)" : ok ? "rgba(255,159,28,.18)" : bad ? "rgba(252,25,25,.16)" : isSel ? "rgba(255,201,49,.12)" : "rgba(255,255,255,.04)";
           return (
             <button
               key={i}

@@ -258,7 +258,7 @@ export const SyrupIcon = ({ size = 18 }: { size?: number }) => (
 // pieces with randomised offsets, colours, and timings via inline CSS vars.
 // CSS-only animation; no library dependency. Auto-disables under
 // prefers-reduced-motion via the global stylesheet rule.
-const CONFETTI_COLORS = ["#FFC931", "#00CFF2", "#FB72FF", "#FF6B6B", "#7BE57E"];
+const CONFETTI_COLORS = ["#FFC931", "#FF9F1C", "#FB72FF", "#FF6B6B", "#7BE57E"];
 export const Confetti = ({ pieces = 36 }: { pieces?: number }) => (
   <div
     aria-hidden="true"
@@ -765,10 +765,10 @@ export const CategoryIcon = ({ name, size = 28 }: { name: string; size?: number 
 
 export const CATEGORY_COLORS: Record<string, { bg: string; fg: string }> = {
   Movies: { bg: "#1e1e1e", fg: "#FB72FF" },
-  Sports: { bg: "#1e1e1e", fg: "#00CFF2" },
+  Sports: { bg: "#1e1e1e", fg: "#FF9F1C" },
   Crypto: { bg: "#1e1e1e", fg: "#FFC931" },
   History: { bg: "#1e1e1e", fg: "#F5BB1B" },
-  Geography: { bg: "#1e1e1e", fg: "#00CFF2" },
+  Geography: { bg: "#1e1e1e", fg: "#FF9F1C" },
   Science: { bg: "#1e1e1e", fg: "#FB72FF" },
   Music: { bg: "#1e1e1e", fg: "#FFC931" },
   Football: { bg: "#1e1e1e", fg: "#3dd17a" },
@@ -950,7 +950,7 @@ export const Button = ({
         ? { background: "var(--live-red)", border: "2px solid var(--frame)", color: "#fff", boxShadow: "0 4px 0 var(--frame)" }
         : { background: accent, border: "2px solid var(--frame)", color: "var(--frame)", boxShadow: "0 4px 0 var(--frame)" };
   return (
-    <button type="button" onClick={onClick} disabled={disabled} aria-label={ariaLabel} style={{ ...base, ...variantStyle, ...style }}>
+    <button type="button" onClick={onClick ? () => { playSound("click"); onClick(); } : undefined} disabled={disabled} aria-label={ariaLabel} style={{ ...base, ...variantStyle, ...style }}>
       {children}
     </button>
   );

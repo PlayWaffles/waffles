@@ -61,7 +61,7 @@ function LiveAnswerers() {
           ))}
         </div>
         <span style={{ display: "inline-flex", alignItems: "center", gap: 5, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.3, color: "#fff", whiteSpace: "nowrap" }}>
-          <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(0,207,242,.25)" }} />
+          <span aria-hidden style={{ width: 6, height: 6, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(255,159,28,.25)" }} />
           {count.toLocaleString()} answered
         </span>
       </div>

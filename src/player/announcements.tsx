@@ -22,7 +22,7 @@ const HOUR = 3_600_000;
 const TONE: Record<Tone, { fg: string; bg: string; bd: string }> = {
   maple: { fg: "#FFC931", bg: "rgba(255,201,49,.12)", bd: "rgba(255,201,49,.32)" },
   berry: { fg: "#FB72FF", bg: "rgba(251,114,255,.12)", bd: "rgba(251,114,255,.32)" },
-  leaf: { fg: "#00CFF2", bg: "rgba(0,207,242,.12)", bd: "rgba(0,207,242,.32)" },
+  leaf: { fg: "#FF9F1C", bg: "rgba(255,159,28,.12)", bd: "rgba(255,159,28,.32)" },
 };
 
 const timeAgo = (ts: number) => {

@@ -97,7 +97,7 @@ export const MissionsScreen = () => {
           </div>
         </div>
         {m.done ? (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.15)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", padding: "5px 9px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.3, flexShrink: 0, whiteSpace: "nowrap" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,159,28,.15)", border: "1px solid rgba(255,159,28,.35)", color: "#FF9F1C", padding: "5px 9px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.3, flexShrink: 0, whiteSpace: "nowrap" }}>
             ✓ Claimed
           </div>
         ) : m.claimable ? (
@@ -199,7 +199,7 @@ export const MissionsScreen = () => {
           <span>DAILY</span>
           <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 99, background: tab === "daily" ? "rgba(0,0,0,.15)" : "rgba(255,255,255,.1)" }}>{dailyMissions.length}</span>
         </button>
-        <button onClick={() => { trackClientEvent(AnalyticsEvent.MissionsTabChanged, { screen: "missions", tab: "partner", coming_soon: true }); setTab("partner"); }} style={{ flex: 1, background: tab === "partner" ? "#00CFF2" : "transparent", color: tab === "partner" ? "#1e1e1e" : "rgba(255,255,255,.6)", border: "none", padding: "9px 10px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+        <button onClick={() => { trackClientEvent(AnalyticsEvent.MissionsTabChanged, { screen: "missions", tab: "partner", coming_soon: true }); setTab("partner"); }} style={{ flex: 1, background: tab === "partner" ? "#FF9F1C" : "transparent", color: tab === "partner" ? "#1e1e1e" : "rgba(255,255,255,.6)", border: "none", padding: "9px 10px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 11, letterSpacing: 0.4, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
           <span>PARTNERS</span>
           <span style={{ fontSize: 9, padding: "1px 5px", borderRadius: 99, background: tab === "partner" ? "rgba(0,0,0,.15)" : "rgba(255,255,255,.1)" }}>{partnerMissions.length}</span>
         </button>
@@ -246,7 +246,7 @@ export const MissionsScreen = () => {
             {/* Partner offers aren't live yet — the real list is rendered dimmed
                 behind a "coming soon" scrim, kept intact for when it ships. */}
             <div aria-hidden="true" style={{ filter: "blur(3px)", opacity: 0.35, pointerEvents: "none", userSelect: "none" }}>
-            <div style={{ background: "linear-gradient(180deg, rgba(0,207,242,.12), rgba(0,207,242,.03))", border: "1px solid rgba(0,207,242,.25)", borderRadius: 14, padding: "12px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ background: "linear-gradient(180deg, rgba(255,159,28,.12), rgba(255,159,28,.03))", border: "1px solid rgba(255,159,28,.25)", borderRadius: 14, padding: "12px 14px", marginBottom: 12, display: "flex", alignItems: "center", gap: 12 }}>
               <AssetWell size={46} accent="var(--leaf)" radius={12}>
                 <SyrupIcon size={24} />
               </AssetWell>
@@ -286,16 +286,16 @@ export const MissionsScreen = () => {
                     <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.85)", lineHeight: 1.3, marginTop: 2 }}>{m.title}</div>
                     <div style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,.45)", marginTop: 3, display: "flex", alignItems: "center", gap: 6 }}>
                       <span>⏱ {m.estTime}</span>
-                      {m.verified && <span style={{ display: "inline-flex", alignItems: "center", gap: 2, color: "rgba(0,207,242,.7)" }}>✓ Verified</span>}
+                      {m.verified && <span style={{ display: "inline-flex", alignItems: "center", gap: 2, color: "rgba(255,159,28,.7)" }}>✓ Verified</span>}
                     </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(0,207,242,.15)", border: "1px solid rgba(0,207,242,.35)", color: "#00CFF2", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 4, background: "rgba(255,159,28,.15)", border: "1px solid rgba(255,159,28,.35)", color: "#FF9F1C", padding: "4px 8px", borderRadius: 8, fontFamily: "var(--font-display)", fontSize: 10 }}>
                       +{m.tickets}
                       <SyrupIcon size={14} />
                     </span>
                     {claimedSlugs.has(m.slug) ? (
-                      <span style={{ background: "rgba(0,207,242,.15)", color: "#00CFF2", border: "1px solid rgba(0,207,242,.35)", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>✓ Claimed</span>
+                      <span style={{ background: "rgba(255,159,28,.15)", color: "#FF9F1C", border: "1px solid rgba(255,159,28,.35)", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, whiteSpace: "nowrap", display: "inline-flex", alignItems: "center", gap: 4 }}>✓ Claimed</span>
                     ) : (
                       <button type="button" onClick={() => claimPartner(m.slug, m.tickets)} aria-label={`${m.cta} ${m.brand}`} style={{ background: "#fff", color: "#1e1e1e", border: "none", padding: "5px 10px", borderRadius: 7, fontFamily: "var(--font-display)", fontSize: 9, letterSpacing: 0.4, cursor: "pointer", whiteSpace: "nowrap", boxShadow: "0 2px 0 rgba(0,0,0,.3)" }}>{m.cta} →</button>
                     )}
@@ -313,7 +313,7 @@ export const MissionsScreen = () => {
                 <SyrupIcon size={32} />
               </AssetWell>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", letterSpacing: 0.3 }}>Partner offers</div>
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: "#00CFF2", background: "rgba(0,207,242,.12)", border: "1px solid rgba(0,207,242,.35)", padding: "4px 10px", borderRadius: 99 }}>
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: "#FF9F1C", background: "rgba(255,159,28,.12)", border: "1px solid rgba(255,159,28,.35)", padding: "4px 10px", borderRadius: 99 }}>
                 Coming soon
               </span>
               <div style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.6)", lineHeight: 1.5, maxWidth: 260 }}>
