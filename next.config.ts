@@ -64,6 +64,7 @@ function assertServerActionsEncryptionKey() {
 assertServerActionsEncryptionKey();
 
 const nextConfig: NextConfig = {
+  output: "standalone",
   deploymentId,
   generateBuildId: async () => deploymentId,
   allowedDevOrigins: ["*.outray.app"],
