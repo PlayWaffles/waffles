@@ -71,6 +71,15 @@ const nextConfig: NextConfig = {
   turbopack: {
     root: workspaceRoot,
   },
+  experimental: {
+    cpus: Number(process.env.NEXT_BUILD_CPUS ?? 1),
+    staticGenerationMaxConcurrency: Number(
+      process.env.NEXT_STATIC_GENERATION_MAX_CONCURRENCY ?? 2,
+    ),
+    staticGenerationMinPagesPerWorker: Number(
+      process.env.NEXT_STATIC_GENERATION_MIN_PAGES_PER_WORKER ?? 100,
+    ),
+  },
   images: {
     formats: ["image/avif", "image/webp"],
     remotePatterns: [

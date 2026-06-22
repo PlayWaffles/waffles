@@ -45,14 +45,19 @@ ARG SOURCE_COMMIT
 ENV NODE_ENV=production
 
 COPY . .
-RUN AUTH_SECRET=build-time-auth-secret \
+RUN export AUTH_SECRET=build-time-auth-secret \
   CLOUDINARY_API_KEY=build-time-cloudinary-key \
   CLOUDINARY_API_SECRET=build-time-cloudinary-secret \
   CLOUDINARY_CLOUD_NAME=build-time-cloudinary-cloud \
   DATABASE_URL=postgresql://postgres:postgres@localhost:5432/waffles_build \
   NEYNAR_API_KEY=build-time-neynar-key \
+  NEXT_BUILD_CPUS=1 \
   NEXT_DEPLOYMENT_ID=docker-build \
-  bun run build
+  NEXT_STATIC_GENERATION_MAX_CONCURRENCY=1 \
+  NEXT_STATIC_GENERATION_MIN_PAGES_PER_WORKER=100 \
+  NODE_OPTIONS=--max-old-space-size=1536 && \
+  bunx --bun prisma generate && \
+  next build --webpack
 RUN cp -R public .next/standalone/public && \
   mkdir -p .next/standalone/.next && \
   cp -R .next/static .next/standalone/.next/static
