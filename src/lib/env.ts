@@ -28,27 +28,32 @@ const addressSchema = z.preprocess(
 
 const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000" as const;
 
+type AddressString = `0x${string}`;
+
 function formatEnvErrors(error: z.ZodError) {
   return Object.entries(error.flatten().fieldErrors)
-    .map(([name, messages]) => `${name}: ${messages?.join(", ")}`)
+    .map(([name, messages]) => {
+      const details = Array.isArray(messages) ? messages.join(", ") : String(messages);
+      return `${name}: ${details}`;
+    })
     .join("; ");
 }
 
 function requireAddress(
   name: string,
-  value: `0x${string}` | undefined,
-): `0x${string}` {
+  value: string | undefined,
+): AddressString {
   if (!value || value.toLowerCase() === ZERO_ADDRESS) {
     throw new Error(`${name} is not configured`);
   }
 
-  return value;
+  return value as AddressString;
 }
 
 function resolveAddress(
   name: string,
-  ...values: (`0x${string}` | undefined)[]
-): `0x${string}` {
+  ...values: (string | undefined)[]
+): AddressString {
   return requireAddress(name, values.find(Boolean));
 }
 
@@ -308,7 +313,10 @@ const getEnv = () => {
       "https://celo-sepolia.blockscout.com",
     nextPublicLeaderboardPageSize: data.NEXT_PUBLIC_LEADERBOARD_PAGE_SIZE,
     homeUrlPath: data.NEXT_PUBLIC_HOME_URL_PATH,
-    nextPublicTreasuryWallet: data.NEXT_PUBLIC_TREASURY_WALLET,
+    nextPublicTreasuryWallet: requireAddress(
+      "NEXT_PUBLIC_TREASURY_WALLET",
+      data.NEXT_PUBLIC_TREASURY_WALLET,
+    ),
     nextPublicTreasuryWalletMiniPay: requireAddress(
       "NEXT_PUBLIC_TREASURY_WALLET_MINIPAY",
       data.NEXT_PUBLIC_TREASURY_WALLET_MINIPAY,
