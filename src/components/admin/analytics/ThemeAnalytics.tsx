@@ -70,7 +70,7 @@ export function ThemeAnalytics({ data }: ThemeAnalyticsProps) {
                                         borderRadius: "12px",
                                     }}
                                     labelStyle={{ color: "#fff", fontWeight: "bold" }}
-                                    formatter={(value: number | undefined) => [`$${(value ?? 0).toFixed(2)}`, "Revenue"]}
+                                    formatter={(value) => [`$${Number(value ?? 0).toFixed(2)}`, "Revenue"]}
                                 />
                                 <Bar dataKey="revenue" radius={[0, 4, 4, 0]}>
                                     {data.map((entry) => (

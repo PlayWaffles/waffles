@@ -75,8 +75,8 @@ export function RevenueChart({ data }: RevenueChartProps) {
                             }}
                             labelStyle={{ color: "#fff", fontWeight: "bold" }}
                             itemStyle={{ color: "rgba(255,255,255,0.8)" }}
-                            formatter={(value: number | undefined, name?: string) => [
-                                name === "revenue" ? `$${(value ?? 0).toFixed(2)}` : (value ?? 0),
+                            formatter={(value, name) => [
+                                name === "revenue" ? `$${Number(value ?? 0).toFixed(2)}` : (value ?? 0),
                                 name === "revenue" ? "Revenue" : "Tickets"
                             ]}
                         />

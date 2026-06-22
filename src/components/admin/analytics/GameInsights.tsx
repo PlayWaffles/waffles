@@ -120,7 +120,7 @@ export function GameInsights({ data }: GameInsightsProps) {
                                         border: "1px solid rgba(255,255,255,0.1)",
                                         borderRadius: "12px",
                                     }}
-                                    formatter={(value: number | undefined) => [`${value} tickets`, ""]}
+                                    formatter={(value) => [`${value ?? 0} tickets`, ""]}
                                 />
                                 <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                                     {conversionData.map((entry, index) => (

@@ -25,6 +25,7 @@ const COLORS = {
 
 type RevenueMode = "day" | "game";
 type ChartPoint = { date: string; amount: number };
+type TooltipValue = number | string | ReadonlyArray<number | string>;
 
 const currencyFormatter = new Intl.NumberFormat("en-US", {
     maximumFractionDigits: 2,
@@ -36,8 +37,9 @@ function formatRevenueTick(value: string, mode: RevenueMode) {
     return `${value.slice(0, 11)}...`;
 }
 
-function formatRevenueAmount(value: number | undefined) {
-    return `$${currencyFormatter.format(value ?? 0)}`;
+function formatRevenueAmount(value: TooltipValue | undefined) {
+    const numericValue = typeof value === "number" ? value : Number(value ?? 0);
+    return `$${currencyFormatter.format(Number.isFinite(numericValue) ? numericValue : 0)}`;
 }
 
 // Custom tooltip style matching the admin theme
@@ -175,7 +177,7 @@ export function DashboardCharts({
                                 contentStyle={tooltipStyle}
                                 labelStyle={tooltipLabelStyle}
                                 itemStyle={{ color: COLORS.gold, fontWeight: 600 }}
-                                formatter={(value: number | undefined) => [formatRevenueAmount(value), 'Revenue']}
+                                formatter={(value) => [formatRevenueAmount(value), "Revenue"]}
                             />
                             <Bar
                                 dataKey="amount"

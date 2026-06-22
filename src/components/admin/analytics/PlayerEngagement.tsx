@@ -115,7 +115,7 @@ export function PlayerEngagement({ data }: PlayerEngagementProps) {
                                     border: "1px solid rgba(255,255,255,0.1)",
                                     borderRadius: "12px",
                                 }}
-                                formatter={(value: number | undefined) => [`${value} players`, "Count"]}
+                                formatter={(value) => [`${value ?? 0} players`, "Count"]}
                             />
                             <Bar
                                 dataKey="count"

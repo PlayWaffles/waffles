@@ -62,7 +62,7 @@ export function HourlyUserActivityChart({ data }: HourlyUserActivityChartProps) 
                             }}
                             labelStyle={{ color: "#fff", fontWeight: "bold" }}
                             itemStyle={{ color: "rgba(255,255,255,0.82)" }}
-                            formatter={(value: number | undefined, name?: string) => [
+                            formatter={(value, name) => [
                                 value ?? 0,
                                 name === "totalArrivals"
                                     ? "Users came in"
