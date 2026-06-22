@@ -165,10 +165,11 @@ export function startCronJobs() {
   cron.schedule("* * * * *", ticketOpenNotificationsJob);
   console.log("[Cron] Scheduled: ticket-open-notifications (every min)");
 
-  // Top of every hour: ensure each platform has a live v2 tournament game.
-  // Idempotent, so also run once now to cover mid-hour restarts.
-  cron.schedule("0 * * * *", ensureTournamentRoundsJob);
-  console.log("[Cron] Scheduled: ensure-tournament-rounds (hourly)");
+  // Every minute: ensure each platform has a live v2 tournament game. The
+  // operation is idempotent, so frequent checks self-heal if the process misses
+  // the exact top-of-hour tick during a restart, deploy, or blocked event loop.
+  cron.schedule("* * * * *", ensureTournamentRoundsJob);
+  console.log("[Cron] Scheduled: ensure-tournament-rounds (every min)");
   ensureTournamentRoundsJob();
 
   // Daily at 00:10 UTC: settle any finished league season (idempotent). Runs
