@@ -7,6 +7,7 @@ import {
   LIVES_MAX,
   LIVES_REFILL_COST,
   USDT_PER_TICKET,
+  usdtLabel,
   syrupLabel,
   useProto,
 } from "../state";
@@ -125,7 +126,7 @@ const TournamentUpsellSheet = ({
             <span style={{ color: "var(--ink-soft)" }}>{playingNow?.toLocaleString()} playing now</span>
             <span style={{ color: "var(--ink-faint)" }}>·</span>
             <span style={{ color: "var(--maple-500)", display: "inline-flex", alignItems: "center", gap: 4 }}>
-              Win up to <TicketIcon size={13} />{prizeTickets}
+              Win up to <TicketIcon size={13} />{usdtLabel(prizeTickets)}
             </span>
           </div>
         ) : (

@@ -90,7 +90,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         </div>
         {round && (
           <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-            <TicketIcon size={14} />Win up to {prizeTickets} — {winnersLabel.toLowerCase()}
+            <TicketIcon size={14} />Win up to {usdtLabel(prizeTickets)} — {winnersLabel.toLowerCase()}
           </div>
         )}
       </div>
