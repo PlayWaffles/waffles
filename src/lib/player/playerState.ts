@@ -12,6 +12,7 @@ import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import { resolveLoginStreak } from "@/lib/player/dailyStreak";
 import { isTriggeredId } from "@/lib/player/announcements";
 import { scoreToXp } from "@/lib/player/xp";
 
@@ -122,6 +123,8 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
         nextLifeAt: true,
         streakFreezes: true,
         currentStreak: true,
+        bestStreak: true,
+        lastLoginAt: true,
       },
     }),
     prisma.levelProgress.findMany({ where: { userId }, select: { track: true, level: true } }),
@@ -163,11 +166,22 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
 
   // Reconcile lives on read so the meter is correct without a write.
   const regen = regenLives(user.lives, user.nextLifeAt?.getTime() ?? null, Date.now());
+  const streak = resolveLoginStreak(user);
+  if (streak.changed) {
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        currentStreak: streak.currentStreak,
+        bestStreak: streak.bestStreak,
+        lastLoginAt: streak.lastLoginAt,
+      },
+    });
+  }
 
   return {
     tickets: user.ticketBalance,
     xp: user.xp,
-    streak: user.currentStreak,
+    streak: streak.currentStreak,
     lives: regen.lives,
     nextLifeAt: regen.nextLifeAt,
     streakFreezes: user.streakFreezes,

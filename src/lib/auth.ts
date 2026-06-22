@@ -13,6 +13,7 @@ import { generateInviteCode } from "@/lib/utils";
 import { randomAvatarId } from "@/lib/avatars";
 import { parseCookieHeader } from "@/lib/platform/server";
 import { getPublicClient } from "@/lib/chain";
+import { resolveLoginStreak } from "@/lib/player/dailyStreak";
 
 const SESSION_COOKIE = "waffles_session";
 const NONCE_COOKIE = "waffles_auth_nonce";
@@ -22,25 +23,6 @@ const MAX_RETRIES = 10;
 
 const JWT_TYPE_SESSION = "session" as const;
 const JWT_TYPE_NONCE = "nonce" as const;
-
-function getUtcDateKey(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
-
-function isPreviousUtcDate(previous: Date, current: Date) {
-  const previousDay = Date.UTC(
-    previous.getUTCFullYear(),
-    previous.getUTCMonth(),
-    previous.getUTCDate(),
-  );
-  const currentDay = Date.UTC(
-    current.getUTCFullYear(),
-    current.getUTCMonth(),
-    current.getUTCDate(),
-  );
-
-  return currentDay - previousDay === 24 * 60 * 60 * 1000;
-}
 
 function getAuthSecret() {
   const secret = env.authSecret;
@@ -201,33 +183,20 @@ async function touchUserLoginStreak(userId: string) {
     return;
   }
 
-  const now = new Date();
-  const todayKey = getUtcDateKey(now);
-  const lastLoginKey = user.lastLoginAt ? getUtcDateKey(user.lastLoginAt) : null;
-
-  if (lastLoginKey === todayKey) {
-    return;
-  }
-
-  const nextCurrentStreak =
-    user.lastLoginAt && isPreviousUtcDate(user.lastLoginAt, now)
-      ? Math.max(user.currentStreak, 0) + 1
-      : 1;
+  const streak = resolveLoginStreak(user);
+  if (!streak.changed) return;
 
   await prisma.user.update({
     where: { id: userId },
     data: {
-      currentStreak: nextCurrentStreak,
-      bestStreak: Math.max(user.bestStreak, nextCurrentStreak),
-      lastLoginAt: now,
+      currentStreak: streak.currentStreak,
+      bestStreak: streak.bestStreak,
+      lastLoginAt: streak.lastLoginAt,
     },
   });
 }
 
-export async function createNonce(
-  address: string,
-  _platform: UserPlatform = UserPlatform.BASE_APP,
-) {
+export async function createNonce(address: string) {
   const normalizedAddress = normalizeAddress(address);
   const nonce = crypto.randomUUID();
   const token = await signPayload(

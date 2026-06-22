@@ -100,16 +100,16 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
   const [claimed, setClaimed] = useState(!resolved.claimable);
   const [reward, setReward] = useState<Roll | null>(null);
 
-  const baseStreak = resolved.state.streak;
+  const baseStreak = Math.max(resolved.state.streak, proto.streak);
+  const displayStreak = claimed ? baseStreak : resolved.claimable ? baseStreak + 1 : baseStreak;
 
-  // Persist the normalized state (records a streak reset / freeze spend even if
-  // the player closes without claiming) and reflect the streak app-wide.
+  // Persist the normalized daily-reward state without letting local storage
+  // downgrade the server-authoritative app streak.
   useEffect(() => {
-    writeDaily(resolved.state);
-    proto.update({ streak: resolved.state.streak });
+    writeDaily({ ...resolved.state, streak: baseStreak });
     trackClientEvent(AnalyticsEvent.DailyRewardViewed, {
       screen: "daily_reward",
-      streak_days: resolved.state.streak,
+      streak_days: displayStreak,
       claimable: resolved.claimable,
       freezes,
     });
@@ -227,7 +227,6 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
     writeDaily({ lastClaim: claimed ? todayKey() : readDaily().lastClaim, streak: claimed ? baseStreak + 1 : baseStreak, freezes: updated });
   };
 
-  const displayStreak = claimed ? baseStreak + 1 : baseStreak;
   // 0-based position of TODAY's claim within the repeating 7-day cycle. Today's
   // claim makes the streak baseStreak+1, i.e. cycle day ((baseStreak+1)-1) % 7.
   const todayIdx = baseStreak % 7;

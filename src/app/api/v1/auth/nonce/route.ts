@@ -24,7 +24,7 @@ export async function GET(request: Request) {
     }
 
     const platform = await resolveRuntimePlatform(request);
-    const nonce = await createNonce(address, platform);
+    const nonce = await createNonce(address);
     await trackServerEvent({
       name: "api_auth_nonce_requested",
       properties: {

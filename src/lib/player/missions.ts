@@ -23,10 +23,11 @@
  * EVENT-DRIVEN PROGRESS — missions advance by `Quest.eventType` (the gameplay
  * signal, e.g. "questions_answered"), so a single `recordMissionEvent` hook
  * advances every active mission keyed to that signal. The "day_streak" event is
- * *derived* — its progress is read straight from `User.currentStreak`, never
- * counted — so it's claimable on any day the player is on a long-enough streak.
+ * *derived* from the login streak, never counted — so it's claimable on any day
+ * the player is on a long-enough streak.
  */
 import { prisma } from "@/lib/db";
+import { resolveLoginStreak } from "@/lib/player/dailyStreak";
 import { QuestCategory, RepeatFrequency } from "@prisma";
 
 // How many pool missions the Missions page surfaces per day (global, deterministic).
@@ -167,7 +168,10 @@ export async function loadMissions(userId: string): Promise<Mission[]> {
       where: { userId, questId: { in: ids } },
       select: { questId: true, completedAt: true },
     }),
-    prisma.user.findUnique({ where: { id: userId }, select: { currentStreak: true } }),
+    prisma.user.findUnique({
+      where: { id: userId },
+      select: { currentStreak: true, bestStreak: true, lastLoginAt: true },
+    }),
   ]);
   // Only count progress / claims from the current UTC day — older is stale.
   const countById = new Map(
@@ -176,7 +180,7 @@ export async function loadMissions(userId: string): Promise<Mission[]> {
   const doneSet = new Set(
     completed.filter((c) => c.completedAt >= dayStart).map((c) => c.questId),
   );
-  const streak = user?.currentStreak ?? 0;
+  const streak = user ? resolveLoginStreak(user).currentStreak : 0;
 
   return active.map((q) => {
     const claimed = doneSet.has(q.id);
@@ -277,8 +281,11 @@ export async function claimMission(userId: string, slug: string): Promise<ClaimM
     // read the same-day counter.
     let todayCount: number;
     if (quest.eventType === "day_streak") {
-      const u = await tx.user.findUnique({ where: { id: userId }, select: { currentStreak: true } });
-      todayCount = u?.currentStreak ?? 0;
+      const u = await tx.user.findUnique({
+        where: { id: userId },
+        select: { currentStreak: true, bestStreak: true, lastLoginAt: true },
+      });
+      todayCount = u ? resolveLoginStreak(u).currentStreak : 0;
     } else {
       const prog = await tx.questProgress.findUnique({
         where: { userId_questId: { userId, questId: quest.id } },

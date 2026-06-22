@@ -12,6 +12,7 @@ import {
   ShopItemKind,
   TicketLedgerReason,
 } from "@prisma";
+import { dayKeyUTC, resolveLoginStreak } from "./dailyStreak";
 import { adjustTickets } from "./playerState";
 
 // ── Daily reward — fixed 7-day calendar (mirrors daily-reward.tsx DAILY_SCHEDULE)
@@ -36,16 +37,12 @@ function rewardForStreak(streak: number): Roll {
   return DAILY_SCHEDULE[(Math.max(1, streak) - 1) % DAILY_SCHEDULE.length];
 }
 
-const dayKeyUTC = (d = new Date()): string => d.toISOString().slice(0, 10);
-const daysBetween = (a: string, b: string): number =>
-  Math.round((Date.parse(b) - Date.parse(a)) / 86_400_000);
-
 export type DailyClaimResult =
   | { claimed: false; reason: "already-claimed" }
   | { claimed: true; roll: Roll; streak: number; usedFreeze: boolean; tickets: number; xp: number };
 
-/** Claim today's daily reward (one per UTC day). Resolves the streak (continue /
- *  freeze-save / reset), rolls a streak-weighted prize, credits it. */
+/** Claim today's daily reward (one per UTC day), using the login streak as the
+ *  streak authority and the claim row only as the duplicate-claim guard. */
 export async function claimDailyReward(userId: string): Promise<DailyClaimResult> {
   return prisma.$transaction(async (tx) => {
     const today = dayKeyUTC();
@@ -69,32 +66,16 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
 
     const user = await tx.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { currentStreak: true, bestStreak: true, streakFreezes: true },
-    });
-    const last = await tx.dailyRewardClaim.findFirst({
-      where: { userId },
-      orderBy: { dayKey: "desc" },
-      select: { dayKey: true },
+      select: {
+        currentStreak: true,
+        bestStreak: true,
+        lastLoginAt: true,
+      },
     });
 
-    // Resolve streak continuity.
-    let streak: number;
-    let usedFreeze = false;
-    let freezes = user.streakFreezes;
-    if (!last) {
-      streak = 1;
-    } else {
-      const gap = daysBetween(last.dayKey, today);
-      if (gap <= 1) {
-        streak = user.currentStreak + 1;
-      } else if (freezes > 0) {
-        streak = user.currentStreak + 1;
-        usedFreeze = true;
-        freezes -= 1;
-      } else {
-        streak = 1;
-      }
-    }
+    const resolvedStreak = resolveLoginStreak(user);
+    const streak = resolvedStreak.currentStreak;
+    const usedFreeze = false;
 
     const roll = rewardForStreak(streak);
 
@@ -113,9 +94,8 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
       where: { id: userId },
       data: {
         currentStreak: streak,
-        bestStreak: Math.max(user.bestStreak, streak),
-        streakFreezes: freezes,
-        lastLoginAt: new Date(),
+        bestStreak: resolvedStreak.bestStreak,
+        lastLoginAt: resolvedStreak.lastLoginAt,
         ...(roll.type === "xp" ? { xp: { increment: roll.amount } } : {}),
       },
       select: { ticketBalance: true, xp: true },
