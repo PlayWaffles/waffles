@@ -141,6 +141,7 @@ export async function ensureHourlyTournamentGame(
     startsAt,
     endsAt,
     ticketsOpenAt: new Date(startsAt.getTime() - TICKETS_LEAD_MS),
+    launchGroupId: `trn:${platform}:${startsAt.getTime()}`,
     // On-chain min = the discounted floor so first-timers can pay it; the
     // standard fee is enforced per-user server-side, not by the contract.
     ticketPrice: DEFAULT_ENTRY_FEE_USDC,

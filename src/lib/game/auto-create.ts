@@ -28,6 +28,16 @@ function isGameNumberConflict(error: unknown) {
   );
 }
 
+function isLaunchGroupConflict(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("launchGroupId") &&
+    error.meta.target.includes("platform")
+  );
+}
+
 interface AutoQuestionTemplate {
   id: string;
   content: string;
@@ -58,6 +68,7 @@ export interface AutoCreateGameInput {
   ticketPrice: number;
   roundBreakSec: number;
   maxPlayers: number;
+  launchGroupId?: string;
 }
 
 type QT = Awaited<ReturnType<typeof prisma.questionTemplate.findMany>>[number];
@@ -209,6 +220,7 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
             description: null,
             theme: DEFAULT_GAME_THEME,
             coverUrl: DEFAULT_GAME_COVER_URL,
+            launchGroupId: input.launchGroupId ?? null,
             startsAt: input.startsAt,
             endsAt: input.endsAt,
             ticketsOpenAt: input.ticketsOpenAt,
@@ -222,6 +234,18 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
         });
         break;
       } catch (error) {
+        if (input.launchGroupId && isLaunchGroupConflict(error)) {
+          const existing = await prisma.game.findFirst({
+            where: {
+              platform: input.platform,
+              launchGroupId: input.launchGroupId,
+            },
+            select: { id: true, gameNumber: true },
+          });
+          if (existing) {
+            return { gameId: existing.id, gameNumber: existing.gameNumber };
+          }
+        }
         if (!isGameNumberConflict(error) || attempt === GAME_NUMBER_RETRY_LIMIT - 1) {
           throw error;
         }

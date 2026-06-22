@@ -204,6 +204,7 @@ export async function getTournament(): Promise<
 > {
   const user = await getCurrentUser();
   if (!user) return null;
+  await tournamentSvc.ensureHourlyTournamentGame(user.platform);
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
   const [questions, firstEntry] = await Promise.all([
