@@ -169,6 +169,11 @@ export function loadCurrentTournamentBoard(): Promise<TournamentBoard | null> {
   return callPlayerApi("loadCurrentTournamentBoard");
 }
 
+export type RecentEntrant = { userId: string; name: string; avatarId: string | null };
+export function loadRecentEntrants(): Promise<RecentEntrant[]> {
+  return callPlayerApi("loadRecentEntrants");
+}
+
 export function confirmTournamentClaim(
   gameId: string,
   txHash: string,

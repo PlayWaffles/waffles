@@ -1,0 +1,37 @@
+/* Live-activity animations for the social-proof explorations. */
+
+/* Continuous ticker — content is duplicated, so -50% loops seamlessly. */
+@keyframes lm-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  display: inline-flex;
+  white-space: nowrap;
+  animation: lm-marquee 22s linear infinite;
+}
+
+/* Single-message swap (rotating strip / pill). */
+@keyframes lm-swap {
+  0% { opacity: 0; transform: translateY(7px); }
+  12% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.swap { animation: lm-swap 600ms cubic-bezier(0.25, 1, 0.5, 1); }
+
+/* Toast bubble — pops in, holds, drifts out. */
+@keyframes lm-bubble {
+  0% { opacity: 0; transform: translateY(12px) scale(0.95); }
+  10% { opacity: 1; transform: translateY(0) scale(1); }
+  86% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-8px) scale(0.98); }
+}
+.bubble { animation: lm-bubble 3.8s ease forwards; }
+
+/* New avatar popping into the stack. */
+@keyframes lm-pop {
+  0% { opacity: 0; transform: translateX(12px) scale(0.6); }
+  60% { transform: translateX(0) scale(1.1); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+.pop { animation: lm-pop 480ms cubic-bezier(0.25, 1, 0.5, 1) both; }

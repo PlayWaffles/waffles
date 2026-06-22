@@ -3,9 +3,9 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/player/api";
+import { getTournament, loadCurrentTournamentBoard, loadRecentEntrants, loadMissions, type RecentEntrant, type TournamentRound } from "@/player/api";
 import { useResilientAction } from "../useResilientAction";
-import { ASSETS, Button, FlameIcon, Phone, PixelImg, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
+import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
@@ -156,6 +156,36 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       </>
       )}
     </Sheet>
+  );
+};
+
+// Live-buying strip — replays real recent buyers on a paced loop (red pulse →
+// popping avatar stack → rotating message) so DB history reads as live activity.
+const LiveBuyingStrip = ({ entrants }: { entrants: RecentEntrant[] }) => {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    if (entrants.length === 0) return;
+    const id = setInterval(() => setI((p) => (p + 1) % entrants.length), 2400);
+    return () => clearInterval(id);
+  }, [entrants.length]);
+  if (entrants.length === 0) return null;
+  const len = entrants.length;
+  const e = entrants[i % len];
+  const stack = [entrants[i % len], entrants[(i + 1) % len], entrants[(i + 2) % len]];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", padding: "7px 12px", overflow: "hidden" }}>
+      <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
+      <div style={{ display: "flex", flexShrink: 0 }}>
+        {stack.map((p, idx) => (
+          <span key={`${i}-${idx}`} style={{ marginLeft: idx === 0 ? 0 : -9, zIndex: stack.length - idx, display: "inline-flex", animation: idx === 0 ? "waffles-v2-buyer-pop 480ms cubic-bezier(0.25,1,0.5,1) both" : undefined }}>
+            <PixelImg src={resolveAvatar(p.avatarId, p.userId)} size={23} alt="" style={{ borderRadius: 99, objectFit: "cover", background: "#1c1c1f", border: "2px solid #0F0F10" }} />
+          </span>
+        ))}
+      </div>
+      <div key={i} style={{ minWidth: 0, flex: 1, fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,.65)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", animation: "waffles-v2-buyer-swap 600ms cubic-bezier(0.25,1,0.5,1)" }}>
+        <span style={{ color: "#fff" }}>{e.name}</span> just bought a ticket
+      </div>
+    </div>
   );
 };
 
@@ -412,6 +442,7 @@ export const HomeScreen = () => {
   // field in preview / before any real entrants). Resilient fetch so the
   // auth-cookie / between-rounds race doesn't drop it.
   const { data: rawBoard } = useResilientAction(() => loadCurrentTournamentBoard(), [proto.tournamentGameId]);
+  const { data: recentBuyers } = useResilientAction(() => loadRecentEntrants(), [proto.tournamentGameId]);
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
@@ -433,7 +464,17 @@ export const HomeScreen = () => {
   // the pool" (replaces the static, almost-always-wrong "Top 100").
   const winnerCount = round?.winnerCount ?? 1;
   const winnersLabel = winnerCount <= 1 ? "Winner takes all" : `Top ${winnerCount} split the pool`;
-  const poolHeadline = winnerCount <= 1 ? "Winner takes the pool" : `Top ${winnerCount} split the pool`;
+
+  // V4 card: the whole prize pool in tickets (not just the top cut) + its USDT
+  // peg value, and the capped-field scarcity meter (playerCount / maxPlayers).
+  const prizePoolTickets = round ? Math.max(1, Math.round(round.prizePoolUsdc / USDT_PER_TICKET)) : 0;
+  const spotsTotal = round?.maxPlayers ?? 0;
+  const spotsLeft = Math.max(0, spotsTotal - realEntrants);
+  const spotsRatio = spotsTotal > 0 ? Math.min(1, realEntrants / spotsTotal) : 0;
+  const spotsCol = spotsRatio >= 0.85 ? "#FC1919" : spotsRatio >= 0.6 ? "#F5A91B" : "var(--leaf)";
+  // Real faces of this round's entrants for the join stack (deterministic avatar
+  // per real userId; their assigned pfp once we select avatarId in standings).
+  const joiners = board?.standings?.slice(0, 5) ?? [];
 
   // Game-card impression — the Top-of-the-Hour tournament is the home hero, so
   // log that the player saw it (one per mount) with the entry state that drives
@@ -471,6 +512,7 @@ export const HomeScreen = () => {
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 140, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ padding: "0 18px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
+        {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} />}
         <div
           role="button"
           tabIndex={0}
@@ -484,50 +526,89 @@ export const HomeScreen = () => {
           }}
           style={{ background: "#0F0F10", borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)", cursor: "pointer" }}
         >
-          {/* Status — the live badge carries the countdown itself, so the tall
-              HH:MM:SS tile block is gone. Entry cost moves to the footer CTA. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 11 }}>
+          {/* Status — tickets-closing countdown (digits in the display font) +
+              your-entry badge. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
             <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
-            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>KICKOFF IN {cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</div>
+            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0 }}>TICKETS CLOSING IN <span style={{ fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums", letterSpacing: 0.5 }}>{cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</span></div>
             <div style={{ flex: 1 }} />
             {entered && (
               <div className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(0,207,242,.4)", whiteSpace: "nowrap", flexShrink: 0 }}>YOU&apos;RE IN</div>
             )}
           </div>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 25, lineHeight: 1.05, color: "#fff" }}>{round?.title || theme.copy.liveTitle}</div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,.55)", fontWeight: 600, marginTop: 2 }}>
-            {round
-              ? `${round.category} trivia · ${round.questionCount} question${round.questionCount === 1 ? "" : "s"} · ${round.roundSeconds}s`
-              : theme.copy.liveTagline}
-          </div>
+
+          <div style={{ fontFamily: "var(--font-display)", fontSize: 24, lineHeight: 1.04, color: "#fff" }}>{round?.title || theme.copy.liveTitle}</div>
           {round?.legacyV1 && (
             <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 5, lineHeight: 1.35 }}>
               This is a game from v1 — games after this one run hourly.
             </div>
           )}
 
-          {/* The one promise — the hook. Prize size, player counts and the cost
-              breakdown all live in the entry sheet this card opens on tap. */}
+          {/* Accents — skill cue (always) + first-game 2× XP (conditional). */}
+          <div style={{ marginTop: 9, display: "flex", flexDirection: "column", gap: 5 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--leaf)" }}>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" /></svg>
+              Fastest correct answers win
+            </span>
+            {bonusAvailable && (
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" /></svg>
+                2× XP on your first game today
+              </span>
+            )}
+          </div>
+
           {round && (
-            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 9 }}>
-              <TicketIcon size={20} />
-              <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", lineHeight: 1 }}>{poolHeadline}</span>
-            </div>
+            <>
+              {/* Prize-pool hero + vertical scarcity gauge (filled / cap). */}
+              <div style={{ marginTop: 13, borderRadius: 14, border: "1px solid rgba(255,201,49,.25)", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,201,49,.16), rgba(255,201,49,.04))", padding: "14px 15px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+                <div>
+                  <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: "var(--maple-500)", textTransform: "uppercase" }}>Prize pool</div>
+                  <div style={{ marginTop: 4, display: "flex", alignItems: "flex-end", gap: 8 }}>
+                    <TicketIcon size={34} />
+                    <span style={{ fontFamily: "var(--font-display)", fontSize: 40, color: "#fff", lineHeight: 0.9 }}>{prizePoolTickets}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: "rgba(255,255,255,.45)", lineHeight: 1 }}>≈ {usdtLabel(prizePoolTickets)}</span>
+                  </div>
+                </div>
+                {spotsTotal > 0 && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                    <div style={{ width: 9, height: 46, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden", display: "flex", flexDirection: "column", justifyContent: "flex-end" }}>
+                      <div style={{ width: "100%", height: `${spotsRatio * 100}%`, borderRadius: 99, background: spotsCol, boxShadow: `0 0 8px ${spotsCol}66` }} />
+                    </div>
+                    <div>
+                      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: spotsCol, lineHeight: 1 }}>{spotsLeft}</div>
+                      <div style={{ fontSize: 9, fontWeight: 900, letterSpacing: 0.8, color: "rgba(255,255,255,.45)", textTransform: "uppercase", marginTop: 3 }}>spots left</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Joiner PFPs + day's social proof. */}
+              <div style={{ marginTop: 13, display: "inline-flex", alignItems: "center", gap: 9 }}>
+                {joiners.length > 0 && (
+                  <div style={{ display: "flex" }}>
+                    {joiners.map((s, idx) => (
+                      <PixelImg key={s.userId} src={resolveAvatar(null, s.userId)} size={26} alt="" style={{ borderRadius: 99, objectFit: "cover", background: "#1c1c1f", border: "2px solid #0F0F10", marginLeft: idx === 0 ? 0 : -9 }} />
+                    ))}
+                  </div>
+                )}
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: "rgba(255,255,255,.6)" }}>
+                  {round.todayPlayerCount > 0 ? (
+                    <>{joiners.length > 0 ? "and " : ""}<span style={{ color: "#fff" }}>{round.todayPlayerCount.toLocaleString()}</span> {joiners.length > 0 ? "others " : ""}joined today</>
+                  ) : (
+                    "Be the first to enter this round"
+                  )}
+                </span>
+              </div>
+            </>
           )}
 
-          {/* Footer — light social proof (left) + the tap affordance (right):
-              what it costs to enter, or your status if already in. */}
-          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
-              <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(0,207,242,.18)", flexShrink: 0, animation: "waffles-v2-pulse 1.5s infinite" }} />
-              {round ? `${realEntrants.toLocaleString()} playing now` : "Round is open"}
-            </span>
-            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-display)", fontSize: 13, color: "var(--maple-500)" }}>
-              {entered
-                ? (canResume ? "Tap to play" : "View standing")
-                : (<><TicketIcon size={14} />{TOURNAMENT_TICKET_COST} to enter</>)}
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
-            </span>
+          {/* CTA — looks like a button but is part of the card's tap (avoids
+              nesting interactives); state-aware: resume / view / buy. */}
+          <div style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.28)" }}>
+            {entered
+              ? (canResume ? "Play your round" : "View standing")
+              : (<><TicketIcon size={18} />Buy ticket · {TOURNAMENT_TICKET_COST}</>)}
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
             <div className="waffle-mark" style={{ width: 120, height: 120, borderRadius: 24 }} />

@@ -166,6 +166,7 @@ export type TournamentGame = {
   entryFee: number;
   prizePool: number;
   playerCount: number;
+  maxPlayers: number;
   todayEntryCount: number;
   todayPlayerCount: number;
   todayPrizePool: number;
@@ -195,6 +196,7 @@ export async function currentTournamentGame(
       tierPrices: true,
       prizePool: true,
       playerCount: true,
+      maxPlayers: true,
     },
   });
   if (!game) return null;
@@ -250,6 +252,7 @@ export async function currentTournamentGame(
     entryFee: game.tierPrices[0] ?? 0,
     prizePool: game.prizePool,
     playerCount: game.playerCount,
+    maxPlayers: game.maxPlayers,
     todayEntryCount: todayEntries.length,
     todayPlayerCount: new Set(todayEntries.map((entry) => entry.userId)).size,
     todayPrizePool: todayPrizePool._sum.prizePool ?? 0,
@@ -584,6 +587,34 @@ export async function tournamentStandings(
     you: opts.userId ? ranked.find((r) => r.you) ?? null : null,
     settled: game.rankedAt != null,
   };
+}
+
+export type RecentEntrant = { userId: string; name: string; avatarId: string | null };
+
+/** Most recent ticket buyers for a platform — real, paid `GameEntry` rows newest
+ *  first, de-duplicated to distinct users. NOT scoped to the current round: it
+ *  spans all games, so a fresh round (e.g. #54 with 2 buyers) backfills from the
+ *  previous rounds (#53, #52, #51 …) and the strip is never empty. The Home
+ *  "live buying" strip replays these on a paced client loop (restarting when
+ *  exhausted) so real DB history reads as live activity, without a realtime
+ *  channel. `take` over-scans so dedup still yields `limit` distinct users even
+ *  when recent games are large. */
+export async function recentEntrants(platform: UserPlatform, limit = 24): Promise<RecentEntrant[]> {
+  const rows = await prisma.gameEntry.findMany({
+    where: { paidAt: { not: null }, game: { platform, onchainId: { not: null } } },
+    orderBy: { paidAt: "desc" },
+    take: limit * 6,
+    select: { userId: true, user: { select: { username: true, avatarId: true } } },
+  });
+  const seen = new Set<string>();
+  const out: RecentEntrant[] = [];
+  for (const r of rows) {
+    if (seen.has(r.userId)) continue;
+    seen.add(r.userId);
+    out.push({ userId: r.userId, name: r.user.username ?? "Player", avatarId: r.user.avatarId ?? null });
+    if (out.length >= limit) break;
+  }
+  return out;
 }
 
 /** A settled result to surface as a return-pop / in-app notification: the

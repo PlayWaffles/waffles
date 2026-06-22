@@ -3,6 +3,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { TicketIcon, PixelImg, resolveAvatar } from "@/player/shared";
 import tactile from "./tactile.module.css";
+import live from "../live-activity/live.module.css";
 
 // ---------------------------------------------------------------------------
 // Tournament-card design lab — four directions, same mock data, side by side.
@@ -27,6 +28,47 @@ const MOCK = {
 // Peg: 1 ticket = 0.05 USDT (matches the real app's USDT_PER_TICKET).
 const USDT_PER_TICKET = 0.05;
 const usdtFor = (tickets: number) => `${(tickets * USDT_PER_TICKET).toFixed(2)} USDT`;
+
+// Live "people are buying" strip (the chosen combined treatment from
+// /sample/live-activity): red pulse → popping avatar stack → rotating message.
+const FEED = [
+  { name: "Maya", seed: "maya-7", action: "just bought a ticket" },
+  { name: "Leo", seed: "leo-3", action: "joined World Cup Royale" },
+  { name: "Ada", seed: "ada-9", action: "is in for the next round" },
+  { name: "Kai", seed: "kai-2", action: "just bought a ticket" },
+  { name: "Zoe", seed: "zoe-5", action: "bought 3 tickets" },
+  { name: "Sam", seed: "sam-1", action: "just bought a ticket" },
+  { name: "Ria", seed: "ria-8", action: "joined World Cup Royale" },
+  { name: "Tom", seed: "tom-4", action: "just bought a ticket" },
+];
+function useCycle(len: number, ms: number) {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setI((p) => (p + 1) % len), ms);
+    return () => clearInterval(id);
+  }, [len, ms]);
+  return i;
+}
+function LiveBuyingStrip() {
+  const i = useCycle(FEED.length, 2400);
+  const e = FEED[i];
+  const stack = [FEED[i], FEED[(i + 1) % FEED.length], FEED[(i + 2) % FEED.length]];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, borderRadius: 12, background: "rgba(255,255,255,.05)", border: "1px solid rgba(255,255,255,.08)", padding: "7px 12px", overflow: "hidden" }}>
+      <LiveDot />
+      <div style={{ display: "flex", flexShrink: 0 }}>
+        {stack.map((p, idx) => (
+          <span key={`${i}-${idx}`} className={idx === 0 ? live.pop : undefined} style={{ marginLeft: idx === 0 ? 0 : -9, zIndex: stack.length - idx, display: "inline-flex" }}>
+            <PixelImg src={resolveAvatar(null, p.seed)} size={23} alt="" style={{ borderRadius: 99, objectFit: "cover", background: "#1c1c1f", border: "2px solid #0F0F10" }} />
+          </span>
+        ))}
+      </div>
+      <div key={i} className={live.swap} style={{ minWidth: 0, flex: 1, fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,.65)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        <span style={{ color: "#fff" }}>{e.name}</span> {e.action}
+      </div>
+    </div>
+  );
+}
 
 /** Shared ticking HH:MM:SS countdown (the ticket-window closing clock). */
 function useCountdown(initial = 3600 + 3 * 60 + 44) {
@@ -233,6 +275,10 @@ export default function TournamentCardPreview() {
           Same data, four takes. All tap to open the entry sheet. Football skin + real tokens.
         </p>
       </header>
+      {/* Live-buying strip sitting above the cards, as it would on home. */}
+      <div style={{ maxWidth: 380, margin: "0 auto 22px" }}>
+        <LiveBuyingStrip />
+      </div>
       <div style={{ maxWidth: 1080, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 28, justifyItems: "center" }}>
         <Slot tag="V3" name="Compact Banner" note="Shortest layout. Explicit pill button instead of whole-card tap. Densest.">
           <CompactBanner timer={timer} />

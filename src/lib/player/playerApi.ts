@@ -165,6 +165,8 @@ export type TournamentRound = {
   questionCount: number;
   roundSeconds: number;
   playerCount: number;
+  /** Entry cap for the round — drives the "X / N spots" scarcity meter. */
+  maxPlayers: number;
   prizePoolUsdc: number;
   topPrizeUsdc: number;
   /** Finishers paid for the current field — the live bracket's winner count
@@ -223,6 +225,7 @@ export async function getTournament(): Promise<
       questionCount: questions.length,
       roundSeconds,
       playerCount: game.playerCount,
+      maxPlayers: game.maxPlayers,
       prizePoolUsdc: game.prizePool,
       topPrizeUsdc: game.prizePool * topWinnerShare(game.playerCount),
       winnerCount: winnersForField(game.playerCount),
@@ -307,6 +310,14 @@ export async function loadCurrentTournamentBoard(): Promise<TournamentBoard | nu
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
   return tournamentSvc.tournamentStandings(game.id, { userId: user.id, limit: 10 });
+}
+
+/** Recent ticket buyers for the player's platform — feeds the Home "live buying"
+ *  strip, which replays these (looping) so DB history reads as live. */
+export async function loadRecentEntrants(): Promise<tournamentSvc.RecentEntrant[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  return tournamentSvc.recentEntrants(user.platform);
 }
 
 /** Confirm an on-chain prize claim after the client sends `claimPrize`. Verifies

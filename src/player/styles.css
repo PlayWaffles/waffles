@@ -125,6 +125,16 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.55; }
 }
+/* Live-buying strip: avatar pops into the stack, message rises in. */
+@keyframes waffles-v2-buyer-pop {
+  0% { opacity: 0; transform: translateX(12px) scale(0.6); }
+  60% { transform: translateX(0) scale(1.1); }
+  100% { opacity: 1; transform: translateX(0) scale(1); }
+}
+@keyframes waffles-v2-buyer-swap {
+  0% { opacity: 0; transform: translateY(7px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
 @keyframes waffles-v2-slideUp {
   from { transform: translateY(100%); }
   to { transform: translateY(0); }
