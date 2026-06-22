@@ -368,12 +368,23 @@ export const HomeScreen = () => {
   // client mount), and it returns null in the brief gap between hourly rounds —
   // so retry rather than leave the card empty on a one-shot miss. Until it lands,
   // the derived values are null and the copy falls back to the themed defaults.
-  const { data: tourney } = useResilientAction(() => getTournament(), []);
+  // Live refresh — the pool, spots and player counts grow as people enter, so
+  // re-pull every 20s instead of freezing on the mount-time snapshot.
+  const [refreshKey, setRefreshKey] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setRefreshKey((k) => k + 1), 20_000);
+    return () => clearInterval(id);
+  }, []);
+  const { data: tourney } = useResilientAction(() => getTournament(), [refreshKey]);
   const fee = tourney ? { entryFee: tourney.entryFee, standardFee: tourney.standardFee, firstEntry: tourney.firstEntry } : null;
-  const closeAt = tourney ? new Date(tourney.game.endsAt).getTime() : null;
   const round: TournamentRound | null = tourney?.round ?? null;
   const now = useNow();
-  // Time left until the round closes, broken into HH:MM:SS.
+  // "Tickets closing in" counts down on the real game clock: to kickoff
+  // (startsAt) while the round is still upcoming, then to the round's end
+  // (endsAt) once it's live and entries stay open.
+  const startMs = tourney ? new Date(tourney.game.startsAt).getTime() : null;
+  const endMs = tourney ? new Date(tourney.game.endsAt).getTime() : null;
+  const closeAt = startMs != null && endMs != null ? (startMs > now ? startMs : endMs) : null;
   const remainMs = closeAt ? Math.max(0, closeAt - now) : 0;
   const cd = {
     hrs: String(Math.floor(remainMs / 3_600_000)).padStart(2, "0"),
@@ -441,8 +452,8 @@ export const HomeScreen = () => {
   // Real entrant count for the current tournament (falls back to the simulated
   // field in preview / before any real entrants). Resilient fetch so the
   // auth-cookie / between-rounds race doesn't drop it.
-  const { data: rawBoard } = useResilientAction(() => loadCurrentTournamentBoard(), [proto.tournamentGameId]);
-  const { data: recentBuyers } = useResilientAction(() => loadRecentEntrants(), [proto.tournamentGameId]);
+  const { data: rawBoard } = useResilientAction(() => loadCurrentTournamentBoard(), [proto.tournamentGameId, refreshKey]);
+  const { data: recentBuyers } = useResilientAction(() => loadRecentEntrants(), [proto.tournamentGameId, refreshKey]);
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
@@ -600,7 +611,7 @@ export const HomeScreen = () => {
 
           {/* CTA — looks like a button but is part of the card's tap (avoids
               nesting interactives); state-aware: resume / view / buy. */}
-          <div className="pressable" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.28)" }}>
+          <div className="pressable" style={{ marginTop: 13, width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, background: "linear-gradient(180deg, #FFD24D, #F5A91B)", color: "#3a2a00", borderRadius: 13, padding: "13px", fontFamily: "var(--font-display)", fontWeight: 700, letterSpacing: 0.3, fontSize: 16, boxShadow: "0 4px 0 rgba(0,0,0,.28)" }}>
             {entered
               ? (canResume ? "Play your round" : "View standing")
               : (<><TicketIcon size={18} />Join game</>)}

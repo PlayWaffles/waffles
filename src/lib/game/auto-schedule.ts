@@ -6,6 +6,10 @@ const ONE_HOUR_MS = 60 * 60 * 1000;
 const ONE_DAY_MS = 24 * ONE_HOUR_MS;
 const ALLOWED_WEEKDAYS = new Set([1, 3, 5]); // Mon, Wed, Fri in Africa/Lagos
 const AUTO_START_HOUR_UTC = 14;
+// Default spots (entry cap) for an auto-scheduled game. Set here rather than
+// carried forward so the cap is a deliberate default, not whatever the last
+// game happened to use.
+const DEFAULT_MAX_PLAYERS = 100;
 
 export function getNextAutoGameStart(lastEndsAt: Date, now = new Date()) {
   const earliestStart = new Date(lastEndsAt.getTime() + ONE_HOUR_MS);
@@ -117,7 +121,7 @@ export async function ensureNextAutoScheduledGameForPlatform(platform: UserPlatf
     ticketsOpenAt: schedule.ticketsOpenAt,
     ticketPrice: latestEndedGame.tierPrices[0] ?? 1,
     roundBreakSec: latestEndedGame.roundBreakSec,
-    maxPlayers: latestEndedGame.maxPlayers,
+    maxPlayers: DEFAULT_MAX_PLAYERS,
   });
 
   return {

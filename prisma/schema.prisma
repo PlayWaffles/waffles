@@ -289,7 +289,7 @@ model Game {
 
   // -- CONFIGURATION --
   roundBreakSec Int @default(20) @db.SmallInt
-  maxPlayers    Int @default(200) @db.SmallInt
+  maxPlayers    Int @default(100) @db.SmallInt
 
   // -- NETWORK --
   isTestnet Boolean @default(false) // Whether game was created on testnet
