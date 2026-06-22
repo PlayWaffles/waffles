@@ -12,9 +12,17 @@ import {
   PAYMENT_TOKEN_DECIMALS,
   getWaffleContractAddress,
 } from "@/lib/chain/config";
+import type { ChainPlatform } from "@/lib/chain/platform";
+import { getPaymentTokenSymbolForTarget } from "@/lib/chain/token-display";
 import { getTreasuryWalletForPlatform } from "@/lib/env";
 
-const ADMIN_CONTRACT_PLATFORM = "BASE_APP";
+type AdminContractPlatform = Extract<ChainPlatform, "BASE_APP" | "MINIPAY">;
+
+function parseAdminContractPlatform(value: FormDataEntryValue | null): AdminContractPlatform {
+  if (value === "BASE_APP") return "BASE_APP";
+  if (value === "MINIPAY") return "MINIPAY";
+  throw new Error("Choose Base or Celo before withdrawing protocol fees.");
+}
 
 export type WithdrawProtocolFeesResult =
   | {
@@ -34,16 +42,25 @@ export async function withdrawProtocolFeesAction(
   formData: FormData,
 ): Promise<WithdrawProtocolFeesResult> {
   void prevState;
-  void formData;
 
   const auth = await requireAdminSession();
   if (!auth.authenticated || !auth.session) {
     return { success: false, error: auth.error || "Unauthorized" };
   }
 
-  const platform = ADMIN_CONTRACT_PLATFORM;
+  let platform: AdminContractPlatform;
+  try {
+    platform = parseAdminContractPlatform(formData.get("platform"));
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Invalid contract target",
+    };
+  }
+
   const contractAddress = getWaffleContractAddress(platform);
   const treasuryWallet = getTreasuryWalletForPlatform(platform);
+  const tokenSymbol = getPaymentTokenSymbolForTarget({ platform });
 
   if (
     !treasuryWallet ||
@@ -51,7 +68,10 @@ export async function withdrawProtocolFeesAction(
   ) {
     return {
       success: false,
-      error: "NEXT_PUBLIC_TREASURY_WALLET is not configured",
+      error:
+        platform === "MINIPAY"
+          ? "NEXT_PUBLIC_TREASURY_WALLET_MINIPAY is not configured"
+          : "NEXT_PUBLIC_TREASURY_WALLET is not configured",
     };
   }
 
@@ -126,7 +146,7 @@ export async function withdrawProtocolFeesAction(
 
     return {
       success: true,
-      message: `Withdrew ${amountFormatted} USDC to treasury`,
+      message: `Withdrew ${amountFormatted} ${tokenSymbol} to treasury`,
       txHash,
       amountFormatted,
       treasuryWallet,

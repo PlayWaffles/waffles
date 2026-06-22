@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { formatUnits } from "viem";
 import { waffleGameAbi } from "@/lib/chain/abi";
@@ -9,9 +9,31 @@ import {
   getWaffleContractAddress,
 } from "@/lib/chain";
 import { getPublicClient } from "@/lib/chain/client";
+import type { ChainPlatform } from "@/lib/chain/platform";
+import { resolveChainTarget } from "@/lib/chain/network";
+import { getPaymentTokenSymbolForTarget } from "@/lib/chain/token-display";
 import { trackServerEvent } from "@/lib/server-analytics";
 
-const ADMIN_CONTRACT_PLATFORM = "BASE_APP";
+type AdminContractPlatform = Extract<ChainPlatform, "BASE_APP" | "MINIPAY">;
+
+function parseAdminContractPlatform(value: string | null): AdminContractPlatform {
+  if (!value || value === "BASE_APP") return "BASE_APP";
+  if (value === "MINIPAY") return "MINIPAY";
+  throw new Error("Admin contract management supports only BASE_APP or MINIPAY.");
+}
+
+function getExplorer(network: ReturnType<typeof resolveChainTarget>["network"]) {
+  if (network === "BASE_MAINNET") {
+    return { name: "Basescan", baseUrl: "https://basescan.org" };
+  }
+  if (network === "BASE_SEPOLIA") {
+    return { name: "Base Sepolia Explorer", baseUrl: "https://sepolia.basescan.org" };
+  }
+  if (network === "CELO_MAINNET") {
+    return { name: "Celoscan", baseUrl: "https://celoscan.io" };
+  }
+  return { name: "Celo Sepolia Explorer", baseUrl: "https://celo-sepolia.blockscout.com" };
+}
 
 /**
  * Admin Contract Management API
@@ -28,9 +50,13 @@ async function isAuthorized(): Promise<boolean> {
 }
 
 interface ContractState {
+  platform: AdminContractPlatform;
+  network: string;
   address: string;
   chain: string;
   chainId: number;
+  explorerName: string;
+  explorerBaseUrl: string;
   token: {
     address: string;
     symbol: string;
@@ -52,7 +78,7 @@ interface ContractState {
  *
  * Fetch current contract state
  */
-export async function GET() {
+export async function GET(request: NextRequest) {
   const startedAt = Date.now();
   // Auth check
   if (!(await isAuthorized())) {
@@ -63,8 +89,26 @@ export async function GET() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  let platform: AdminContractPlatform;
   try {
-    const platform = ADMIN_CONTRACT_PLATFORM;
+    platform = parseAdminContractPlatform(
+      request.nextUrl.searchParams.get("platform"),
+    );
+  } catch (error) {
+    return NextResponse.json(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Invalid admin contract platform",
+      },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const { network } = resolveChainTarget(platform);
+    const explorer = getExplorer(network);
     const chain = getPlatformChain(platform);
     const contractAddress = getWaffleContractAddress(platform);
     const publicClient = getPublicClient(platform);
@@ -118,12 +162,16 @@ export async function GET() {
     // let balance = null;
 
     const state: ContractState = {
+      platform,
+      network,
       address: contractAddress,
       chain: chain.name,
       chainId: chain.id,
+      explorerName: explorer.name,
+      explorerBaseUrl: explorer.baseUrl,
       token: {
         address: tokenAddress,
-        symbol: "USDC",
+        symbol: getPaymentTokenSymbolForTarget({ platform, network }),
         decimals: PAYMENT_TOKEN_DECIMALS,
       },
       platformFeeBps: Number(platformFeeBps),

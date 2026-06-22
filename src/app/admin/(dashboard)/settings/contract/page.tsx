@@ -20,10 +20,33 @@ import {
     type WithdrawProtocolFeesResult,
 } from "@/actions/admin/contract";
 
+type AdminContractPlatform = "BASE_APP" | "MINIPAY";
+
+const CONTRACT_TARGETS: Array<{
+    platform: AdminContractPlatform;
+    label: string;
+    description: string;
+}> = [
+    {
+        platform: "BASE_APP",
+        label: "Base",
+        description: "Base App contract",
+    },
+    {
+        platform: "MINIPAY",
+        label: "Celo",
+        description: "MiniPay contract",
+    },
+];
+
 interface ContractState {
+    platform: AdminContractPlatform;
+    network: string;
     address: string;
     chain: string;
     chainId: number;
+    explorerName: string;
+    explorerBaseUrl: string;
     token: {
         address: string;
         symbol: string;
@@ -41,6 +64,7 @@ interface ContractState {
 }
 
 export default function ContractSettingsPage() {
+    const [selectedPlatform, setSelectedPlatform] = useState<AdminContractPlatform>("BASE_APP");
     const [state, setState] = useState<ContractState | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -53,7 +77,8 @@ export default function ContractSettingsPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/v1/admin/contract", {
+            const params = new URLSearchParams({ platform: selectedPlatform });
+            const res = await fetch(`/api/v1/admin/contract?${params.toString()}`, {
                 credentials: "include",
             });
             if (!res.ok) {
@@ -66,7 +91,7 @@ export default function ContractSettingsPage() {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [selectedPlatform]);
 
     useEffect(() => {
         const timeout = window.setTimeout(() => {
@@ -88,6 +113,13 @@ export default function ContractSettingsPage() {
 
     const truncateAddress = (addr: string) =>
         `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+
+    const explorerAddressUrl = (address: string) =>
+        `${state?.explorerBaseUrl}/address/${address}`;
+
+    const formattedAccumulatedFees = state
+        ? `${Number(state.accumulatedFeesFormatted).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${state.token.symbol}`
+        : "";
 
     if (loading && !state) {
         return (
@@ -122,7 +154,7 @@ export default function ContractSettingsPage() {
     return (
         <div className="max-w-5xl mx-auto space-y-6">
             {/* Header */}
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h1 className="text-2xl font-bold text-white font-display">
                         Contract Management
@@ -131,13 +163,32 @@ export default function ContractSettingsPage() {
                         WaffleGame smart contract on {state.chain}
                     </p>
                 </div>
-                <button
-                    onClick={fetchContractState}
-                    disabled={loading}
-                    className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
-                >
-                    <ArrowPathIcon className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
-                </button>
+                <div className="flex items-center gap-2">
+                    <div className="flex rounded-xl border border-white/10 bg-white/5 p-1">
+                        {CONTRACT_TARGETS.map((target) => (
+                            <button
+                                key={target.platform}
+                                type="button"
+                                onClick={() => setSelectedPlatform(target.platform)}
+                                className={`rounded-lg px-3 py-2 text-left transition-colors ${
+                                    selectedPlatform === target.platform
+                                        ? "bg-[#FFC931] text-black"
+                                        : "text-white/60 hover:bg-white/10 hover:text-white"
+                                }`}
+                            >
+                                <span className="block text-sm font-bold">{target.label}</span>
+                                <span className="block text-[10px]">{target.description}</span>
+                            </button>
+                        ))}
+                    </div>
+                    <button
+                        onClick={fetchContractState}
+                        disabled={loading}
+                        className="p-2 text-white/50 hover:text-white hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                        <ArrowPathIcon className={`h-5 w-5 ${loading ? "animate-spin" : ""}`} />
+                    </button>
+                </div>
             </div>
 
             {/* Status Banner */}
@@ -186,9 +237,9 @@ export default function ContractSettingsPage() {
                             <span>Accumulated Fees</span>
                         </div>
                         <div className="text-3xl font-bold text-[#14B985]">
-                            ${Number(state.accumulatedFeesFormatted).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            {formattedAccumulatedFees}
                         </div>
-                        <div className="text-white/40 text-xs mt-1">{state.token.symbol}</div>
+                        <div className="text-white/40 text-xs mt-1">{state.network}</div>
                     </div>
                 </div>
 
@@ -238,12 +289,12 @@ export default function ContractSettingsPage() {
                             <p className="text-white font-mono">{state.address}</p>
                         </div>
                         <a
-                            href={`https://basescan.org/address/${state.address}`}
+                            href={explorerAddressUrl(state.address)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors"
                         >
-                            <span>View on Basescan</span>
+                            <span>View on {state.explorerName}</span>
                             <ArrowTopRightOnSquareIcon className="h-4 w-4" />
                         </a>
                     </div>
@@ -260,7 +311,7 @@ export default function ContractSettingsPage() {
                             </div>
                         </div>
                         <a
-                            href={`https://basescan.org/address/${state.token.address}`}
+                            href={explorerAddressUrl(state.token.address)}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-white text-sm transition-colors"
@@ -308,6 +359,7 @@ export default function ContractSettingsPage() {
                         </p>
                     </div>
                     <form action={withdrawAction} className="shrink-0">
+                        <input type="hidden" name="platform" value={selectedPlatform} />
                         <button
                             type="submit"
                             disabled={
@@ -437,7 +489,7 @@ export default function ContractSettingsPage() {
                         </div>
 
                         <p className="text-white/40 text-xs">
-                            Admin functions should be executed directly on Basescan or via your multisig wallet.
+                            Admin functions should be executed directly on {state.explorerName} or via your multisig wallet.
                         </p>
                     </div>
                 </div>
