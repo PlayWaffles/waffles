@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import { getTournament, loadCurrentTournamentBoard, loadMissions, type TournamentRound } from "@/player/api";
@@ -434,17 +434,6 @@ export const HomeScreen = () => {
   const winnerCount = round?.winnerCount ?? 1;
   const winnersLabel = winnerCount <= 1 ? "Winner takes all" : `Top ${winnerCount} split the pool`;
   const poolHeadline = winnerCount <= 1 ? "Winner takes the pool" : `Top ${winnerCount} split the pool`;
-  // "Filling up" bar: each prize bracket widens as more rivals join (1 winner →
-  // 3 → 5 → 8 → 12 → 15), and the pot grows with every $0.05 entry. Fill = how
-  // close the field is to the next bracket, so an empty round reads as
-  // momentum/"get in early" instead of a lonely "1". Honest: it's the real
-  // bracket ladder, not a fake meter.
-  const BRACKET_STEPS = [5, 8, 15, 25, 40];
-  const nextBracketAt = BRACKET_STEPS.find((n) => n > realEntrants) ?? 40;
-  const fillRatio = Math.min(1, Math.max(0.06, realEntrants / nextBracketAt));
-  const fillStatus = realEntrants >= 40 ? "packed" : fillRatio >= 0.85 ? "almost full" : fillRatio >= 0.34 ? "heating up" : "filling up";
-
-  const lastPct = lastRank && fieldSize > 0 ? Math.max(1, Math.round((lastRank / fieldSize) * 100)) : null;
 
   // Game-card impression — the Top-of-the-Hour tournament is the home hero, so
   // log that the player saw it (one per mount) with the entry state that drives
@@ -495,18 +484,14 @@ export const HomeScreen = () => {
           }}
           style={{ background: "#0F0F10", borderRadius: 18, padding: 18, position: "relative", overflow: "hidden", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.04)", cursor: "pointer" }}
         >
-          {/* Two essential chips only — live status (left) and entry cost (right),
-              both nowrap so they never break onto a second line. */}
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+          {/* Status — the live badge carries the countdown itself, so the tall
+              HH:MM:SS tile block is gone. Entry cost moves to the footer CTA. */}
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 11 }}>
             <div style={{ width: 8, height: 8, borderRadius: 99, flexShrink: 0, background: "#FC1919", boxShadow: "0 0 0 4px rgba(252,25,25,.2)", animation: "waffles-v2-pulse 1.5s infinite" }} />
-            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0 }}>{theme.copy.liveBadge}</div>
+            <div className="chip" style={{ background: "rgba(252,25,25,.15)", color: "#FC1919", padding: "3px 10px", fontSize: 11, border: "1px solid rgba(252,25,25,.3)", whiteSpace: "nowrap", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>KICKOFF IN {cd.hrs !== "00" ? `${cd.hrs}:` : ""}{cd.min}:{cd.sec}</div>
             <div style={{ flex: 1 }} />
-            {entered ? (
+            {entered && (
               <div className="chip" style={{ background: "rgba(0,207,242,.14)", color: "var(--leaf)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(0,207,242,.4)", whiteSpace: "nowrap", flexShrink: 0 }}>YOU&apos;RE IN</div>
-            ) : (
-              <div className="chip" style={{ background: "rgba(255,201,49,.12)", color: "var(--maple-500)", padding: "3px 9px", fontSize: 11, border: "1px solid rgba(255,201,49,.3)", display: "inline-flex", alignItems: "center", gap: 4, whiteSpace: "nowrap", flexShrink: 0 }}>
-                <TicketIcon size={12} />{TOURNAMENT_TICKET_COST} TO ENTER
-              </div>
             )}
           </div>
           <div style={{ fontFamily: "var(--font-display)", fontSize: 25, lineHeight: 1.05, color: "#fff" }}>{round?.title || theme.copy.liveTitle}</div>
@@ -515,79 +500,34 @@ export const HomeScreen = () => {
               ? `${round.category} trivia · ${round.questionCount} question${round.questionCount === 1 ? "" : "s"} · ${round.roundSeconds}s`
               : theme.copy.liveTagline}
           </div>
-          {/* Skill cue — this is a game of speed + accuracy, not a raffle. Says
-              up front how you win so the prize reads as earned. */}
-          <div style={{ marginTop: 5, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 800, color: "var(--leaf)" }}>
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" /></svg>
-            Fastest correct answers win
-          </div>
           {round?.legacyV1 && (
             <div style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,.4)", marginTop: 5, lineHeight: 1.35 }}>
               This is a game from v1 — games after this one run hourly.
             </div>
           )}
 
+          {/* The one promise — the hook. Prize size, player counts and the cost
+              breakdown all live in the entry sheet this card opens on tap. */}
           {round && (
-            <div style={{ marginTop: 12, borderRadius: 14, border: "1px solid rgba(255,201,49,.22)", background: "linear-gradient(180deg, rgba(255,201,49,.11), rgba(255,201,49,.035))", padding: "12px 13px" }}>
-              {/* Prize as a mechanic, not a lonely number — "Winner takes the
-                  pool" reads as a deal even on a near-empty round. */}
-              <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                <TicketIcon size={20} />
-                <span style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "#fff", letterSpacing: 0.3, textTransform: "uppercase", lineHeight: 1 }}>{poolHeadline}</span>
-              </div>
-              {/* Fill bar — the pot/field momentum. Each entry widens the prize
-                  bracket and grows the pot, so an empty round reads as "get in
-                  early" rather than dead. */}
-              <div style={{ marginTop: 11, display: "flex", alignItems: "center", gap: 9 }}>
-                <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.07)", overflow: "hidden", position: "relative" }}>
-                  <div style={{ position: "absolute", top: 0, left: 0, bottom: 0, width: `${Math.round(fillRatio * 100)}%`, borderRadius: 99, background: "linear-gradient(90deg, #F5BB1B, #FFCF31)", boxShadow: "0 0 10px rgba(255,201,49,.45)", overflow: "hidden" }}>
-                    <div style={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, transparent, rgba(255,255,255,.4), transparent)", animation: "waffles-v2-shimmer 1.9s infinite" }} />
-                  </div>
-                </div>
-                <span style={{ fontSize: 10, fontWeight: 900, letterSpacing: 0.8, color: "var(--maple-500)", textTransform: "uppercase", flexShrink: 0 }}>{fillStatus}</span>
-              </div>
-              {/* Live momentum line — carries both the live count and the day's
-                  social proof (folded in from the old separate TODAY band), so
-                  the hero owns the "people are here" story in one place. */}
-              <div style={{ marginTop: 9, display: "flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
-                <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(0,207,242,.18)", flexShrink: 0, animation: "waffles-v2-pulse 1.5s infinite" }} />
-                {realEntrants.toLocaleString()} playing now · {round.todayPlayerCount.toLocaleString()} joined today
-              </div>
+            <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 9 }}>
+              <TicketIcon size={20} />
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "#fff", lineHeight: 1 }}>{poolHeadline}</span>
             </div>
           )}
 
-          {/* "Act" tier: the personal status/hook (entered → resume, returning →
-              beat your last finish, first-timer → welcome) plus the conditional
-              2× XP bonus. The first-timer copy stays off the prize (the hero
-              already owns "winner takes the pool") so nothing repeats. */}
-          <div style={{ marginTop: 13, display: "flex", flexDirection: "column", gap: 5 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--leaf)", fontVariantNumeric: "tabular-nums" }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M4 12a8 8 0 1 1 2.3 5.6M4 12V7m0 5h5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+          {/* Footer — light social proof (left) + the tap affordance (right):
+              what it costs to enter, or your status if already in. */}
+          <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid rgba(255,255,255,.08)", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
+              <span style={{ width: 7, height: 7, borderRadius: 99, background: "var(--leaf)", boxShadow: "0 0 0 3px rgba(0,207,242,.18)", flexShrink: 0, animation: "waffles-v2-pulse 1.5s infinite" }} />
+              {round ? `${realEntrants.toLocaleString()} playing now` : "Round is open"}
+            </span>
+            <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: "var(--font-display)", fontSize: 13, color: "var(--maple-500)" }}>
               {entered
-                ? (canResume ? "You're in — tap to play your round" : `${enteredRank != null ? `Currently #${enteredRank} · ` : ""}tap to view`)
-                : lastPct != null ? `You placed Top ${lastPct}% last hour — beat it` : "Your first tournament — climb the leaderboard"}
-            </div>
-            {bonusAvailable && (
-              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-                <span style={{ flexShrink: 0 }}>⚡</span>
-                2× XP on your first game today
-              </div>
-            )}
-          </div>
-
-          <div style={{ marginTop: 13, display: "flex", alignItems: "center", gap: 6 }}>
-            {[[cd.hrs, "HRS"], [cd.min, "MIN"], [cd.sec, "SEC"]].map(([v, l], i, a) => (
-              <Fragment key={l}>
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-                  <div style={{ width: 46, height: 40, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-display)", fontSize: 21, color: "#F5BB1B", background: "linear-gradient(180deg, rgba(245,187,27,0.1), rgba(245,187,27,0.04))", border: "1px solid rgba(245,187,27,0.15)", fontVariantNumeric: "tabular-nums" }}>{v}</div>
-                  <div style={{ fontSize: 8, fontWeight: 800, color: "rgba(255,255,255,.25)", letterSpacing: 1.5 }}>{l}</div>
-                </div>
-                {i < a.length - 1 && <span style={{ color: "rgba(255,255,255,.2)", fontSize: 18, marginTop: -12 }}>:</span>}
-              </Fragment>
-            ))}
-            <div style={{ flex: 1 }} />
-            {/* Countdown stands alone now — the payoff lives in the TOP PRIZE
-                stat card above, so the old duplicate here is gone. */}
+                ? (canResume ? "Tap to play" : "View standing")
+                : (<><TicketIcon size={14} />{TOURNAMENT_TICKET_COST} to enter</>)}
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0 }}><path d="M5 12h14M13 6l6 6-6 6" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" /></svg>
+            </span>
           </div>
           <div style={{ position: "absolute", right: -30, top: -30, opacity: 0.08, transform: "rotate(15deg)" }}>
             <div className="waffle-mark" style={{ width: 120, height: 120, borderRadius: 24 }} />
