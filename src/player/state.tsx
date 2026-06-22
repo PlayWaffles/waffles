@@ -150,8 +150,10 @@ export function tournamentReward(rank: number): number {
 
 // Prizes are shown in tickets but backed by USDT. This is the peg used to value
 // a winning when the player claims it as real money (vs. converting it back into
-// spendable in-app tickets): 1 ticket = 0.1 USDT.
-export const USDT_PER_TICKET = 0.1;
+// spendable in-app tickets): 1 ticket = 0.05 USDT — the same price a ticket
+// costs to buy, so buy-value and win-value stay consistent. (Display only; real
+// on-chain payouts are USDC and unaffected.)
+export const USDT_PER_TICKET = 0.05;
 export function ticketsToUsdt(tickets: number): number {
   return tickets * USDT_PER_TICKET;
 }

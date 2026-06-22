@@ -14,10 +14,10 @@ import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { isTriggeredId } from "@/lib/player/announcements";
 
-// Peg used to value an on-chain prize as in-app Syrup: 1 ticket = 0.1 USDT.
-// merkleAmount is in payment-token base units (6 decimals), so its ticket value
-// is (merkleAmount / 10^decimals) / 0.1.
-const USDT_PER_TICKET = 0.1;
+// Peg used to value an on-chain prize as in-app Syrup: 1 ticket = 0.05 USDT
+// (matches the ticket buy price). merkleAmount is in payment-token base units
+// (6 decimals), so its ticket value is (merkleAmount / 10^decimals) / 0.05.
+const USDT_PER_TICKET = 0.05;
 function merkleAmountToTickets(merkleAmount: string): number {
   const usdt = Number(merkleAmount) / 10 ** PAYMENT_TOKEN_DECIMALS;
   return Math.round(usdt / USDT_PER_TICKET);
