@@ -111,8 +111,8 @@ export function OnchainKitProvider({ children }: Props) {
   );
 
   return (
-    <WagmiProvider config={activeWagmiConfig}>
-      <QueryClientProvider client={wagmiQueryClient}>{app}</QueryClientProvider>
-    </WagmiProvider>
+    <QueryClientProvider client={wagmiQueryClient}>
+      <WagmiProvider config={activeWagmiConfig}>{app}</WagmiProvider>
+    </QueryClientProvider>
   );
 }

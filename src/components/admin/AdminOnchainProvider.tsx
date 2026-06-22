@@ -21,8 +21,8 @@ interface Props {
 export function AdminOnchainProvider({ children }: Props) {
 
     return (
-        <WagmiProvider config={wagmiConfig}>
-            <QueryClientProvider client={wagmiQueryClient}>
+        <QueryClientProvider client={wagmiQueryClient}>
+            <WagmiProvider config={wagmiConfig}>
                 <OnchainKitProviderComponent
                     apiKey={env.nextPublicOnchainkitApiKey}
                     chain={farcasterChain}
@@ -37,7 +37,7 @@ export function AdminOnchainProvider({ children }: Props) {
                 >
                     {children}
                 </OnchainKitProviderComponent>
-            </QueryClientProvider>
-        </WagmiProvider>
+            </WagmiProvider>
+        </QueryClientProvider>
     );
 }
