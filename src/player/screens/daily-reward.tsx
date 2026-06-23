@@ -48,14 +48,9 @@ type DailyState = { lastClaim: string | null; streak: number; freezes: number };
 
 const EMPTY: DailyState = { lastClaim: null, streak: 0, freezes: 0 };
 
-const dateKey = (d: Date): string =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-const todayKey = (): string => dateKey(new Date());
-const yesterdayKey = (): string => {
-  const d = new Date();
-  d.setDate(d.getDate() - 1);
-  return dateKey(d);
-};
+const dateKeyUTC = (d: Date): string =>
+  `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+const todayKey = (): string => dateKeyUTC(new Date());
 
 const readDaily = (): DailyState => {
   if (typeof window === "undefined") return EMPTY;
@@ -75,14 +70,12 @@ const writeDaily = (s: DailyState) => {
   }
 };
 
-// Normalize for "today": if days were missed, a freeze saves the streak,
-// otherwise it resets. Returns the resolved state + whether a reward is
-// claimable right now.
+// The server owns streak progression and freeze consumption. The client only
+// uses local state as a cache for "already claimed today" and the last known
+// display values between reloads.
 const resolveToday = (s: DailyState): { state: DailyState; claimable: boolean } => {
   if (s.lastClaim === todayKey()) return { state: s, claimable: false };
-  if (s.lastClaim === null || s.lastClaim === yesterdayKey()) return { state: s, claimable: true };
-  if (s.freezes > 0) return { state: { ...s, freezes: s.freezes - 1 }, claimable: true };
-  return { state: { ...s, streak: 0 }, claimable: true };
+  return { state: s, claimable: true };
 };
 
 /** True if the player still has a daily reward to claim today. */
@@ -100,7 +93,7 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
   const [claimed, setClaimed] = useState(!resolved.claimable);
   const [reward, setReward] = useState<Roll | null>(null);
 
-  const baseStreak = Math.max(resolved.state.streak, proto.streak);
+  const baseStreak = proto.hydrated ? proto.streak : resolved.state.streak;
   // proto.streak is the held streak NOT yet counting today (claiming is what
   // advances it — see economy.claimDailyReward). So before claiming we optimistically
   // show baseStreak + 1 (what today's claim will make it), and after claiming we
