@@ -44,6 +44,8 @@ const MAX_ENTRY_APPROVAL_USDC = "10";
 const APPROVE_GAS_LIMIT = BigInt(100_000);
 const BUY_TICKET_GAS_LIMIT = BigInt(245_574);
 const NETWORK_FEE_BUFFER_USDC = "0.002";
+const CELO_MAINNET_CHAIN_ID = 42220;
+const CELO_ALFAJORES_CHAIN_ID = 11142220;
 
 /**
  * Progress steps for the on-chain entry/claim flow (mirrors v1's PurchaseStep).
@@ -77,12 +79,27 @@ export function txStepLabel(step: TournamentTxStep | null): string {
  *  useTicketPurchase handling). */
 function walletErrorMessage(error: unknown, platform: ChainPlatform): string {
   const msg = error instanceof Error ? error.message : String(error);
+  if (/MiniPay is connected to/i.test(msg)) return msg;
   if (/user rejected|denied|rejected the request/i.test(msg)) return "Cancelled.";
   if (/reverted|failed on-chain|transaction failed/i.test(msg)) return "Transaction failed on-chain. Your ticket was not purchased.";
   if (/insufficient|not enough|balance|transfer amount exceeds balance/i.test(msg)) {
     return platform === "MINIPAY" ? MINIPAY_LOW_BALANCE_MESSAGE : "Not enough balance to enter.";
   }
   return "Something went wrong. Please try again.";
+}
+
+function miniPayChainName(chainId: number) {
+  if (chainId === CELO_MAINNET_CHAIN_ID) return "Celo mainnet";
+  if (chainId === CELO_ALFAJORES_CHAIN_ID) return "Celo Alfajores testnet";
+  return `chain ${chainId}`;
+}
+
+function assertMiniPayChainMatches(currentChainId: number, targetChainId: number) {
+  if (currentChainId === targetChainId) return;
+
+  throw new Error(
+    `MiniPay is connected to ${miniPayChainName(currentChainId)}, but this tournament is on ${miniPayChainName(targetChainId)}. Open the matching MiniPay environment or use a tournament deployed to the current MiniPay network.`,
+  );
 }
 
 function tokenUnitsForGas(gasLimit: bigint, gasPrice: bigint) {
@@ -133,6 +150,9 @@ export function useTournamentWallet() {
         if (currentChainId !== chainId) {
           blog("[buy-ticket] switching chain", { from: currentChainId, to: chainId });
           onStep?.("switching");
+          if (platform === "MINIPAY") {
+            assertMiniPayChainMatches(currentChainId, chainId);
+          }
           await switchChainAsync({ chainId });
         }
 
@@ -246,6 +266,9 @@ export function useTournamentWallet() {
       try {
         if (currentChainId !== chainId) {
           onStep?.("switching");
+          if (platform === "MINIPAY") {
+            assertMiniPayChainMatches(currentChainId, chainId);
+          }
           await switchChainAsync({ chainId });
         }
         onStep?.("claiming");
