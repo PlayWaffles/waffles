@@ -434,13 +434,6 @@ export const HomeScreen = () => {
       proto.goto("results");
       return;
     }
-    // True first-timer (never played a real tournament and hasn't done the cup) →
-    // the free, winnable Rookie Cup before they ever hit the paid/wallet flow.
-    if (!proto.rookieDone && proto.lastTournamentRank == null) {
-      trackClientEvent(AnalyticsEvent.TicketCtaClicked, { screen: "home", source: "rookie_route", entry_fee: fee?.entryFee ?? null, first_entry: fee?.firstEntry ?? null });
-      proto.goto("rookie");
-      return;
-    }
     trackClientEvent(AnalyticsEvent.TicketCtaClicked, {
       screen: "home",
       source: "join_cta",

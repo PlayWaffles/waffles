@@ -24,6 +24,8 @@ import {
   getTournament,
   enterTournament,
   submitTournamentAnswers,
+  getRookieCup,
+  submitRookieCup,
   getTournamentClaim,
   confirmTournamentClaim,
   reconcileTournamentClaim,
@@ -39,6 +41,7 @@ import {
   logClient,
 } from "@/player/api";
 import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
+import type { RookieResult } from "@/lib/player/rookieCup";
 import { type Announcement } from "./announcements";
 import { soundManager } from "./sound";
 import { useTournamentWallet, type TournamentTxStep } from "./useTournamentWallet";
@@ -110,7 +113,7 @@ const SCREEN_ORDER: ScreenName[] = [
   "profile",
 ];
 
-export type GameMode = "tournament" | "level";
+export type GameMode = "tournament" | "level" | "rookie";
 
 // Shop power-ups consumed in the live quiz.
 export type PowerUpName = "FIFTY_FIFTY" | "EXTRA_TIME" | "SKIP" | "SHIELD";
@@ -525,6 +528,9 @@ type State = {
   // on-chain path (real USDC deposit). Set by `enterTournamentOnChain`; routes
   // the finish-submit to the server-authoritative on-chain scorer.
   tournamentGameId: string | null;
+  // Settled Rookie Cup result (ghost standings + Syrup), set when a "rookie"-mode
+  // round finishes; read by the rookie result screen. Null otherwise.
+  rookieResult: RookieResult | null;
   // Live progress of the current on-chain entry/claim (approve → pay → confirm →
   // verify), so the UI can narrate the multi-step wallet flow. Null when idle.
   tournamentStep: TournamentTxStep | null;
@@ -592,6 +598,7 @@ const initialState = (tweaks: Tweaks): State => ({
   roundAnswers: [],
   pendingLevelQuestions: null,
   tournamentGameId: null,
+  rookieResult: null,
   tournamentStep: null,
   tournamentBonus: false,
   dailyOpen: false,
@@ -617,6 +624,7 @@ export type Proto = State & {
   // a settled prize via the merkle proof. Resolve with ok/error for the UI.
   enterTournamentOnChain: (entrySource?: TournamentEntrySource) => Promise<{ ok: boolean; error?: string }>;
   playEnteredTournament: () => Promise<{ ok: boolean; error?: string }>;
+  enterRookieCup: () => Promise<{ ok: boolean }>;
   claimTournamentPrize: (gameId: string) => Promise<{ ok: boolean; error?: string }>;
   markResultRead: (id: string) => void;
   dismissAnnouncement: (id: string) => void;
@@ -1038,7 +1046,7 @@ export function ProtoProvider({
               ? [state.qAnswered]
               : [];
       const nextAnswers: RoundAnswer[] =
-        state.mode === "tournament" && q.id
+        (state.mode === "tournament" || state.mode === "rookie") && q.id
           ? [...state.roundAnswers, { id: q.id, selection, responseMs }]
           : state.roundAnswers;
 
@@ -1180,6 +1188,12 @@ export function ProtoProvider({
             xp_multiplier: xpMult,
           });
           void submitTournamentAnswers(state.tournamentGameId, nextAnswers);
+        } else if (state.mode === "rookie") {
+          // Rookie Cup: settle synchronously against the ghost field and credit
+          // the Syrup; the result screen reads `rookieResult` once it lands.
+          void submitRookieCup(nextAnswers).then((res) => {
+            if (res) update((s) => ({ rookieResult: res, tickets: s.tickets + res.syrup }));
+          });
         }
         // Local provisional placement shown on the results screen (the locked
         // rank/prize come later at settlement, server/chain-side).
@@ -1200,8 +1214,8 @@ export function ProtoProvider({
         });
         void recordMissionEvent("questions_answered", totalQs);
         void recordMissionEvent("points_scored", state.score);
-        void recordMissionEvent("tournaments_played", 1);
-        goto("results");
+        if (state.mode !== "rookie") void recordMissionEvent("tournaments_played", 1);
+        goto(state.mode === "rookie" ? "rookie" : "results");
         update((s) => ({
           xp: s.xp + xpGain,
           roundAnswers: nextAnswers,
@@ -1733,6 +1747,36 @@ export function ProtoProvider({
     return { ok: true };
   };
 
+  // Rookie Cup — the free intro tournament. Reuses the SAME round/question/finish
+  // machinery as live tournaments (mode "rookie"), but with no game/wallet: it
+  // serves a short round, the finish-submit settles it against the ghost field
+  // (submitRookieCup), and routes to the rookie result screen. One per user.
+  const enterRookieCup = async (): Promise<{ ok: boolean }> => {
+    const cup = await getRookieCup();
+    if (!cup || cup.done || cup.questions.length === 0) {
+      goto("home");
+      return { ok: false };
+    }
+    const mapped: Question[] = cup.questions.map((q) => ({ ...q }));
+    update({
+      mode: "rookie",
+      tournamentGameId: null,
+      rookieResult: null,
+      roundQuestions: mapped,
+      roundAnswers: [],
+      qIdx: 0,
+      score: 0,
+      qAnswered: null,
+      qSelection: null,
+      hearts: 3,
+      timer: mapped[0]?.time ?? tweaks.questionTime,
+      countdownSec: tweaks.lobbyCountdown,
+      tournamentStep: null,
+    });
+    goto("question");
+    return { ok: true };
+  };
+
   // Claim a settled on-chain prize: send `claimPrize` with the merkle proof, then
   // confirm server-side (reused `verifyClaim`).
   const claimTournamentPrize = async (gameId: string): Promise<{ ok: boolean; error?: string }> => {
@@ -1820,6 +1864,7 @@ export function ProtoProvider({
     usePowerUp,
     enterTournamentOnChain,
     playEnteredTournament,
+    enterRookieCup,
     claimTournamentPrize,
   };
 

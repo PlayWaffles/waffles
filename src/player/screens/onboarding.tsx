@@ -329,9 +329,11 @@ export const OnboardingScreen = ({
   // Finale: drop the just-created player onto Home with the live-tournament buy
   // sheet primed — NOT a free level. The money moment is now part of signup.
   const enterLiveRound = () => {
-    trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, { step_index: idx, step_id: "welcome_play", cta: "enter_live_round" });
+    trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, { step_index: idx, step_id: "welcome_play", cta: "play_rookie_cup" });
+    // First-timers start with the free Rookie Cup (guaranteed win), not the paid
+    // live round — that's the coherent first-tournament experience.
     onPlay();
-    proto.update({ pendingTournamentJoin: true });
+    void proto.enterRookieCup();
   };
 
   const openLegal = (tab: LegalTab) => {
@@ -492,11 +494,11 @@ export const OnboardingScreen = ({
             </div>
             <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 2.5, color: "var(--maple-500)", textTransform: "uppercase", marginBottom: 8 }}>Welcome, @{username.trim()}!</div>
             <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 32, lineHeight: 1.06, color: "#fff", marginBottom: 8 }}>
-              A round is live now
+              Your first cup&apos;s on us
             </div>
             <div style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,.62)", maxWidth: 300, marginBottom: 18 }}>
-              Answer 6 questions, outscore the room, and split the pot. Your{" "}
-              <strong style={{ color: "var(--maple-400, #FFD24D)" }}>first entry is half price</strong> — just a few cents.
+              Answer 6 questions and beat the field in the{" "}
+              <strong style={{ color: "var(--maple-400, #FFD24D)" }}>free Rookie Cup</strong> — win Syrup, then you&apos;re ready for the real thing.
             </div>
           </div>
           <div style={{ padding: "0 18px max(20px, env(safe-area-inset-bottom))", position: "relative", zIndex: 1 }}>
@@ -506,7 +508,7 @@ export const OnboardingScreen = ({
               style={{ width: "100%", flex: "none" }}
               onClick={enterLiveRound}
             >
-              ENTER LIVE ROUND
+              PLAY ROOKIE CUP
             </button>
           </div>
         </div>
