@@ -139,9 +139,10 @@ export async function ensureHourlyTournamentGame(
     select: { roundBreakSec: true },
   });
 
-  // Deterministic per hour+platform+network — the (launchGroupId, platform) unique makes
-  // concurrent "ensure" calls race-safe: only one create wins.
-  const launchGroupId = `trn:${platform}:${network}:${startsAt.getTime()}`;
+  // Deterministic per hour+platform+network — the (launchGroupId, platform) unique
+  // makes concurrent "ensure" calls race-safe: only one create wins. Uses the hour
+  // INDEX (not the full ms timestamp) so the key fits the launchGroupId VarChar(36).
+  const launchGroupId = `trn:${platform}:${network}:${Math.floor(startsAt.getTime() / TOURNAMENT_ROUND_MS)}`;
   try {
     const created = await createAutoScheduledGame({
       platform,
