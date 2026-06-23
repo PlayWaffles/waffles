@@ -35,6 +35,7 @@ export type UserAvgAggregateOutputType = {
   streakFreezes: number | null
   currentStreak: number | null
   bestStreak: number | null
+  freeTournamentEntries: number | null
 }
 
 export type UserSumAggregateOutputType = {
@@ -46,6 +47,7 @@ export type UserSumAggregateOutputType = {
   streakFreezes: number | null
   currentStreak: number | null
   bestStreak: number | null
+  freeTournamentEntries: number | null
 }
 
 export type UserMinAggregateOutputType = {
@@ -73,6 +75,8 @@ export type UserMinAggregateOutputType = {
   currentStreak: number | null
   bestStreak: number | null
   lastLoginAt: Date | null
+  rookieCupAt: Date | null
+  freeTournamentEntries: number | null
   isBanned: boolean | null
   bannedAt: Date | null
   bannedBy: string | null
@@ -105,6 +109,8 @@ export type UserMaxAggregateOutputType = {
   currentStreak: number | null
   bestStreak: number | null
   lastLoginAt: Date | null
+  rookieCupAt: Date | null
+  freeTournamentEntries: number | null
   isBanned: boolean | null
   bannedAt: Date | null
   bannedBy: string | null
@@ -137,6 +143,8 @@ export type UserCountAggregateOutputType = {
   currentStreak: number
   bestStreak: number
   lastLoginAt: number
+  rookieCupAt: number
+  freeTournamentEntries: number
   isBanned: number
   bannedAt: number
   bannedBy: number
@@ -155,6 +163,7 @@ export type UserAvgAggregateInputType = {
   streakFreezes?: true
   currentStreak?: true
   bestStreak?: true
+  freeTournamentEntries?: true
 }
 
 export type UserSumAggregateInputType = {
@@ -166,6 +175,7 @@ export type UserSumAggregateInputType = {
   streakFreezes?: true
   currentStreak?: true
   bestStreak?: true
+  freeTournamentEntries?: true
 }
 
 export type UserMinAggregateInputType = {
@@ -193,6 +203,8 @@ export type UserMinAggregateInputType = {
   currentStreak?: true
   bestStreak?: true
   lastLoginAt?: true
+  rookieCupAt?: true
+  freeTournamentEntries?: true
   isBanned?: true
   bannedAt?: true
   bannedBy?: true
@@ -225,6 +237,8 @@ export type UserMaxAggregateInputType = {
   currentStreak?: true
   bestStreak?: true
   lastLoginAt?: true
+  rookieCupAt?: true
+  freeTournamentEntries?: true
   isBanned?: true
   bannedAt?: true
   bannedBy?: true
@@ -257,6 +271,8 @@ export type UserCountAggregateInputType = {
   currentStreak?: true
   bestStreak?: true
   lastLoginAt?: true
+  rookieCupAt?: true
+  freeTournamentEntries?: true
   isBanned?: true
   bannedAt?: true
   bannedBy?: true
@@ -376,6 +392,8 @@ export type UserGroupByOutputType = {
   currentStreak: number
   bestStreak: number
   lastLoginAt: Date | null
+  rookieCupAt: Date | null
+  freeTournamentEntries: number
   isBanned: boolean
   bannedAt: Date | null
   bannedBy: string | null
@@ -431,6 +449,8 @@ export type UserWhereInput = {
   currentStreak?: Prisma.IntFilter<"User"> | number
   bestStreak?: Prisma.IntFilter<"User"> | number
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  rookieCupAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  freeTournamentEntries?: Prisma.IntFilter<"User"> | number
   isBanned?: Prisma.BoolFilter<"User"> | boolean
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedBy?: Prisma.StringNullableFilter<"User"> | string | null
@@ -489,6 +509,8 @@ export type UserOrderByWithRelationInput = {
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  rookieCupAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
   isBanned?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   bannedBy?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -550,6 +572,8 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   currentStreak?: Prisma.IntFilter<"User"> | number
   bestStreak?: Prisma.IntFilter<"User"> | number
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  rookieCupAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  freeTournamentEntries?: Prisma.IntFilter<"User"> | number
   isBanned?: Prisma.BoolFilter<"User"> | boolean
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedBy?: Prisma.StringNullableFilter<"User"> | string | null
@@ -608,6 +632,8 @@ export type UserOrderByWithAggregationInput = {
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  rookieCupAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
   isBanned?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   bannedBy?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -648,6 +674,8 @@ export type UserScalarWhereWithAggregatesInput = {
   currentStreak?: Prisma.IntWithAggregatesFilter<"User"> | number
   bestStreak?: Prisma.IntWithAggregatesFilter<"User"> | number
   lastLoginAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  rookieCupAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
+  freeTournamentEntries?: Prisma.IntWithAggregatesFilter<"User"> | number
   isBanned?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   bannedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   bannedBy?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
@@ -679,6 +707,8 @@ export type UserCreateInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -737,6 +767,8 @@ export type UserUncheckedCreateInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -793,6 +825,8 @@ export type UserUpdateInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -851,6 +885,8 @@ export type UserUncheckedUpdateInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -908,6 +944,8 @@ export type UserCreateManyInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -939,6 +977,8 @@ export type UserUpdateManyMutationInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -971,6 +1011,8 @@ export type UserUncheckedUpdateManyInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1018,6 +1060,8 @@ export type UserCountOrderByAggregateInput = {
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
+  rookieCupAt?: Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
   isBanned?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
   bannedBy?: Prisma.SortOrder
@@ -1034,6 +1078,7 @@ export type UserAvgOrderByAggregateInput = {
   streakFreezes?: Prisma.SortOrder
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
 }
 
 export type UserMaxOrderByAggregateInput = {
@@ -1061,6 +1106,8 @@ export type UserMaxOrderByAggregateInput = {
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
+  rookieCupAt?: Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
   isBanned?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
   bannedBy?: Prisma.SortOrder
@@ -1093,6 +1140,8 @@ export type UserMinOrderByAggregateInput = {
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
   lastLoginAt?: Prisma.SortOrder
+  rookieCupAt?: Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
   isBanned?: Prisma.SortOrder
   bannedAt?: Prisma.SortOrder
   bannedBy?: Prisma.SortOrder
@@ -1109,6 +1158,7 @@ export type UserSumOrderByAggregateInput = {
   streakFreezes?: Prisma.SortOrder
   currentStreak?: Prisma.SortOrder
   bestStreak?: Prisma.SortOrder
+  freeTournamentEntries?: Prisma.SortOrder
 }
 
 export type UserScalarRelationFilter = {
@@ -1582,6 +1632,8 @@ export type UserCreateWithoutReferralsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -1639,6 +1691,8 @@ export type UserUncheckedCreateWithoutReferralsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -1699,6 +1753,8 @@ export type UserCreateWithoutReferredByInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -1755,6 +1811,8 @@ export type UserUncheckedCreateWithoutReferredByInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -1832,6 +1890,8 @@ export type UserUpdateWithoutReferralsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1889,6 +1949,8 @@ export type UserUncheckedUpdateWithoutReferralsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -1964,6 +2026,8 @@ export type UserScalarWhereInput = {
   currentStreak?: Prisma.IntFilter<"User"> | number
   bestStreak?: Prisma.IntFilter<"User"> | number
   lastLoginAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  rookieCupAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
+  freeTournamentEntries?: Prisma.IntFilter<"User"> | number
   isBanned?: Prisma.BoolFilter<"User"> | boolean
   bannedAt?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   bannedBy?: Prisma.StringNullableFilter<"User"> | string | null
@@ -1995,6 +2059,8 @@ export type UserCreateWithoutWalletsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2052,6 +2118,8 @@ export type UserUncheckedCreateWithoutWalletsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2123,6 +2191,8 @@ export type UserUpdateWithoutWalletsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2180,6 +2250,8 @@ export type UserUncheckedUpdateWithoutWalletsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2235,6 +2307,8 @@ export type UserCreateWithoutRewardsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2292,6 +2366,8 @@ export type UserUncheckedCreateWithoutRewardsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2363,6 +2439,8 @@ export type UserUpdateWithoutRewardsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2420,6 +2498,8 @@ export type UserUncheckedUpdateWithoutRewardsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2475,6 +2555,8 @@ export type UserCreateWithoutCompletedQuestsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2532,6 +2614,8 @@ export type UserUncheckedCreateWithoutCompletedQuestsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2603,6 +2687,8 @@ export type UserUpdateWithoutCompletedQuestsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2660,6 +2746,8 @@ export type UserUncheckedUpdateWithoutCompletedQuestsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2715,6 +2803,8 @@ export type UserCreateWithoutEntriesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2772,6 +2862,8 @@ export type UserUncheckedCreateWithoutEntriesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -2843,6 +2935,8 @@ export type UserUpdateWithoutEntriesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2900,6 +2994,8 @@ export type UserUncheckedUpdateWithoutEntriesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -2955,6 +3051,8 @@ export type UserCreateWithoutPendingPurchasesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3012,6 +3110,8 @@ export type UserUncheckedCreateWithoutPendingPurchasesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3083,6 +3183,8 @@ export type UserUpdateWithoutPendingPurchasesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3140,6 +3242,8 @@ export type UserUncheckedUpdateWithoutPendingPurchasesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3195,6 +3299,8 @@ export type UserCreateWithoutNotifsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3252,6 +3358,8 @@ export type UserUncheckedCreateWithoutNotifsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3323,6 +3431,8 @@ export type UserUpdateWithoutNotifsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3380,6 +3490,8 @@ export type UserUncheckedUpdateWithoutNotifsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3435,6 +3547,8 @@ export type UserCreateWithoutAuditLogsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3492,6 +3606,8 @@ export type UserUncheckedCreateWithoutAuditLogsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3563,6 +3679,8 @@ export type UserUpdateWithoutAuditLogsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3620,6 +3738,8 @@ export type UserUncheckedUpdateWithoutAuditLogsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3675,6 +3795,8 @@ export type UserCreateWithoutAnalyticsEventsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3732,6 +3854,8 @@ export type UserUncheckedCreateWithoutAnalyticsEventsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3803,6 +3927,8 @@ export type UserUpdateWithoutAnalyticsEventsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3860,6 +3986,8 @@ export type UserUncheckedUpdateWithoutAnalyticsEventsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -3915,6 +4043,8 @@ export type UserCreateWithoutRedeemedCodesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -3972,6 +4102,8 @@ export type UserUncheckedCreateWithoutRedeemedCodesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4043,6 +4175,8 @@ export type UserUpdateWithoutRedeemedCodesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4100,6 +4234,8 @@ export type UserUncheckedUpdateWithoutRedeemedCodesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4155,6 +4291,8 @@ export type UserCreateWithoutTicketLedgerInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4212,6 +4350,8 @@ export type UserUncheckedCreateWithoutTicketLedgerInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4283,6 +4423,8 @@ export type UserUpdateWithoutTicketLedgerInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4340,6 +4482,8 @@ export type UserUncheckedUpdateWithoutTicketLedgerInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4395,6 +4539,8 @@ export type UserCreateWithoutLevelProgressInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4452,6 +4598,8 @@ export type UserUncheckedCreateWithoutLevelProgressInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4523,6 +4671,8 @@ export type UserUpdateWithoutLevelProgressInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4580,6 +4730,8 @@ export type UserUncheckedUpdateWithoutLevelProgressInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4635,6 +4787,8 @@ export type UserCreateWithoutRoundEntriesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4692,6 +4846,8 @@ export type UserUncheckedCreateWithoutRoundEntriesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4763,6 +4919,8 @@ export type UserUpdateWithoutRoundEntriesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4820,6 +4978,8 @@ export type UserUncheckedUpdateWithoutRoundEntriesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -4875,6 +5035,8 @@ export type UserCreateWithoutAnnouncementStateInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -4932,6 +5094,8 @@ export type UserUncheckedCreateWithoutAnnouncementStateInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5003,6 +5167,8 @@ export type UserUpdateWithoutAnnouncementStateInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5060,6 +5226,8 @@ export type UserUncheckedUpdateWithoutAnnouncementStateInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5115,6 +5283,8 @@ export type UserCreateWithoutAnnouncementRecipientsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5172,6 +5342,8 @@ export type UserUncheckedCreateWithoutAnnouncementRecipientsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5243,6 +5415,8 @@ export type UserUpdateWithoutAnnouncementRecipientsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5300,6 +5474,8 @@ export type UserUncheckedUpdateWithoutAnnouncementRecipientsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5355,6 +5531,8 @@ export type UserCreateWithoutQuestProgressInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5412,6 +5590,8 @@ export type UserUncheckedCreateWithoutQuestProgressInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5483,6 +5663,8 @@ export type UserUpdateWithoutQuestProgressInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5540,6 +5722,8 @@ export type UserUncheckedUpdateWithoutQuestProgressInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5595,6 +5779,8 @@ export type UserCreateWithoutLeagueMembersInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5652,6 +5838,8 @@ export type UserUncheckedCreateWithoutLeagueMembersInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5723,6 +5911,8 @@ export type UserUpdateWithoutLeagueMembersInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5780,6 +5970,8 @@ export type UserUncheckedUpdateWithoutLeagueMembersInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -5835,6 +6027,8 @@ export type UserCreateWithoutPurchasesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5892,6 +6086,8 @@ export type UserUncheckedCreateWithoutPurchasesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -5963,6 +6159,8 @@ export type UserUpdateWithoutPurchasesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6020,6 +6218,8 @@ export type UserUncheckedUpdateWithoutPurchasesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6075,6 +6275,8 @@ export type UserCreateWithoutPowerUpsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6132,6 +6334,8 @@ export type UserUncheckedCreateWithoutPowerUpsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6203,6 +6407,8 @@ export type UserUpdateWithoutPowerUpsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6260,6 +6466,8 @@ export type UserUncheckedUpdateWithoutPowerUpsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6315,6 +6523,8 @@ export type UserCreateWithoutCosmeticsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6372,6 +6582,8 @@ export type UserUncheckedCreateWithoutCosmeticsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6443,6 +6655,8 @@ export type UserUpdateWithoutCosmeticsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6500,6 +6714,8 @@ export type UserUncheckedUpdateWithoutCosmeticsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6555,6 +6771,8 @@ export type UserCreateWithoutBoostsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6612,6 +6830,8 @@ export type UserUncheckedCreateWithoutBoostsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6683,6 +6903,8 @@ export type UserUpdateWithoutBoostsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6740,6 +6962,8 @@ export type UserUncheckedUpdateWithoutBoostsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6795,6 +7019,8 @@ export type UserCreateWithoutEarnedBadgesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6852,6 +7078,8 @@ export type UserUncheckedCreateWithoutEarnedBadgesInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -6923,6 +7151,8 @@ export type UserUpdateWithoutEarnedBadgesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -6980,6 +7210,8 @@ export type UserUncheckedUpdateWithoutEarnedBadgesInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7035,6 +7267,8 @@ export type UserCreateWithoutPartnerClaimsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7092,6 +7326,8 @@ export type UserUncheckedCreateWithoutPartnerClaimsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7163,6 +7399,8 @@ export type UserUpdateWithoutPartnerClaimsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7220,6 +7458,8 @@ export type UserUncheckedUpdateWithoutPartnerClaimsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7275,6 +7515,8 @@ export type UserCreateWithoutSeasonPassClaimsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7332,6 +7574,8 @@ export type UserUncheckedCreateWithoutSeasonPassClaimsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7403,6 +7647,8 @@ export type UserUpdateWithoutSeasonPassClaimsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7460,6 +7706,8 @@ export type UserUncheckedUpdateWithoutSeasonPassClaimsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7515,6 +7763,8 @@ export type UserCreateWithoutDailyClaimsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7572,6 +7822,8 @@ export type UserUncheckedCreateWithoutDailyClaimsInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7643,6 +7895,8 @@ export type UserUpdateWithoutDailyClaimsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7700,6 +7954,8 @@ export type UserUncheckedUpdateWithoutDailyClaimsInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7755,6 +8011,8 @@ export type UserCreateManyReferredByInput = {
   currentStreak?: number
   bestStreak?: number
   lastLoginAt?: Date | string | null
+  rookieCupAt?: Date | string | null
+  freeTournamentEntries?: number
   isBanned?: boolean
   bannedAt?: Date | string | null
   bannedBy?: string | null
@@ -7786,6 +8044,8 @@ export type UserUpdateWithoutReferredByInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7842,6 +8102,8 @@ export type UserUncheckedUpdateWithoutReferredByInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -7898,6 +8160,8 @@ export type UserUncheckedUpdateManyWithoutReferredByInput = {
   currentStreak?: Prisma.IntFieldUpdateOperationsInput | number
   bestStreak?: Prisma.IntFieldUpdateOperationsInput | number
   lastLoginAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  rookieCupAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  freeTournamentEntries?: Prisma.IntFieldUpdateOperationsInput | number
   isBanned?: Prisma.BoolFieldUpdateOperationsInput | boolean
   bannedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   bannedBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -8177,6 +8441,8 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   currentStreak?: boolean
   bestStreak?: boolean
   lastLoginAt?: boolean
+  rookieCupAt?: boolean
+  freeTournamentEntries?: boolean
   isBanned?: boolean
   bannedAt?: boolean
   bannedBy?: boolean
@@ -8236,6 +8502,8 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   currentStreak?: boolean
   bestStreak?: boolean
   lastLoginAt?: boolean
+  rookieCupAt?: boolean
+  freeTournamentEntries?: boolean
   isBanned?: boolean
   bannedAt?: boolean
   bannedBy?: boolean
@@ -8269,6 +8537,8 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   currentStreak?: boolean
   bestStreak?: boolean
   lastLoginAt?: boolean
+  rookieCupAt?: boolean
+  freeTournamentEntries?: boolean
   isBanned?: boolean
   bannedAt?: boolean
   bannedBy?: boolean
@@ -8302,6 +8572,8 @@ export type UserSelectScalar = {
   currentStreak?: boolean
   bestStreak?: boolean
   lastLoginAt?: boolean
+  rookieCupAt?: boolean
+  freeTournamentEntries?: boolean
   isBanned?: boolean
   bannedAt?: boolean
   bannedBy?: boolean
@@ -8309,7 +8581,7 @@ export type UserSelectScalar = {
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "platform" | "fid" | "username" | "pfpUrl" | "wallet" | "role" | "password" | "referredById" | "inviteCode" | "inviteQuota" | "hasGameAccess" | "accessGrantedAt" | "accessGrantedBy" | "onboardingCompletedAt" | "xp" | "ticketBalance" | "lives" | "nextLifeAt" | "streakFreezes" | "avatarId" | "currentStreak" | "bestStreak" | "lastLoginAt" | "isBanned" | "bannedAt" | "bannedBy" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "platform" | "fid" | "username" | "pfpUrl" | "wallet" | "role" | "password" | "referredById" | "inviteCode" | "inviteQuota" | "hasGameAccess" | "accessGrantedAt" | "accessGrantedBy" | "onboardingCompletedAt" | "xp" | "ticketBalance" | "lives" | "nextLifeAt" | "streakFreezes" | "avatarId" | "currentStreak" | "bestStreak" | "lastLoginAt" | "rookieCupAt" | "freeTournamentEntries" | "isBanned" | "bannedAt" | "bannedBy" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   referredBy?: boolean | Prisma.User$referredByArgs<ExtArgs>
   referrals?: boolean | Prisma.User$referralsArgs<ExtArgs>
@@ -8401,6 +8673,8 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     currentStreak: number
     bestStreak: number
     lastLoginAt: Date | null
+    rookieCupAt: Date | null
+    freeTournamentEntries: number
     isBanned: boolean
     bannedAt: Date | null
     bannedBy: string | null
@@ -8879,6 +9153,8 @@ export interface UserFieldRefs {
   readonly currentStreak: Prisma.FieldRef<"User", 'Int'>
   readonly bestStreak: Prisma.FieldRef<"User", 'Int'>
   readonly lastLoginAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly rookieCupAt: Prisma.FieldRef<"User", 'DateTime'>
+  readonly freeTournamentEntries: Prisma.FieldRef<"User", 'Int'>
   readonly isBanned: Prisma.FieldRef<"User", 'Boolean'>
   readonly bannedAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly bannedBy: Prisma.FieldRef<"User", 'String'>

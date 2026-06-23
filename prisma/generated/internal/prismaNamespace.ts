@@ -3167,6 +3167,8 @@ export const UserScalarFieldEnum = {
   currentStreak: 'currentStreak',
   bestStreak: 'bestStreak',
   lastLoginAt: 'lastLoginAt',
+  rookieCupAt: 'rookieCupAt',
+  freeTournamentEntries: 'freeTournamentEntries',
   isBanned: 'isBanned',
   bannedAt: 'bannedAt',
   bannedBy: 'bannedBy',
