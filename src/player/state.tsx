@@ -1595,7 +1595,7 @@ export function ProtoProvider({
     }
     blog("[buy-ticket] enter flow start", {
       gameId: t.game.id, gameNumber: t.game.gameNumber, platform: t.game.platform,
-      onchainId: t.game.onchainId, entryFee: t.game.entryFee,
+      network: t.game.network, onchainId: t.game.onchainId, entryFee: t.game.entryFee,
     });
     // Shared context stamped on every step of the funnel so the on-chain entry
     // (start → approve → pay → confirm → server sync) is one analyzable journey.
@@ -1604,6 +1604,7 @@ export function ProtoProvider({
       game_number: t.game.gameNumber,
       entry_fee: t.game.entryFee,
       platform: t.game.platform,
+      network: t.game.network,
       onchain_id: t.game.onchainId,
       entry_source: entrySource,
     };
@@ -1635,6 +1636,7 @@ export function ProtoProvider({
     try {
       const txHash = await tournamentWallet.enter(
         assertChainPlatform(t.game.platform),
+        t.game.network,
         t.game.onchainId as `0x${string}`,
         t.game.entryFee,
         onStep,
@@ -1736,6 +1738,7 @@ export function ProtoProvider({
     const claimContext = {
       game_id: gameId,
       platform: claim.platform,
+      network: claim.network,
       onchain_id: claim.onchainId,
       prize_amount: claim.amount,
     };
@@ -1751,6 +1754,7 @@ export function ProtoProvider({
     try {
       const txHash = await tournamentWallet.claim(
         assertChainPlatform(claim.platform),
+        claim.network,
         claim.onchainId,
         BigInt(claim.amount),
         claim.proof,

@@ -21,7 +21,7 @@ import {
   getPlatformChain,
   getWaffleContractAddress,
 } from "@/lib/chain/config";
-import { defaultNetworkForPlatform } from "@/lib/chain/network";
+import type { GameNetwork } from "@/lib/chain/network";
 import type { ChainPlatform } from "@/lib/chain/platform";
 import { ERC20_ABI } from "@/lib/constants";
 import { MINIPAY_LOW_BALANCE_MESSAGE } from "@/lib/minipay/compliance";
@@ -111,19 +111,20 @@ export function useTournamentWallet() {
   const enter = useCallback(
     async (
       platform: ChainPlatform,
+      network: GameNetwork,
       onchainId: `0x${string}`,
       entryFeeUsdc: number,
       onStep?: (step: TournamentTxStep) => void,
     ): Promise<`0x${string}`> => {
       if (!address) throw new Error("Connect a wallet to enter.");
       if (!publicClient) throw new Error("no_public_client");
-      const target = { platform, network: defaultNetworkForPlatform(platform) };
+      const target = { platform, network };
       const chainId = getPlatformChain(target).id;
       const contractAddress = getWaffleContractAddress(target);
       const tokenAddress = getPaymentTokenAddress(target);
       const amount = parseUnits(entryFeeUsdc.toString(), PAYMENT_TOKEN_DECIMALS);
       blog("[buy-ticket] wallet.enter start", {
-        platform, chainId, currentChainId, address, contractAddress, tokenAddress,
+        platform, network, chainId, currentChainId, address, contractAddress, tokenAddress,
         onchainId, entryFeeUsdc, amount: amount.toString(),
       });
 
@@ -232,13 +233,14 @@ export function useTournamentWallet() {
   const claim = useCallback(
     async (
       platform: ChainPlatform,
+      network: GameNetwork,
       onchainId: `0x${string}`,
       amount: bigint,
       proof: `0x${string}`[],
       onStep?: (step: TournamentTxStep) => void,
     ): Promise<`0x${string}`> => {
       if (!publicClient) throw new Error("no_public_client");
-      const target = { platform, network: defaultNetworkForPlatform(platform) };
+      const target = { platform, network };
       const chainId = getPlatformChain(target).id;
       const contractAddress = getWaffleContractAddress(target);
       try {

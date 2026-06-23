@@ -22,6 +22,7 @@ import { adjustTickets } from "./playerState";
 import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import { defaultNetworkForPlatform, type GameNetwork } from "@/lib/chain/network";
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
@@ -115,11 +116,12 @@ const DEFAULT_ENTRY_FEE_USDC = TOURNAMENT_ENTRY_FEE_USDC; // game floor = the fl
  */
 export async function ensureHourlyTournamentGame(
   platform: UserPlatform,
+  network: GameNetwork = defaultNetworkForPlatform(platform),
 ): Promise<{ created: boolean; gameId: string }> {
   const now = Date.now();
 
   const live = await prisma.game.findFirst({
-    where: { platform, startsAt: { lte: new Date(now) }, endsAt: { gt: new Date(now) } },
+    where: { platform, network, startsAt: { lte: new Date(now) }, endsAt: { gt: new Date(now) } },
     orderBy: { startsAt: "desc" },
     select: { id: true },
   });
@@ -131,13 +133,14 @@ export async function ensureHourlyTournamentGame(
 
   // Inherit non-cap play params from the platform's most recent game.
   const recent = await prisma.game.findFirst({
-    where: { platform },
+    where: { platform, network },
     orderBy: { startsAt: "desc" },
     select: { roundBreakSec: true },
   });
 
   const created = await createAutoScheduledGame({
     platform,
+    network,
     startsAt,
     endsAt,
     ticketsOpenAt: new Date(startsAt.getTime() - TICKETS_LEAD_MS),
@@ -167,6 +170,7 @@ export type TournamentGame = {
   onchainId: string | null;
   gameNumber: number;
   platform: UserPlatform;
+  network: GameNetwork;
   title: string;
   theme: string;
   startsAt: Date;
@@ -186,6 +190,7 @@ export type TournamentGame = {
 async function participantAvatarsForGame(
   gameId: string,
   platform: UserPlatform,
+  network: GameNetwork,
   now: Date,
   limit = 6,
 ): Promise<TournamentParticipantAvatar[]> {
@@ -216,6 +221,7 @@ async function participantAvatarsForGame(
   const lastGame = await prisma.game.findFirst({
     where: {
       platform,
+      network,
       id: { not: gameId },
       onchainId: { not: null },
       endsAt: { lte: now },
@@ -257,16 +263,18 @@ async function participantAvatarsForGame(
  *  only read it. */
 export async function currentTournamentGame(
   platform: UserPlatform,
+  network: GameNetwork = defaultNetworkForPlatform(platform),
 ): Promise<TournamentGame | null> {
   const now = new Date();
   const game = await prisma.game.findFirst({
-    where: { platform, endsAt: { gt: now }, onchainId: { not: null } },
+    where: { platform, network, endsAt: { gt: now }, onchainId: { not: null } },
     orderBy: { startsAt: "asc" },
     select: {
       id: true,
       onchainId: true,
       gameNumber: true,
       platform: true,
+      network: true,
       title: true,
       theme: true,
       startsAt: true,
@@ -292,6 +300,7 @@ export async function currentTournamentGame(
         paidAt: { not: null },
         game: {
           platform,
+          network,
           onchainId: { not: null },
           startsAt: { gte: todayStart, lt: todayEnd },
         },
@@ -301,6 +310,7 @@ export async function currentTournamentGame(
     prisma.game.aggregate({
       where: {
         platform,
+        network,
         onchainId: { not: null },
         startsAt: { gte: todayStart, lt: todayEnd },
       },
@@ -311,12 +321,13 @@ export async function currentTournamentGame(
         paidAt: { gte: recentStart },
         game: {
           platform,
+          network,
           onchainId: { not: null },
           startsAt: { gte: todayStart, lt: todayEnd },
         },
       },
     }),
-    participantAvatarsForGame(game.id, platform, now, 6),
+    participantAvatarsForGame(game.id, platform, network, now, 6),
   ]);
 
   return {
@@ -324,6 +335,7 @@ export async function currentTournamentGame(
     onchainId: game.onchainId,
     gameNumber: game.gameNumber,
     platform: game.platform,
+    network: game.network,
     title: game.title,
     theme: game.theme,
     startsAt: game.startsAt,
@@ -742,6 +754,7 @@ export async function latestTournamentStandings(
 export type TournamentClaim = {
   gameId: string;
   platform: UserPlatform;
+  network: GameNetwork;
   onchainId: `0x${string}`;
   /** Prize amount in token units (6-decimals), as a string for BigInt parsing. */
   amount: string;
@@ -764,7 +777,7 @@ export async function getTournamentClaim(
       claimedAt: true,
       merkleAmount: true,
       merkleProof: true,
-      game: { select: { onchainId: true, onChainAt: true, platform: true } },
+      game: { select: { onchainId: true, onChainAt: true, platform: true, network: true } },
     },
   });
   if (!entry || entry.claimedAt) return null;
@@ -780,6 +793,7 @@ export async function getTournamentClaim(
   return {
     gameId,
     platform: entry.game.platform,
+    network: entry.game.network,
     onchainId: entry.game.onchainId as `0x${string}`,
     amount: entry.merkleAmount,
     proof: proof as `0x${string}`[],

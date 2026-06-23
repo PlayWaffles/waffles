@@ -5,7 +5,7 @@ import { defaultNetworkForPlatform } from "@/lib/chain";
 import { recalculateGameRounds } from "@/lib/game/rounds";
 import { generateGameTitle } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
-import { isTestnetNetwork } from "@/lib/chain/network";
+import { isTestnetNetwork, type GameNetwork } from "@/lib/chain/network";
 import { sendBatch } from "@/lib/notifications";
 import { preGame, buildPayload } from "@/lib/notifications/templates";
 import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
@@ -62,6 +62,7 @@ interface AutoQuestionTemplate {
 
 export interface AutoCreateGameInput {
   platform: UserPlatform;
+  network?: GameNetwork;
   startsAt: Date;
   endsAt: Date;
   ticketsOpenAt: Date | null;
@@ -195,7 +196,7 @@ async function assignAutoQuestionsToGame(
 
 export async function createAutoScheduledGame(input: AutoCreateGameInput) {
   const templates = await getAutoQuestionTemplates();
-  const network = defaultNetworkForPlatform(input.platform);
+  const network = input.network ?? defaultNetworkForPlatform(input.platform);
   const ticketPrice = enforceMinimumTicketPriceForPlatform(
     input.ticketPrice,
     input.platform,
