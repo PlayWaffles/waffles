@@ -13,8 +13,17 @@ export type ChainTarget =
       network?: GameNetwork | null;
     };
 
+function configuredChainNetwork() {
+  const value = process.env.NEXT_PUBLIC_CHAIN_NETWORK;
+  if (value === "mainnet" || value === "testnet") {
+    return value;
+  }
+
+  throw new Error("NEXT_PUBLIC_CHAIN_NETWORK must be configured as mainnet or testnet.");
+}
+
 export function defaultNetworkForPlatform(platform: ChainPlatform): GameNetwork {
-  const useTestnet = process.env.NEXT_PUBLIC_CHAIN_NETWORK === "testnet";
+  const useTestnet = configuredChainNetwork() === "testnet";
   if (platform === "MINIPAY") {
     return useTestnet ? "CELO_SEPOLIA" : "CELO_MAINNET";
   }

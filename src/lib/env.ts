@@ -104,7 +104,9 @@ const envSchema = z.object({
   NEXT_PUBLIC_BASE_SEPOLIA_RPC_URL: optionalUrlSchema,
   NEXT_PUBLIC_CELO_MAINNET_RPC_URL: optionalUrlSchema,
   NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL: optionalUrlSchema,
-  NEXT_PUBLIC_CHAIN_NETWORK: z.enum(["mainnet", "testnet"]).optional(),
+  NEXT_PUBLIC_CHAIN_NETWORK: z.enum(["mainnet", "testnet"], {
+    error: "NEXT_PUBLIC_CHAIN_NETWORK must be mainnet or testnet",
+  }),
   NEXT_PUBLIC_BASE_BUILDER_CODE: z.string().optional(),
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS: addressSchema,
   NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS_FARCASTER: addressSchema,
@@ -262,7 +264,7 @@ const getEnv = () => {
     nextPublicCeloSepoliaRpcUrl:
       data.NEXT_PUBLIC_CELO_SEPOLIA_RPC_URL ||
       "https://forno.celo-sepolia.celo-testnet.org",
-    nextPublicChainNetwork: data.NEXT_PUBLIC_CHAIN_NETWORK || "mainnet",
+    nextPublicChainNetwork: data.NEXT_PUBLIC_CHAIN_NETWORK,
     nextPublicBaseBuilderCode: data.NEXT_PUBLIC_BASE_BUILDER_CODE,
     nextPublicWaffleContractAddress: data.NEXT_PUBLIC_WAFFLE_CONTRACT_ADDRESS,
     nextPublicWaffleContractAddressFarcaster: resolveAddress(
