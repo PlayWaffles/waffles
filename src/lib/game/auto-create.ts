@@ -31,11 +31,12 @@ function isGameNumberConflict(error: unknown) {
 function isLaunchGroupConflict(error: unknown) {
   return (
     error instanceof Prisma.PrismaClientKnownRequestError &&
-    error.code === "P2002" &&
-    Array.isArray(error.meta?.target) &&
-    error.meta.target.includes("launchGroupId") &&
-    error.meta.target.includes("platform")
+    error.code === "P2002"
   );
+}
+
+function isUniqueConstraintConflict(error: unknown) {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
 }
 
 interface AutoQuestionTemplate {
@@ -241,13 +242,21 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
               platform: input.platform,
               launchGroupId: input.launchGroupId,
             },
-            select: { id: true, gameNumber: true },
+            select: { id: true, gameNumber: true, network: true },
           });
-          if (existing) {
+          if (existing?.network === network) {
             return { gameId: existing.id, gameNumber: existing.gameNumber };
           }
+          if (existing) {
+            throw new Error(
+              `Launch group ${input.launchGroupId} already exists for ${input.platform} on ${existing.network}; refusing to reuse it for ${network}.`,
+            );
+          }
         }
-        if (!isGameNumberConflict(error) || attempt === GAME_NUMBER_RETRY_LIMIT - 1) {
+        if (
+          (!isGameNumberConflict(error) && !isUniqueConstraintConflict(error)) ||
+          attempt === GAME_NUMBER_RETRY_LIMIT - 1
+        ) {
           throw error;
         }
       }

@@ -139,20 +139,36 @@ export async function ensureHourlyTournamentGame(
     select: { roundBreakSec: true },
   });
 
-  const created = await createAutoScheduledGame({
-    platform,
-    network,
-    startsAt,
-    endsAt,
-    ticketsOpenAt: new Date(startsAt.getTime() - TICKETS_LEAD_MS),
-    launchGroupId: `trn:${platform}:${startsAt.getTime()}`,
-    // On-chain min = the discounted floor so first-timers can pay it; the
-    // standard fee is enforced per-user server-side, not by the contract.
-    ticketPrice: DEFAULT_ENTRY_FEE_USDC,
-    roundBreakSec: recent?.roundBreakSec ?? 0,
-    maxPlayers: TOURNAMENT_MAX_PLAYERS,
-  });
-  return { created: true, gameId: created.gameId };
+  // Deterministic per hour+platform+network — the (launchGroupId, platform) unique makes
+  // concurrent "ensure" calls race-safe: only one create wins.
+  const launchGroupId = `trn:${platform}:${network}:${startsAt.getTime()}`;
+  try {
+    const created = await createAutoScheduledGame({
+      platform,
+      network,
+      startsAt,
+      endsAt,
+      ticketsOpenAt: new Date(startsAt.getTime() - TICKETS_LEAD_MS),
+      launchGroupId,
+      // On-chain min = the discounted floor so first-timers can pay it; the
+      // standard fee is enforced per-user server-side, not by the contract.
+      ticketPrice: DEFAULT_ENTRY_FEE_USDC,
+      roundBreakSec: recent?.roundBreakSec ?? 0,
+      maxPlayers: TOURNAMENT_MAX_PLAYERS,
+    });
+    return { created: true, gameId: created.gameId };
+  } catch (error) {
+    // A concurrent request created this hour's game first (unique launchGroupId +
+    // platform) — use theirs instead of surfacing a 500.
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existing = await prisma.game.findFirst({
+        where: { platform, network, launchGroupId },
+        select: { id: true },
+      });
+      if (existing) return { created: false, gameId: existing.id };
+    }
+    throw error;
+  }
 }
 
 // ---------------------------------------------------------------------------
