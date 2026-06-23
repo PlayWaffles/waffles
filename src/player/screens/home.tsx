@@ -75,6 +75,8 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
   // MiniPay: if the wallet can't cover the entry, swap JOIN for a one-tap
   // "Add Cash" deeplink instead of dead-ending at an insufficient-balance error.
   const { needsTopUp, openAddCash, isMiniPay } = useMiniPayTopUp(fee?.entryFee);
+  const isNetworkMismatch = !!error && /MiniPay is connected to/i.test(error);
+  const canTopUpForError = isMiniPay && !!error && /not enough|add cash|balance/i.test(error) && !isNetworkMismatch;
   return (
     <Sheet onClose={onClose} ariaLabel="Enter tournament">
       {(close) => (
@@ -129,7 +131,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
       {error && (
         <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 12 }}>
           {error}
-          {isMiniPay && (
+          {canTopUpForError && (
             <button type="button" onClick={openAddCash} style={{ display: "block", margin: "6px auto 0", background: "none", border: "none", color: "var(--maple-500)", fontWeight: 800, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Add Cash in MiniPay →</button>
           )}
         </div>
@@ -144,10 +146,10 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
 
       <div style={{ display: "flex", gap: 10 }}>
         <Button variant="ghost" flex={1} onClick={pending ? () => {} : close} disabled={pending}>CANCEL</Button>
-        {needsTopUp ? (
+        {needsTopUp && !isNetworkMismatch ? (
           <Button flex={1.4} onClick={openAddCash} ariaLabel="Add cash in MiniPay to play">ADD CASH TO PLAY</Button>
         ) : (
-          <Button flex={1.4} onClick={pending || !canJoin ? () => {} : onConfirm} disabled={!canJoin} ariaLabel="Join the tournament">
+          <Button flex={1.4} onClick={pending || !canJoin || isNetworkMismatch ? () => {} : onConfirm} disabled={!canJoin || isNetworkMismatch} ariaLabel="Join the tournament">
             {pending ? (stepLabel ?? "Working…") : (
               <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                 <TicketIcon size={18} />Join game

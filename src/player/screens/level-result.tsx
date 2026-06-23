@@ -87,6 +87,8 @@ const TournamentUpsellSheet = ({
   const [entryError, setEntryError] = useState<string | null>(null);
   // MiniPay: offer a one-tap Add Cash deeplink when the wallet can't cover entry.
   const { needsTopUp, openAddCash, isMiniPay } = useMiniPayTopUp(fee?.entryFee);
+  const isNetworkMismatch = !!entryError && /MiniPay is connected to/i.test(entryError);
+  const canTopUpForError = isMiniPay && !!entryError && /not enough|add cash|balance/i.test(entryError) && !isNetworkMismatch;
   const enter = async () => {
     trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellAccepted, {
       offer: "live_tournament",
@@ -162,7 +164,7 @@ const TournamentUpsellSheet = ({
         {entryError && (
           <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 10 }}>
             {entryError}
-            {isMiniPay && (
+            {canTopUpForError && (
               <button type="button" onClick={openAddCash} style={{ display: "block", margin: "6px auto 0", background: "none", border: "none", color: "var(--maple-500)", fontWeight: 800, fontSize: 12, cursor: "pointer", textDecoration: "underline" }}>Add Cash in MiniPay →</button>
             )}
           </div>
@@ -174,16 +176,16 @@ const TournamentUpsellSheet = ({
           </div>
         )}
 
-        {needsTopUp && !entering ? (
+        {needsTopUp && !entering && !isNetworkMismatch ? (
           <button type="button" className="cta maple" onClick={openAddCash} style={{ width: "100%", marginBottom: 6 }}>
             ADD CASH TO PLAY
           </button>
         ) : (
-          <button type="button" className="cta maple" onClick={entering || !round || !fee ? undefined : () => void enter()} disabled={!round || !fee} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...((entering || !round || !fee) ? { opacity: 0.85, cursor: "default" } : null) }}>
+          <button type="button" className="cta maple" onClick={entering || !round || !fee || isNetworkMismatch ? undefined : () => void enter()} disabled={!round || !fee || isNetworkMismatch} aria-busy={entering} style={{ width: "100%", marginBottom: 6, ...((entering || !round || !fee || isNetworkMismatch) ? { opacity: 0.85, cursor: "default" } : null) }}>
             {entering
               ? (proto.tournamentStep ? txStepLabel(proto.tournamentStep) : "Working…")
               : entryError
-                ? `RETRY · ${fee ? usd(fee.entryFee) : ""}`.trim()
+                ? isNetworkMismatch ? "NETWORK MISMATCH" : `RETRY · ${fee ? usd(fee.entryFee) : ""}`.trim()
                 : fee && round ? `ENTER LIVE TOURNAMENT · ${usd(fee.entryFee)}` : "LOADING LIVE TOURNAMENT"}
           </button>
         )}
