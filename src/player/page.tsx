@@ -174,7 +174,10 @@ const Stage = () => {
     // first-timer this means it waits until they finish that level and return to
     // Home (their first Home visit); a returning user opens to Home and sees it
     // right away. No "first run" flag needed — the Home gate does the waiting.
-    if (!showOnboarding && proto.screen === "home" && migrationResolved && !showMigration && wcCanShow) {
+    // Suppressed while a tournament-join intent is pending (the onboarding
+    // finale funnel) so the WC takeover never covers the buy sheet — it can open
+    // once that intent clears (the dep below re-runs this effect).
+    if (!showOnboarding && proto.screen === "home" && migrationResolved && !showMigration && wcCanShow && !proto.pendingTournamentJoin) {
       // rAF so the flip isn't a synchronous setState in the effect body.
       const id = requestAnimationFrame(() => {
         trackClientEvent(AnalyticsEvent.WorldCupTakeoverAutoOpened, {
@@ -186,7 +189,7 @@ const Stage = () => {
       });
       return () => cancelAnimationFrame(id);
     }
-  }, [showOnboarding, proto.screen, migrationResolved, showMigration, wcCanShow]);
+  }, [showOnboarding, proto.screen, migrationResolved, showMigration, wcCanShow, proto.pendingTournamentJoin]);
 
   useEffect(() => {
     if (showOnboarding || proto.screen !== "home" || migrationChecked.current) return;
@@ -219,7 +222,9 @@ const Stage = () => {
   const dailyAutoShown = useRef(false);
   const { screen, update } = proto;
   useEffect(() => {
-    if (!showOnboarding && !showWcTakeover && screen === "home" && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
+    // Suppressed while the onboarding join intent is pending so it can't stack
+    // on top of the buy sheet; re-runs and can open once the intent clears.
+    if (!showOnboarding && !showWcTakeover && screen === "home" && !proto.pendingTournamentJoin && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
       dailyAutoShown.current = true;
       trackClientEvent(AnalyticsEvent.DailyRewardAutoOpened, {
         screen: "home",
@@ -227,7 +232,7 @@ const Stage = () => {
       });
       update({ dailyOpen: true });
     }
-  }, [showOnboarding, showWcTakeover, screen, update]);
+  }, [showOnboarding, showWcTakeover, screen, update, proto.pendingTournamentJoin]);
 
   // Warm the code-split screen chunks during idle time after first paint, so
   // they're cached before the player navigates — off the initial critical path.

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import { getTournament, loadCurrentTournamentBoard, loadRecentEntrants, loadMissions, type RecentEntrant, type TournamentRound } from "@/player/api";
+import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBanner, AnnouncementBell } from "../announcements";
@@ -368,6 +369,13 @@ export const HomeScreen = () => {
   // `openJoin`. If already entered this round, tapping the card views the
   // standing instead.
   const [gate, setGate] = useState<"confirm" | null>(null);
+  // Attribution for the next on-chain entry — "home" for a manual tap, flipped
+  // to "onboarding" when the gate is auto-opened by the just-onboarded funnel so
+  // we can measure onboarding → paying conversion. Set on every gate open.
+  const entrySourceRef = useRef<TournamentEntrySource>("home");
+  // Guards the one-shot onboarding auto-open so a re-render (the intent flag
+  // stays set until the sheet closes) doesn't re-open the gate.
+  const joinIntentOpenedRef = useRef(false);
   // On-chain entry: the deposit is paid via the wallet (USDC), so there's no
   // ticket gate — the wallet reports an insufficient balance on confirm.
   const [entering, setEntering] = useState(false);
@@ -402,13 +410,16 @@ export const HomeScreen = () => {
   const confirmEntry = async () => {
     setEntryError(null);
     setEntering(true);
-    const res = await proto.enterTournamentOnChain("home");
+    const res = await proto.enterTournamentOnChain(entrySourceRef.current);
     setEntering(false);
-    if (res.ok) setGate(null);
-    else setEntryError(res.error ?? "Entry failed");
+    if (res.ok) {
+      setGate(null);
+      if (proto.pendingTournamentJoin) proto.update({ pendingTournamentJoin: false });
+    } else setEntryError(res.error ?? "Entry failed");
   };
   const openJoin = () => {
     if (!round || !fee) return;
+    entrySourceRef.current = "home";
     // Already entered this round (one paid entry per round). If they haven't
     // played yet, resume into the quiz for the entry they already paid for — no
     // second charge. Otherwise just show their standing.
@@ -465,6 +476,35 @@ export const HomeScreen = () => {
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
+
+  // Onboarding finale funnel: a just-created player lands here with the intent
+  // flag set. Once the live round details have loaded, auto-open the buy sheet
+  // so the money moment is front and centre (buy-primed). If they somehow
+  // already entered, just drop the intent. The flag is left set until the sheet
+  // closes so the first-visit takeovers stay suppressed behind it (see Stage).
+  useEffect(() => {
+    if (!proto.pendingTournamentJoin || joinIntentOpenedRef.current) return;
+    if (!round || !fee) return; // wait for the resilient round fetch to land
+    joinIntentOpenedRef.current = true;
+    if (entered) {
+      proto.update({ pendingTournamentJoin: false });
+      return;
+    }
+    entrySourceRef.current = "onboarding";
+    trackClientEvent(AnalyticsEvent.TicketCtaClicked, {
+      screen: "home",
+      source: "onboarding",
+      entry_fee: fee.entryFee,
+      first_entry: fee.firstEntry,
+    });
+    // rAF so the flip isn't a synchronous setState in the effect body.
+    const id = requestAnimationFrame(() => {
+      setEntryError(null);
+      setGate("confirm");
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proto.pendingTournamentJoin, round, fee, entered]);
   // Paid this round but hasn't played yet → can resume into the quiz (no second
   // charge). Once they've played (or it's settled), it's view-standing only.
   const canResume = entered && !(board?.you?.played ?? false);
@@ -673,7 +713,10 @@ export const HomeScreen = () => {
           pending={entering}
           stepLabel={proto.tournamentStep ? txStepLabel(proto.tournamentStep) : null}
           error={entryError}
-          onClose={() => setGate(null)}
+          onClose={() => {
+            setGate(null);
+            if (proto.pendingTournamentJoin) proto.update({ pendingTournamentJoin: false });
+          }}
           onConfirm={() => void confirmEntry()}
         />
       )}

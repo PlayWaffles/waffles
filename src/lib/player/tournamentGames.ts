@@ -399,7 +399,7 @@ export type EnterResult =
   | { ok: true; entryId: string; alreadyEntered: boolean }
   | { ok: false; error: string; retryable?: boolean };
 
-export type TournamentEntrySource = "home" | "post_first_level_upsell" | "unknown";
+export type TournamentEntrySource = "home" | "post_first_level_upsell" | "onboarding" | "unknown";
 
 /**
  * Record a tournament entry after verifying the player's on-chain `buyTicket`.

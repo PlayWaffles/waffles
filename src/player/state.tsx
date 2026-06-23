@@ -532,6 +532,12 @@ type State = {
   // the announcement (the persistent re-entry point) can summon it on demand —
   // not just the once-only first-run auto-show.
   wcTakeoverOpen: boolean;
+  // One-shot intent set by onboarding's finale: the just-created player should
+  // land on Home with the live-tournament join sheet primed (buy CTA front and
+  // centre). Home consumes it once round details load; while it's set, the
+  // first-visit takeovers (World Cup / daily reward) are suppressed so nothing
+  // covers the buy moment. Cleared when the join sheet closes.
+  pendingTournamentJoin: boolean;
 };
 
 const initialState = (tweaks: Tweaks): State => ({
@@ -584,6 +590,7 @@ const initialState = (tweaks: Tweaks): State => ({
   tournamentBonus: false,
   dailyOpen: false,
   wcTakeoverOpen: false,
+  pendingTournamentJoin: false,
 });
 
 type GotoOpts = { back?: boolean };

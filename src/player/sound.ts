@@ -31,6 +31,12 @@ export const BG_TRACK = "/sounds/bg-loop.mp3";
 
 export type SoundName = keyof typeof SOUNDS;
 
+// Per-sound volume multipliers (applied on top of the global SFX volume).
+// Defaults to 1; the ubiquitous click is quieter so it doesn't fatigue.
+const SOUND_GAIN: Partial<Record<SoundName, number>> = {
+  click: 0.5,
+};
+
 const STORAGE_KEY_MUTED = "waffles.v2.sound.muted";
 
 const bufferCache = new Map<SoundName, AudioBuffer>();
@@ -174,7 +180,7 @@ class SoundManager {
   play(name: SoundName) {
     this.init();
     if (this._muted) return;
-    playBuffer(name, this._volume);
+    playBuffer(name, this._volume * (SOUND_GAIN[name] ?? 1));
   }
 
   get isMuted() {
