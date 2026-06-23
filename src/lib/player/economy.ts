@@ -12,7 +12,7 @@ import {
   ShopItemKind,
   TicketLedgerReason,
 } from "@prisma";
-import { dayKeyUTC, resolveLoginStreak } from "./dailyStreak";
+import { dayKeyUTC, resolveClaimStreak } from "./dailyStreak";
 import { adjustTickets } from "./playerState";
 
 // ── Daily reward — fixed 7-day calendar (mirrors daily-reward.tsx DAILY_SCHEDULE)
@@ -41,8 +41,10 @@ export type DailyClaimResult =
   | { claimed: false; reason: "already-claimed" }
   | { claimed: true; roll: Roll; streak: number; usedFreeze: boolean; tickets: number; xp: number };
 
-/** Claim today's daily reward (one per UTC day), using the login streak as the
- *  streak authority and the claim row only as the duplicate-claim guard. */
+/** Claim today's daily reward (one per UTC day). The claim is the streak
+ *  authority: it advances the streak off the player's last claim day, bridges
+ *  missed days with Streak Freezes when available, and resets only when a gap
+ *  can't be covered. */
 export async function claimDailyReward(userId: string): Promise<DailyClaimResult> {
   return prisma.$transaction(async (tx) => {
     const today = dayKeyUTC();
@@ -69,13 +71,28 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
       select: {
         currentStreak: true,
         bestStreak: true,
-        lastLoginAt: true,
+        streakFreezes: true,
       },
     });
 
-    const resolvedStreak = resolveLoginStreak(user);
-    const streak = resolvedStreak.currentStreak;
-    const usedFreeze = false;
+    // Most recent prior claim (today's doesn't exist yet — guarded above).
+    // dayKey is a zero-padded ISO date, so lexical desc == chronological.
+    const lastClaim = await tx.dailyRewardClaim.findFirst({
+      where: { userId },
+      orderBy: { dayKey: "desc" },
+      select: { dayKey: true },
+    });
+
+    const resolved = resolveClaimStreak(
+      {
+        currentStreak: user.currentStreak,
+        streakFreezes: user.streakFreezes,
+        lastClaimDay: lastClaim?.dayKey ?? null,
+      },
+      today,
+    );
+    const streak = resolved.streak;
+    const usedFreeze = resolved.freezesUsed > 0;
 
     const roll = rewardForStreak(streak);
 
@@ -94,8 +111,10 @@ export async function claimDailyReward(userId: string): Promise<DailyClaimResult
       where: { id: userId },
       data: {
         currentStreak: streak,
-        bestStreak: resolvedStreak.bestStreak,
-        lastLoginAt: resolvedStreak.lastLoginAt,
+        bestStreak: Math.max(user.bestStreak, streak),
+        ...(resolved.freezesUsed > 0
+          ? { streakFreezes: { decrement: resolved.freezesUsed } }
+          : {}),
         ...(roll.type === "xp" ? { xp: { increment: roll.amount } } : {}),
       },
       select: { ticketBalance: true, xp: true },

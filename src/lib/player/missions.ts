@@ -27,7 +27,6 @@
  * the player is on a long-enough streak.
  */
 import { prisma } from "@/lib/db";
-import { resolveLoginStreak } from "@/lib/player/dailyStreak";
 import { QuestCategory, RepeatFrequency } from "@prisma";
 
 // How many pool missions the Missions page surfaces per day (global, deterministic).
@@ -180,7 +179,7 @@ export async function loadMissions(userId: string): Promise<Mission[]> {
   const doneSet = new Set(
     completed.filter((c) => c.completedAt >= dayStart).map((c) => c.questId),
   );
-  const streak = user ? resolveLoginStreak(user).currentStreak : 0;
+  const streak = user?.currentStreak ?? 0;
 
   return active.map((q) => {
     const claimed = doneSet.has(q.id);
@@ -285,7 +284,7 @@ export async function claimMission(userId: string, slug: string): Promise<ClaimM
         where: { id: userId },
         select: { currentStreak: true, bestStreak: true, lastLoginAt: true },
       });
-      todayCount = u ? resolveLoginStreak(u).currentStreak : 0;
+      todayCount = u?.currentStreak ?? 0;
     } else {
       const prog = await tx.questProgress.findUnique({
         where: { userId_questId: { userId, questId: quest.id } },

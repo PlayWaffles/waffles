@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "waffles-party",
+  "main": "src/party/server.ts",
+  "compatibility_date": "2025-06-01",
+  // PartyServer rooms are Durable Objects. The binding is named `Main` so the
+  // URL party segment resolves to "main" (matching the client + delivery layer).
+  "durable_objects": {
+    "bindings": [{ "name": "Main", "class_name": "AnnouncementsServer" }]
+  },
+  // SQLite-backed DO class — free-tier eligible and the current default.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["AnnouncementsServer"] }],
+  "observability": { "enabled": true }
+  // PARTYKIT_SECRET is set as an encrypted secret via `wrangler secret put`,
+  // never committed here.
+}

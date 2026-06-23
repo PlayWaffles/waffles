@@ -13,7 +13,6 @@ import { generateInviteCode } from "@/lib/utils";
 import { randomAvatarId } from "@/lib/avatars";
 import { parseCookieHeader } from "@/lib/platform/server";
 import { getPublicClient } from "@/lib/chain";
-import { resolveLoginStreak } from "@/lib/player/dailyStreak";
 
 const SESSION_COOKIE = "waffles_session";
 const NONCE_COOKIE = "waffles_auth_nonce";
@@ -169,30 +168,13 @@ function ensureUserByFid(fid: number) {
   );
 }
 
-async function touchUserLoginStreak(userId: string) {
-  const user = await prisma.user.findUnique({
+// Record last activity on auth. The login no longer drives the daily streak —
+// claiming the daily reward is the streak authority (see economy.claimDailyReward)
+// — so this only stamps lastLoginAt for "last seen" purposes.
+async function touchUserLastSeen(userId: string) {
+  await prisma.user.updateMany({
     where: { id: userId },
-    select: {
-      currentStreak: true,
-      bestStreak: true,
-      lastLoginAt: true,
-    },
-  });
-
-  if (!user) {
-    return;
-  }
-
-  const streak = resolveLoginStreak(user);
-  if (!streak.changed) return;
-
-  await prisma.user.update({
-    where: { id: userId },
-    data: {
-      currentStreak: streak.currentStreak,
-      bestStreak: streak.bestStreak,
-      lastLoginAt: streak.lastLoginAt,
-    },
+    data: { lastLoginAt: new Date() },
   });
 }
 
@@ -251,7 +233,7 @@ export async function verifyWalletSignature(
   }
 
   const user = await ensureUserByWallet(normalizedAddress, platform);
-  await touchUserLoginStreak(user.id);
+  await touchUserLastSeen(user.id);
   const session = await signPayload(
     {
       type: JWT_TYPE_SESSION,
@@ -288,7 +270,7 @@ export async function getAuthFromRequest(
       const domain = new URL(env.rootUrl).host;
       const payload = await farcasterAuthClient.verifyJwt({ token: bearerToken, domain });
       const user = await ensureUserByFid(payload.sub);
-      await touchUserLoginStreak(user.id);
+      await touchUserLastSeen(user.id);
 
       return {
         userId: user.id,

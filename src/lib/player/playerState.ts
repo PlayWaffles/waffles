@@ -12,7 +12,7 @@ import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
-import { resolveLoginStreak } from "@/lib/player/dailyStreak";
+import { displayStreak } from "@/lib/player/dailyStreak";
 import { isTriggeredId } from "@/lib/player/announcements";
 import { scoreToXp } from "@/lib/player/xp";
 
@@ -111,7 +111,7 @@ export async function ensurePlayerDefaults(userId: string): Promise<void> {
 export async function loadPlayerState(userId: string): Promise<PlayerState> {
   await ensurePlayerDefaults(userId);
 
-  const [user, progress, winnings, lastSettled, annStates, badges] = await Promise.all([
+  const [user, progress, winnings, lastSettled, annStates, badges, lastClaim] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
@@ -159,6 +159,13 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
     // Earned badges — the durable, cross-device record. The client unions this
     // with any badge freshly derived from current stats (and records new ones).
     prisma.userBadge.findMany({ where: { userId }, select: { badgeId: true } }),
+    // Most recent daily-reward claim — the streak authority. Read-only here:
+    // opening the app never advances or breaks a streak (only claiming does).
+    prisma.dailyRewardClaim.findFirst({
+      where: { userId },
+      orderBy: { dayKey: "desc" },
+      select: { dayKey: true },
+    }),
   ]);
 
   const levelByTrack: Record<Track, number> = { standard: 1, "world-cup": 1 };
@@ -166,22 +173,18 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
 
   // Reconcile lives on read so the meter is correct without a write.
   const regen = regenLives(user.lives, user.nextLifeAt?.getTime() ?? null, Date.now());
-  const streak = resolveLoginStreak(user);
-  if (streak.changed) {
-    await prisma.user.update({
-      where: { id: userId },
-      data: {
-        currentStreak: streak.currentStreak,
-        bestStreak: streak.bestStreak,
-        lastLoginAt: streak.lastLoginAt,
-      },
-    });
-  }
+  // Display-only streak: the held streak the player still has, without counting
+  // today until it's claimed and without mutating anything on read.
+  const streak = displayStreak({
+    currentStreak: user.currentStreak,
+    streakFreezes: user.streakFreezes,
+    lastClaimDay: lastClaim?.dayKey ?? null,
+  });
 
   return {
     tickets: user.ticketBalance,
     xp: user.xp,
-    streak: streak.currentStreak,
+    streak,
     lives: regen.lives,
     nextLifeAt: regen.nextLifeAt,
     streakFreezes: user.streakFreezes,

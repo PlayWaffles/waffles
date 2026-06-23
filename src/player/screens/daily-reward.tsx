@@ -101,6 +101,10 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
   const [reward, setReward] = useState<Roll | null>(null);
 
   const baseStreak = Math.max(resolved.state.streak, proto.streak);
+  // proto.streak is the held streak NOT yet counting today (claiming is what
+  // advances it — see economy.claimDailyReward). So before claiming we optimistically
+  // show baseStreak + 1 (what today's claim will make it), and after claiming we
+  // show the server-confirmed value — which match, so the number never "drops".
   const displayStreak = claimed ? baseStreak : resolved.claimable ? baseStreak + 1 : baseStreak;
 
   // Persist the normalized daily-reward state without letting local storage
