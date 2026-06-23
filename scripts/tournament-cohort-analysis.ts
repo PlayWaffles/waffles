@@ -72,9 +72,9 @@ async function main() {
       const cur = levelByUser.get(lp.userId) ?? { std: 1, wc: 1, campaignUpdated: null };
       if (lp.track === LevelTrack.STANDARD) cur.std = lp.level;
       else if (lp.track === LevelTrack.WORLD_CUP) cur.wc = lp.level;
-      if (lp.level > 1) {
-        const t = lp.updatedAt.getTime();
-        cur.campaignUpdated = cur.campaignUpdated == null ? t : Math.max(cur.campaignUpdated, t);
+      // Campaign = World Cup track only (Standard is ignored).
+      if (lp.track === LevelTrack.WORLD_CUP && lp.level > 1) {
+        cur.campaignUpdated = lp.updatedAt.getTime();
       }
       levelByUser.set(lp.userId, cur);
     }
@@ -102,7 +102,8 @@ async function main() {
     };
   });
   const n = players.length;
-  const playsCampaign = (p: P) => p.std > 1 || p.wc > 1;
+  // Campaign engagement = World Cup track only (Standard ignored).
+  const playsCampaign = (p: P) => p.wc > 1;
 
   // ── A. One-and-done recency ───────────────────────────────────────────────
   const once = players.filter((p) => p.entries === 1);

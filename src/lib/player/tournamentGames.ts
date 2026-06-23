@@ -26,6 +26,7 @@ import { defaultNetworkForPlatform, type GameNetwork } from "@/lib/chain/network
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
+import { formatGameLabel } from "@/lib/game/labels";
 import { trackServerEvent } from "@/lib/server-analytics";
 import {
   scoreAnswer,
@@ -745,6 +746,56 @@ export async function latestTournamentStandings(
     select: { id: true },
   });
   return tournamentStandings(game?.id ?? null, opts);
+}
+
+/** All-time leaderboard: total score summed across every paid game per player,
+ *  ranked. Powers the V1 leaderboard's "All-time" tab. The caller's own row is
+ *  always resolved (even outside the top `limit`) with their true global rank. */
+export async function allTimeLeaderboard(
+  platform: UserPlatform,
+  opts: { userId?: string; limit?: number } = {},
+): Promise<TournamentBoard> {
+  const limit = opts.limit ?? 50;
+  // Full ordering (player count is small) so we can give an exact "you" rank.
+  const grouped = await prisma.gameEntry.groupBy({
+    by: ["userId"],
+    where: { paidAt: { not: null }, game: { platform, onchainId: { not: null } } },
+    _sum: { score: true },
+    orderBy: { _sum: { score: "desc" } },
+  });
+  const topIds = grouped.slice(0, limit).map((g) => g.userId);
+  const youIdx = opts.userId ? grouped.findIndex((g) => g.userId === opts.userId) : -1;
+  const idsToName = [...new Set([...topIds, ...(youIdx >= 0 ? [opts.userId!] : [])])];
+  const users = await prisma.user.findMany({ where: { id: { in: idsToName } }, select: { id: true, username: true } });
+  const nameById = new Map(users.map((u) => [u.id, u.username ?? "Player"]));
+
+  const toStanding = (g: (typeof grouped)[number], rank: number): TournamentStanding => ({
+    rank,
+    userId: g.userId,
+    name: nameById.get(g.userId) ?? "Player",
+    score: g._sum.score ?? 0,
+    prize: 0,
+    you: !!opts.userId && opts.userId === g.userId,
+    played: true,
+  });
+
+  const standings = grouped.slice(0, limit).map((g, i) => toStanding(g, i + 1));
+  const you = youIdx >= 0 ? toStanding(grouped[youIdx], youIdx + 1) : null;
+  return { gameId: null, fieldSize: grouped.length, standings, you, settled: true };
+}
+
+export type PreviousGame = { id: string; label: string; title: string; endsAt: Date };
+
+/** Ended tournament games for the platform, newest first — the "Past games" tab
+ *  picker; each id feeds `tournamentStandings(gameId)` for that game's board. */
+export async function listPreviousGames(platform: UserPlatform, limit = 20): Promise<PreviousGame[]> {
+  const games = await prisma.game.findMany({
+    where: { platform, onchainId: { not: null }, endsAt: { lt: new Date() } },
+    orderBy: { endsAt: "desc" },
+    take: limit,
+    select: { id: true, gameNumber: true, title: true, endsAt: true },
+  });
+  return games.map((g) => ({ id: g.id, label: formatGameLabel(g.gameNumber), title: g.title, endsAt: g.endsAt }));
 }
 
 // ---------------------------------------------------------------------------

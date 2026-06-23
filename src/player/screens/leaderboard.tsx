@@ -1,28 +1,13 @@
 "use client";
 
-import { type TouchEvent as ReactTouchEvent, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { useResilientAction } from "../useResilientAction";
-import { ASSETS, BackButton, InfoButton, InfoIcon, Phone, PixelImg, resolveAvatar, TabBar, ToastButton, useNow } from "../shared";
-import { loadLeague, loadLeagueLeaderboard, loadTierLeaderboard } from "@/player/api";
+import { ASSETS, BackButton, InfoButton, Phone, PixelImg, resolveAvatar, TabBar } from "../shared";
+import { listPreviousGames, loadAllTimeLeaderboard, loadCurrentTournamentBoard, loadTournamentBoard } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
-const MEDAL_BY_COLOR: Record<string, string> = {
-  "#cd7f32": ASSETS.medalApprentice,
-  "#bfc7d0": ASSETS.medalSilver,
-  "#9aa6b3": ASSETS.medalAdvanced,
-  "#3ddbb8": ASSETS.medalGenius,
-  "#FFD24D": ASSETS.medalMaster,
-};
-
-const BigMedal = ({ color = "#cd7f32", size = 78 }: { color?: string; size?: number }) => (
-  <PixelImg src={MEDAL_BY_COLOR[color] ?? ASSETS.medalApprentice} size={size} alt="medal" />
-);
-
-const ChestGlyph = ({ rank }: { rank: number }) => {
-  const src = rank <= 5 ? ASSETS.chestRainbow : rank <= 20 ? ASSETS.chestPurple : ASSETS.chestBrown;
-  return <PixelImg src={src} size={24} alt="chest" />;
-};
+type Tab = "current" | "alltime" | "past";
 
 type Player = { rank: number; name: string; pts: number; avatar: string; you?: boolean };
 
@@ -36,7 +21,6 @@ const LeaderRow = ({ p }: { p: Player }) => {
       <PixelImg src={p.avatar} size={40} alt="" style={{ borderRadius: 99, objectFit: "cover" }} />
       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
       <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-        {!p.you && <ChestGlyph rank={p.rank} />}
         <PixelImg src={ASSETS.trophy} size={24} alt="" />
         <span style={{ fontFamily: "var(--font-display)", fontSize: 13, color: ptsColor, fontVariantNumeric: "tabular-nums", minWidth: 36, textAlign: "right" }}>{p.pts.toLocaleString()}</span>
       </div>
@@ -46,191 +30,136 @@ const LeaderRow = ({ p }: { p: Player }) => {
 
 export const LeaderboardScreen = () => {
   const proto = useProto();
-  const [tab, setTab] = useState<"league" | "friends">("league");
-  const now = useNow(true, 60_000);
+  const [tab, setTab] = useState<Tab>("current");
+  const [pickedGameId, setPickedGameId] = useState<string | null>(null);
 
-  // Swipe between league tiers. Load the ladder (+ the player's own tier key) so
-  // we know the order, then fetch the *viewed* tier's board: the player's own
-  // tier shows their cohort; other tiers show that tier's top players.
-  const { data: league } = useResilientAction(() => loadLeague(), []);
-  const ladder = league?.tiers ?? [];
-  const userKey = league?.key ?? null;
-  const [viewedKey, setViewedKey] = useState<string | null>(null);
-  const activeKey = viewedKey ?? userKey;
-  const viewingOwn = !activeKey || activeKey === userKey;
-  const { data: board } = useResilientAction(
-    () => (viewingOwn ? loadLeagueLeaderboard() : loadTierLeaderboard(activeKey as string)),
-    [activeKey, viewingOwn],
+  const { data: currentBoard } = useResilientAction(() => loadCurrentTournamentBoard(), []);
+  const { data: allTimeBoard } = useResilientAction(() => loadAllTimeLeaderboard(), []);
+  const { data: pastGames } = useResilientAction(() => listPreviousGames(), []);
+  // The picker defaults to the most recent ended game (derived, not stored, so we
+  // never setState in an effect just to pick a default).
+  const selectedGameId = pickedGameId ?? pastGames?.[0]?.id ?? null;
+  const { data: pastBoard } = useResilientAction(
+    () => (selectedGameId ? loadTournamentBoard(selectedGameId) : Promise.resolve(null)),
+    [selectedGameId],
   );
 
-  const activeIdx = activeKey ? ladder.findIndex((t) => t.key === activeKey) : -1;
-  const goTier = (dir: number) => {
-    const n = activeIdx + dir;
-    if (n >= 0 && n < ladder.length) setViewedKey(ladder[n].key);
-  };
-  const touchX = useRef<number | null>(null);
-  const onTouchStart = (e: ReactTouchEvent) => { touchX.current = e.touches[0]?.clientX ?? null; };
-  const onTouchEnd = (e: ReactTouchEvent) => {
-    if (touchX.current == null) return;
-    const dx = (e.changedTouches[0]?.clientX ?? touchX.current) - touchX.current;
-    touchX.current = null;
-    if (Math.abs(dx) > 50) goTier(dx < 0 ? 1 : -1); // swipe left → next (higher) tier
-  };
+  const board = tab === "current" ? currentBoard : tab === "alltime" ? allTimeBoard : pastBoard;
 
-  const avatarFor = (row: { userId: string; avatarId: string | null; pfpUrl: string | null; you: boolean }) => {
-    if (row.pfpUrl) return row.pfpUrl;
-    return resolveAvatar(row.you ? proto.avatarId ?? row.avatarId : row.avatarId, row.userId);
-  };
+  const avatarFor = (s: { userId: string; you: boolean }) =>
+    resolveAvatar(s.you ? proto.avatarId ?? null : null, s.userId);
   const leaders: Player[] = board
-    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.points, you: s.you, avatar: avatarFor(s) }))
+    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, you: s.you, avatar: avatarFor(s) }))
     : [];
   const you: Player | null = board?.you
-    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.points, you: true, avatar: avatarFor(board.you) }
+    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, you: true, avatar: avatarFor(board.you) }
     : null;
-  const seasonMs = Math.max(0, (board?.seasonEndsAt ?? now) - now);
-  const days = Math.floor(seasonMs / 86_400_000);
-  const hours = Math.floor((seasonMs % 86_400_000) / 3_600_000);
-  const seasonEnd = board ? `${days}d ${hours}h` : "Loading";
 
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
       screen: "leaderboard",
       leaderboard_tab: tab,
-      field_size: board?.cohortSize ?? leaders.length,
+      field_size: board?.fieldSize ?? leaders.length,
       rank: you?.rank ?? 0,
       score_after: you?.pts ?? 0,
       has_live_board: Boolean(board),
     });
   }, [tab, board, leaders.length, you?.rank, you?.pts]);
 
+  const heading =
+    tab === "current"
+      ? "This game"
+      : tab === "alltime"
+        ? "All-time scores"
+        : pastGames?.find((g) => g.id === selectedGameId)?.title ?? "Past games";
+
   return (
     <Phone statusDark>
-      {/* Match the rest of the v2 app: deep tinted-neutral surface with a
-          warm gold glow at the top that echoes the results / level-up screens
-          rather than the off-brand purple gradient that was here before. */}
       <div className="bg-deep" />
       <div
         aria-hidden="true"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 280,
-          background: "radial-gradient(ellipse at center top, rgba(255, 210, 77, 0.22), transparent 65%)",
-          pointerEvents: "none",
-        }}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, height: 220, background: "radial-gradient(ellipse at center top, rgba(255, 210, 77, 0.22), transparent 65%)", pointerEvents: "none" }}
       />
       <div
         aria-hidden="true"
         style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: 280,
-          backgroundImage:
-            "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
-          backgroundSize: "80px 80px, 100px 100px, 70px 70px",
-          backgroundPosition: "0 0, 30px 40px, 50px 20px",
-          opacity: 0.35,
-          pointerEvents: "none",
+          position: "absolute", top: 0, left: 0, right: 0, height: 220,
+          backgroundImage: "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #FB72FF 2px, transparent 2.5px), radial-gradient(circle, #FF9F1C 2px, transparent 2.5px)",
+          backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.35, pointerEvents: "none",
         }}
       />
 
-      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", justifyContent: "space-between", color: "var(--ink)", zIndex: 2 }}>
+      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "var(--ink)", zIndex: 2 }}>
         <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
-        <div style={{ flex: 1 }} />
-        <button
-          type="button"
-          aria-label="About leagues"
-          onClick={() => {
-            trackClientEvent(AnalyticsEvent.AboutLeaguesClicked, {
-              screen: "leaderboard",
-              leaderboard_tab: tab,
-            });
-            proto.goto("leagues");
-          }}
-          style={{ background: "rgba(253, 251, 246, 0.08)", border: "1.5px solid rgba(253, 251, 246, 0.25)", borderRadius: 99, width: 30, height: 30, padding: 0, cursor: "pointer", color: "var(--ink)", display: "flex", alignItems: "center", justifyContent: "center" }}
-        ><InfoIcon size={16} /></button>
       </div>
 
-      <div onTouchStart={onTouchStart} onTouchEnd={onTouchEnd} style={{ position: "absolute", top: 50, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
-        {/* Swipe the medal — or tap the chevrons — to browse other leagues. */}
-        {ladder.length > 1 && (
-          <>
-            <button aria-label="Previous league" onClick={() => goTier(-1)} disabled={activeIdx <= 0} style={{ position: "absolute", left: 16, top: 42, width: 34, height: 34, borderRadius: 99, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, opacity: activeIdx <= 0 ? 0.3 : 1, cursor: activeIdx <= 0 ? "default" : "pointer" }}>‹</button>
-            <button aria-label="Next league" onClick={() => goTier(1)} disabled={activeIdx >= ladder.length - 1} style={{ position: "absolute", right: 16, top: 42, width: 34, height: 34, borderRadius: 99, background: "rgba(255,255,255,.08)", border: "1px solid rgba(255,255,255,.15)", color: "#fff", fontFamily: "var(--font-display)", fontSize: 20, lineHeight: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: 0, opacity: activeIdx >= ladder.length - 1 ? 0.3 : 1, cursor: activeIdx >= ladder.length - 1 ? "default" : "pointer" }}>›</button>
-          </>
-        )}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
-          <BigMedal color={board?.color ?? "#cd7f32"} size={120} />
+      <div style={{ position: "absolute", top: 96, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
+          <PixelImg src={ASSETS.trophy} size={72} alt="" />
         </div>
-        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>{board?.label ?? "Loading league"}</div>
-        <div style={{ display: "inline-flex", gap: 5, alignItems: "center", fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4 }}>
-          {viewingOwn ? <><span>⏱</span> Ends in {seasonEnd}</> : <span style={{ color: "var(--maple-500)" }}>Browsing — swipe back to your league</span>}
-        </div>
-        {/* Tier dots — position in the ladder; ringed dot marks your own tier. */}
-        {ladder.length > 1 && (
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 5, marginTop: 8 }}>
-            {ladder.map((t, i) => (
-              <span key={t.key} style={{ width: i === activeIdx ? 7 : 5, height: i === activeIdx ? 7 : 5, borderRadius: 99, background: i === activeIdx ? "var(--maple-500)" : "rgba(255,255,255,.25)", border: t.key === userKey ? "1.5px solid var(--maple-500)" : "none", boxSizing: "border-box" }} />
-            ))}
-          </div>
-        )}
+        <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>Leaderboard</div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 2 }}>{heading}</div>
       </div>
 
-      <div style={{ position: "absolute", top: 280, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 24px" }}>
+      <div style={{ position: "absolute", top: 222, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+        <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 12px" }}>
           {[
-            { id: "league" as const, label: "Your League" },
-            { id: "friends" as const, label: "Friends" },
+            { id: "current" as const, label: "This game" },
+            { id: "alltime" as const, label: "All-time" },
+            { id: "past" as const, label: "Past games" },
           ].map((t) => (
             <button
               key={t.id}
               onClick={() => {
                 if (tab !== t.id) {
-                  trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, {
-                    screen: "leaderboard",
-                    previous_tab: tab,
-                    leaderboard_tab: t.id,
-                  });
+                  trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, { screen: "leaderboard", previous_tab: tab, leaderboard_tab: t.id });
                 }
                 setTab(t.id);
               }}
-              style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 15, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
+              style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
             >
               {t.label}
             </button>
           ))}
         </div>
 
-        {tab === "league" ? (
-          leaders.length === 0 ? (
-            // No real standings yet. Show an empty state instead of fabricated
-            // players.
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
-              <PixelImg src={ASSETS.trophy} size={64} alt="" style={{ opacity: 0.85, marginBottom: 16 }} />
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No standings yet</div>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
-                Earn points to claim your spot — the league board fills up once this cohort starts scoring.
-              </div>
+        {/* Past-games picker — horizontal scroll of ended games. */}
+        {tab === "past" && pastGames && pastGames.length > 0 && (
+          <div style={{ display: "flex", gap: 6, padding: "10px 12px 6px", overflowX: "auto", scrollbarWidth: "none" }}>
+            {pastGames.map((g) => {
+              const active = g.id === selectedGameId;
+              return (
+                <button
+                  key={g.id}
+                  onClick={() => setPickedGameId(g.id)}
+                  style={{ flexShrink: 0, padding: "6px 12px", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 12, cursor: "pointer", background: active ? "var(--maple-500)" : "var(--surface-2)", color: active ? "var(--frame)" : "var(--ink-soft)", border: active ? "1.5px solid var(--frame)" : "1px solid rgba(253,251,246,.08)" }}
+                >
+                  {g.label}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {leaders.length === 0 ? (
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
+            <PixelImg src={ASSETS.trophy} size={64} alt="" style={{ opacity: 0.85, marginBottom: 16 }} />
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No scores yet</div>
+            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
+              {tab === "current" ? "This game's board fills up as players answer." : tab === "alltime" ? "Play a tournament to land on the all-time board." : "Pick a game above to see its final standings."}
             </div>
-          ) : (
+          </div>
+        ) : (
           <>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px 10px", color: "var(--ink-soft)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 22px 8px", color: "var(--ink-soft)" }}>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>Position</span>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
-                Points
-                <InfoButton title="Points" text="Points are what you score by playing levels and tournaments during this league period. The more points you score, the higher you climb — top finishers get promoted to the next league and win reward chests, while the bottom few drop down." size={18} />
+                Score
+                <InfoButton title="Score" text="Your score is the points you earned answering questions in this tournament — faster correct answers score more. The all-time board sums your score across every game you've played." size={18} />
               </span>
             </div>
             <div style={{ flex: 1, overflow: "auto", scrollbarWidth: "none" }}>
-              {leaders.map((p) => <LeaderRow key={p.rank} p={p} />)}
-              {/* "You" row pinned to the bottom — uses the maple-tinted highlight
-                  that the results screen uses for the player's row, so the two
-                  leaderboards in the app share a visual language. Only shown when
-                  the board actually places you. */}
+              {leaders.map((p) => <LeaderRow key={`${p.rank}-${p.name}`} p={p} />)}
               {you && (
                 <div data-coach="leaderboard-you" style={{ position: "sticky", bottom: 0, background: "#191507", borderTop: "1.5px solid var(--maple-500)", boxShadow: "0 -10px 18px rgba(0, 0, 0, 0.45)" }}>
                   <LeaderRow p={you} />
@@ -238,50 +167,6 @@ export const LeaderboardScreen = () => {
               )}
             </div>
           </>
-          )
-        ) : (
-          // Friends tab — empty state with a clear CTA, instead of mirroring
-          // the league list and leaving the user wondering whether the tab
-          // even switched. Sets up a real product moment (invite friends).
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 28px", textAlign: "center" }}>
-            <div style={{ width: 72, height: 72, borderRadius: 99, background: "var(--surface-2)", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 16, border: "1px solid rgba(253, 251, 246, 0.08)" }}>
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <circle cx="9" cy="8" r="3.5" stroke="var(--ink-soft)" strokeWidth="2" fill="none" />
-                <path d="M3 19c.8-3 3.2-5 6-5s5.2 2 6 5" stroke="var(--ink-soft)" strokeWidth="2" fill="none" strokeLinecap="round" />
-                <circle cx="17" cy="6" r="2.5" stroke="var(--maple-500)" strokeWidth="2" fill="none" />
-                <path d="M14 14c.5-1.8 1.8-3 3-3s2.5 1.2 3 3" stroke="var(--maple-500)" strokeWidth="2" fill="none" strokeLinecap="round" />
-              </svg>
-            </div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No friends yet</div>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
-              Add friends to see their scores next to yours and compete for bragging rights.
-            </div>
-            <ToastButton
-              ariaLabel="Invite friends"
-              toast="Friend invites are coming soon!"
-              onClick={() => trackClientEvent(AnalyticsEvent.InviteFriendsClicked, {
-                screen: "leaderboard",
-                leaderboard_tab: tab,
-              })}
-              className="pressable"
-              style={{
-                marginTop: 22,
-                background: "var(--maple-500)",
-                color: "var(--frame)",
-                border: "2px solid var(--frame)",
-                fontFamily: "var(--font-body)",
-                fontWeight: 900,
-                fontSize: 13,
-                padding: "10px 20px",
-                borderRadius: 12,
-                letterSpacing: 0.3,
-                boxShadow: "0 3px 0 var(--frame)",
-                cursor: "pointer",
-              }}
-            >
-              INVITE FRIENDS
-            </ToastButton>
-          </div>
         )}
       </div>
 

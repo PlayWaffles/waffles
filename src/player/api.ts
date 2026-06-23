@@ -79,10 +79,6 @@ export function loadLeagueLeaderboard(): Promise<leaguesSvc.LeagueLeaderboard | 
   return callPlayerApi("loadLeagueLeaderboard");
 }
 
-export function loadTierLeaderboard(tierKey: string): Promise<leaguesSvc.LeagueLeaderboard | null> {
-  return callPlayerApi("loadTierLeaderboard", [tierKey]);
-}
-
 export function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
   return callPlayerApi("loadLeagueResult");
 }
@@ -175,6 +171,14 @@ export function loadTournamentLeaderboard(): Promise<TournamentBoard | null> {
 
 export function loadCurrentTournamentBoard(): Promise<TournamentBoard | null> {
   return callPlayerApi("loadCurrentTournamentBoard");
+}
+
+export function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
+  return callPlayerApi("loadAllTimeLeaderboard");
+}
+
+export function listPreviousGames(): Promise<tournamentSvc.PreviousGame[]> {
+  return callPlayerApi("listPreviousGames");
 }
 
 export type RecentEntrant = { userId: string; name: string; avatarId: string | null };

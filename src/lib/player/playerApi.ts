@@ -73,13 +73,6 @@ export async function loadLeagueLeaderboard(): Promise<leaguesSvc.LeagueLeaderbo
   return leaguesSvc.loadLeagueLeaderboard(user.id);
 }
 
-/** Top players in a given tier (across cohorts) — for swiping to other leagues. */
-export async function loadTierLeaderboard(tierKey: string): Promise<leaguesSvc.LeagueLeaderboard | null> {
-  const user = await getCurrentUser();
-  if (!user) return null;
-  return leaguesSvc.loadTierLeaderboard(user.id, tierKey);
-}
-
 export async function loadLeagueResult(): Promise<leaguesSvc.LeagueResult | null> {
   const user = await getCurrentUser();
   if (!user) return null;
@@ -326,6 +319,20 @@ export async function loadCurrentTournamentBoard(): Promise<TournamentBoard | nu
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
   return tournamentSvc.tournamentStandings(game.id, { userId: user.id, limit: 10 });
+}
+
+/** All-time tournament leaderboard (total score across all games) — V1 "All-time" tab. */
+export async function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return tournamentSvc.allTimeLeaderboard(user.platform, { userId: user.id, limit: 50 });
+}
+
+/** Ended games for the platform — V1 "Past games" tab picker. */
+export async function listPreviousGames(): Promise<tournamentSvc.PreviousGame[]> {
+  const user = await getCurrentUser();
+  if (!user) return [];
+  return tournamentSvc.listPreviousGames(user.platform, 20);
 }
 
 /** Recent ticket buyers for the player's platform — feeds the Home "live buying"
