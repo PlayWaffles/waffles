@@ -1,12 +1,10 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useProto } from "../state";
-import { ASSETS, AssetWell, Phone, PixelImg, SyrupIcon, TabBar, TopHeader, useNow } from "../shared";
-import { loadLeague, loadSeasonPass, claimSeasonReward, loadMissions, loadPartnerOffers } from "@/player/api";
+import { AssetWell, Phone, TabBar, TopHeader, useNow } from "../shared";
+import { loadLeague, loadMissions, loadPartnerOffers } from "@/player/api";
 import type { League } from "@/lib/player/leagues";
-import type { SeasonPass } from "@/lib/player/seasonPass";
-import { SEASON_PASS_TIERS, type SeasonReward as PassReward } from "@/lib/player/seasonPassTiers";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
 const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?: string; size?: number; state?: "current" | "locked" | "passed" }) => {
@@ -28,211 +26,18 @@ const TierMedal = ({ color = "#cd7f32", size = 28, state = "passed" }: { color?:
   );
 };
 
-type RewardType = "xp" | "ticket" | "cosmetic";
-type Reward = { type: RewardType; label: string };
-
-const REWARD_PALETTE: Record<RewardType, { bg: string; fg: string }> = {
-  xp:       { bg: "rgba(255, 210, 77, 0.10)", fg: "var(--maple-500)" },
-  ticket:   { bg: "rgba(255,159,28, 0.10)",  fg: "var(--leaf)" },
-  cosmetic: { bg: "rgba(251, 114, 255, 0.10)", fg: "var(--berry)" },
-};
-
-const RewardAsset = ({ reward }: { reward: Reward }) => {
-  if (reward.type === "xp") {
-    return <PixelImg src={ASSETS.xpGem} size={28} alt="" />;
-  }
-  if (reward.type === "ticket") {
-    return <SyrupIcon size={24} />;
-  }
-  return <PixelImg src={ASSETS.vipStar} size={28} alt="" />;
-};
-
-// One reward chip — keeps the reward visible in every state. Claimed cells
-// get a small corner badge instead of a full overlay so the player can still
-// see WHAT they earned, not just THAT they earned something.
-const PassRewardCell = ({
-  reward,
-  state,
-  premium,
-  onClick,
-}: {
-  reward: Reward;
-  state: "claimed" | "current" | "locked";
-  premium?: boolean;
-  onClick?: () => void;
-}) => {
-  const palette = REWARD_PALETTE[reward.type];
-  const isClaimed = state === "claimed";
-  const isCurrent = state === "current";
-  const isLocked = state === "locked";
-  return (
-    <div
-      onClick={onClick}
-      role={onClick ? "button" : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={
-        onClick
-          ? (e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick();
-              }
-            }
-          : undefined
-      }
-      style={{
-        flex: 1,
-        minWidth: 0,
-        height: 56,
-        borderRadius: 12,
-        cursor: onClick ? "pointer" : undefined,
-        background: palette.bg,
-        border: isCurrent
-          ? `1.5px solid ${palette.fg}`
-          : isClaimed
-            ? `1px solid ${palette.fg}`
-            : "1px solid rgba(253, 251, 246, 0.08)",
-        boxShadow: isCurrent ? `0 0 0 3px ${palette.fg}20` : undefined,
-        opacity: isLocked ? 0.45 : 1,
-        position: "relative",
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        padding: "0 10px",
-        color: "var(--ink)",
-      }}
-    >
-      <AssetWell size={38} accent={palette.fg} radius={9}>
-        <RewardAsset reward={reward} />
-      </AssetWell>
-      <div style={{ minWidth: 0, flex: 1 }}>
-        <div
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: 11,
-            color: "var(--ink)",
-            letterSpacing: 0.2,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          {reward.label}
-        </div>
-        <div style={{ fontSize: 9, fontWeight: 800, color: "var(--ink-faint)", marginTop: 2, textTransform: "uppercase", letterSpacing: 0.4 }}>
-          {premium ? "VIP" : "Free"}
-        </div>
-      </div>
-      {/* State badges — claimed (cyan check), current (maple "GET"), locked (lock).
-          All sit in the corner so the reward art stays visible underneath. */}
-      {isClaimed && (
-        <div
-          aria-label="Claimed"
-          style={{
-            position: "absolute",
-            top: -6,
-            right: -6,
-            width: 20,
-            height: 20,
-            borderRadius: 99,
-            background: "var(--leaf)",
-            color: "var(--frame)",
-            fontFamily: "var(--font-display)",
-            fontSize: 11,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            boxShadow: "0 2px 0 rgba(0, 0, 0, 0.4)",
-          }}
-        >
-          ✓
-        </div>
-      )}
-      {isCurrent && (
-        <div
-          aria-label="Available now"
-          style={{
-            position: "absolute",
-            top: -6,
-            right: -6,
-            background: "var(--maple-500)",
-            color: "var(--frame)",
-            fontFamily: "var(--font-display)",
-            fontSize: 9,
-            padding: "2px 6px",
-            borderRadius: 99,
-            letterSpacing: 0.4,
-            boxShadow: "0 2px 0 rgba(0, 0, 0, 0.4)",
-          }}
-        >
-          GET
-        </div>
-      )}
-      {isLocked && (
-        <div
-          aria-label="Locked"
-          style={{
-            position: "absolute",
-            top: 6,
-            right: 6,
-            width: 14,
-            height: 14,
-            borderRadius: 99,
-            background: "rgba(0, 0, 0, 0.55)",
-            color: "var(--ink-soft)",
-            fontSize: 9,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <PixelImg src={ASSETS.lock} size={12} alt="" style={{ filter: "none" }} />
-        </div>
-      )}
-    </div>
-  );
-};
-
-// "Coming soon" treatment — keeps the Season Pass design visible (so players see
-// what's coming) but dims it and lays a non-interactive veil on top, matching the
-// Shop's teaser pattern. Underlying claim buttons are inert so nothing can fire.
-const ComingSoonVeil = ({ note, children }: { note: string; children: ReactNode }) => (
-  <div style={{ position: "relative" }}>
-    <div aria-hidden="true" inert style={{ opacity: 0.4, filter: "saturate(.55)", pointerEvents: "none", userSelect: "none" }}>
-      {children}
-    </div>
-    <div
-      onClick={() => trackClientEvent(AnalyticsEvent.ComingSoonClicked, { screen: "compete", feature: "season_pass", note })}
-      style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6, cursor: "pointer" }}
-    >
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "rgba(0,0,0,.6)", border: "1px solid rgba(255,255,255,.14)", borderRadius: 99, padding: "7px 14px", fontFamily: "var(--font-display)", fontSize: 12, letterSpacing: 0.5, color: "#fff" }}>
-        <span aria-hidden="true">🔒</span> Coming soon
-      </div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "rgba(255,255,255,.6)", textAlign: "center", padding: "0 16px" }}>{note}</div>
-    </div>
-  </div>
-);
-
 export const CompeteScreen = () => {
   const proto = useProto();
   const tickets = proto.tickets;
-  const [toast, setToast] = useState<string | null>(null);
-  const flash = (msg: string) => {
-    setToast(msg);
-    window.setTimeout(() => setToast(null), 2200);
-  };
 
-  // Real league standing + season pass + mission/offer counts.
+  // Real league standing + mission/offer counts. (Season Pass is temporarily
+  // removed — the seasonPass service is kept intact for when it returns.)
   const [league, setLeague] = useState<League | null>(null);
-  const [pass, setPass] = useState<SeasonPass | null>(null);
   const [counts, setCounts] = useState<{ daily: number; partner: number; xp: number; open: number } | null>(null);
-  const [localClaimed, setLocalClaimed] = useState<Set<number>>(new Set());
-  const [claiming, setClaiming] = useState(false);
   const now = useNow(!!league, 60_000);
   useEffect(() => {
     let active = true;
     loadLeague().then((l) => { if (active && l) setLeague(l); }).catch(() => {});
-    loadSeasonPass().then((p) => { if (active && p) setPass(p); }).catch(() => {});
     Promise.all([loadMissions(), loadPartnerOffers()])
       .then(([m, o]) => {
         if (!active || !m) return;
@@ -262,54 +67,6 @@ export const CompeteScreen = () => {
         return `${String(d).padStart(2, "0")}d ${String(h).padStart(2, "0")}h`;
       })()
     : "Loading";
-
-  // Season pass progression — pass level + per-tier XP from the player's XP.
-  const passLevel = pass?.level ?? 0;
-  const passXpNext = pass?.xpPerTier ?? 500;
-  const passXp = pass ? pass.xp % passXpNext : 0;
-  const passPct = pass ? Math.min(100, Math.round((passXp / passXpNext) * 100)) : 0;
-
-  // Free-track reward cells claimed this season (server + optimistic local).
-  const claimedFree = new Set<number>([
-    ...((pass?.claimed ?? []).filter((c) => !c.premium).map((c) => c.tier)),
-    ...localClaimed,
-  ]);
-
-  const claimFreeReward = async (level: number, reward: PassReward) => {
-    if (claiming || claimedFree.has(level)) return;
-    setClaiming(true);
-    // Optimistic: mark claimed + credit locally; reconcile from the server result.
-    setLocalClaimed((prev) => new Set(prev).add(level));
-    if (reward.type === "ticket") proto.update((s) => ({ tickets: s.tickets + reward.amount }));
-    else if (reward.type === "xp") proto.update((s) => ({ xp: s.xp + reward.amount }));
-    flash(reward.type === "cosmetic" ? "Cosmetic unlocked!" : `Claimed ${reward.label}`);
-    try {
-      const res = await claimSeasonReward(level, false);
-      if (res?.ok) {
-        if (res.tickets != null) proto.update(() => ({ tickets: res.tickets! }));
-        if (res.xp != null) proto.update(() => ({ xp: res.xp! }));
-      } else if (res && !res.ok && res.reason === "already") {
-        // server says already claimed — keep it marked, drop the toast noise.
-      }
-    } catch {
-      /* offline / no session — keep the optimistic local claim */
-    } finally {
-      setClaiming(false);
-    }
-  };
-
-  const track = SEASON_PASS_TIERS.map((t, i) => {
-    const level = i + 1;
-    return {
-      level,
-      claimed: level < passLevel,
-      current: level === passLevel,
-      reached: level <= passLevel,
-      freeClaimed: claimedFree.has(level),
-      free: t.free,
-      premium: t.premium,
-    };
-  });
 
   return (
     <Phone statusDark>
@@ -362,163 +119,7 @@ export const CompeteScreen = () => {
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="rgba(255,255,255,.5)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </div>
         </button>
-
-        {/* Season Pass — coming soon. Design stays visible under a veil. */}
-        <ComingSoonVeil note="Season Pass arrives soon — climb the tiers to earn rewards.">
-        {/* Season Pass — header with title, countdown, and current tier. */}
-        <div style={{ margin: "20px 16px 0", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
-          <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "var(--ink)", letterSpacing: 1, lineHeight: 1 }}>SEASON PASS</div>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 4, display: "inline-flex", alignItems: "center", gap: 5 }}>
-              <span>⏱</span> Ends in {seasonEnd}
-            </div>
-          </div>
-          <div
-            style={{
-              background: "var(--surface-1)",
-              border: "1px solid rgba(253, 251, 246, 0.06)",
-              borderRadius: 10,
-              padding: "6px 10px",
-              textAlign: "center",
-              flexShrink: 0,
-            }}
-          >
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 16, color: "var(--maple-500)", lineHeight: 1 }}>{passLevel}</div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.5, textTransform: "uppercase", marginTop: 2 }}>Tier</div>
-          </div>
-        </div>
-
-        {/* Progress to next tier — clear horizontal bar with mission count. */}
-        <div style={{ margin: "10px 16px 0", background: "var(--surface-1)", border: "1px solid rgba(253, 251, 246, 0.06)", borderRadius: 12, padding: "10px 12px" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)" }}>Next tier in</span>
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 11, color: "var(--ink)" }}>{passXp} / {passXpNext} XP</span>
-          </div>
-          <div style={{ height: 8, borderRadius: 99, background: "rgba(253, 251, 246, 0.06)", overflow: "hidden" }}>
-            <div style={{ width: `${passPct}%`, height: "100%", background: "linear-gradient(90deg, var(--berry), var(--maple-500))", borderRadius: 99 }} />
-          </div>
-        </div>
-
-        {/* VIP upsell — routes to the Shop where purchases actually happen. */}
-        <button
-          type="button"
-          onClick={() => proto.goto("shop")}
-          style={{
-            margin: "10px 16px 0",
-            background: "linear-gradient(180deg, var(--maple-500), var(--maple-400))",
-            color: "var(--frame)",
-            border: "2px solid var(--frame)",
-            padding: "12px 14px",
-            borderRadius: 14,
-            fontFamily: "var(--font-body)",
-            fontWeight: 900,
-            fontSize: 14,
-            letterSpacing: 0.2,
-            boxShadow: "0 4px 0 var(--frame)",
-            cursor: "pointer",
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-            textAlign: "left",
-          }}
-        >
-          <PixelImg src={ASSETS.vipStar} size={26} alt="" />
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, lineHeight: 1, letterSpacing: 0.4 }}>UNLOCK VIP REWARDS</div>
-            <div style={{ fontSize: 11, fontWeight: 700, marginTop: 2, opacity: 0.75 }}>Claim every premium reward this season</div>
-          </div>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-        </button>
-
-        {/* Track headers — set the two-column expectation before the rows. */}
-        <div style={{ margin: "16px 16px 6px", display: "grid", gridTemplateColumns: "32px 1fr 1fr", gap: 10, alignItems: "center" }}>
-          <div />
-          <div style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.6, textTransform: "uppercase" }}>Free</div>
-          <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 0.6, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 4 }}>
-            <PixelImg src={ASSETS.vipStar} size={11} alt="" /> VIP
-          </div>
-        </div>
-
-        <div style={{ padding: "0 16px 16px" }}>
-          {track.slice(Math.max(0, passLevel - 3), passLevel + 5).map((row, i, arr) => {
-            // Claimed cells show as such; any reached-but-unclaimed free reward is
-            // claimable ("current"); unreached tiers are locked.
-            const freeState: "claimed" | "current" | "locked" = row.freeClaimed ? "claimed" : row.reached ? "current" : "locked";
-            const premiumState: "claimed" | "current" | "locked" = row.current ? "current" : "locked";
-            return (
-              <div key={row.level} style={{ display: "grid", gridTemplateColumns: "32px 1fr 1fr", gap: 10, alignItems: "center", marginBottom: 10, position: "relative" }}>
-                {/* Tier number column with connecting line. */}
-                <div style={{ position: "relative", height: 56, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                  {i > 0 && <div style={{ position: "absolute", top: 0, bottom: "50%", left: "50%", width: 2, background: "rgba(253, 251, 246, 0.10)", transform: "translateX(-50%)" }} />}
-                  {i < arr.length - 1 && <div style={{ position: "absolute", top: "50%", bottom: 0, left: "50%", width: 2, background: "rgba(253, 251, 246, 0.10)", transform: "translateX(-50%)" }} />}
-                  <div
-                    style={{
-                      position: "relative",
-                      width: 28,
-                      height: 28,
-                      borderRadius: 99,
-                      background: row.claimed
-                        ? "var(--leaf)"
-                        : row.current
-                          ? "var(--maple-500)"
-                          : "var(--surface-1)",
-                      border: row.current
-                        ? "2px solid var(--ink)"
-                        : "1.5px solid rgba(253, 251, 246, 0.15)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontFamily: "var(--font-display)",
-                      fontSize: 12,
-                      color: row.claimed || row.current ? "var(--frame)" : "var(--ink-faint)",
-                      boxShadow: row.current ? "0 0 0 4px rgba(255, 210, 77, 0.20)" : undefined,
-                    }}
-                  >
-                    {row.level}
-                  </div>
-                </div>
-                <PassRewardCell
-                  reward={row.free}
-                  state={freeState}
-                  onClick={row.reached && !row.freeClaimed ? () => claimFreeReward(row.level, row.free) : undefined}
-                />
-                <PassRewardCell
-                  reward={row.premium}
-                  state={premiumState}
-                  premium
-                  onClick={row.current ? () => proto.goto("shop") : undefined}
-                />
-              </div>
-            );
-          })}
-        </div>
-        </ComingSoonVeil>
       </div>
-
-      {toast && (
-        <div
-          role="status"
-          style={{
-            position: "fixed",
-            left: "50%",
-            bottom: 96,
-            transform: "translateX(-50%)",
-            zIndex: 120,
-            background: "var(--surface-2)",
-            color: "var(--ink)",
-            border: "1px solid rgba(253, 251, 246, 0.14)",
-            borderRadius: 12,
-            padding: "10px 16px",
-            fontSize: 13,
-            fontWeight: 700,
-            boxShadow: "0 10px 28px rgba(0, 0, 0, 0.5)",
-            maxWidth: 280,
-            textAlign: "center",
-          }}
-        >
-          {toast}
-        </div>
-      )}
 
       <div className="bottom-bar">
         <TabBar active="compete" />

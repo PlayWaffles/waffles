@@ -201,8 +201,8 @@ export const DailyRewardSheet = ({ onClose }: { onClose: () => void }) => {
         tickets_balance: proto.tickets,
         price_tickets: STREAK_FREEZE_COST,
       });
-      onClose();
-      proto.goto("shop");
+      // Shop is temporarily removed — can't redirect there to top up; just keep
+      // the sheet open (the blocked attempt is tracked above).
       return;
     }
     trackClientEvent(AnalyticsEvent.StreakFreezePurchaseStarted, {

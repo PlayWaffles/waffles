@@ -451,19 +451,8 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
         </>
       ),
     },
-    {
-      id: "shop",
-      label: "Shop",
-      icon: (
-        <path
-          d="M4 8h16l-1.5 11a2 2 0 0 1-2 1.7H7.5a2 2 0 0 1-2-1.7L4 8zM8 8V6a4 4 0 0 1 8 0v2"
-          stroke="currentColor"
-          strokeWidth="2"
-          fill="none"
-          strokeLinejoin="round"
-        />
-      ),
-    },
+    // Shop temporarily disabled — screen + economy service kept intact; only the
+    // nav entry is removed so it's unreachable but trivially restorable.
     {
       id: "me",
       label: "Me",
