@@ -29,6 +29,8 @@ const handlers = {
   loadCurrentTournamentBoard: playerApi.loadCurrentTournamentBoard,
   loadAllTimeLeaderboard: playerApi.loadAllTimeLeaderboard,
   listPreviousGames: playerApi.listPreviousGames,
+  getRookieCup: playerApi.getRookieCup,
+  submitRookieCup: playerApi.submitRookieCup,
   loadRecentEntrants: playerApi.loadRecentEntrants,
   confirmTournamentClaim: playerApi.confirmTournamentClaim,
   reconcileTournamentClaim: playerApi.reconcileTournamentClaim,

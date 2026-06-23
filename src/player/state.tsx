@@ -89,6 +89,7 @@ export type ScreenName =
   | "lobby"
   | "question"
   | "results"
+  | "rookie"
   | "profile";
 
 const SCREEN_ORDER: ScreenName[] = [
@@ -103,6 +104,7 @@ const SCREEN_ORDER: ScreenName[] = [
   "lobby",
   "question",
   "results",
+  "rookie",
   "levelWin",
   "levelFail",
   "profile",
@@ -459,6 +461,9 @@ type State = {
   nextLifeAt: number | null;
   xp: number;
   streak: number;
+  // Rookie Cup: whether the free intro tournament is done. First-timers (this
+  // false AND no prior tournament rank) are routed into it from the Home join.
+  rookieDone: boolean;
   // The player's most recent tournament finishing rank, or null if they've
   // never played one. Powers the "beat your last result" hook on the Home card.
   lastTournamentRank: number | null;
@@ -558,6 +563,7 @@ const initialState = (tweaks: Tweaks): State => ({
   // loadState resolves (logged-out / pre-load shows a fresh account).
   xp: 0,
   streak: 0,
+  rookieDone: false,
   lastTournamentRank: null,
   resultNotifs: [],
   winnings: [],
@@ -766,6 +772,7 @@ export function ProtoProvider({
           streak: s.streak,
           lives: s.lives,
           nextLifeAt: s.nextLifeAt,
+          rookieDone: s.rookieDone,
           username: s.username,
           avatarId: s.avatarId,
           levelByTrack: s.levelByTrack,

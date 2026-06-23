@@ -49,6 +49,7 @@ const SCREEN_COMPONENTS: Record<ScreenName, React.ComponentType> = {
   lobby: lazyScreen(() => import("./screens/lobby").then((m) => ({ default: m.LobbyScreen }))),
   question: lazyScreen(() => import("./screens/question").then((m) => ({ default: m.QuestionScreen }))),
   results: lazyScreen(() => import("./screens/results").then((m) => ({ default: m.ResultsScreen }))),
+  rookie: lazyScreen(() => import("./screens/rookie-cup").then((m) => ({ default: m.RookieCupScreen }))),
   profile: lazyScreen(() => import("./screens/profile").then((m) => ({ default: m.ProfileScreen }))),
 };
 

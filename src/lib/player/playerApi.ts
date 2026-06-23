@@ -18,6 +18,7 @@ import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem
 import * as migrationSvc from "@/lib/player/migrationNotice";
 import * as wcTakeoverSvc from "@/lib/player/worldCupTakeover";
 import type { RoundAnswer } from "@/lib/player/scoring";
+import * as rookieCupSvc from "@/lib/player/rookieCup";
 import * as economySvc from "@/lib/player/economy";
 import type { DailyClaimResult, PurchaseResult, ShopCatalog } from "@/lib/player/economy";
 import { PowerUpKind } from "@prisma";
@@ -319,6 +320,20 @@ export async function loadCurrentTournamentBoard(): Promise<TournamentBoard | nu
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
   return tournamentSvc.tournamentStandings(game.id, { userId: user.id, limit: 10 });
+}
+
+/** Serve the free intro Rookie Cup (questions + field size); `done` once played. */
+export async function getRookieCup(): Promise<rookieCupSvc.RookieCup | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return rookieCupSvc.getRookieCup(user.id);
+}
+
+/** Settle the Rookie Cup: re-score, rank vs the ghost field, grant the reward. */
+export async function submitRookieCup(answers: RoundAnswer[]): Promise<rookieCupSvc.RookieResult | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return rookieCupSvc.submitRookieCup(user.id, answers);
 }
 
 /** All-time tournament leaderboard (total score across all games) — V1 "All-time" tab. */

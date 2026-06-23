@@ -52,12 +52,10 @@ model User {
   bestStreak    Int       @default(0)
   lastLoginAt   DateTime?
 
-  // -- ROOKIE CUP + FREE ENTRIES --
-  // rookieCupAt = when the free intro tournament was completed (gates one-per-user
-  // + marks "graduated"). freeTournamentEntries = banked free real-tournament seats
-  // (granted by the rookie cup + daily Day-7 jackpot; spent on a free entry).
-  rookieCupAt          DateTime?
-  freeTournamentEntries Int      @default(0)
+  // -- ROOKIE CUP --
+  // When the free intro tournament was completed — gates one-per-user and marks
+  // the player as "graduated" (so first-timers route into it, returners don't).
+  rookieCupAt DateTime?
 
   // -- BAN --
   isBanned Boolean   @default(false)

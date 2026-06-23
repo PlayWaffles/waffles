@@ -44,6 +44,7 @@ export type PlayerState = {
   lives: number;
   nextLifeAt: number | null;
   streakFreezes: number;
+  rookieDone: boolean;
   username: string;
   avatarId: string | null;
   levelByTrack: Record<Track, number>;
@@ -125,6 +126,7 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
         currentStreak: true,
         bestStreak: true,
         lastLoginAt: true,
+        rookieCupAt: true,
       },
     }),
     prisma.levelProgress.findMany({ where: { userId }, select: { track: true, level: true } }),
@@ -188,6 +190,7 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
     lives: regen.lives,
     nextLifeAt: regen.nextLifeAt,
     streakFreezes: user.streakFreezes,
+    rookieDone: user.rookieCupAt != null,
     username: user.username ?? "",
     avatarId: user.avatarId,
     levelByTrack,

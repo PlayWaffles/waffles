@@ -21,6 +21,7 @@ import type { PlayerState } from "@/lib/player/playerState";
 import type { TournamentRound, PowerUps } from "@/lib/player/playerApi";
 import type * as leaguesSvc from "@/lib/player/leagues";
 import type * as tournamentSvc from "@/lib/player/tournamentGames";
+import type * as rookieCupSvc from "@/lib/player/rookieCup";
 import type { TicketLedgerReason } from "@prisma";
 import type { PowerUpKind } from "@prisma";
 
@@ -171,6 +172,14 @@ export function loadTournamentLeaderboard(): Promise<TournamentBoard | null> {
 
 export function loadCurrentTournamentBoard(): Promise<TournamentBoard | null> {
   return callPlayerApi("loadCurrentTournamentBoard");
+}
+
+export function getRookieCup(): Promise<rookieCupSvc.RookieCup | null> {
+  return callPlayerApi("getRookieCup");
+}
+
+export function submitRookieCup(answers: RoundAnswer[]): Promise<rookieCupSvc.RookieResult | null> {
+  return callPlayerApi("submitRookieCup", [answers]);
 }
 
 export function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
