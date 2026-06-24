@@ -6,7 +6,9 @@ const ONE_HOUR_MS = 60 * 60 * 1000;
 // Default spots (entry cap) for an auto-scheduled game. Set here rather than
 // carried forward so the cap is a deliberate default, not whatever the last
 // game happened to use.
-const DEFAULT_MAX_PLAYERS = 50;
+// Keep in sync with TOURNAMENT_MAX_PLAYERS — smaller fields lift the win rate
+// (see tournamentGames.ts).
+const DEFAULT_MAX_PLAYERS = 20;
 
 // Continuous hourly cadence: a new 1-hour game starts the moment the last one
 // ends, back-to-back, 24/7 (no weekday/time gating). Kept back-to-back even if

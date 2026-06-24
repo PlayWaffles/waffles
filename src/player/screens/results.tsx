@@ -8,6 +8,7 @@ import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, res
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { scoreToXp } from "@/lib/player/xp";
+import { consolationSyrup } from "@/lib/game/prizeDistribution";
 
 // Animated count between two values with an ease-out roll. Used for the rank
 // reveal (counts the big number down from the full field to the player's spot,
@@ -118,6 +119,12 @@ export const ResultsScreen = () => {
   // before rankGame/publishResults locks the GameEntry prize.
   const won = board?.you ? board.you.prize : settled ? 0 : tournamentReward(rank);
   const wonTicket = won > 0;
+
+  // Top-half consolation Syrup — granted at settlement to non-cash finishers in
+  // the top half (mirrors `consolationSyrup` in rankGame). Only locked once
+  // settled; folded into the Syrup tile so a top-half finish reads as a win.
+  const consolation = settled && !wonTicket ? consolationSyrup(rank, fieldSize, false) : 0;
+  const syrupTotal = syrupEarned + consolation;
 
   // Finish gives an instant positive hit (you're placed!); settlement plays the
   // win/lose cue for the locked result.
@@ -276,8 +283,8 @@ export const ResultsScreen = () => {
             <AssetWell size={58} accent="var(--frame)" radius={14} style={{ margin: "0 auto 6px", background: "rgba(30, 30, 30, 0.16)" }}>
               {wonTicket ? <TicketIcon size={38} /> : <SyrupIcon size={38} />}
             </AssetWell>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "#1e1e1e", lineHeight: 1, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{wonTicket ? (settled ? <>+<CountUp from={0} to={won} delayMs={900} durationMs={750} /></> : `+${won}`) : `+${syrupEarned}`}</div>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75, marginTop: 3 }}>{wonTicket ? (settled ? "PRIZE WON" : "IF IT HOLDS") : "SYRUP EARNED"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 19, color: "#1e1e1e", lineHeight: 1, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{wonTicket ? (settled ? <>+<CountUp from={0} to={won} delayMs={900} durationMs={750} /></> : `+${won}`) : `+${syrupTotal}`}</div>
+            <div style={{ fontSize: 10, fontWeight: 800, color: "#1e1e1e", opacity: 0.75, marginTop: 3 }}>{wonTicket ? (settled ? "PRIZE WON" : "IF IT HOLDS") : consolation > 0 ? "TOP-HALF BONUS" : "SYRUP EARNED"}</div>
           </div>
           <div style={{ flex: 1, background: "linear-gradient(180deg, #FB72FF, #a83fb8)", borderRadius: 16, padding: "14px 10px", textAlign: "center", border: "2px solid #1e1e1e", boxShadow: "0 4px 0 #1e1e1e", color: "#fff", animation: "waffles-v2-lvl-pop .5s cubic-bezier(0.34,1.56,0.64,1) .75s both" }}>
             <AssetWell size={58} accent="var(--frame)" radius={14} style={{ margin: "0 auto 6px", background: "rgba(30, 30, 30, 0.16)" }}>

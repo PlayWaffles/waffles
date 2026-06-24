@@ -19,6 +19,7 @@ import { sendToUser, sendBatch } from "@/lib/notifications";
 import { env } from "@/lib/env";
 import {
   calculatePrizeDistribution,
+  consolationSyrup,
   formatDistribution,
   WINNERS_COUNT,
   type PlayerEntry,
@@ -219,6 +220,24 @@ export async function rankGame(gameId: string): Promise<RankResult> {
       await adjustTickets(w.userId, TOURNAMENT_WINNER_SYRUP_BONUS, TicketLedgerReason.TOURNAMENT_REWARD, { refId: gameId, note: "tournament winner bonus" });
     } catch (e) {
       console.error(`[Lifecycle] winner syrup bonus failed for ${w.userId}:`, e);
+    }
+  }
+
+  // Off-chain Syrup consolation for the top half of the field who missed the
+  // cash podium — manufactures a "win" so most entrants leave with something
+  // (insight: a top-N-of-30 cash schedule means ~88% never cash; top-half
+  // finishers repeat ~2×). Cash winners (prize > 0) are excluded — they're
+  // covered by their prize + the winner bonus above. Fresh-ranking path only
+  // (the already-ranked early return never reaches here), so it grants exactly
+  // once per game. Best-effort: a Syrup hiccup must never fail settlement.
+  const fieldSize = distribution.allocations.length;
+  for (const alloc of distribution.allocations) {
+    const syrup = consolationSyrup(alloc.rank, fieldSize, alloc.prize > 0);
+    if (syrup <= 0) continue;
+    try {
+      await adjustTickets(alloc.userId, syrup, TicketLedgerReason.TOURNAMENT_REWARD, { refId: gameId, note: "top-half consolation" });
+    } catch (e) {
+      console.error(`[Lifecycle] consolation syrup failed for ${alloc.userId}:`, e);
     }
   }
 

@@ -99,7 +99,10 @@ async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
 
 export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000; // hourly
 const TICKETS_LEAD_MS = 5 * 60 * 1000; // sales open 5m before the hour
-export const TOURNAMENT_MAX_PLAYERS = 50;
+// Smaller fields → higher win rate. A top-N-of-50 schedule means most players
+// never cash; a tighter field (plus the top-half Syrup consolation at
+// settlement) means ~half the field leaves with a reward. Tunable.
+export const TOURNAMENT_MAX_PLAYERS = 20;
 
 // Entry pricing. The contract requires the entry payment to EXACTLY equal the
 // game's on-chain price, so there is ONE flat price for everyone — the game

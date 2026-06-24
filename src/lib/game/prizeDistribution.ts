@@ -209,6 +209,28 @@ export function topWinnerShare(paidEntrants: number): number {
   return normalizeShares(schedule)[0] ?? 1;
 }
 
+/** Flat off-chain Syrup consolation paid to a top-half finisher who missed the
+ *  cash podium. Tunable. */
+export const TOURNAMENT_CONSOLATION_SYRUP = 20;
+
+/** Off-chain Syrup consolation for non-cash finishers who still landed in the
+ *  top half of the field — "manufactures a win" so most entrants leave with
+ *  something (insight: a top-N-of-30 cash schedule means ~88% never cash, yet
+ *  top-half finishers repeat ~2×). Cash winners are excluded — they already get
+ *  their prize plus the winner Syrup bonus. Returns 0 for the bottom half, cash
+ *  winners, and trivially small fields (no real field to place within).
+ *
+ *  Pure + deterministic from (rank, fieldSize) so the settlement grant
+ *  (`rankGame`) and the client results screen stay in exact sync. */
+export function consolationSyrup(
+  rank: number,
+  fieldSize: number,
+  hasCashPrize: boolean,
+): number {
+  if (hasCashPrize || fieldSize < 3) return 0;
+  return rank <= Math.ceil(fieldSize / 2) ? TOURNAMENT_CONSOLATION_SYRUP : 0;
+}
+
 /** How many finishers get paid for a field of this size — the live bracket's
  *  schedule length, capped at the field. Lets the lobby say "Top N split the
  *  pool" / "Winner takes all" using the same bracket the settlement uses,

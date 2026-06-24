@@ -108,15 +108,22 @@ the Day-7 jackpot a tournament shot — and it bypasses the broken purchase flow
   `purchaseSource: FREE` and decrement (no on-chain purchase → dodges item 1).
 - `daily-reward.tsx` — render Day-7 as "🎟️ Free tournament seat".
 
-### 4. Manufacture wins in real games — widen the payout
+### 4. Manufacture wins in real games — widen the payout ✅ (done this session)
 **Insight:** Top-3-of-30 means 88% never win; top-10 finishers repeat ~20% vs 9%.
 
-**In code:**
-- Keep real **USDC to the podium** (don't bloat merkle), add an **off-chain Syrup
-  consolation** for the top 50%: in the ranking job (`cron.ts` → `tournamentStandings`),
-  after ranks are set, `adjustTickets` for above-median entries (excl. podium).
-- Smaller fields: lower `TOURNAMENT_MAX_PLAYERS` in `auto-schedule.ts` and/or spin
-  up multiple concurrent smaller games per hour.
+**In code (shipped):**
+- `prizeDistribution.ts` — `consolationSyrup(rank, fieldSize, hasCashPrize)` +
+  `TOURNAMENT_CONSOLATION_SYRUP` (20). Pure/deterministic so settlement and the
+  client results screen stay in sync.
+- `lifecycle.ts:rankGame` — after the cash podium + winner bonus, grants the
+  consolation Syrup (`adjustTickets … TOURNAMENT_REWARD`, note "top-half
+  consolation") to every non-cash finisher in the top half. Cash stays
+  **USDC-only to the podium** (merkle untouched). Fresh-ranking path → once per
+  game; best-effort.
+- Smaller fields: `TOURNAMENT_MAX_PLAYERS` (tournamentGames.ts) and
+  `DEFAULT_MAX_PLAYERS` (auto-schedule.ts) 50 → 20.
+- `results.tsx` — folds the consolation into the Syrup tile when settled (label
+  flips to "TOP-HALF BONUS"), so a top-half finish reads as a win.
 
 ### 5. Campaign as tournament practice + skill-edge
 **Insight:** Doing both → 52% return; World Cup is the active track. Make the
