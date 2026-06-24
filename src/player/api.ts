@@ -135,6 +135,7 @@ export function getTournament(): Promise<{
   entryFee: number;
   standardFee: number;
   firstEntry: boolean;
+  skillBonus: number;
   round: TournamentRound;
 } | null> {
   return callPlayerApi("getTournament");

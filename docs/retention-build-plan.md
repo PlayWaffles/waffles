@@ -125,16 +125,25 @@ the Day-7 jackpot a tournament shot — and it bypasses the broken purchase flow
 - `results.tsx` — folds the consolation into the Syrup tile when settled (label
   flips to "TOP-HALF BONUS"), so a top-half finish reads as a win.
 
-### 5. Campaign as tournament practice + skill-edge
+### 5. Campaign as tournament practice + skill-edge ✅ (done this session)
 **Insight:** Doing both → 52% return; World Cup is the active track. Make the
 campaign matter *to* the tournament.
 
-**In code:**
-- Skill-edge: in `enterTournament`, read `LevelProgress.wc` and grant a starting
-  score cushion (write onto `GameEntry`) or auto-grant a `PowerUp` (model +
-  `consumePowerUp` exist). Rewards depth AND helps manufacture wins.
-- Practice routing: after a result (`results.tsx`), deep-link into the WC campaign
-  for the same theme ("practice next round's category").
+**In code (shipped):**
+- Migration `20260624040000_skill_edge_bonus_score` — `GameEntry.bonusScore`
+  (SmallInt, default 0).
+- `scoring.ts` — `tournamentSkillBonus(completedLevels)` = `min(levels*15, 200)`
+  (pure, shared client+server; capped under one fast question so it tips close
+  finishes, not steamrolls).
+- `tournamentGames.ts` — `playerSkillBonus(userId)` reads `LevelProgress.WORLD_CUP`
+  (level-1 = completed). `enterTournamentOnChain` folds it into the new entry
+  (`bonusScore` + `score = bonusScore`, so the head start shows on the live
+  board immediately). `submitTournamentAnswers` rebuilds `score = round +
+  bonusScore`, so ranking/standings/index paths stay unchanged.
+- `playerApi.getTournament` returns `skillBonus`; the Home entry sheet
+  (`home.tsx`) shows "World Cup head start — you start +N from your campaign."
+- Practice loop: settled `results.tsx` adds "Practice for next round — climb the
+  World Cup" → routes into the WC campaign (`levelTrack: "world-cup"` → `levels`).
 
 ### 6. Wire the re-engagement notifications (exist, never fire)
 **Insight:** `retention.comeback` + `retention.streakReminder` exist in
