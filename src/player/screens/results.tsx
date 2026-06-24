@@ -379,6 +379,21 @@ export const ResultsScreen = () => {
         )
       ) : (
         <div className="bottom-bar">
+          {/* Practice loop — route into the World Cup campaign to sharpen up for
+              next round. Doing both campaign + tournament is the strongest repeat
+              signal, and campaign depth feeds the entry skill-edge (bonusScore). */}
+          <button
+            type="button"
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.ResultsDoneClicked, { screen: "results", settled: true, source: "practice_campaign", game_id: proto.tournamentGameId, rank });
+              proto.update({ levelTrack: "world-cup" });
+              proto.goto("levels");
+            }}
+            style={{ width: "100%", marginBottom: 8, background: "rgba(54,209,124,0.10)", border: "1px solid rgba(54,209,124,.3)", borderRadius: 12, padding: "10px 14px", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, cursor: "pointer", color: "var(--leaf)", fontWeight: 800, fontSize: 13 }}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" /></svg>
+            Practice for next round — climb the World Cup
+          </button>
           <div className="cta-row">
             <button
               className="cta icon-btn"

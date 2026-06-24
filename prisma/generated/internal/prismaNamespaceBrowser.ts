@@ -321,6 +321,7 @@ export const GameEntryScalarFieldEnum = {
   freeIssuedById: 'freeIssuedById',
   freeIssueNote: 'freeIssueNote',
   score: 'score',
+  bonusScore: 'bonusScore',
   answered: 'answered',
   answers: 'answers',
   rank: 'rank',

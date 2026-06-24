@@ -29,6 +29,7 @@ export type AggregateGameEntry = {
 export type GameEntryAvgAggregateOutputType = {
   paidAmount: number | null
   score: number | null
+  bonusScore: number | null
   answered: number | null
   rank: number | null
   prize: number | null
@@ -37,6 +38,7 @@ export type GameEntryAvgAggregateOutputType = {
 export type GameEntrySumAggregateOutputType = {
   paidAmount: number | null
   score: number | null
+  bonusScore: number | null
   answered: number | null
   rank: number | null
   prize: number | null
@@ -54,6 +56,7 @@ export type GameEntryMinAggregateOutputType = {
   freeIssuedById: string | null
   freeIssueNote: string | null
   score: number | null
+  bonusScore: number | null
   answered: number | null
   rank: number | null
   prize: number | null
@@ -76,6 +79,7 @@ export type GameEntryMaxAggregateOutputType = {
   freeIssuedById: string | null
   freeIssueNote: string | null
   score: number | null
+  bonusScore: number | null
   answered: number | null
   rank: number | null
   prize: number | null
@@ -98,6 +102,7 @@ export type GameEntryCountAggregateOutputType = {
   freeIssuedById: number
   freeIssueNote: number
   score: number
+  bonusScore: number
   answered: number
   answers: number
   rank: number
@@ -115,6 +120,7 @@ export type GameEntryCountAggregateOutputType = {
 export type GameEntryAvgAggregateInputType = {
   paidAmount?: true
   score?: true
+  bonusScore?: true
   answered?: true
   rank?: true
   prize?: true
@@ -123,6 +129,7 @@ export type GameEntryAvgAggregateInputType = {
 export type GameEntrySumAggregateInputType = {
   paidAmount?: true
   score?: true
+  bonusScore?: true
   answered?: true
   rank?: true
   prize?: true
@@ -140,6 +147,7 @@ export type GameEntryMinAggregateInputType = {
   freeIssuedById?: true
   freeIssueNote?: true
   score?: true
+  bonusScore?: true
   answered?: true
   rank?: true
   prize?: true
@@ -162,6 +170,7 @@ export type GameEntryMaxAggregateInputType = {
   freeIssuedById?: true
   freeIssueNote?: true
   score?: true
+  bonusScore?: true
   answered?: true
   rank?: true
   prize?: true
@@ -184,6 +193,7 @@ export type GameEntryCountAggregateInputType = {
   freeIssuedById?: true
   freeIssueNote?: true
   score?: true
+  bonusScore?: true
   answered?: true
   answers?: true
   rank?: true
@@ -295,6 +305,7 @@ export type GameEntryGroupByOutputType = {
   freeIssuedById: string | null
   freeIssueNote: string | null
   score: number
+  bonusScore: number
   answered: number
   answers: runtime.JsonValue
   rank: number | null
@@ -342,6 +353,7 @@ export type GameEntryWhereInput = {
   freeIssuedById?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   freeIssueNote?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   score?: Prisma.IntFilter<"GameEntry"> | number
+  bonusScore?: Prisma.IntFilter<"GameEntry"> | number
   answered?: Prisma.IntFilter<"GameEntry"> | number
   answers?: Prisma.JsonFilter<"GameEntry">
   rank?: Prisma.IntNullableFilter<"GameEntry"> | number | null
@@ -368,6 +380,7 @@ export type GameEntryOrderByWithRelationInput = {
   freeIssuedById?: Prisma.SortOrderInput | Prisma.SortOrder
   freeIssueNote?: Prisma.SortOrderInput | Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   answers?: Prisma.SortOrder
   rank?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -398,6 +411,7 @@ export type GameEntryWhereUniqueInput = Prisma.AtLeast<{
   freeIssuedById?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   freeIssueNote?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   score?: Prisma.IntFilter<"GameEntry"> | number
+  bonusScore?: Prisma.IntFilter<"GameEntry"> | number
   answered?: Prisma.IntFilter<"GameEntry"> | number
   answers?: Prisma.JsonFilter<"GameEntry">
   rank?: Prisma.IntNullableFilter<"GameEntry"> | number | null
@@ -424,6 +438,7 @@ export type GameEntryOrderByWithAggregationInput = {
   freeIssuedById?: Prisma.SortOrderInput | Prisma.SortOrder
   freeIssueNote?: Prisma.SortOrderInput | Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   answers?: Prisma.SortOrder
   rank?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -456,6 +471,7 @@ export type GameEntryScalarWhereWithAggregatesInput = {
   freeIssuedById?: Prisma.StringNullableWithAggregatesFilter<"GameEntry"> | string | null
   freeIssueNote?: Prisma.StringNullableWithAggregatesFilter<"GameEntry"> | string | null
   score?: Prisma.IntWithAggregatesFilter<"GameEntry"> | number
+  bonusScore?: Prisma.IntWithAggregatesFilter<"GameEntry"> | number
   answered?: Prisma.IntWithAggregatesFilter<"GameEntry"> | number
   answers?: Prisma.JsonWithAggregatesFilter<"GameEntry">
   rank?: Prisma.IntNullableWithAggregatesFilter<"GameEntry"> | number | null
@@ -478,6 +494,7 @@ export type GameEntryCreateInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -504,6 +521,7 @@ export type GameEntryUncheckedCreateInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -526,6 +544,7 @@ export type GameEntryUpdateInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -552,6 +571,7 @@ export type GameEntryUncheckedUpdateInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -576,6 +596,7 @@ export type GameEntryCreateManyInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -598,6 +619,7 @@ export type GameEntryUpdateManyMutationInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -622,6 +644,7 @@ export type GameEntryUncheckedUpdateManyInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -661,6 +684,7 @@ export type GameEntryCountOrderByAggregateInput = {
   freeIssuedById?: Prisma.SortOrder
   freeIssueNote?: Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   answers?: Prisma.SortOrder
   rank?: Prisma.SortOrder
@@ -676,6 +700,7 @@ export type GameEntryCountOrderByAggregateInput = {
 export type GameEntryAvgOrderByAggregateInput = {
   paidAmount?: Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   prize?: Prisma.SortOrder
@@ -693,6 +718,7 @@ export type GameEntryMaxOrderByAggregateInput = {
   freeIssuedById?: Prisma.SortOrder
   freeIssueNote?: Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   prize?: Prisma.SortOrder
@@ -715,6 +741,7 @@ export type GameEntryMinOrderByAggregateInput = {
   freeIssuedById?: Prisma.SortOrder
   freeIssueNote?: Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   prize?: Prisma.SortOrder
@@ -728,6 +755,7 @@ export type GameEntryMinOrderByAggregateInput = {
 export type GameEntrySumOrderByAggregateInput = {
   paidAmount?: Prisma.SortOrder
   score?: Prisma.SortOrder
+  bonusScore?: Prisma.SortOrder
   answered?: Prisma.SortOrder
   rank?: Prisma.SortOrder
   prize?: Prisma.SortOrder
@@ -839,6 +867,7 @@ export type GameEntryCreateWithoutUserInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -863,6 +892,7 @@ export type GameEntryUncheckedCreateWithoutUserInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -916,6 +946,7 @@ export type GameEntryScalarWhereInput = {
   freeIssuedById?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   freeIssueNote?: Prisma.StringNullableFilter<"GameEntry"> | string | null
   score?: Prisma.IntFilter<"GameEntry"> | number
+  bonusScore?: Prisma.IntFilter<"GameEntry"> | number
   answered?: Prisma.IntFilter<"GameEntry"> | number
   answers?: Prisma.JsonFilter<"GameEntry">
   rank?: Prisma.IntNullableFilter<"GameEntry"> | number | null
@@ -938,6 +969,7 @@ export type GameEntryCreateWithoutGameInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -962,6 +994,7 @@ export type GameEntryUncheckedCreateWithoutGameInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -1011,6 +1044,7 @@ export type GameEntryCreateManyUserInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -1033,6 +1067,7 @@ export type GameEntryUpdateWithoutUserInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1057,6 +1092,7 @@ export type GameEntryUncheckedUpdateWithoutUserInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1080,6 +1116,7 @@ export type GameEntryUncheckedUpdateManyWithoutUserInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1103,6 +1140,7 @@ export type GameEntryCreateManyGameInput = {
   freeIssuedById?: string | null
   freeIssueNote?: string | null
   score?: number
+  bonusScore?: number
   answered?: number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: number | null
@@ -1125,6 +1163,7 @@ export type GameEntryUpdateWithoutGameInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1149,6 +1188,7 @@ export type GameEntryUncheckedUpdateWithoutGameInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1172,6 +1212,7 @@ export type GameEntryUncheckedUpdateManyWithoutGameInput = {
   freeIssuedById?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   freeIssueNote?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   score?: Prisma.IntFieldUpdateOperationsInput | number
+  bonusScore?: Prisma.IntFieldUpdateOperationsInput | number
   answered?: Prisma.IntFieldUpdateOperationsInput | number
   answers?: Prisma.JsonNullValueInput | runtime.InputJsonValue
   rank?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1198,6 +1239,7 @@ export type GameEntrySelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   freeIssuedById?: boolean
   freeIssueNote?: boolean
   score?: boolean
+  bonusScore?: boolean
   answered?: boolean
   answers?: boolean
   rank?: boolean
@@ -1224,6 +1266,7 @@ export type GameEntrySelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   freeIssuedById?: boolean
   freeIssueNote?: boolean
   score?: boolean
+  bonusScore?: boolean
   answered?: boolean
   answers?: boolean
   rank?: boolean
@@ -1250,6 +1293,7 @@ export type GameEntrySelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   freeIssuedById?: boolean
   freeIssueNote?: boolean
   score?: boolean
+  bonusScore?: boolean
   answered?: boolean
   answers?: boolean
   rank?: boolean
@@ -1276,6 +1320,7 @@ export type GameEntrySelectScalar = {
   freeIssuedById?: boolean
   freeIssueNote?: boolean
   score?: boolean
+  bonusScore?: boolean
   answered?: boolean
   answers?: boolean
   rank?: boolean
@@ -1288,7 +1333,7 @@ export type GameEntrySelectScalar = {
   updatedAt?: boolean
 }
 
-export type GameEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameId" | "userId" | "txHash" | "payerWallet" | "paidAmount" | "paidAt" | "purchaseSource" | "freeIssuedById" | "freeIssueNote" | "score" | "answered" | "answers" | "rank" | "prize" | "claimedAt" | "merkleProof" | "merkleAmount" | "leftAt" | "createdAt" | "updatedAt", ExtArgs["result"]["gameEntry"]>
+export type GameEntryOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameId" | "userId" | "txHash" | "payerWallet" | "paidAmount" | "paidAt" | "purchaseSource" | "freeIssuedById" | "freeIssueNote" | "score" | "bonusScore" | "answered" | "answers" | "rank" | "prize" | "claimedAt" | "merkleProof" | "merkleAmount" | "leftAt" | "createdAt" | "updatedAt", ExtArgs["result"]["gameEntry"]>
 export type GameEntryInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   game?: boolean | Prisma.GameDefaultArgs<ExtArgs>
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
@@ -1320,6 +1365,7 @@ export type $GameEntryPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     freeIssuedById: string | null
     freeIssueNote: string | null
     score: number
+    bonusScore: number
     answered: number
     answers: runtime.JsonValue
     rank: number | null
@@ -1766,6 +1812,7 @@ export interface GameEntryFieldRefs {
   readonly freeIssuedById: Prisma.FieldRef<"GameEntry", 'String'>
   readonly freeIssueNote: Prisma.FieldRef<"GameEntry", 'String'>
   readonly score: Prisma.FieldRef<"GameEntry", 'Int'>
+  readonly bonusScore: Prisma.FieldRef<"GameEntry", 'Int'>
   readonly answered: Prisma.FieldRef<"GameEntry", 'Int'>
   readonly answers: Prisma.FieldRef<"GameEntry", 'Json'>
   readonly rank: Prisma.FieldRef<"GameEntry", 'Int'>

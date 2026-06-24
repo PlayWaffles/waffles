@@ -128,6 +128,19 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         </div>
       )}
 
+      {/* Skill-edge: campaign depth → a starting score cushion. Shown only when
+          earned, so it reads as a reward for climbing the World Cup track. */}
+      {fee && fee.skillBonus > 0 && (
+        <div style={{ display: "flex", alignItems: "center", gap: 10, background: "rgba(54,209,124,0.10)", border: "1px solid rgba(54,209,124,.35)", borderRadius: 12, padding: "9px 12px", marginBottom: error ? 8 : 14 }}>
+          <span style={{ display: "inline-flex", flexShrink: 0, color: "var(--leaf)" }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8Z" fill="currentColor" /></svg>
+          </span>
+          <div style={{ flex: 1, minWidth: 0, fontSize: 12, fontWeight: 700, color: "var(--ink-soft)" }}>
+            World Cup head start — you start <strong style={{ color: "var(--leaf)" }}>+{fee.skillBonus}</strong> from your campaign progress
+          </div>
+        </div>
+      )}
+
       {error && (
         <div role="alert" style={{ fontSize: 12, fontWeight: 700, color: "var(--danger-soft, #FF6B6B)", textAlign: "center", marginBottom: 12 }}>
           {error}
