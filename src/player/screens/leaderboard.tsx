@@ -3,38 +3,72 @@
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
 import { useResilientAction } from "../useResilientAction";
-import { ASSETS, BackButton, InfoButton, Phone, PixelImg, resolveAvatar, TabBar } from "../shared";
-import { listPreviousGames, loadAllTimeLeaderboard, loadCurrentTournamentBoard, loadTournamentBoard } from "@/player/api";
+import { ASSETS, InfoButton, Phone, PixelImg, resolveAvatar, TabBar } from "../shared";
+import { listPreviousGames, loadAllTimeLeaderboard, loadCurrentTournamentBoard, loadLevelsLeaderboard, loadTournamentBoard } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
+// Two boards under one screen: TOURNAMENT (paid on-chain games) and LEVELS (free
+// solo XP progression). Tournament has three sub-tabs — This game / Top earners
+// (all-time, ranked by winnings) / Past games — and shows each player's USDT
+// winnings. Levels ranks everyone by total XP.
+type Mode = "tournament" | "levels";
 type Tab = "current" | "alltime" | "past";
 
-type Player = { rank: number; name: string; pts: number; avatar: string; you?: boolean };
+type Player = {
+  rank: number;
+  name: string;
+  avatar: string;
+  you?: boolean;
+  // Tournament rows.
+  score?: number;
+  winnings?: number; // USDT (payment-token units); shown when > 0
+  // Levels rows.
+  level?: number;
+  xp?: number;
+};
+
+const fmtUsd = (n: number) => `$${n.toFixed(2)}`;
 
 const LeaderRow = ({ p }: { p: Player }) => {
   // Top-3 ranks get the brand maple gold, everyone else uses the muted-ink ramp.
   const rankColor = p.rank === 1 ? "var(--maple-500)" : p.rank === 2 ? "#bfc7d0" : p.rank === 3 ? "#cd7f32" : "var(--ink-faint)";
-  const ptsColor = p.you ? "var(--maple-500)" : "var(--ink)";
+  const valueColor = p.you ? "var(--maple-500)" : "var(--ink)";
+  const isLevels = p.level != null;
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "3px 16px", color: "var(--ink)" }}>
       <div style={{ width: 22, fontFamily: "var(--font-display)", fontSize: 13, color: rankColor, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{p.rank}</div>
       <PixelImg src={p.avatar} size={40} alt="" style={{ borderRadius: 99, objectFit: "cover" }} />
       <div style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 700, color: "var(--ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
-      <div style={{ display: "flex", alignItems: "center", gap: 5, flexShrink: 0 }}>
-        <PixelImg src={ASSETS.trophy} size={24} alt="" />
-        <span style={{ fontFamily: "var(--font-display)", fontSize: 13, color: ptsColor, fontVariantNumeric: "tabular-nums", minWidth: 36, textAlign: "right" }}>{p.pts.toLocaleString()}</span>
-      </div>
+      {isLevels ? (
+        <div style={{ display: "flex", alignItems: "center", gap: 7, flexShrink: 0 }}>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 11, color: "var(--maple-500)", background: "rgba(255,210,77,.14)", border: "1px solid rgba(255,210,77,.3)", borderRadius: 99, padding: "2px 8px" }}>Lv {p.level}</span>
+          <span style={{ fontFamily: "var(--font-display)", fontSize: 13, color: valueColor, fontVariantNumeric: "tabular-nums", minWidth: 52, textAlign: "right" }}>{(p.xp ?? 0).toLocaleString()} XP</span>
+        </div>
+      ) : (
+        <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+          {p.winnings != null && p.winnings > 0 && (
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "var(--leaf)", background: "rgba(20,185,133,.14)", border: "1px solid rgba(20,185,133,.3)", borderRadius: 99, padding: "2px 8px", fontVariantNumeric: "tabular-nums" }}>{fmtUsd(p.winnings)}</span>
+          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+            <PixelImg src={ASSETS.trophy} size={24} alt="" />
+            <span style={{ fontFamily: "var(--font-display)", fontSize: 13, color: valueColor, fontVariantNumeric: "tabular-nums", minWidth: 36, textAlign: "right" }}>{(p.score ?? 0).toLocaleString()}</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
 export const LeaderboardScreen = () => {
   const proto = useProto();
+  const [mode, setMode] = useState<Mode>("tournament");
   const [tab, setTab] = useState<Tab>("current");
   const [pickedGameId, setPickedGameId] = useState<string | null>(null);
+  const isLevels = mode === "levels";
 
   const { data: currentBoard } = useResilientAction(() => loadCurrentTournamentBoard(), []);
   const { data: allTimeBoard } = useResilientAction(() => loadAllTimeLeaderboard(), []);
+  const { data: levelsBoard } = useResilientAction(() => loadLevelsLeaderboard(), []);
   const { data: pastGames } = useResilientAction(() => listPreviousGames(), []);
   // The picker defaults to the most recent ended game (derived, not stored, so we
   // never setState in an effect just to pick a default).
@@ -44,34 +78,54 @@ export const LeaderboardScreen = () => {
     [selectedGameId],
   );
 
-  const board = tab === "current" ? currentBoard : tab === "alltime" ? allTimeBoard : pastBoard;
+  const tBoard = tab === "current" ? currentBoard : tab === "alltime" ? allTimeBoard : pastBoard;
 
   const avatarFor = (s: { userId: string; you: boolean }) =>
     resolveAvatar(s.you ? proto.avatarId ?? null : null, s.userId);
-  const leaders: Player[] = board
-    ? board.standings.map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, pts: s.score, you: s.you, avatar: avatarFor(s) }))
-    : [];
-  const you: Player | null = board?.you
-    ? { rank: board.you.rank, name: proto.username || board.you.name, pts: board.you.score, you: true, avatar: avatarFor(board.you) }
-    : null;
+
+  const leaders: Player[] = isLevels
+    ? (levelsBoard?.standings ?? []).map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, you: s.you, avatar: avatarFor(s), level: s.level, xp: s.xp }))
+    : (tBoard?.standings ?? []).map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, you: s.you, avatar: avatarFor(s), score: s.score, winnings: s.prize }));
+
+  const you: Player | null = isLevels
+    ? (levelsBoard?.you ? { rank: levelsBoard.you.rank, name: proto.username || levelsBoard.you.name, you: true, avatar: avatarFor(levelsBoard.you), level: levelsBoard.you.level, xp: levelsBoard.you.xp } : null)
+    : (tBoard?.you ? { rank: tBoard.you.rank, name: proto.username || tBoard.you.name, you: true, avatar: avatarFor(tBoard.you), score: tBoard.you.score, winnings: tBoard.you.prize } : null);
+
+  const fieldSize = (isLevels ? levelsBoard?.fieldSize : tBoard?.fieldSize) ?? leaders.length;
+  const hasBoard = Boolean(isLevels ? levelsBoard : tBoard);
 
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
       screen: "leaderboard",
-      leaderboard_tab: tab,
-      field_size: board?.fieldSize ?? leaders.length,
+      leaderboard_tab: isLevels ? "levels" : tab,
+      field_size: fieldSize,
       rank: you?.rank ?? 0,
-      score_after: you?.pts ?? 0,
-      has_live_board: Boolean(board),
+      score_after: (isLevels ? you?.xp : you?.score) ?? 0,
+      has_live_board: hasBoard,
     });
-  }, [tab, board, leaders.length, you?.rank, you?.pts]);
+  }, [isLevels, tab, fieldSize, you?.rank, you?.xp, you?.score, hasBoard]);
 
-  const heading =
-    tab === "current"
+  const heading = isLevels
+    ? "Top by XP"
+    : tab === "current"
       ? "This game"
       : tab === "alltime"
-        ? "All-time scores"
+        ? "Top earners"
         : pastGames?.find((g) => g.id === selectedGameId)?.title ?? "Past games";
+
+  const metricLabel = isLevels ? "Level" : tab === "alltime" ? "Won" : "Score";
+  const metricInfo = isLevels
+    ? "Players ranked by total XP. You earn XP for every question you answer — in both levels and live tournaments — and your level is your XP milestone."
+    : tab === "alltime"
+      ? "Top earners — ranked by total winnings (USDT) across every tournament you've cashed in."
+      : "Your score is the points you earned answering questions — faster correct answers score more. Winnings (USDT) show beside the score once a game settles.";
+  const emptyCopy = isLevels
+    ? "Play levels to earn XP and climb the ranks."
+    : tab === "current"
+      ? "This game's board fills up as players answer."
+      : tab === "alltime"
+        ? "Win a tournament to land on the top earners board."
+        : "Pick a game above to see its final standings.";
 
   return (
     <Phone statusDark>
@@ -89,10 +143,6 @@ export const LeaderboardScreen = () => {
         }}
       />
 
-      <div style={{ position: "absolute", top: 50, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "var(--ink)", zIndex: 2 }}>
-        <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
-      </div>
-
       <div style={{ position: "absolute", top: 96, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
         <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
           <PixelImg src={ASSETS.trophy} size={72} alt="" />
@@ -102,29 +152,56 @@ export const LeaderboardScreen = () => {
       </div>
 
       <div style={{ position: "absolute", top: 222, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 12px" }}>
-          {[
-            { id: "current" as const, label: "This game" },
-            { id: "alltime" as const, label: "All-time" },
-            { id: "past" as const, label: "Past games" },
-          ].map((t) => (
-            <button
-              key={t.id}
-              onClick={() => {
-                if (tab !== t.id) {
-                  trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, { screen: "leaderboard", previous_tab: tab, leaderboard_tab: t.id });
-                }
-                setTab(t.id);
-              }}
-              style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
-            >
-              {t.label}
-            </button>
-          ))}
+        {/* Mode toggle — Tournament (paid games) vs Levels (XP progression). */}
+        <div style={{ display: "flex", gap: 6, padding: "10px 12px" }}>
+          {([
+            { id: "tournament" as const, label: "Tournament" },
+            { id: "levels" as const, label: "Levels" },
+          ]).map((m) => {
+            const active = mode === m.id;
+            return (
+              <button
+                key={m.id}
+                onClick={() => {
+                  if (mode !== m.id) {
+                    trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, { screen: "leaderboard", previous_tab: isLevels ? "levels" : tab, leaderboard_tab: m.id });
+                  }
+                  setMode(m.id);
+                }}
+                style={{ flex: 1, padding: "9px 0", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", background: active ? "var(--maple-500)" : "var(--surface-2)", color: active ? "var(--frame)" : "var(--ink-soft)", border: active ? "1.5px solid var(--frame)" : "1px solid rgba(253,251,246,.08)" }}
+              >
+                {m.label}
+              </button>
+            );
+          })}
         </div>
 
+        {/* Tournament sub-tabs. */}
+        {!isLevels && (
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 12px" }}>
+            {[
+              { id: "current" as const, label: "This game" },
+              { id: "alltime" as const, label: "Top earners" },
+              { id: "past" as const, label: "Past games" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  if (tab !== t.id) {
+                    trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, { screen: "leaderboard", previous_tab: tab, leaderboard_tab: t.id });
+                  }
+                  setTab(t.id);
+                }}
+                style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Past-games picker — horizontal scroll of ended games. */}
-        {tab === "past" && pastGames && pastGames.length > 0 && (
+        {!isLevels && tab === "past" && pastGames && pastGames.length > 0 && (
           <div style={{ display: "flex", gap: 6, padding: "10px 12px 6px", overflowX: "auto", scrollbarWidth: "none" }}>
             {pastGames.map((g) => {
               const active = g.id === selectedGameId;
@@ -146,7 +223,7 @@ export const LeaderboardScreen = () => {
             <PixelImg src={ASSETS.trophy} size={64} alt="" style={{ opacity: 0.85, marginBottom: 16 }} />
             <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", letterSpacing: 0.4 }}>No scores yet</div>
             <div style={{ fontSize: 13, fontWeight: 600, color: "var(--ink-soft)", marginTop: 8, lineHeight: 1.45, maxWidth: 260 }}>
-              {tab === "current" ? "This game's board fills up as players answer." : tab === "alltime" ? "Play a tournament to land on the all-time board." : "Pick a game above to see its final standings."}
+              {emptyCopy}
             </div>
           </div>
         ) : (
@@ -154,8 +231,8 @@ export const LeaderboardScreen = () => {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 22px 8px", color: "var(--ink-soft)" }}>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" }}>Position</span>
               <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", display: "flex", alignItems: "center", gap: 5 }}>
-                Score
-                <InfoButton title="Score" text="Your score is the points you earned answering questions in this tournament — faster correct answers score more. The all-time board sums your score across every game you've played." size={18} />
+                {metricLabel}
+                <InfoButton title={metricLabel} text={metricInfo} size={18} />
               </span>
             </div>
             <div style={{ flex: 1, overflow: "auto", scrollbarWidth: "none" }}>

@@ -397,7 +397,7 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
     const map: Record<string, string> = {
       home: "home",
       levels: "levels",
-      compete: "pass",
+      compete: "leaderboard",
       shop: "shop",
       me: "profile",
     };

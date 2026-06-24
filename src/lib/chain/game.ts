@@ -69,6 +69,13 @@ export async function createGameOnChain(
     PAYMENT_TOKEN_DECIMALS,
   );
 
+  // Balance sampled right before the failing send (declared out here so the
+  // catch can read it), so an "insufficient funds" message reports what that
+  // transaction actually saw — not a value re-read after the failure, which can
+  // race a just-landed funding tx and print a healthy balance next to a
+  // gas-failure (misleading).
+  let balanceAtSend: bigint | null = null;
+
   try {
     const request = withBuilderCodeDataSuffix({
       address: contractAddress,
@@ -80,6 +87,9 @@ export async function createGameOnChain(
     let lastError: unknown = null;
     for (let attempt = 1; attempt <= CREATE_GAME_RETRY_LIMIT; attempt += 1) {
       try {
+        balanceAtSend = await publicClient.getBalance({
+          address: walletClient.account.address,
+        });
         const hash = await walletClient.writeContract({
           ...request,
           gas: CREATE_GAME_GAS_LIMIT,
@@ -99,16 +109,13 @@ export async function createGameOnChain(
     const message = error instanceof Error ? error.message : String(error);
 
     if (/insufficient funds/i.test(message)) {
-      const balance = await publicClient.getBalance({
-        address: walletClient.account.address,
-      });
       const chainName = walletClient.chain.name;
       const nativeSymbol = walletClient.chain.nativeCurrency.symbol;
-      const formattedBalance = formatEther(balance);
+      const formattedBalance = formatEther(balanceAtSend ?? 0n);
       const shortAddress = `${walletClient.account.address.slice(0, 6)}...${walletClient.account.address.slice(-4)}`;
 
       throw new Error(
-        `${platform} operator wallet ${shortAddress} has ${formattedBalance} ${nativeSymbol} on ${chainName}, so it cannot pay gas to create the game. Fund that wallet with testnet ${nativeSymbol} and try again.`,
+        `${platform} operator wallet ${shortAddress} had ${formattedBalance} ${nativeSymbol} on ${chainName} at the time of the attempt, so it could not pay gas to create the game. Fund that wallet with testnet ${nativeSymbol} and try again.`,
       );
     }
 

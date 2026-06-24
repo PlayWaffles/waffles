@@ -10,6 +10,7 @@ import type {
   TournamentEntrySource,
   TournamentGame,
 } from "@/lib/player/tournamentGames";
+import type { LevelBoard } from "@/lib/player/levelsLeaderboard";
 import type { RoundAnswer } from "@/lib/player/scoring";
 import type { DailyClaimResult, PurchaseResult, ShopCatalog } from "@/lib/player/economy";
 import type { PlayerAnnouncement } from "@/lib/player/announcements";
@@ -184,6 +185,10 @@ export function submitRookieCup(answers: RoundAnswer[]): Promise<rookieCupSvc.Ro
 
 export function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
   return callPlayerApi("loadAllTimeLeaderboard");
+}
+
+export function loadLevelsLeaderboard(): Promise<LevelBoard | null> {
+  return callPlayerApi("loadLevelsLeaderboard");
 }
 
 export function listPreviousGames(): Promise<tournamentSvc.PreviousGame[]> {

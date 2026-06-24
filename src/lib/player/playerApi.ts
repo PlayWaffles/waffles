@@ -14,6 +14,7 @@ import type { PlayerState, Track } from "@/lib/player/playerState";
 import { getLevelClientQuestions, recordLevelQuestionStats, themeLabel, type ClientRoundQuestion, type LevelTrack } from "@/lib/player/roundQuestions";
 import { topWinnerShare, winnersForField } from "@/lib/game/prizeDistribution";
 import * as tournamentSvc from "@/lib/player/tournamentGames";
+import * as levelsSvc from "@/lib/player/levelsLeaderboard";
 import type { EnterResult, TournamentBoard, TournamentClaim, TournamentClaimItem, TournamentEntrySource, TournamentGame, TournamentParticipantAvatar } from "@/lib/player/tournamentGames";
 import * as migrationSvc from "@/lib/player/migrationNotice";
 import * as wcTakeoverSvc from "@/lib/player/worldCupTakeover";
@@ -313,7 +314,10 @@ export async function loadTournamentClaims(): Promise<TournamentClaimItem[]> {
  *  the in-quiz presence strip. */
 export async function loadTournamentBoard(gameId: string): Promise<TournamentBoard> {
   const user = await getCurrentUser();
-  return tournamentSvc.tournamentStandings(gameId, { userId: user?.id, limit: 10 });
+  // Scope the lookup to the caller's platform — an arbitrary client gameId must
+  // not be able to surface a foreign-platform game's board (e.g. a Farcaster
+  // game inside the MiniPay app).
+  return tournamentSvc.tournamentStandings(gameId, { userId: user?.id, limit: 10, platform: user?.platform });
 }
 
 /** Standings for the platform's latest tournament game — leaderboard screen. */
@@ -347,11 +351,19 @@ export async function submitRookieCup(answers: RoundAnswer[]): Promise<rookieCup
   return rookieCupSvc.submitRookieCup(user.id, answers);
 }
 
-/** All-time tournament leaderboard (total score across all games) — V1 "All-time" tab. */
+/** All-time tournament leaderboard — now ranked by total winnings (USDT), i.e.
+ *  the "top earners" board. */
 export async function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
   const user = await getCurrentUser();
   if (!user) return null;
   return tournamentSvc.allTimeLeaderboard(user.platform, { userId: user.id, limit: 50 });
+}
+
+/** Levels leaderboard — players ranked by total XP for the caller's platform. */
+export async function loadLevelsLeaderboard(): Promise<levelsSvc.LevelBoard | null> {
+  const user = await getCurrentUser();
+  if (!user) return null;
+  return levelsSvc.levelsLeaderboard(user.platform, { userId: user.id, limit: 50 });
 }
 
 /** Ended games for the platform — V1 "Past games" tab picker. */

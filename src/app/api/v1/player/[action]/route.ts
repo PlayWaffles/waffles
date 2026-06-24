@@ -28,6 +28,7 @@ const handlers = {
   loadTournamentLeaderboard: playerApi.loadTournamentLeaderboard,
   loadCurrentTournamentBoard: playerApi.loadCurrentTournamentBoard,
   loadAllTimeLeaderboard: playerApi.loadAllTimeLeaderboard,
+  loadLevelsLeaderboard: playerApi.loadLevelsLeaderboard,
   listPreviousGames: playerApi.listPreviousGames,
   getRookieCup: playerApi.getRookieCup,
   submitRookieCup: playerApi.submitRookieCup,

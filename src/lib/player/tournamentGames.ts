@@ -671,11 +671,11 @@ const EMPTY_BOARD: TournamentBoard = { gameId: null, fieldSize: 0, standings: []
  *  once settled), with the field size and the caller's own row. */
 export async function tournamentStandings(
   gameId: string | null,
-  opts: { userId?: string; limit?: number } = {},
+  opts: { userId?: string; limit?: number; platform?: UserPlatform } = {},
 ): Promise<TournamentBoard> {
   if (!gameId) return EMPTY_BOARD;
   const [game, entries] = await Promise.all([
-    prisma.game.findUnique({ where: { id: gameId }, select: { rankedAt: true } }),
+    prisma.game.findUnique({ where: { id: gameId }, select: { rankedAt: true, platform: true, network: true } }),
     prisma.gameEntry.findMany({
       where: { gameId, paidAt: { not: null } },
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],
@@ -683,6 +683,15 @@ export async function tournamentStandings(
     }),
   ]);
   if (!game) return EMPTY_BOARD;
+  // Ownership guard: a board is only served to the platform/network it belongs
+  // to. Without this, an arbitrary `gameId` from the client (e.g. a stale or
+  // cross-platform id) would render a foreign game's standings — e.g. a
+  // Farcaster/Base game leaking into the MiniPay app. Callers that already
+  // resolved the game from a platform-scoped query (current/latest) omit
+  // `platform` and skip the check.
+  if (opts.platform && (game.platform !== opts.platform || game.network !== defaultNetworkForPlatform(opts.platform))) {
+    return EMPTY_BOARD;
+  }
 
   const ranked: TournamentStanding[] = entries.map((e, i) => ({
     rank: e.rank ?? i + 1,
@@ -774,14 +783,17 @@ export async function latestTournamentStandings(
 export async function allTimeLeaderboard(
   platform: UserPlatform,
   opts: { userId?: string; limit?: number } = {},
+  network: GameNetwork = defaultNetworkForPlatform(platform),
 ): Promise<TournamentBoard> {
   const limit = opts.limit ?? 50;
   // Full ordering (player count is small) so we can give an exact "you" rank.
+  // Ranked by total WINNINGS (summed prize, in payment-token/USDT units) — this
+  // is the "top earners" board — with summed score carried for display.
   const grouped = await prisma.gameEntry.groupBy({
     by: ["userId"],
-    where: { paidAt: { not: null }, game: { platform, onchainId: { not: null } } },
-    _sum: { score: true },
-    orderBy: { _sum: { score: "desc" } },
+    where: { paidAt: { not: null }, game: { platform, network, onchainId: { not: null } } },
+    _sum: { score: true, prize: true },
+    orderBy: [{ _sum: { prize: "desc" } }, { _sum: { score: "desc" } }],
   });
   const topIds = grouped.slice(0, limit).map((g) => g.userId);
   const youIdx = opts.userId ? grouped.findIndex((g) => g.userId === opts.userId) : -1;
@@ -794,7 +806,7 @@ export async function allTimeLeaderboard(
     userId: g.userId,
     name: nameById.get(g.userId) ?? "Player",
     score: g._sum.score ?? 0,
-    prize: 0,
+    prize: g._sum.prize ?? 0,
     you: !!opts.userId && opts.userId === g.userId,
     played: true,
   });
@@ -808,9 +820,13 @@ export type PreviousGame = { id: string; label: string; title: string; endsAt: D
 
 /** Ended tournament games for the platform, newest first — the "Past games" tab
  *  picker; each id feeds `tournamentStandings(gameId)` for that game's board. */
-export async function listPreviousGames(platform: UserPlatform, limit = 20): Promise<PreviousGame[]> {
+export async function listPreviousGames(
+  platform: UserPlatform,
+  limit = 20,
+  network: GameNetwork = defaultNetworkForPlatform(platform),
+): Promise<PreviousGame[]> {
   const games = await prisma.game.findMany({
-    where: { platform, onchainId: { not: null }, endsAt: { lt: new Date() } },
+    where: { platform, network, onchainId: { not: null }, endsAt: { lt: new Date() } },
     orderBy: { endsAt: "desc" },
     take: limit,
     select: { id: true, gameNumber: true, title: true, endsAt: true },
