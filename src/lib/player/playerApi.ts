@@ -205,7 +205,18 @@ export async function getTournament(): Promise<
 > {
   const user = await getCurrentUser();
   if (!user) return null;
-  await tournamentSvc.ensureHourlyTournamentGame(user.platform);
+  try {
+    await tournamentSvc.ensureHourlyTournamentGame(user.platform);
+  } catch (error) {
+    // Creating the hourly game can fail for operational reasons (e.g. the operator
+    // wallet is out of gas to send the on-chain create). Don't 500 the player API —
+    // fall back to any existing game for the hour; if there is none, the caller
+    // returns null and the UI shows "live game unavailable".
+    console.error(
+      "[getTournament] ensureHourlyTournamentGame failed:",
+      error instanceof Error ? error.message : error,
+    );
+  }
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
   const [questions, firstEntry] = await Promise.all([
