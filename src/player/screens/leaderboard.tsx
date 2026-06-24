@@ -144,16 +144,14 @@ export const LeaderboardScreen = () => {
       />
 
       <div style={{ position: "absolute", top: 96, left: 0, right: 0, textAlign: "center", color: "var(--ink)", zIndex: 1 }}>
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 6, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
-          <PixelImg src={ASSETS.trophy} size={72} alt="" />
+        <div style={{ display: "flex", justifyContent: "center", marginBottom: 4, filter: "drop-shadow(0 0 24px rgba(255, 210, 77, 0.35))" }}>
+          <PixelImg src={ASSETS.trophy} size={58} alt="" />
         </div>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>Leaderboard</div>
         <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 2 }}>{heading}</div>
-      </div>
-
-      <div style={{ position: "absolute", top: 222, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-        {/* Mode toggle — Tournament (paid games) vs Levels (XP progression). */}
-        <div style={{ display: "flex", gap: 6, padding: "10px 12px" }}>
+        {/* Mode toggle — Tournament (paid games) vs Levels (XP) — sits in the
+            header above the board so the card holds only its own tabs + list. */}
+        <div style={{ display: "flex", gap: 6, maxWidth: 320, margin: "16px auto 0", padding: "0 14px" }}>
           {([
             { id: "tournament" as const, label: "Tournament" },
             { id: "levels" as const, label: "Levels" },
@@ -168,14 +166,16 @@ export const LeaderboardScreen = () => {
                   }
                   setMode(m.id);
                 }}
-                style={{ flex: 1, padding: "9px 0", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", background: active ? "var(--maple-500)" : "var(--surface-2)", color: active ? "var(--frame)" : "var(--ink-soft)", border: active ? "1.5px solid var(--frame)" : "1px solid rgba(253,251,246,.08)" }}
+                style={{ flex: 1, padding: "10px 0", borderRadius: 99, fontFamily: "var(--font-display)", fontSize: 13, cursor: "pointer", background: active ? "var(--maple-500)" : "var(--surface-2)", color: active ? "var(--frame)" : "var(--ink-soft)", border: active ? "1.5px solid var(--frame)" : "1px solid rgba(253,251,246,.08)" }}
               >
                 {m.label}
               </button>
             );
           })}
         </div>
+      </div>
 
+      <div style={{ position: "absolute", top: 290, left: 14, right: 14, bottom: 80, background: "var(--surface-1)", borderRadius: 18, border: "1px solid rgba(253, 251, 246, 0.06)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
         {/* Tournament sub-tabs. */}
         {!isLevels && (
           <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 12px" }}>
@@ -202,7 +202,7 @@ export const LeaderboardScreen = () => {
 
         {/* Past-games picker — horizontal scroll of ended games. */}
         {!isLevels && tab === "past" && pastGames && pastGames.length > 0 && (
-          <div style={{ display: "flex", gap: 6, padding: "10px 12px 6px", overflowX: "auto", scrollbarWidth: "none" }}>
+          <div style={{ display: "flex", gap: 6, padding: "12px 16px", overflowX: "auto", scrollbarWidth: "none", scrollPaddingInline: 16 }}>
             {pastGames.map((g) => {
               const active = g.id === selectedGameId;
               return (
@@ -247,7 +247,7 @@ export const LeaderboardScreen = () => {
         )}
       </div>
 
-      <div className="bottom-bar" style={{ paddingTop: 4, paddingBottom: 4, gap: 0 }}>
+      <div className="bottom-bar">
         <TabBar active="leaderboard" />
       </div>
     </Phone>

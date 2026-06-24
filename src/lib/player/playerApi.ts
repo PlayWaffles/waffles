@@ -201,6 +201,10 @@ export async function getTournament(): Promise<
     entryFee: number;
     standardFee: number;
     firstEntry: boolean;
+    /** Starting score cushion this player brings from World Cup campaign depth
+     *  (0 if they haven't climbed it). Shown in the entry sheet so the campaign
+     *  visibly pays off in the tournament. */
+    skillBonus: number;
     round: TournamentRound;
   } | null
 > {
@@ -220,9 +224,10 @@ export async function getTournament(): Promise<
   }
   const game = await tournamentSvc.currentTournamentGame(user.platform);
   if (!game) return null;
-  const [questions, firstEntry] = await Promise.all([
+  const [questions, firstEntry, skillBonus] = await Promise.all([
     tournamentSvc.getTournamentClientQuestions(game.id),
     tournamentSvc.isFirstTournamentEntry(user.id),
+    tournamentSvc.playerSkillBonus(user.id),
   ]);
   // Everyone pays the game's flat on-chain floor — the contract requires the
   // exact price, so there's no per-user amount. The discount framing
@@ -240,6 +245,7 @@ export async function getTournament(): Promise<
     // adapts: $0.10 game → "$0.20 → $0.10", $0.05 v2 game → "$0.10 → $0.05".
     standardFee: game.entryFee * 2,
     firstEntry,
+    skillBonus,
     round: {
       title: game.title,
       category: themeLabel(game.theme),

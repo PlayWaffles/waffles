@@ -491,8 +491,14 @@ model GameEntry {
   freeIssueNote  String? @db.VarChar(255)
 
   // -- PROGRESS (updated per answer) --
-  score    Int @default(0)
-  answered Int @default(0) @db.SmallInt
+  // `score` is the player's ranked total = the round's answer points PLUS
+  // `bonusScore` (a starting "skill-edge" cushion granted at entry, scaled by
+  // World Cup campaign depth). Keeping the cushion folded into `score` means all
+  // ranking/standings/index paths stay unchanged; `bonusScore` is retained only
+  // for transparency + so a re-submit recomputes `score = round + bonusScore`.
+  score      Int @default(0)
+  bonusScore Int @default(0) @db.SmallInt
+  answered   Int @default(0) @db.SmallInt
 
   // -- ANSWERS (embedded JSON for speed) --
   // Format: { "questionId": { "selected": 0, "correct": true, "points": 100, "ms": 2340 } }

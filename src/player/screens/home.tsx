@@ -69,7 +69,7 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 // sheet (with both the free earn-by-playing route and a buy route) when they
 // can't. Both share the shop's sheet visual language.
 
-const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, winnersLabel }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean } | null; round: TournamentRound | null; prizeTickets: number; winnersLabel: string }) => {
+const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, winnersLabel }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean; skillBonus: number } | null; round: TournamentRound | null; prizeTickets: number; winnersLabel: string }) => {
   const usd = (n: number) => `$${n.toFixed(2)}`;
   const canJoin = !!fee && !!round;
   // MiniPay: if the wallet can't cover the entry, swap JOIN for a one-tap
@@ -394,7 +394,7 @@ export const HomeScreen = () => {
     return () => clearInterval(id);
   }, []);
   const { data: tourney, loading: tournamentLoading } = useResilientAction(() => getTournament(), [refreshKey]);
-  const fee = tourney ? { entryFee: tourney.entryFee, standardFee: tourney.standardFee, firstEntry: tourney.firstEntry } : null;
+  const fee = tourney ? { entryFee: tourney.entryFee, standardFee: tourney.standardFee, firstEntry: tourney.firstEntry, skillBonus: tourney.skillBonus } : null;
   const round: TournamentRound | null = tourney?.round ?? null;
   const now = useNow();
   // "Tickets closing in" counts down on the real game clock: to kickoff

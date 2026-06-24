@@ -116,3 +116,24 @@ export function scoreRound(issued: ScorableQuestion[], answers: RoundAnswer[]): 
   }
   return clamp(total, 0, cap);
 }
+
+// ---------------------------------------------------------------------------
+// Skill-edge — campaign depth → a tournament head start
+// ---------------------------------------------------------------------------
+
+/** Points of starting cushion per completed World Cup campaign level. */
+export const SKILL_BONUS_PER_LEVEL = 15;
+/** Hard cap on the cushion — kept under a single fast question's value so the
+ *  edge tips close finishes into wins without steamrolling an honest round. */
+export const SKILL_BONUS_CAP = 200;
+
+/** Tournament "skill-edge": a starting score cushion scaled by how far the
+ *  player has climbed the World Cup campaign. Doing BOTH campaign + tournament
+ *  is the strongest retention signal in the data, so this makes campaign depth
+ *  pay off inside the tournament — and helps manufacture the near-wins that
+ *  drive repeat play. `completedLevels` is levels FINISHED (LevelProgress.level
+ *  is the next level, so pass `level - 1`); 0 → no edge. */
+export function tournamentSkillBonus(completedLevels: number): number {
+  if (!completedLevels || completedLevels < 1) return 0;
+  return Math.min(Math.floor(completedLevels) * SKILL_BONUS_PER_LEVEL, SKILL_BONUS_CAP);
+}

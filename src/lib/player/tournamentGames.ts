@@ -31,6 +31,7 @@ import { trackServerEvent } from "@/lib/server-analytics";
 import {
   scoreAnswer,
   scoreRound,
+  tournamentSkillBonus,
   type RoundAnswer,
   type ScorableKind,
   type ScorableQuestion,
@@ -439,6 +440,18 @@ export type TournamentEntrySource = "home" | "post_first_level_upsell" | "onboar
  * The deposit funds the on-chain prize pool (v1 model). Idempotent: one entry
  * per (game, user); the unique `txHash` also blocks replaying a payment.
  */
+/** The player's tournament skill-edge (starting score cushion) derived from how
+ *  far they've climbed the World Cup campaign. Shared by the entry grant and the
+ *  lobby display so they never drift. `LevelProgress.level` is the NEXT level, so
+ *  completed levels = level - 1. No progress row → 0. */
+export async function playerSkillBonus(userId: string): Promise<number> {
+  const wc = await prisma.levelProgress.findUnique({
+    where: { userId_track: { userId, track: "WORLD_CUP" } },
+    select: { level: true },
+  });
+  return tournamentSkillBonus((wc?.level ?? 1) - 1);
+}
+
 export async function enterTournamentOnChain(input: {
   userId: string;
   gameId: string;
@@ -493,6 +506,10 @@ export async function enterTournamentOnChain(input: {
   }
   console.log("[buy-ticket] verified ✓ — recording entry", { gameId, userId, entryFee });
   const prizePoolContribution = calculatePrizePoolContribution(entryFee);
+  // Skill-edge: a starting score cushion from World Cup campaign depth. Folded
+  // into `score` so the entrant lands on the live board with their head start
+  // immediately; `submitTournamentAnswers` rebuilds score = round + bonusScore.
+  const bonusScore = await playerSkillBonus(userId);
 
   try {
     const entry = await prisma.$transaction(async (tx) => {
@@ -505,6 +522,8 @@ export async function enterTournamentOnChain(input: {
           paidAmount: entryFee,
           paidAt: new Date(),
           purchaseSource: TicketPurchaseSource.PAID,
+          bonusScore,
+          score: bonusScore,
         },
         select: { id: true },
       });
@@ -577,7 +596,7 @@ export async function submitTournamentAnswers(
 
   const rows = await gameQuestions(gameId);
   const issued = rows.map(toScorable);
-  const score = scoreRound(issued, answers);
+  const roundScore = scoreRound(issued, answers);
 
   // Per-question breakdown in the GameEntry.answers JSON shape v1 uses.
   const byId = new Map(issued.map((q) => [q.id, q]));
@@ -598,8 +617,12 @@ export async function submitTournamentAnswers(
   // improvement (the tournament keeps the best of repeated submissions).
   const prev = await prisma.gameEntry.findUnique({
     where: { gameId_userId: { gameId, userId } },
-    select: { score: true, answered: true },
+    select: { score: true, answered: true, bonusScore: true },
   });
+
+  // Ranked total = the round's answer points + the entry's skill-edge cushion.
+  // The "only-if-higher" guard then keeps the best ranked total across re-submits.
+  const score = roundScore + (prev?.bonusScore ?? 0);
 
   const result = await prisma.gameEntry.updateMany({
     where: {
