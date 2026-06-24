@@ -175,7 +175,7 @@ export const MissionsScreen = () => {
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 160, background: "radial-gradient(ellipse at 50% 0%, rgba(255,210,77,.18), transparent 70%)" }} />
 
       <div style={{ position: "absolute", top: 6, left: 0, right: 0, padding: "0 14px", display: "flex", alignItems: "center", color: "#fff", gap: 8 }}>
-        <BackButton label="Back to Compete" onClick={() => proto.goto("pass", { back: true })} />
+        <BackButton label="Back to Home" onClick={() => proto.goto("home", { back: true })} />
         <div style={{ flex: 1, fontFamily: "var(--font-display)", fontSize: 18, letterSpacing: 0.5, textAlign: "center" }}>MISSIONS</div>
         <InfoButton title="Missions" text="Complete missions to earn rewards. Daily missions refresh every 24 hours and grant XP toward your level. Partner offers are sponsored tasks that pay out bonus Syrup." />
       </div>
@@ -317,7 +317,7 @@ export const MissionsScreen = () => {
       </div>
 
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: "#0F0F10", padding: "8px 0 6px", borderTop: "2px solid rgba(255,255,255,.08)" }}>
-        <TabBar active="compete" />
+        <TabBar active="home" />
       </div>
     </Phone>
   );

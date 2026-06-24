@@ -84,10 +84,8 @@ export type ScreenName =
   | "levelIntro"
   | "levelWin"
   | "levelFail"
-  | "pass"
   | "shop"
   | "leaderboard"
-  | "leagues"
   | "missions"
   | "lobby"
   | "question"
@@ -99,10 +97,8 @@ const SCREEN_ORDER: ScreenName[] = [
   "home",
   "levels",
   "levelIntro",
-  "pass",
   "missions",
   "leaderboard",
-  "leagues",
   "shop",
   "lobby",
   "question",

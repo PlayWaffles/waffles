@@ -248,7 +248,7 @@ export const LeaderboardScreen = () => {
       </div>
 
       <div className="bottom-bar" style={{ paddingTop: 4, paddingBottom: 4, gap: 0 }}>
-        <TabBar active="compete" />
+        <TabBar active="leaderboard" />
       </div>
     </Phone>
   );

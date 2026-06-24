@@ -41,10 +41,8 @@ const SCREEN_COMPONENTS: Record<ScreenName, React.ComponentType> = {
   levelIntro: lazyScreen(() => import("./screens/level-intro").then((m) => ({ default: m.LevelIntroScreen }))),
   levelWin: lazyScreen(() => import("./screens/level-result").then((m) => ({ default: m.LevelWinScreen }))),
   levelFail: lazyScreen(() => import("./screens/level-result").then((m) => ({ default: m.LevelFailScreen }))),
-  pass: lazyScreen(() => import("./screens/compete").then((m) => ({ default: m.CompeteScreen }))),
   shop: lazyScreen(() => import("./screens/shop").then((m) => ({ default: m.ShopScreen }))),
   leaderboard: lazyScreen(() => import("./screens/leaderboard").then((m) => ({ default: m.LeaderboardScreen }))),
-  leagues: lazyScreen(() => import("./screens/leagues").then((m) => ({ default: m.LeaguesScreen }))),
   missions: lazyScreen(() => import("./screens/missions").then((m) => ({ default: m.MissionsScreen }))),
   lobby: lazyScreen(() => import("./screens/lobby").then((m) => ({ default: m.LobbyScreen }))),
   question: lazyScreen(() => import("./screens/question").then((m) => ({ default: m.QuestionScreen }))),
@@ -63,10 +61,8 @@ const SCREEN_PRELOADERS: Array<() => Promise<unknown>> = [
   () => import("./screens/question"),
   () => import("./screens/results"),
   () => import("./screens/level-result"),
-  () => import("./screens/compete"),
   () => import("./screens/profile"),
   () => import("./screens/leaderboard"),
-  () => import("./screens/leagues"),
   () => import("./screens/missions"),
 ];
 

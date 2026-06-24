@@ -397,7 +397,6 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
     const map: Record<string, string> = {
       home: "home",
       levels: "levels",
-      compete: "leaderboard",
       shop: "shop",
       me: "profile",
     };
@@ -436,8 +435,8 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
       ),
     },
     {
-      id: "compete",
-      label: "Compete",
+      id: "leaderboard",
+      label: "Leaderboard",
       icon: (
         <>
           <path d="M7 4h10v3a5 5 0 0 1-10 0V4z" stroke="currentColor" strokeWidth="2" fill="none" strokeLinejoin="round" />

@@ -70,14 +70,6 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
       placement: "top",
     },
   ],
-  pass: [
-    {
-      target: "compete-ladder",
-      title: "Climb the leagues",
-      body: "Earn points by playing levels and tournaments to climb the league tiers. Finish each season high to move up — bottom finishers drop down.",
-      placement: "bottom",
-    },
-  ],
   shop: [
     {
       title: "Power up your game",
@@ -96,16 +88,8 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "leaderboard-you",
       title: "That's you",
-      body: "Score points by playing levels and tournaments to climb your league's leaderboard before the season ends.",
+      body: "Score points by playing levels and tournaments to climb the leaderboard and win the pot.",
       placement: "top",
-    },
-  ],
-  leagues: [
-    {
-      target: "leagues-current",
-      title: "This is your league",
-      body: "Finish in the top spots before it ends to get promoted to the next league — and win bigger reward chests.",
-      placement: "bottom",
     },
   ],
   missions: [
