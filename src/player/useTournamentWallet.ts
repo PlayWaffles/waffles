@@ -250,6 +250,7 @@ export function useTournamentWallet() {
               abi: ERC20_ABI,
               functionName: "approve",
               args: [contractAddress, approveAmount],
+              ...(platform === "MINIPAY" ? { gas: APPROVE_GAS_LIMIT } : {}),
             }, target),
           );
           onStep?.("approveConfirm");
@@ -268,6 +269,7 @@ export function useTournamentWallet() {
             abi: waffleGameAbi,
             functionName: "buyTicket",
             args: [onchainId, amount],
+            ...(platform === "MINIPAY" ? { gas: BUY_TICKET_GAS_LIMIT } : {}),
           }, target),
         );
         onStep?.("confirming");
