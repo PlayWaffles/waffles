@@ -50,7 +50,7 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "tabbar",
       title: "Everything's down here",
-      body: "Switch between Levels, Compete, the Shop and your profile whenever you like.",
+      body: "Switch between Practice, the Leaderboard and your profile whenever you like.",
       placement: "top",
     },
   ],

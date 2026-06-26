@@ -10,7 +10,7 @@ import { FullModalTemplate, type FullModalBullet } from "../FullModal";
 
 const WHATS_NEW: FullModalBullet[] = [
   { icon: "✨", title: "Fresh new look", text: "We redesigned the whole thing." },
-  { icon: "🪜", title: "Levels", text: "Climb through levels and earn rewards as you play." },
+  { icon: "🪜", title: "Practice", text: "Climb through practice rounds and earn rewards as you play." },
   { icon: "📈", title: "Earn XP", text: "Every game you play earns XP and levels up your profile." },
   { icon: "🍯", title: "Syrup", text: "Your new in-game currency — spend it on power-ups, cosmetics & emotes." },
   { icon: "⏱️", title: "Games every 4 hours", text: "A new tournament every 4 hours. No more waiting to play." },

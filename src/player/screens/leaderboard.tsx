@@ -115,12 +115,12 @@ export const LeaderboardScreen = () => {
 
   const metricLabel = isLevels ? "Level" : tab === "alltime" ? "Won" : "Score";
   const metricInfo = isLevels
-    ? "Players ranked by total XP. You earn XP for every question you answer — in both levels and live tournaments — and your level is your XP milestone."
+    ? "Players ranked by total XP. You earn XP for every question you answer — in both practice and live tournaments — and your level is your XP milestone."
     : tab === "alltime"
       ? "Top earners — ranked by total winnings (USDT) across every tournament you've cashed in."
       : "Your score is the points you earned answering questions — faster correct answers score more. Winnings (USDT) show beside the score once a game settles.";
   const emptyCopy = isLevels
-    ? "Play levels to earn XP and climb the ranks."
+    ? "Play practice rounds to earn XP and climb the ranks."
     : tab === "current"
       ? "This game's board fills up as players answer."
       : tab === "alltime"
@@ -149,12 +149,12 @@ export const LeaderboardScreen = () => {
         </div>
         <div style={{ fontFamily: "var(--font-display)", fontSize: 22, letterSpacing: 0.5 }}>Leaderboard</div>
         <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-soft)", marginTop: 2 }}>{heading}</div>
-        {/* Mode toggle — Tournament (paid games) vs Levels (XP) — sits in the
+        {/* Mode toggle — Tournament (paid games) vs Practice (XP) — sits in the
             header above the board so the card holds only its own tabs + list. */}
         <div style={{ display: "flex", gap: 6, maxWidth: 320, margin: "16px auto 0", padding: "0 14px" }}>
           {([
             { id: "tournament" as const, label: "Tournament" },
-            { id: "levels" as const, label: "Levels" },
+            { id: "levels" as const, label: "Practice" },
           ]).map((m) => {
             const active = mode === m.id;
             return (

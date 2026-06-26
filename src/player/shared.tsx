@@ -425,7 +425,7 @@ export const TabBar = ({ active = "home" }: { active?: string }) => {
     },
     {
       id: "levels",
-      label: "Levels",
+      label: "Practice",
       icon: (
         <>
           <rect x="3" y="14" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="2" fill="none" />
