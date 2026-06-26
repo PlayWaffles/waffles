@@ -26,6 +26,8 @@ import { defaultNetworkForPlatform, type GameNetwork } from "@/lib/chain/network
 import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
 import { calculatePrizePoolContribution } from "@/lib/admin-utils";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
+import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
+import { getDisplayName } from "@/lib/address";
 import { formatGameLabel } from "@/lib/game/labels";
 import { trackServerEvent } from "@/lib/server-analytics";
 import {
@@ -622,7 +624,7 @@ export async function submitTournamentAnswers(
 ): Promise<{ score: number; updated: boolean } | null> {
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    select: { id: true, endsAt: true },
+    select: { id: true, endsAt: true, gameNumber: true },
   });
   if (!game) return null;
   if (new Date() >= game.endsAt) return { score: 0, updated: false };
@@ -669,6 +671,22 @@ export async function submitTournamentAnswers(
   if (result.count > 0) {
     const gained = Math.max(0, score - (prev?.score ?? 0));
     await accrueLeaguePoints(userId, gained);
+    // Live "someone passed you" nudge — now that this score landed, re-check the
+    // leaderboard and notify anyone it knocked out of the top N. sendToUser routes
+    // per platform (MiniPay → in-app toast). v1's live-game action already does
+    // this; the v2 async tournament submit didn't, so flips went unnotified here.
+    // Fire-and-forget — it must never block or fail scoring.
+    const scorer = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { username: true, wallet: true },
+    });
+    void checkAndNotifyFlipped(
+      gameId,
+      game.gameNumber,
+      userId,
+      getDisplayName({ username: scorer?.username ?? null, wallet: scorer?.wallet ?? null }),
+      score,
+    ).catch((err) => console.error("[tournament] flip_check_error", err));
     // Base Syrup for PLAYING — an extra reward on top of any cash prize, so even
     // non-winners walk away with something. Granted once, on the first completed
     // round only (prev.answered === 0), so a re-submit can't farm it. Winners
