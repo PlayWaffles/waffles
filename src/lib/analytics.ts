@@ -86,6 +86,7 @@ export const AnalyticsEvent = {
   LegalSheetClosed: "legal_sheet_closed",
   SupportTelegramClicked: "support_telegram_clicked",
   SupportEmailClicked: "support_email_clicked",
+  SocialTwitterClicked: "social_twitter_clicked",
   BadgeUnlocked: "badge_unlocked",
   BadgeUnlockOverlayViewed: "badge_unlock_overlay_viewed",
   BadgeUnlockDismissed: "badge_unlock_dismissed",

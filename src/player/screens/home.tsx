@@ -11,6 +11,8 @@ import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+import { TWITTER_FOLLOW_URL } from "@/lib/social-links";
+import { XIcon } from "@/components/icons";
 
 const XP_PER_LEVEL = 500;
 
@@ -574,9 +576,27 @@ export const HomeScreen = () => {
 
       <TopHeader tickets={tickets} title="WAFFLES" />
 
-      {/* Header bar — wordmark + announcements bell (the bell's natural home). */}
+      {/* Header bar — wordmark + community follow + announcements bell. */}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 46, display: "flex", alignItems: "center", justifyContent: "space-between", padding: "max(8px, env(safe-area-inset-top)) 16px 0", zIndex: 14 }}>
-        <img src={ASSETS.logoWordmark} alt={theme.copy.appName} height={22} style={{ height: 22, width: "auto", display: "block" }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+          <img src={ASSETS.logoWordmark} alt={theme.copy.appName} height={22} style={{ height: 22, width: "auto", display: "block", flexShrink: 0 }} />
+          <a
+            href={TWITTER_FOLLOW_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Follow Waffles on X"
+            title="Follow Waffles on X"
+            onClick={() => {
+              trackClientEvent(AnalyticsEvent.SocialTwitterClicked, {
+                component: "home_header",
+                destination: "x",
+              });
+            }}
+            style={{ width: 30, height: 30, borderRadius: 99, background: "rgba(255,255,255,.06)", border: "1px solid rgba(255,255,255,.12)", color: "#fff", display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}
+          >
+            <XIcon width={18} height={18} aria-hidden="true" />
+          </a>
+        </div>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <SoundToggle />
           <AnnouncementBell />
