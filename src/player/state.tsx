@@ -486,6 +486,11 @@ type State = {
   // transient global toast so it's seen immediately on any screen — not only the
   // Home banner/inbox. Auto-clears; set only on live delivery, never on load.
   announcementToast: Announcement | null;
+  // The announcement currently opened as a detail modal (small or full, per its
+  // `surface`). Set when the player taps a non-navigating announcement (toast,
+  // banner or inbox item); rendered globally so it opens on any screen. Null when
+  // no detail modal is open.
+  announcementDetail: Announcement | null;
   // The player's chosen handle (set in onboarding). Empty until set; persisted
   // to localStorage and hydrated post-mount.
   username: string;
@@ -577,6 +582,7 @@ const initialState = (tweaks: Tweaks): State => ({
   // Empty until the DB feed loads (loadAnnouncements) — fully server-driven.
   announcements: [],
   announcementToast: null,
+  announcementDetail: null,
   username: "",
   avatarId: null,
   levelJustUnlocked: null,

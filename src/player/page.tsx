@@ -5,13 +5,11 @@ import { ProtoProvider, useProto, type ScreenName } from "./state";
 import { THEMES, ThemeProvider, resolveThemeId, type ThemeId } from "./theme";
 import { CoachmarkProvider, TOURS, useCoachTour } from "./coachmarks";
 import { BadgeUnlockWatcher } from "./badge-unlock";
-import { AnnouncementToast } from "./announcements";
+import { AnnouncementToast, AnnouncementDetail, AnnouncementModalHost } from "./announcements";
 import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
-import { WorldCupTakeover } from "./screens/world-cup-takeover";
-import { MigrationTakeover } from "./screens/migration-takeover";
 import { LeagueResultTakeover, hasSeenLeagueResult } from "./screens/league-result";
-import { getMigrationNotice, dismissMigrationNotice, getWorldCupTakeover, dismissWorldCupTakeover, loadLeagueResult, logClient } from "@/player/api";
+import { loadLeagueResult, logClient } from "@/player/api";
 import type { LeagueResult } from "@/lib/player/leagues";
 import { OnboardingScreen } from "./screens/onboarding";
 import { HomeScreen } from "./screens/home";
@@ -121,9 +119,7 @@ const Stage = () => {
   // open it manually. Checked client-side post-mount to stay hydration-safe.
   // Ref guard (not state) so flipping "already shown" doesn't itself trigger a
   // setState-in-effect / re-run; the effect only mutates global state.
-  // World Cup season welcome — the big "moment", shown once after onboarding.
-  // The World Cup is the default season for everyone (not opt-in), so this is a
-  // celebratory intro, not a gate; the bell entry reopens it anytime. Takes
+  //
   // Warm the SFX cache once so the first play of each sound is instant (no fetch
   // latency between a trigger and the sound).
   useEffect(() => {
@@ -146,60 +142,12 @@ const Stage = () => {
     return () => window.removeEventListener("pointerdown", onDown, true);
   }, []);
 
-  // One-time "welcome to v2" modal for migrated users — server-gated (migrated +
-  // not yet dismissed). Takes precedence over the WC takeover + daily reward, and
-  // gates them until the check resolves so they don't flash first.
-  const [showMigration, setShowMigration] = useState(false);
-  const [migrationResolved, setMigrationResolved] = useState(false);
-  const migrationChecked = useRef(false);
-
-  // precedence over the daily reward so the two never stack.
-  const [showWcTakeover, setShowWcTakeover] = useState(false);
-  // "Seen" is now DB-backed (worldCupTakeover.ts), so it's cross-device — resolve
-  // it server-side once, on Home, like the migration notice.
-  const [wcCanShow, setWcCanShow] = useState(false);
-  const wcChecked = useRef(false);
-  useEffect(() => {
-    if (showOnboarding || proto.screen !== "home" || wcChecked.current) return;
-    wcChecked.current = true;
-    getWorldCupTakeover()
-      .then((r) => setWcCanShow(r.show))
-      .catch(() => {});
-  }, [showOnboarding, proto.screen]);
-  useEffect(() => {
-    // Gated to Home so it never lands on the onboarding→first-level funnel. For a
-    // first-timer this means it waits until they finish that level and return to
-    // Home (their first Home visit); a returning user opens to Home and sees it
-    // right away. No "first run" flag needed — the Home gate does the waiting.
-    // Suppressed while a tournament-join intent is pending (the onboarding
-    // finale funnel) so the WC takeover never covers the buy sheet — it can open
-    // once that intent clears (the dep below re-runs this effect).
-    if (!showOnboarding && proto.screen === "home" && migrationResolved && !showMigration && wcCanShow && !proto.pendingTournamentJoin) {
-      // rAF so the flip isn't a synchronous setState in the effect body.
-      const id = requestAnimationFrame(() => {
-        trackClientEvent(AnalyticsEvent.WorldCupTakeoverAutoOpened, {
-          screen: "home",
-          theme_id: resolveThemeId(),
-          entry_reason: "first_visit",
-        });
-        setShowWcTakeover(true);
-      });
-      return () => cancelAnimationFrame(id);
-    }
-  }, [showOnboarding, proto.screen, migrationResolved, showMigration, wcCanShow, proto.pendingTournamentJoin]);
-
-  useEffect(() => {
-    if (showOnboarding || proto.screen !== "home" || migrationChecked.current) return;
-    migrationChecked.current = true;
-    getMigrationNotice()
-      .then((r) => setShowMigration(r.show))
-      .catch(() => {})
-      .finally(() => setMigrationResolved(true));
-  }, [showOnboarding, proto.screen]);
-  const dismissMigration = () => {
-    setShowMigration(false);
-    void dismissMigrationNotice();
-  };
+  // Full/small-modal announcements (migration welcome, season takeover, …) are
+  // owned by <AnnouncementModalHost> below. It resolves their server gates,
+  // handles precedence + persistence, and reports whether one is currently up via
+  // this flag so the daily reward, league result and coach marks hold back while
+  // a modal shows.
+  const [modalActive, setModalActive] = useState(false);
 
   // Last settled league season's result (promotion/demotion + rewards), shown
   // once per season. Gated to Home and checked once; the component records the
@@ -221,7 +169,7 @@ const Stage = () => {
   useEffect(() => {
     // Suppressed while the onboarding join intent is pending so it can't stack
     // on top of the buy sheet; re-runs and can open once the intent clears.
-    if (!showOnboarding && !showWcTakeover && screen === "home" && !proto.pendingTournamentJoin && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
+    if (!showOnboarding && !modalActive && screen === "home" && !proto.pendingTournamentJoin && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
       dailyAutoShown.current = true;
       trackClientEvent(AnalyticsEvent.DailyRewardAutoOpened, {
         screen: "home",
@@ -229,7 +177,7 @@ const Stage = () => {
       });
       update({ dailyOpen: true });
     }
-  }, [showOnboarding, showWcTakeover, screen, update, proto.pendingTournamentJoin]);
+  }, [showOnboarding, modalActive, screen, update, proto.pendingTournamentJoin]);
 
   // Warm the code-split screen chunks during idle time after first paint, so
   // they're cached before the player navigates — off the initial critical path.
@@ -259,11 +207,11 @@ const Stage = () => {
   // Contextual coach marks for the current screen — fire once per screen, but
   // never while the first-launch intro is up (its DOM has none of the targets).
   // Suppress the small coach tips while a full-screen overlay is up (onboarding,
-  // WC takeover, daily reward) so they don't spotlight elements hidden behind it.
-  // They run after the overlay is dismissed — progressive disclosure: big moment
-  // first, then the contextual tips.
+  // a modal announcement, daily reward) so they don't spotlight elements hidden
+  // behind it. They run after the overlay is dismissed — progressive disclosure:
+  // big moment first, then the contextual tips.
   useCoachTour(proto.screen, TOURS[proto.screen] ?? [], {
-    enabled: !showOnboarding && !showWcTakeover && !proto.wcTakeoverOpen && !proto.dailyOpen && !leagueResult,
+    enabled: !showOnboarding && !modalActive && !proto.dailyOpen && !leagueResult,
   });
 
   return (
@@ -275,29 +223,23 @@ const Stage = () => {
       ) : (
         <>
           <Current />
-          {showMigration ? (
-            <MigrationTakeover onClose={dismissMigration} />
-          ) : showWcTakeover || proto.wcTakeoverOpen ? (
-            <WorldCupTakeover
-              onClose={() => {
-                setShowWcTakeover(false);
-                setWcCanShow(false);
-                proto.update({ wcTakeoverOpen: false });
-                // Persist "seen" DB-side (cross-device); idempotent on reopen.
-                void dismissWorldCupTakeover();
-              }}
-            />
-          ) : leagueResult ? (
-            <LeagueResultTakeover result={leagueResult} onClose={() => setLeagueResult(null)} />
-          ) : (
-            proto.dailyOpen && <DailyRewardSheet onClose={() => proto.update({ dailyOpen: false })} />
-          )}
+          {/* Owns the migration welcome + season takeover (and any future modal
+              announcement); precedence + persistence live in the registry. */}
+          <AnnouncementModalHost enabled={!showOnboarding} onActiveChange={setModalActive} />
+          {!modalActive &&
+            (leagueResult ? (
+              <LeagueResultTakeover result={leagueResult} onClose={() => setLeagueResult(null)} />
+            ) : (
+              proto.dailyOpen && <DailyRewardSheet onClose={() => proto.update({ dailyOpen: false })} />
+            ))}
         </>
       )}
       {/* Global: celebrates any newly-earned badge wherever the player is. */}
       <BadgeUnlockWatcher />
       {/* Global: a pushed announcement (PartyKit) slides in on any screen. */}
       <AnnouncementToast />
+      {/* Global: tapping an announcement opens its details here, on any screen. */}
+      <AnnouncementDetail />
       {/* Global transient toast (e.g. a level whose server questions couldn't load). */}
       {proto.toast && (
         <div

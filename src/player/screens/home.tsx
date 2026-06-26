@@ -7,7 +7,7 @@ import { getTournament, loadCurrentTournamentBoard, loadRecentEntrants, loadMiss
 import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
 import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
-import { AnnouncementBanner, AnnouncementBell } from "../announcements";
+import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
 import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -585,7 +585,6 @@ export const HomeScreen = () => {
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 84, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
-        <AnnouncementBanner />
         {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} title={round?.title ?? "the tournament"} />}
         <div
           role="button"

@@ -458,6 +458,76 @@ export async function sendResultNotifications(gameId: string) {
     await sendBatch(payload, warmNonBuyers);
   }
 
+  // In-app realtime toasts — the MiniPay-reaching equivalent of the Farcaster
+  // push above. MiniPay users have no push token, so sendToUser/sendBatch never
+  // reach them; this pops a live toast for anyone currently in the app, targeted
+  // per-user via PartyKit. Best-effort — a PartyKit/env failure must never fail
+  // settlement, so the whole block is guarded.
+  try {
+    const { deliverAnnouncementToUsers } = await import("@/lib/realtime/announcementDelivery");
+    const now = Date.now();
+    const ends = now + 60 * 60 * 1000;
+    const usd = (n: number) => `$${n.toFixed(2)}`;
+    const gameName = meta.title?.trim() || `Waffles #${String(game.gameNumber).padStart(3, "0")}`;
+
+    await Promise.allSettled([
+      // Winners — personalized, highest intent (real money to claim).
+      ...winners.map((e) => {
+        const medal = e.rank === 1 ? "🥇" : e.rank === 2 ? "🥈" : e.rank === 3 ? "🥉" : "🏆";
+        return deliverAnnouncementToUsers([e.userId], {
+          id: `live:won-${gameId}-${e.userId}`,
+          priority: 100,
+          tone: "maple",
+          emoji: medal,
+          title: `#${e.rank ?? 1} ${medal} — you won ${usd(e.prize ?? 0)}`,
+          body: "Tap to claim it from your Prize Wallet.",
+          cta: { label: "Claim your prize", screen: "profile" },
+          publishedAt: now,
+          startsAt: 0,
+          endsAt: ends,
+          ephemeral: true,
+        });
+      }),
+      // Non-winners — where you placed.
+      nonWinners.length > 0
+        ? deliverAnnouncementToUsers(
+            nonWinners.map((e) => e.userId),
+            {
+              id: `live:results-${gameId}`,
+              priority: 80,
+              tone: "leaf",
+              emoji: "🎯",
+              title: `${gameName} results are in`,
+              body: "See where you placed — then jump into the next round.",
+              cta: { label: "See results", screen: "home" },
+              publishedAt: now,
+              startsAt: 0,
+              endsAt: ends,
+              ephemeral: true,
+            },
+          )
+        : Promise.resolve(),
+      // Warm skippers — FOMO recap of the pot they sat out.
+      warmNonBuyers.length > 0
+        ? deliverAnnouncementToUsers(warmNonBuyers, {
+            id: `live:wrap-${gameId}`,
+            priority: 70,
+            tone: "leaf",
+            emoji: "💸",
+            title: `${usd(game.prizePool ?? 0)} just got split`,
+            body: "The top players split the pot on a round you sat out. The next one's live — get in.",
+            cta: { label: "Play the next round", screen: "home" },
+            publishedAt: now,
+            startsAt: 0,
+            endsAt: ends,
+            ephemeral: true,
+          })
+        : Promise.resolve(),
+    ]);
+  } catch (e) {
+    console.error("[Lifecycle] In-app realtime result toasts failed:", e);
+  }
+
   console.log(
     `[Lifecycle] Sent notifications: ${winners.length} winners, ${nonWinners.length} non-winners, ${warmNonBuyers.length} warm non-buyers`,
   );

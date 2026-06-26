@@ -22,16 +22,21 @@ const TONES = [
     { value: "berry", label: "Berry (pink)", dot: "#FB72FF" },
 ] as const;
 
-// CTA targets map to the player's in-app routes (parsed as "screen:"/"theme:").
+// The announcement's category — what tapping it does. Blank = the disappearing
+// toast (no popup). "open:*" reveal the details as a modal (no button label
+// needed); "screen:"/"theme:" are nav buttons (need a label). Every announcement
+// shows as the transient toast on delivery and is logged in the bell inbox.
 const CTA_TARGETS = [
-    { value: "", label: "No button" },
-    { value: "screen:home", label: "Home (play)" },
-    { value: "screen:compete", label: "Compete" },
-    { value: "screen:leaderboard", label: "Leaderboard" },
-    { value: "screen:levels", label: "Levels" },
-    { value: "screen:profile", label: "Profile / Prize Wallet" },
-    { value: "screen:shop", label: "Shop" },
-    { value: "theme:world-cup", label: "World Cup takeover" },
+    { value: "", label: "Disappearing toast — no popup (default)" },
+    { value: "open:small", label: "Tap opens — small modal" },
+    { value: "open:full", label: "Tap opens — full screen" },
+    { value: "screen:home", label: "Button → Home (play)" },
+    { value: "screen:compete", label: "Button → Compete" },
+    { value: "screen:leaderboard", label: "Button → Leaderboard" },
+    { value: "screen:levels", label: "Button → Levels" },
+    { value: "screen:profile", label: "Button → Profile / Prize Wallet" },
+    { value: "screen:shop", label: "Button → Shop" },
+    { value: "theme:world-cup", label: "Button → World Cup takeover" },
 ] as const;
 
 const TONE_ACCENT: Record<string, string> = { leaf: "#00CFF2", maple: "#FFC931", berry: "#FB72FF" };

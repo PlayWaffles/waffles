@@ -109,14 +109,42 @@ async function ticketOpenNotificationsJob() {
  */
 async function ensureTournamentRoundsJob() {
   const platforms = [UserPlatform.FARCASTER, UserPlatform.MINIPAY] as const;
+  let anyCreated = false;
   for (const platform of platforms) {
     try {
       const { created, gameId } = await ensureTournamentGame(platform);
       if (created) {
+        anyCreated = true;
         console.log(`[Cron] Created tournament game ${gameId} (${platform})`);
       }
     } catch (e) {
       console.error(`[Cron] ensure-tournament-rounds failed (${platform}):`, e);
+    }
+  }
+
+  // A new round just opened → push one in-app realtime toast to everyone
+  // currently in the app. Both platforms run on the same hourly cadence, so
+  // generic copy + a Home CTA always resolves to the caller's own live round.
+  // Best-effort: a PartyKit/env failure must not break the cron tick.
+  if (anyCreated) {
+    try {
+      const { deliverGlobalAnnouncement } = await import("@/lib/realtime/announcementDelivery");
+      const now = Date.now();
+      await deliverGlobalAnnouncement({
+        id: `live:round-${Math.floor(now / 60_000)}`,
+        priority: 90,
+        tone: "maple",
+        emoji: "🔴",
+        title: "A new round just went live",
+        body: "Jump in, answer 6, and play for the pot.",
+        cta: { label: "Join the round", screen: "home" },
+        publishedAt: now,
+        startsAt: 0,
+        endsAt: now + 60 * 60 * 1000,
+        ephemeral: true,
+      });
+    } catch (e) {
+      console.error("[Cron] round-live realtime toast failed:", e);
     }
   }
 }

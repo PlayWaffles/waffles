@@ -14,6 +14,8 @@
  */
 import { prisma } from "@/lib/db";
 import { loadTournamentClaims, loadRecentResults } from "@/lib/player/tournamentGames";
+import { displayStreak, dayKeyUTC } from "@/lib/player/dailyStreak";
+import { defaultNetworkForPlatform } from "@/lib/chain/network";
 
 export type AnnouncementTone = "maple" | "berry" | "leaf";
 
@@ -25,7 +27,16 @@ export type PlayerAnnouncement = {
   title: string;
   body: string;
   // CTA either navigates to a screen, or opens a season takeover via `theme`.
+  // When set, tapping the announcement runs the CTA instead of opening details.
   cta?: { label: string; screen?: string; theme?: string };
+  // What tapping the announcement does (in the live toast or the bell inbox).
+  // Every announcement shows as the transient top toast on delivery and is logged
+  // in the inbox; `surface` only controls the tap behaviour:
+  //   "toast" — the "disappears" category: informational, no modal on tap (default)
+  //   "small" — tapping opens a compact bottom-sheet modal
+  //   "full"  — tapping opens a full-screen takeover
+  // Authored via the `ctaAction` value "open:small" / "open:full" (blank = toast).
+  surface?: "toast" | "small" | "full";
   publishedAt: number;
   startsAt: number;
   endsAt: number;
@@ -43,16 +54,22 @@ function normalizeTone(tone: string): AnnouncementTone {
   return tone === "maple" || tone === "berry" || tone === "leaf" ? tone : "leaf";
 }
 
-/** Parse the stored `ctaAction` ("screen:<name>" | "theme:<id>") into a CTA. */
-function parseCta(
+/**
+ * Parse the stored `ctaAction` into the tap behaviour:
+ *   "screen:<name>" / "theme:<id>" → a navigating CTA
+ *   "open:small" / "open:full"     → open the details as a modal
+ *   anything else / empty          → the "disappears" toast: informational, no
+ *                                     modal on tap.
+ */
+function parseAction(
   label: string | null,
   action: string | null,
-): PlayerAnnouncement["cta"] {
-  if (!label || !action) return undefined;
-  const [kind, value] = action.split(":", 2);
-  if (kind === "screen" && value) return { label, screen: value };
-  if (kind === "theme" && value) return { label, theme: value };
-  return undefined;
+): { cta?: PlayerAnnouncement["cta"]; surface?: PlayerAnnouncement["surface"] } {
+  const [kind, value] = (action ?? "").split(":", 2);
+  if (kind === "screen" && value && label) return { cta: { label, screen: value } };
+  if (kind === "theme" && value && label) return { cta: { label, theme: value } };
+  if (kind === "open") return { surface: value === "full" ? "full" : "small" };
+  return { surface: "toast" };
 }
 
 export type DbAnnouncement = {
@@ -70,6 +87,7 @@ export type DbAnnouncement = {
 };
 
 export function mapDbAnnouncement(row: DbAnnouncement): PlayerAnnouncement {
+  const { cta, surface } = parseAction(row.ctaLabel, row.ctaAction);
   return {
     id: row.id,
     priority: row.sortOrder,
@@ -77,7 +95,8 @@ export function mapDbAnnouncement(row: DbAnnouncement): PlayerAnnouncement {
     emoji: row.emoji,
     title: row.title,
     body: row.body,
-    cta: parseCta(row.ctaLabel, row.ctaAction),
+    cta,
+    surface,
     publishedAt: row.createdAt.getTime(),
     startsAt: row.startsAt?.getTime() ?? 0,
     endsAt: row.endsAt?.getTime() ?? FAR_FUTURE,
@@ -126,6 +145,137 @@ async function computeTriggeredAnnouncements(userId: string): Promise<PlayerAnno
       body: "The prize bracket was just ahead. The next round is live — go again while you're warmed up.",
       cta: { label: "Play the next round", screen: "home" },
       publishedAt: latest.roundId,
+      startsAt: 0,
+      endsAt: FAR_FUTURE,
+      ephemeral: true,
+    });
+  }
+
+  // The remaining rules need the caller's platform (live-round + recap queries
+  // are platform/network scoped) and streak state. One small read covers both.
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { platform: true, streakFreezes: true },
+  });
+  if (!user) return out;
+
+  const network = defaultNetworkForPlatform(user.platform);
+  const usd = (n: number) => `$${n.toFixed(2)}`;
+
+  // Live round available — the in-app stand-in for the ENTIRE Farcaster
+  // countdown / ticket-open / almost-sold-out family. A push can't reach MiniPay
+  // at "5 minutes left", so instead of time-anchored variants we show ONE
+  // state-driven card reflecting whatever the round looks like the moment they
+  // open the app. Only for players who haven't entered, while seats remain.
+  // Lightweight direct read (not currentTournamentGame, which is heavy) since
+  // this runs on every announcement load.
+  const liveGame = await prisma.game.findFirst({
+    where: {
+      platform: user.platform,
+      network,
+      onchainId: { not: null },
+      startsAt: { lte: new Date(now) },
+      endsAt: { gt: new Date(now) },
+    },
+    orderBy: { startsAt: "desc" },
+    select: { id: true, prizePool: true, playerCount: true, maxPlayers: true, endsAt: true },
+  });
+  if (liveGame) {
+    const spotsLeft = Math.max(0, liveGame.maxPlayers - liveGame.playerCount);
+    if (spotsLeft > 0) {
+      const entered = await prisma.gameEntry.findFirst({
+        where: { gameId: liveGame.id, userId, paidAt: { not: null } },
+        select: { id: true },
+      });
+      if (!entered) {
+        const pot = usd(liveGame.prizePool);
+        const msLeft = liveGame.endsAt.getTime() - now;
+        const closingSoon = msLeft <= 15 * 60 * 1000;
+        const tight = spotsLeft <= 3;
+        const spots = `${spotsLeft} spot${spotsLeft === 1 ? "" : "s"} left`;
+        out.push({
+          id: `${TRIGGERED_PREFIX}live-round`,
+          priority: 90,
+          tone: "maple",
+          emoji: "🔴",
+          title: closingSoon
+            ? `Live round closes in ${Math.max(1, Math.round(msLeft / 60_000))}m`
+            : tight
+              ? spots
+              : "A round is live now",
+          body: closingSoon
+            ? `${spots} · ${pot} pot. Last call — answer 6 and split it.`
+            : tight
+              ? `The live round's almost full — ${pot} pot. Grab a seat before it's gone.`
+              : `${pot} pot. Answer 6, outscore the room, and split it.`,
+          cta: { label: "Join the round", screen: "home" },
+          publishedAt: now,
+          startsAt: 0,
+          endsAt: FAR_FUTURE,
+          ephemeral: true,
+        });
+      }
+    }
+  }
+
+  // Round-wrap FOMO — a recently-ended round the player SKIPPED (entrants get the
+  // near-miss / win cards above instead). Leads with the pot that just paid out,
+  // since real money is the hook. Capped to the last 6h so it stays fresh.
+  const lastEnded = await prisma.game.findFirst({
+    where: {
+      platform: user.platform,
+      network,
+      onchainId: { not: null },
+      endsAt: { lt: new Date(now), gt: new Date(now - 6 * 3_600_000) },
+    },
+    orderBy: { endsAt: "desc" },
+    select: { id: true, prizePool: true },
+  });
+  if (lastEnded && lastEnded.prizePool > 0) {
+    const playedIt = await prisma.gameEntry.findFirst({
+      where: { gameId: lastEnded.id, userId, paidAt: { not: null } },
+      select: { id: true },
+    });
+    if (!playedIt) {
+      out.push({
+        id: `${TRIGGERED_PREFIX}round-wrap-${lastEnded.id}`,
+        priority: 70,
+        tone: "leaf",
+        emoji: "💸",
+        title: `${usd(lastEnded.prizePool)} just got split`,
+        body: "The top players split the pot on a round you sat out. Get in the next one.",
+        cta: { label: "Play the next round", screen: "home" },
+        publishedAt: now,
+        startsAt: 0,
+        endsAt: FAR_FUTURE,
+        ephemeral: true,
+      });
+    }
+  }
+
+  // Streak on the line — a held streak not yet kept today. The daily-reward sheet
+  // also nudges this, but a feed card persists in the inbox and shows on any
+  // screen. DailyRewardClaim is the streak authority (see dailyStreak.ts).
+  const lastClaim = await prisma.dailyRewardClaim.findFirst({
+    where: { userId },
+    orderBy: { dayKey: "desc" },
+    select: { dayKey: true, streak: true },
+  });
+  const today = dayKeyUTC();
+  const heldStreak = displayStreak(
+    { currentStreak: lastClaim?.streak ?? 0, streakFreezes: user.streakFreezes, lastClaimDay: lastClaim?.dayKey ?? null },
+    today,
+  );
+  if (heldStreak > 0 && lastClaim?.dayKey !== today) {
+    out.push({
+      id: `${TRIGGERED_PREFIX}streak-reminder`,
+      priority: 60,
+      tone: "berry",
+      emoji: "🔥",
+      title: `Your ${heldStreak}-day streak is on the line`,
+      body: "Claim today's reward or play a level to keep it alive.",
+      cta: { label: "Keep my streak", screen: "home" },
+      publishedAt: now,
       startsAt: 0,
       endsAt: FAR_FUTURE,
       ephemeral: true,

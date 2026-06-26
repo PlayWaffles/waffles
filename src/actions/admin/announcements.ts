@@ -68,8 +68,12 @@ export async function createAnnouncementAction(
   if (!parsed.success) return { success: false, error: parsed.error.issues[0].message };
 
   const d = parsed.data;
-  // A CTA needs both a label and a target; otherwise the card is non-interactive.
-  const hasCta = Boolean(d.ctaLabel && d.ctaTarget);
+  // The target encodes the tap behaviour. "open:small"/"open:full" reveal the
+  // details as a modal and need no label; a "screen:"/"theme:" nav button needs a
+  // label (otherwise there's nothing to render). With no target, the player tap
+  // defaults to a small detail modal — so the card is always interactive.
+  const isOpenAction = (d.ctaTarget ?? "").startsWith("open:");
+  const hasNavCta = Boolean(d.ctaLabel && d.ctaTarget) && !isOpenAction;
 
   try {
     const created = await prisma.announcement.create({
@@ -80,8 +84,8 @@ export async function createAnnouncementAction(
         tone: d.tone,
         emoji: d.emoji,
         kind: "info",
-        ctaLabel: hasCta ? d.ctaLabel : null,
-        ctaAction: hasCta ? d.ctaTarget : null,
+        ctaLabel: hasNavCta ? d.ctaLabel : null,
+        ctaAction: isOpenAction ? d.ctaTarget : hasNavCta ? d.ctaTarget : null,
         sortOrder: d.sortOrder,
         startsAt: parseDate(d.startsAt),
         endsAt: parseDate(d.endsAt),
