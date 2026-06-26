@@ -345,6 +345,7 @@ export type QuestionTemplateWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
   stats?: Prisma.QuestionStatListRelationFilter
+  levelExposures?: Prisma.LevelQuestionExposureListRelationFilter
 }
 
 export type QuestionTemplateOrderByWithRelationInput = {
@@ -370,6 +371,7 @@ export type QuestionTemplateOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
   stats?: Prisma.QuestionStatOrderByRelationAggregateInput
+  levelExposures?: Prisma.LevelQuestionExposureOrderByRelationAggregateInput
 }
 
 export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
@@ -398,6 +400,7 @@ export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"QuestionTemplate"> | Date | string
   stats?: Prisma.QuestionStatListRelationFilter
+  levelExposures?: Prisma.LevelQuestionExposureListRelationFilter
 }, "id">
 
 export type QuestionTemplateOrderByWithAggregationInput = {
@@ -479,6 +482,7 @@ export type QuestionTemplateCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   stats?: Prisma.QuestionStatCreateNestedManyWithoutTemplateInput
+  levelExposures?: Prisma.LevelQuestionExposureCreateNestedManyWithoutTemplateInput
 }
 
 export type QuestionTemplateUncheckedCreateInput = {
@@ -504,6 +508,7 @@ export type QuestionTemplateUncheckedCreateInput = {
   createdAt?: Date | string
   updatedAt?: Date | string
   stats?: Prisma.QuestionStatUncheckedCreateNestedManyWithoutTemplateInput
+  levelExposures?: Prisma.LevelQuestionExposureUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type QuestionTemplateUpdateInput = {
@@ -529,6 +534,7 @@ export type QuestionTemplateUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stats?: Prisma.QuestionStatUpdateManyWithoutTemplateNestedInput
+  levelExposures?: Prisma.LevelQuestionExposureUpdateManyWithoutTemplateNestedInput
 }
 
 export type QuestionTemplateUncheckedUpdateInput = {
@@ -554,6 +560,7 @@ export type QuestionTemplateUncheckedUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   stats?: Prisma.QuestionStatUncheckedUpdateManyWithoutTemplateNestedInput
+  levelExposures?: Prisma.LevelQuestionExposureUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 export type QuestionTemplateCreateManyInput = {
@@ -788,6 +795,20 @@ export type QuestionTemplateUpdateOneRequiredWithoutStatsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionTemplateUpdateToOneWithWhereWithoutStatsInput, Prisma.QuestionTemplateUpdateWithoutStatsInput>, Prisma.QuestionTemplateUncheckedUpdateWithoutStatsInput>
 }
 
+export type QuestionTemplateCreateNestedOneWithoutLevelExposuresInput = {
+  create?: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutLevelExposuresInput, Prisma.QuestionTemplateUncheckedCreateWithoutLevelExposuresInput>
+  connectOrCreate?: Prisma.QuestionTemplateCreateOrConnectWithoutLevelExposuresInput
+  connect?: Prisma.QuestionTemplateWhereUniqueInput
+}
+
+export type QuestionTemplateUpdateOneRequiredWithoutLevelExposuresNestedInput = {
+  create?: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutLevelExposuresInput, Prisma.QuestionTemplateUncheckedCreateWithoutLevelExposuresInput>
+  connectOrCreate?: Prisma.QuestionTemplateCreateOrConnectWithoutLevelExposuresInput
+  upsert?: Prisma.QuestionTemplateUpsertWithoutLevelExposuresInput
+  connect?: Prisma.QuestionTemplateWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.QuestionTemplateUpdateToOneWithWhereWithoutLevelExposuresInput, Prisma.QuestionTemplateUpdateWithoutLevelExposuresInput>, Prisma.QuestionTemplateUncheckedUpdateWithoutLevelExposuresInput>
+}
+
 export type QuestionTemplateCreateWithoutStatsInput = {
   id?: string
   content: string
@@ -810,6 +831,7 @@ export type QuestionTemplateCreateWithoutStatsInput = {
   usageCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  levelExposures?: Prisma.LevelQuestionExposureCreateNestedManyWithoutTemplateInput
 }
 
 export type QuestionTemplateUncheckedCreateWithoutStatsInput = {
@@ -834,6 +856,7 @@ export type QuestionTemplateUncheckedCreateWithoutStatsInput = {
   usageCount?: number
   createdAt?: Date | string
   updatedAt?: Date | string
+  levelExposures?: Prisma.LevelQuestionExposureUncheckedCreateNestedManyWithoutTemplateInput
 }
 
 export type QuestionTemplateCreateOrConnectWithoutStatsInput = {
@@ -874,6 +897,7 @@ export type QuestionTemplateUpdateWithoutStatsInput = {
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  levelExposures?: Prisma.LevelQuestionExposureUpdateManyWithoutTemplateNestedInput
 }
 
 export type QuestionTemplateUncheckedUpdateWithoutStatsInput = {
@@ -898,6 +922,123 @@ export type QuestionTemplateUncheckedUpdateWithoutStatsInput = {
   usageCount?: Prisma.IntFieldUpdateOperationsInput | number
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  levelExposures?: Prisma.LevelQuestionExposureUncheckedUpdateManyWithoutTemplateNestedInput
+}
+
+export type QuestionTemplateCreateWithoutLevelExposuresInput = {
+  id?: string
+  content: string
+  options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
+  correctIndex: number
+  durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
+  mediaUrl?: string | null
+  soundUrl?: string | null
+  theme?: $Enums.GameTheme
+  category?: string | null
+  difficulty?: $Enums.Difficulty
+  usageCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  stats?: Prisma.QuestionStatCreateNestedManyWithoutTemplateInput
+}
+
+export type QuestionTemplateUncheckedCreateWithoutLevelExposuresInput = {
+  id?: string
+  content: string
+  options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
+  correctIndex: number
+  durationSec?: number
+  kind?: $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
+  pick?: number | null
+  correctOrder?: Prisma.QuestionTemplateCreatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateCreateflagsInput | string[]
+  minefield?: boolean
+  kicker?: string | null
+  clues?: Prisma.QuestionTemplateCreatecluesInput | string[]
+  mediaUrl?: string | null
+  soundUrl?: string | null
+  theme?: $Enums.GameTheme
+  category?: string | null
+  difficulty?: $Enums.Difficulty
+  usageCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  stats?: Prisma.QuestionStatUncheckedCreateNestedManyWithoutTemplateInput
+}
+
+export type QuestionTemplateCreateOrConnectWithoutLevelExposuresInput = {
+  where: Prisma.QuestionTemplateWhereUniqueInput
+  create: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutLevelExposuresInput, Prisma.QuestionTemplateUncheckedCreateWithoutLevelExposuresInput>
+}
+
+export type QuestionTemplateUpsertWithoutLevelExposuresInput = {
+  update: Prisma.XOR<Prisma.QuestionTemplateUpdateWithoutLevelExposuresInput, Prisma.QuestionTemplateUncheckedUpdateWithoutLevelExposuresInput>
+  create: Prisma.XOR<Prisma.QuestionTemplateCreateWithoutLevelExposuresInput, Prisma.QuestionTemplateUncheckedCreateWithoutLevelExposuresInput>
+  where?: Prisma.QuestionTemplateWhereInput
+}
+
+export type QuestionTemplateUpdateToOneWithWhereWithoutLevelExposuresInput = {
+  where?: Prisma.QuestionTemplateWhereInput
+  data: Prisma.XOR<Prisma.QuestionTemplateUpdateWithoutLevelExposuresInput, Prisma.QuestionTemplateUncheckedUpdateWithoutLevelExposuresInput>
+}
+
+export type QuestionTemplateUpdateWithoutLevelExposuresInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
+  correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
+  mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
+  usageCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  stats?: Prisma.QuestionStatUpdateManyWithoutTemplateNestedInput
+}
+
+export type QuestionTemplateUncheckedUpdateWithoutLevelExposuresInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  content?: Prisma.StringFieldUpdateOperationsInput | string
+  options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
+  correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
+  durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
+  correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
+  pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  correctOrder?: Prisma.QuestionTemplateUpdatecorrectOrderInput | number[]
+  flags?: Prisma.QuestionTemplateUpdateflagsInput | string[]
+  minefield?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  kicker?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  clues?: Prisma.QuestionTemplateUpdatecluesInput | string[]
+  mediaUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  soundUrl?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  theme?: Prisma.EnumGameThemeFieldUpdateOperationsInput | $Enums.GameTheme
+  category?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  difficulty?: Prisma.EnumDifficultyFieldUpdateOperationsInput | $Enums.Difficulty
+  usageCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  stats?: Prisma.QuestionStatUncheckedUpdateManyWithoutTemplateNestedInput
 }
 
 
@@ -907,10 +1048,12 @@ export type QuestionTemplateUncheckedUpdateWithoutStatsInput = {
 
 export type QuestionTemplateCountOutputType = {
   stats: number
+  levelExposures: number
 }
 
 export type QuestionTemplateCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   stats?: boolean | QuestionTemplateCountOutputTypeCountStatsArgs
+  levelExposures?: boolean | QuestionTemplateCountOutputTypeCountLevelExposuresArgs
 }
 
 /**
@@ -928,6 +1071,13 @@ export type QuestionTemplateCountOutputTypeDefaultArgs<ExtArgs extends runtime.T
  */
 export type QuestionTemplateCountOutputTypeCountStatsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   where?: Prisma.QuestionStatWhereInput
+}
+
+/**
+ * QuestionTemplateCountOutputType without action
+ */
+export type QuestionTemplateCountOutputTypeCountLevelExposuresArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.LevelQuestionExposureWhereInput
 }
 
 
@@ -954,6 +1104,7 @@ export type QuestionTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   createdAt?: boolean
   updatedAt?: boolean
   stats?: boolean | Prisma.QuestionTemplate$statsArgs<ExtArgs>
+  levelExposures?: boolean | Prisma.QuestionTemplate$levelExposuresArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["questionTemplate"]>
 
@@ -1032,6 +1183,7 @@ export type QuestionTemplateSelectScalar = {
 export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "category" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
 export type QuestionTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   stats?: boolean | Prisma.QuestionTemplate$statsArgs<ExtArgs>
+  levelExposures?: boolean | Prisma.QuestionTemplate$levelExposuresArgs<ExtArgs>
   _count?: boolean | Prisma.QuestionTemplateCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type QuestionTemplateIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
@@ -1041,6 +1193,7 @@ export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
   name: "QuestionTemplate"
   objects: {
     stats: Prisma.$QuestionStatPayload<ExtArgs>[]
+    levelExposures: Prisma.$LevelQuestionExposurePayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1459,6 +1612,7 @@ readonly fields: QuestionTemplateFieldRefs;
 export interface Prisma__QuestionTemplateClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   stats<T extends Prisma.QuestionTemplate$statsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.QuestionTemplate$statsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$QuestionStatPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  levelExposures<T extends Prisma.QuestionTemplate$levelExposuresArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.QuestionTemplate$levelExposuresArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$LevelQuestionExposurePayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1918,6 +2072,30 @@ export type QuestionTemplate$statsArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.QuestionStatScalarFieldEnum | Prisma.QuestionStatScalarFieldEnum[]
+}
+
+/**
+ * QuestionTemplate.levelExposures
+ */
+export type QuestionTemplate$levelExposuresArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the LevelQuestionExposure
+   */
+  select?: Prisma.LevelQuestionExposureSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the LevelQuestionExposure
+   */
+  omit?: Prisma.LevelQuestionExposureOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.LevelQuestionExposureInclude<ExtArgs> | null
+  where?: Prisma.LevelQuestionExposureWhereInput
+  orderBy?: Prisma.LevelQuestionExposureOrderByWithRelationInput | Prisma.LevelQuestionExposureOrderByWithRelationInput[]
+  cursor?: Prisma.LevelQuestionExposureWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.LevelQuestionExposureScalarFieldEnum | Prisma.LevelQuestionExposureScalarFieldEnum[]
 }
 
 /**

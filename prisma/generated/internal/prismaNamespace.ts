@@ -402,6 +402,7 @@ export const ModelName = {
   InviteCode: 'InviteCode',
   TicketLedger: 'TicketLedger',
   LevelProgress: 'LevelProgress',
+  LevelQuestionExposure: 'LevelQuestionExposure',
   RoundEntry: 'RoundEntry',
   Announcement: 'Announcement',
   AnnouncementState: 'AnnouncementState',
@@ -435,7 +436,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "roundEntry" | "announcement" | "announcementState" | "announcementRecipient" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "levelQuestionExposure" | "roundEntry" | "announcement" | "announcementState" | "announcementRecipient" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1768,6 +1769,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.LevelProgressCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.LevelProgressCountAggregateOutputType> | number
+        }
+      }
+    }
+    LevelQuestionExposure: {
+      payload: Prisma.$LevelQuestionExposurePayload<ExtArgs>
+      fields: Prisma.LevelQuestionExposureFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.LevelQuestionExposureFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.LevelQuestionExposureFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>
+        }
+        findFirst: {
+          args: Prisma.LevelQuestionExposureFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.LevelQuestionExposureFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>
+        }
+        findMany: {
+          args: Prisma.LevelQuestionExposureFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>[]
+        }
+        create: {
+          args: Prisma.LevelQuestionExposureCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>
+        }
+        createMany: {
+          args: Prisma.LevelQuestionExposureCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.LevelQuestionExposureCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>[]
+        }
+        delete: {
+          args: Prisma.LevelQuestionExposureDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>
+        }
+        update: {
+          args: Prisma.LevelQuestionExposureUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>
+        }
+        deleteMany: {
+          args: Prisma.LevelQuestionExposureDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.LevelQuestionExposureUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.LevelQuestionExposureUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>[]
+        }
+        upsert: {
+          args: Prisma.LevelQuestionExposureUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$LevelQuestionExposurePayload>
+        }
+        aggregate: {
+          args: Prisma.LevelQuestionExposureAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateLevelQuestionExposure>
+        }
+        groupBy: {
+          args: Prisma.LevelQuestionExposureGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LevelQuestionExposureGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.LevelQuestionExposureCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.LevelQuestionExposureCountAggregateOutputType> | number
         }
       }
     }
@@ -3489,6 +3564,20 @@ export const LevelProgressScalarFieldEnum = {
 export type LevelProgressScalarFieldEnum = (typeof LevelProgressScalarFieldEnum)[keyof typeof LevelProgressScalarFieldEnum]
 
 
+export const LevelQuestionExposureScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  templateId: 'templateId',
+  track: 'track',
+  seenCount: 'seenCount',
+  firstSeenAt: 'firstSeenAt',
+  lastSeenAt: 'lastSeenAt',
+  lastLevel: 'lastLevel'
+} as const
+
+export type LevelQuestionExposureScalarFieldEnum = (typeof LevelQuestionExposureScalarFieldEnum)[keyof typeof LevelQuestionExposureScalarFieldEnum]
+
+
 export const RoundEntryScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -4264,6 +4353,7 @@ export type GlobalOmitConfig = {
   inviteCode?: Prisma.InviteCodeOmit
   ticketLedger?: Prisma.TicketLedgerOmit
   levelProgress?: Prisma.LevelProgressOmit
+  levelQuestionExposure?: Prisma.LevelQuestionExposureOmit
   roundEntry?: Prisma.RoundEntryOmit
   announcement?: Prisma.AnnouncementOmit
   announcementState?: Prisma.AnnouncementStateOmit

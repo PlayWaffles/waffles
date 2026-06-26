@@ -108,6 +108,11 @@ export type TicketLedger = Prisma.TicketLedgerModel
  */
 export type LevelProgress = Prisma.LevelProgressModel
 /**
+ * Model LevelQuestionExposure
+ * 
+ */
+export type LevelQuestionExposure = Prisma.LevelQuestionExposureModel
+/**
  * Model RoundEntry
  * 
  */

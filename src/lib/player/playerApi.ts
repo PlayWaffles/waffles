@@ -130,7 +130,9 @@ export async function getLevelQuestions(
   track: LevelTrack,
   level: number,
 ): Promise<ClientRoundQuestion[]> {
-  return getLevelClientQuestions(track, level);
+  const user = await getCurrentUser();
+  if (!user) return [];
+  return getLevelClientQuestions(track, level, undefined, user.id);
 }
 
 /** The player's recent settled tournament results — drives the return-pop result

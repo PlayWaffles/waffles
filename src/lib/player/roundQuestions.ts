@@ -8,7 +8,7 @@
  * and read back via `getTournamentClientQuestions` in `lib/player/tournamentGames`.
  */
 import { prisma } from "@/lib/db";
-import { Difficulty, GameTheme, QuestionKind } from "@prisma";
+import { Difficulty, GameTheme, LevelTrack as DbLevelTrack, QuestionKind } from "@prisma";
 import { scoreAnswer, type RoundAnswer, type ScorableKind, type ScorableQuestion } from "./scoring";
 import { recordQuestionStats } from "./questionStats";
 
@@ -229,7 +229,16 @@ type Candidate = {
     lastPlayedAt: Date | null;
   }[];
 };
+type Exposure = {
+  seenCount: number;
+  lastSeenAt: Date;
+};
 const levelPoolCache = new Map<LevelTrack, { items: Candidate[]; at: number }>();
+
+const TRACK_TO_ENUM: Record<LevelTrack, DbLevelTrack> = {
+  standard: DbLevelTrack.STANDARD,
+  "world-cup": DbLevelTrack.WORLD_CUP,
+};
 
 async function levelPool(track: LevelTrack): Promise<Candidate[]> {
   const cached = levelPoolCache.get(track);
@@ -263,6 +272,25 @@ async function levelPool(track: LevelTrack): Promise<Candidate[]> {
   return items;
 }
 
+async function levelExposureMap(
+  userId: string | null | undefined,
+  track: LevelTrack,
+): Promise<Map<string, Exposure>> {
+  if (!userId) return new Map();
+  const rows = await prisma.levelQuestionExposure.findMany({
+    where: { userId, track: TRACK_TO_ENUM[track] },
+    select: {
+      templateId: true,
+      seenCount: true,
+      lastSeenAt: true,
+    },
+  });
+  return new Map(rows.map((row) => [
+    row.templateId,
+    { seenCount: row.seenCount, lastSeenAt: row.lastSeenAt },
+  ]));
+}
+
 function targetCorrectRate(difficulty: Difficulty): number {
   if (difficulty === Difficulty.EASY) return 0.78;
   if (difficulty === Difficulty.MEDIUM) return 0.62;
@@ -274,6 +302,7 @@ function candidateScore(
   slot: LevelSlot,
   usedKinds: Set<QuestionKind>,
   usedCategories: Set<string>,
+  exposure: Exposure | undefined,
   now: number,
 ): number {
   const stat = candidate.stats[0];
@@ -296,6 +325,13 @@ function candidateScore(
   score += candidate.kind === slot.kind ? 105 : usedKinds.has(candidate.kind) ? -20 : 32;
   score += categoryKey && !usedCategories.has(categoryKey) ? 38 : categoryKey ? -34 : 0;
   score += Math.max(0, 28 - candidate.usageCount * 0.8);
+  if (exposure) {
+    score -= 200 + Math.min(160, exposure.seenCount * 24);
+    const daysSinceUserSaw = (now - exposure.lastSeenAt.getTime()) / 86_400_000;
+    if (daysSinceUserSaw < 30) score -= 120 - daysSinceUserSaw * 4;
+  } else {
+    score += 60;
+  }
 
   if (correctRate == null || playCount < 8) {
     score += 16;
@@ -312,6 +348,27 @@ function candidateScore(
   }
 
   return score;
+}
+
+function bestTier(
+  exact: Candidate[],
+  kindMatched: Candidate[],
+  difficultyMatched: Candidate[],
+  unused: Candidate[],
+  exposures: Map<string, Exposure>,
+): Candidate[] {
+  const tiers = [exact, kindMatched, difficultyMatched, unused];
+  for (const tier of tiers) {
+    const unseen = tier.filter((candidate) => !exposures.has(candidate.id));
+    if (unseen.length > 0) return unseen;
+  }
+  return exact.length > 0
+    ? exact
+    : kindMatched.length > 0
+      ? kindMatched
+      : difficultyMatched.length > 0
+        ? difficultyMatched
+        : unused;
 }
 
 function pickRanked(candidates: Candidate[], score: (candidate: Candidate) => number): Candidate {
@@ -334,9 +391,15 @@ function pickRanked(candidates: Candidate[], score: (candidate: Candidate) => nu
 }
 
 /** Select level question ids by difficulty, kind, category, and observed stats. */
-async function levelIds(track: LevelTrack, level: number, n: number): Promise<string[]> {
+async function levelIds(
+  track: LevelTrack,
+  level: number,
+  n: number,
+  userId?: string | null,
+): Promise<string[]> {
   const pool = await levelPool(track);
   if (pool.length === 0) return [];
+  const exposures = await levelExposureMap(userId, track);
   const used = new Set<string>();
   const usedKinds = new Set<QuestionKind>();
   const usedCategories = new Set<string>();
@@ -350,16 +413,10 @@ async function levelIds(track: LevelTrack, level: number, n: number): Promise<st
     const exact = unused.filter((q) => q.difficulty === slot.difficulty && q.kind === slot.kind);
     const kindMatched = unused.filter((q) => q.kind === slot.kind);
     const difficultyMatched = unused.filter((q) => q.difficulty === slot.difficulty);
-    const tier = exact.length > 0
-      ? exact
-      : kindMatched.length > 0
-        ? kindMatched
-        : difficultyMatched.length > 0
-          ? difficultyMatched
-          : unused;
+    const tier = bestTier(exact, kindMatched, difficultyMatched, unused, exposures);
 
     const pick = pickRanked(tier, (candidate) =>
-      candidateScore(candidate, slot, usedKinds, usedCategories, now),
+      candidateScore(candidate, slot, usedKinds, usedCategories, exposures.get(candidate.id), now),
     );
     used.add(pick.id);
     usedKinds.add(pick.kind);
@@ -369,19 +426,59 @@ async function levelIds(track: LevelTrack, level: number, n: number): Promise<st
   return out;
 }
 
+async function recordLevelQuestionExposures(
+  userId: string | null | undefined,
+  track: LevelTrack,
+  level: number,
+  templateIds: string[],
+): Promise<void> {
+  if (!userId || templateIds.length === 0) return;
+  const now = new Date();
+  await prisma.$transaction(
+    templateIds.map((templateId) =>
+      prisma.levelQuestionExposure.upsert({
+        where: {
+          userId_track_templateId: {
+            userId,
+            track: TRACK_TO_ENUM[track],
+            templateId,
+          },
+        },
+        create: {
+          userId,
+          track: TRACK_TO_ENUM[track],
+          templateId,
+          seenCount: 1,
+          firstSeenAt: now,
+          lastSeenAt: now,
+          lastLevel: level,
+        },
+        update: {
+          seenCount: { increment: 1 },
+          lastSeenAt: now,
+          lastLevel: level,
+        },
+      }),
+    ),
+  );
+}
+
 /** The solo level's questions in client shape (answer keys included). */
 export async function getLevelClientQuestions(
   track: LevelTrack,
   level: number,
   n = QUESTIONS_PER_LEVEL,
+  userId?: string | null,
 ): Promise<ClientRoundQuestion[]> {
-  const ids = await levelIds(track, level, n);
+  const ids = await levelIds(track, level, n, userId);
   if (ids.length === 0) return [];
   const rows = await prisma.questionTemplate.findMany({
     where: { id: { in: ids } },
     select: TEMPLATE_SELECT,
   });
   const byId = new Map(rows.map((r) => [r.id, r as TemplateRow]));
+  const resolvedIds = ids.filter((id) => byId.has(id));
+  await recordLevelQuestionExposures(userId, track, level, resolvedIds);
   return ids
     .map((id) => byId.get(id))
     .filter((r): r is TemplateRow => Boolean(r))

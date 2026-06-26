@@ -76,7 +76,7 @@ export async function buildGhostField(platform: UserPlatform, n: number): Promis
 export async function getRookieCup(userId: string): Promise<RookieCup> {
   const user = await prisma.user.findUnique({ where: { id: userId }, select: { rookieCupAt: true } });
   if (user?.rookieCupAt) return { done: true, questions: [], fieldSize: 0 };
-  const questions = await getLevelClientQuestions("world-cup", 1, ROOKIE_QUESTION_COUNT);
+  const questions = await getLevelClientQuestions("world-cup", 1, ROOKIE_QUESTION_COUNT, userId);
   return { done: false, questions, fieldSize: ROOKIE_FIELD_SIZE };
 }
 

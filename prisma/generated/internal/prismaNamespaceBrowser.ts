@@ -69,6 +69,7 @@ export const ModelName = {
   InviteCode: 'InviteCode',
   TicketLedger: 'TicketLedger',
   LevelProgress: 'LevelProgress',
+  LevelQuestionExposure: 'LevelQuestionExposure',
   RoundEntry: 'RoundEntry',
   Announcement: 'Announcement',
   AnnouncementState: 'AnnouncementState',
@@ -450,6 +451,20 @@ export const LevelProgressScalarFieldEnum = {
 } as const
 
 export type LevelProgressScalarFieldEnum = (typeof LevelProgressScalarFieldEnum)[keyof typeof LevelProgressScalarFieldEnum]
+
+
+export const LevelQuestionExposureScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  templateId: 'templateId',
+  track: 'track',
+  seenCount: 'seenCount',
+  firstSeenAt: 'firstSeenAt',
+  lastSeenAt: 'lastSeenAt',
+  lastLevel: 'lastLevel'
+} as const
+
+export type LevelQuestionExposureScalarFieldEnum = (typeof LevelQuestionExposureScalarFieldEnum)[keyof typeof LevelQuestionExposureScalarFieldEnum]
 
 
 export const RoundEntryScalarFieldEnum = {

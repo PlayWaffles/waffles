@@ -82,6 +82,7 @@ model User {
   // -- v2 MIGRATION RELATIONS --
   ticketLedger           TicketLedger[]
   levelProgress          LevelProgress[]
+  levelQuestionExposures LevelQuestionExposure[]
   roundEntries           RoundEntry[]
   announcementState      AnnouncementState[]
   announcementRecipients AnnouncementRecipient[]
@@ -390,6 +391,7 @@ model QuestionTemplate {
 
   // Per-mode play/answer stats (tournament vs level), one row per (template,mode).
   stats QuestionStat[]
+  levelExposures LevelQuestionExposure[]
 
   // -- INDEXES --
   @@index([theme, difficulty])
@@ -761,6 +763,26 @@ model LevelProgress {
   updatedAt DateTime   @updatedAt
 
   @@unique([userId, track])
+}
+
+// -- Per-player solo level question exposure history. Used by the level selector
+//    to avoid serving the same template back to the same player unless the track's
+//    unseen pool is exhausted. --
+model LevelQuestionExposure {
+  id         String           @id @default(cuid())
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId     String
+  template   QuestionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  templateId String
+  track      LevelTrack
+  seenCount  Int              @default(1)
+  firstSeenAt DateTime        @default(now())
+  lastSeenAt  DateTime        @default(now())
+  lastLevel   Int             @db.SmallInt
+
+  @@unique([userId, track, templateId])
+  @@index([userId, track, lastSeenAt(sort: Desc)])
+  @@index([templateId])
 }
 
 // -- Hourly tournament round entry. roundId = epoch-ms bucket of the round
