@@ -1,14 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { syrupLabel, USDT_PER_TICKET, useProto } from "../state";
-import { loadTournamentClaims, deleteMyAccount } from "@/player/api";
+import { deleteMyAccount } from "@/player/api";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
 import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, resolveAvatar, SyrupIcon, TabBar, TopHeader } from "../shared";
 import { BADGES, badgeProgress, deriveBadgeStats, isBadgeEarned, type Badge, type BadgeStats } from "../data/badges";
 import { LegalSheet, type LegalTab } from "../legal";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+import {
+  playerQueryKeys,
+  useTournamentClaimsQuery,
+} from "../hooks/usePlayerQueries";
 
 const TICKET_INFO = "Syrup is the in-app currency. Earn it through daily rewards, levels, and missions, then spend it on lives, power-ups, and cosmetics. Tournament prizes are paid in USDT and can be claimed from your Prize Wallet below.";
 
@@ -67,6 +72,7 @@ const BadgeCoin = ({ badge, stats, earned, onClick }: { badge: Badge; stats: Bad
 
 export const ProfileScreen = () => {
   const proto = useProto();
+  const queryClient = useQueryClient();
   const tickets = proto.tickets;
   const level = proto.level;
   const streak = proto.streak;
@@ -91,14 +97,9 @@ export const ProfileScreen = () => {
 
   // The Prize Wallet — a player's settled on-chain tournament prizes. Each can be
   // CLAIMED as USDT (merkle `claimPrize`) or CONVERTED into off-chain Syrup.
-  const [onchainClaims, setOnchainClaims] = useState<TournamentClaimItem[]>([]);
+  const { data: onchainClaims = [] } = useTournamentClaimsQuery();
   const [claimingGameId, setClaimingGameId] = useState<string | null>(null);
   const claimableUsdt = onchainClaims.reduce((s, c) => s + c.amount, 0);
-  useEffect(() => {
-    let active = true;
-    loadTournamentClaims().then((c) => { if (active) setOnchainClaims(c); }).catch(() => {});
-    return () => { active = false; };
-  }, []);
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.ProfileViewed, {
       screen: "profile",
@@ -117,7 +118,10 @@ export const ProfileScreen = () => {
     const res = await proto.claimTournamentPrize(item.gameId);
     setClaimingGameId(null);
     if (res.ok) {
-      setOnchainClaims((list) => list.filter((c) => c.gameId !== item.gameId));
+      queryClient.setQueryData<TournamentClaimItem[]>(playerQueryKeys.tournamentClaims(), (list) =>
+        list?.filter((c) => c.gameId !== item.gameId),
+      );
+      void queryClient.invalidateQueries({ queryKey: playerQueryKeys.tournamentClaims() });
       setToast(`Claimed ${item.amount.toFixed(2)} USDT`);
     } else {
       setToast(res.error ?? "Claim failed");

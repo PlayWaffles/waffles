@@ -14,7 +14,6 @@ import { type VMedia } from "./world-cup/data";
 import { THEMES, resolveThemeId } from "./theme";
 import { scoreToXp } from "@/lib/player/xp";
 import {
-  loadState,
   advanceLevel,
   // Aliased: these collide with same-named local proto methods below whose
   // bodies call the player API (e.g. local `refillLives` → `refillLivesAction`).
@@ -34,9 +33,7 @@ import {
   recordMissionEvent,
   refillLives as refillLivesAction,
   setAnnouncementsRead,
-  loadAnnouncements,
   getAnnouncementRealtimeToken,
-  loadResults,
   setUsername as setUsernameAction,
   logClient,
 } from "@/player/api";
@@ -58,6 +55,11 @@ import {
   ANNOUNCEMENTS_ROOM,
   type AnnouncementRealtimeMessage,
 } from "@/lib/realtime/announcementMessages";
+import {
+  usePlayerAnnouncementsQuery,
+  usePlayerResultNotificationsQuery,
+  usePlayerStateQuery,
+} from "./hooks/usePlayerQueries";
 
 // Forward the buy-ticket flow trace to the SERVER terminal (these run in the
 // browser). Errors are flattened since Error objects don't cross the RSC wire.
@@ -673,6 +675,9 @@ export function ProtoProvider({
   // forever" symptom, which just made it visible by hard-gating its UI).
   const { user } = useUser();
   const authedUserId = user?.id ?? null;
+  const playerStateQuery = usePlayerStateQuery(authedUserId);
+  const announcementsQuery = usePlayerAnnouncementsQuery(authedUserId);
+  const resultNotificationsQuery = usePlayerResultNotificationsQuery(authedUserId);
   const shellTrackedRef = useRef(false);
   const questionStartRef = useRef<string | null>(null);
   const screenViewedRef = useRef<string | null>(null);
@@ -766,16 +771,13 @@ export function ProtoProvider({
   }, [update]);
 
   // Hydrate real player state from the server after a confirmed session lands
-  // (authedUserId). The shell gates all screens behind `hydrated`, so this is
-  // the single source of the player's real data — there is no mock fallback.
-  // `hydrated` flips on settle (success OR failure) so the app can never hang on
-  // the loader; a failed load just proceeds on the seed and self-heals on refetch.
+  // (authedUserId). React Query owns the server read/retry; proto keeps the
+  // gameplay/UI store that the screens already consume.
   useEffect(() => {
     if (!authedUserId) return;
-    let active = true;
-    loadState()
-      .then((s) => {
-        if (!active || !s) return;
+    const id = requestAnimationFrame(() => {
+      const s = playerStateQuery.data;
+      if (s) {
         update({
           tickets: s.tickets,
           xp: s.xp,
@@ -792,15 +794,13 @@ export function ProtoProvider({
           annDismissed: s.annDismissed,
           earnedBadges: s.earnedBadges,
         });
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (active) update({ hydrated: true });
-      });
-    return () => {
-      active = false;
-    };
-  }, [authedUserId, update]);
+      }
+      if (playerStateQuery.isFetched || playerStateQuery.isError) {
+        update({ hydrated: true });
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [authedUserId, playerStateQuery.data, playerStateQuery.isFetched, playerStateQuery.isError, update]);
 
   // Auto-dismiss the transient global toast.
   useEffect(() => {
@@ -813,21 +813,13 @@ export function ProtoProvider({
   // clear lifecycle in <AnnouncementToast> so it can animate out, not just blink
   // away. State here only holds the payload.
 
-  // Fetch the live announcement feed (authored DB rows + per-user triggered
-  // cards). Runs on mount for authored content and refetches once a session
-  // lands so triggered cards (e.g. unclaimed prize) appear. The DB is the sole
-  // source of truth — an empty result clears the feed.
+  // Mirror the live announcement feed (authored DB rows + per-user triggered
+  // cards) from the query cache into proto so realtime delivery can merge into it.
   useEffect(() => {
-    let active = true;
-    loadAnnouncements()
-      .then((list) => {
-        if (active && list) update({ announcements: list });
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, [authedUserId, update]);
+    if (!announcementsQuery.data) return;
+    const id = requestAnimationFrame(() => update({ announcements: announcementsQuery.data }));
+    return () => cancelAnimationFrame(id);
+  }, [announcementsQuery.data, update]);
 
   useEffect(() => {
     const configuredHost = process.env.NEXT_PUBLIC_PARTYKIT_HOST;
@@ -894,24 +886,18 @@ export function ProtoProvider({
     };
   }, [authedUserId, update]);
 
-  // Recent SETTLED results → the return-pop result modal. With no MiniPay push
-  // channel, loading these on open is the only way a returning player learns they
-  // placed/won. Dismissed results are remembered per-device (localStorage) so the
-  // popup fires once, not on every open.
+  // Recent SETTLED results → the return-pop result modal. Dismissed results are
+  // remembered per-device (localStorage) so the popup fires once, not on every open.
   useEffect(() => {
-    if (!authedUserId) return;
-    let active = true;
-    loadResults()
-      .then((list) => {
-        if (!active || !list || list.length === 0) return;
-        let seen: string[] = [];
-        try { seen = JSON.parse(localStorage.getItem(RESULTS_SEEN_KEY) ?? "[]"); } catch { /* storage off */ }
-        const fresh = list.filter((r) => !seen.includes(r.id)).map((r) => ({ ...r, read: false }));
-        if (fresh.length) update({ resultNotifs: fresh });
-      })
-      .catch(() => {});
-    return () => { active = false; };
-  }, [authedUserId, update]);
+    const list = resultNotificationsQuery.data;
+    if (!authedUserId || !list || list.length === 0) return;
+    let seen: string[] = [];
+    try { seen = JSON.parse(localStorage.getItem(RESULTS_SEEN_KEY) ?? "[]"); } catch { /* storage off */ }
+    const fresh = list.filter((r) => !seen.includes(r.id)).map((r) => ({ ...r, read: false }));
+    if (!fresh.length) return;
+    const id = requestAnimationFrame(() => update({ resultNotifs: fresh }));
+    return () => cancelAnimationFrame(id);
+  }, [authedUserId, resultNotificationsQuery.data, update]);
 
   useEffect(() => {
     if (state.screen !== "question" || state.qAnswered !== null) return;

@@ -2,10 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useProto } from "../state";
-import { useResilientAction } from "../useResilientAction";
 import { ASSETS, InfoButton, Phone, PixelImg, resolveAvatar, TabBar } from "../shared";
-import { listPreviousGames, loadAllTimeLeaderboard, loadCurrentTournamentBoard, loadLevelsLeaderboard, loadTournamentBoard } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
+import {
+  useAllTimeLeaderboardQuery,
+  useCurrentTournamentBoardQuery,
+  useLevelsLeaderboardQuery,
+  usePreviousGamesQuery,
+  useTournamentBoardQuery,
+} from "../hooks/usePlayerQueries";
 
 // Two boards under one screen: TOURNAMENT (paid on-chain games) and LEVELS (free
 // solo XP progression). Tournament has three sub-tabs — This game / Top earners
@@ -66,17 +71,14 @@ export const LeaderboardScreen = () => {
   const [pickedGameId, setPickedGameId] = useState<string | null>(null);
   const isLevels = mode === "levels";
 
-  const { data: currentBoard } = useResilientAction(() => loadCurrentTournamentBoard(), []);
-  const { data: allTimeBoard } = useResilientAction(() => loadAllTimeLeaderboard(), []);
-  const { data: levelsBoard } = useResilientAction(() => loadLevelsLeaderboard(), []);
-  const { data: pastGames } = useResilientAction(() => listPreviousGames(), []);
+  const { data: currentBoard } = useCurrentTournamentBoardQuery();
+  const { data: allTimeBoard } = useAllTimeLeaderboardQuery();
+  const { data: levelsBoard } = useLevelsLeaderboardQuery();
+  const { data: pastGames } = usePreviousGamesQuery();
   // The picker defaults to the most recent ended game (derived, not stored, so we
   // never setState in an effect just to pick a default).
   const selectedGameId = pickedGameId ?? pastGames?.[0]?.id ?? null;
-  const { data: pastBoard } = useResilientAction(
-    () => (selectedGameId ? loadTournamentBoard(selectedGameId) : Promise.resolve(null)),
-    [selectedGameId],
-  );
+  const { data: pastBoard } = useTournamentBoardQuery(selectedGameId);
 
   const tBoard = tab === "current" ? currentBoard : tab === "alltime" ? allTimeBoard : pastBoard;
 

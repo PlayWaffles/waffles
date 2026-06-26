@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { syrupLabel, useProto } from "../state";
-import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BackButton, InfoButton, Phone, PixelImg, SyrupIcon, TabBar } from "../shared";
-import { loadMissions, loadPartnerOffers, claimPartnerOffer, claimMission } from "@/player/api";
+import { claimPartnerOffer, claimMission } from "@/player/api";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import type { Mission } from "@/lib/player/missions";
 import type { PartnerOffer } from "@/lib/player/partnerOffers";
+import {
+  playerQueryKeys,
+  useMissionsQuery,
+  usePartnerOffersQuery,
+} from "../hooks/usePlayerQueries";
 
 const ICON_ASSETS: Record<string, string> = {
   iconTarget: ASSETS.iconTarget,
@@ -28,14 +33,10 @@ const timeToUtcMidnight = (): string => {
 
 export const MissionsScreen = () => {
   const proto = useProto();
+  const queryClient = useQueryClient();
   const [tab, setTab] = useState<"daily" | "partner">("daily");
 
-  // Load real daily missions (Quest + per-user progress) via a resilient fetch
-  // (retries through the auth-cookie race), then mirror into local state so the
-  // optimistic claim flip below can mutate it.
-  const { data: fetchedMissions, loading: missionsLoading } = useResilientAction(() => loadMissions(), []);
-  const [loaded, setLoaded] = useState<Mission[] | null>(null);
-  const missionSource = loaded ?? fetchedMissions;
+  const { data: missionSource, isLoading: missionsLoading } = useMissionsQuery();
 
   type DailyRow = { slug: string | null; t: string; p: number; tot: number; xp: number; icon: string; done: boolean; claimable: boolean; featured: boolean };
   const dailyMissions: DailyRow[] = missionSource
@@ -47,19 +48,39 @@ export const MissionsScreen = () => {
   // Claim a completed daily mission — awards XP server-side, with an optimistic
   // local flip + XP credit so the tile updates instantly.
   const [claimingSlug, setClaimingSlug] = useState<string | null>(null);
+  const claimMissionMutation = useMutation({
+    mutationFn: ({ slug }: { slug: string; xp: number }) => claimMission(slug),
+    onSuccess: (res, { slug }) => {
+      if (res?.ok) {
+        proto.update(() => ({ xp: res.xp }));
+        queryClient.setQueryData<Mission[]>(playerQueryKeys.missions(), (list) =>
+          list?.map((m) =>
+            m.slug === slug ? { ...m, done: true, claimable: false, count: m.total } : m,
+          ),
+        );
+        trackClientEvent(AnalyticsEvent.MissionClaimSucceeded, {
+          screen: "missions",
+          mission_slug: slug,
+          xp_awarded: res.xpAwarded,
+        });
+      } else {
+        trackClientEvent(AnalyticsEvent.MissionClaimFailed, {
+          screen: "missions",
+          mission_slug: slug,
+          reason: res?.error ?? "no_session",
+        });
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: playerQueryKeys.missions() });
+    },
+  });
   const claimDailyMission = async (slug: string | null, xp: number) => {
     if (!slug || claimingSlug) return;
     setClaimingSlug(slug);
     trackClientEvent(AnalyticsEvent.MissionClaimClicked, { screen: "missions", mission_slug: slug, xp });
     try {
-      const res = await claimMission(slug);
-      if (res?.ok) {
-        proto.update(() => ({ xp: res.xp }));
-        setLoaded((list) => (list ?? fetchedMissions)?.map((m) => (m.slug === slug ? { ...m, done: true, claimable: false, count: m.total } : m)) ?? null);
-        trackClientEvent(AnalyticsEvent.MissionClaimSucceeded, { screen: "missions", mission_slug: slug, xp_awarded: res.xpAwarded });
-      } else {
-        trackClientEvent(AnalyticsEvent.MissionClaimFailed, { screen: "missions", mission_slug: slug, reason: res?.error ?? "no_session" });
-      }
+      await claimMissionMutation.mutateAsync({ slug, xp });
     } finally {
       setClaimingSlug(null);
     }
@@ -105,45 +126,35 @@ export const MissionsScreen = () => {
     );
   };
 
-  // Real sponsored partner offers (+ per-user claim state). Falls back to the
-  // static list in the preview / unauthenticated context.
-  const [offers, setOffers] = useState<PartnerOffer[] | null>(null);
-  const [claimedSlugs, setClaimedSlugs] = useState<Set<string>>(new Set());
-  useEffect(() => {
-    let active = true;
-    loadPartnerOffers()
-      .then((o) => {
-        if (active && o && o.length) {
-          setOffers(o);
-          setClaimedSlugs(new Set(o.filter((x) => x.claimed).map((x) => x.slug)));
-        }
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const STATIC_PARTNERS: PartnerOffer[] = [
-    { slug: "duolingo-lesson", brand: "Duolingo", brandColor: "#58CC02", glyph: "🦉", title: "Try a free language lesson", cta: "Open app", tickets: 3, estTime: "~2 min", verified: true, hot: false, claimed: false },
-    { slug: "spotify-trial", brand: "Spotify", brandColor: "#1DB954", glyph: "♫", title: "Sign up for Spotify Free trial", cta: "Get offer", tickets: 5, estTime: "~5 min", verified: true, hot: false, claimed: false },
-    { slug: "doordash-first-order", brand: "Doordash", brandColor: "#FF3008", glyph: "D", title: "Place your first order, $10 off", cta: "Claim", tickets: 10, estTime: "varies", verified: true, hot: true, claimed: false },
-    { slug: "pulse-survey", brand: "Pulse", brandColor: "#FFD24D", glyph: "?", title: "Answer a 5-min market survey", cta: "Start", tickets: 2, estTime: "~5 min", verified: true, hot: false, claimed: false },
-    { slug: "lyft-first-ride", brand: "Lyft", brandColor: "#FF00BF", glyph: "L", title: "First ride, up to $5 off", cta: "Claim", tickets: 8, estTime: "~2 min", verified: true, hot: false, claimed: false },
-    { slug: "calm-trial", brand: "Calm", brandColor: "#3a8df1", glyph: "☾", title: "Try a free 7-day trial", cta: "Open app", tickets: 6, estTime: "~3 min", verified: true, hot: false, claimed: false },
-  ];
-  const partnerMissions = offers ?? STATIC_PARTNERS;
+  const { data: partnerMissions = [] } = usePartnerOffersQuery();
+  const claimedSlugs = new Set(partnerMissions.filter((x) => x.claimed).map((x) => x.slug));
+  const claimPartnerMutation = useMutation({
+    mutationFn: ({ slug }: { slug: string; tickets: number }) => claimPartnerOffer(slug),
+    onMutate: async ({ slug, tickets }) => {
+      await queryClient.cancelQueries({ queryKey: playerQueryKeys.partnerOffers() });
+      const previous = queryClient.getQueryData<PartnerOffer[]>(playerQueryKeys.partnerOffers());
+      queryClient.setQueryData<PartnerOffer[]>(playerQueryKeys.partnerOffers(), (list) =>
+        list?.map((offer) => (offer.slug === slug ? { ...offer, claimed: true } : offer)),
+      );
+      proto.update((s) => ({ tickets: s.tickets + tickets }));
+      return { previous };
+    },
+    onSuccess: (res) => {
+      if (res?.ok && res.tickets != null) proto.update(() => ({ tickets: res.tickets! }));
+    },
+    onError: (_error, _vars, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(playerQueryKeys.partnerOffers(), context.previous);
+      }
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: playerQueryKeys.partnerOffers() });
+    },
+  });
 
   const claimPartner = async (slug: string, tickets: number) => {
     if (claimedSlugs.has(slug)) return;
-    setClaimedSlugs((prev) => new Set(prev).add(slug));
-    proto.update((s) => ({ tickets: s.tickets + tickets }));
-    try {
-      const res = await claimPartnerOffer(slug);
-      if (res?.ok && res.tickets != null) proto.update(() => ({ tickets: res.tickets! }));
-    } catch {
-      /* no session — keep the optimistic local credit */
-    }
+    await claimPartnerMutation.mutateAsync({ slug, tickets });
   };
 
   const totalDailyXP = dailyMissions.reduce((s, m) => s + m.xp, 0);

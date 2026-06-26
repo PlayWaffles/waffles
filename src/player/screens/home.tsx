@@ -13,11 +13,11 @@ import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { TWITTER_FOLLOW_URL } from "@/lib/social-links";
 import { XIcon } from "@/components/icons";
 import {
-  useHomeMissionsQuery,
-  useHomeRecentEntrantsQuery,
-  useHomeTournamentBoardQuery,
+  useCurrentTournamentBoardQuery,
+  useMissionsQuery,
+  useRecentEntrantsQuery,
   useHomeTournamentQuery,
-} from "../hooks/useHomeQueries";
+} from "../hooks/usePlayerQueries";
 
 const XP_PER_LEVEL = 500;
 
@@ -246,7 +246,7 @@ const HomeMissions = () => {
     const id = setInterval(() => setResetIn(timeToUtcMidnight()), 60_000);
     return () => clearInterval(id);
   }, []);
-  const { data: loaded, isLoading: missionLoading } = useHomeMissionsQuery();
+  const { data: loaded, isLoading: missionLoading } = useMissionsQuery();
   const missions: HomeMissionRow[] = (loaded ?? [])
     .filter((x) => x.featured && x.count < x.total)
     .map((x) => ({
@@ -464,8 +464,8 @@ export const HomeScreen = () => {
   const lastRank = proto.lastTournamentRank;
 
   // Real entrant count for the current tournament, refreshed with the home query cadence.
-  const { data: rawBoard } = useHomeTournamentBoardQuery(proto.tournamentGameId);
-  const { data: recentBuyers } = useHomeRecentEntrantsQuery(proto.tournamentGameId);
+  const { data: rawBoard } = useCurrentTournamentBoardQuery();
+  const { data: recentBuyers } = useRecentEntrantsQuery(proto.tournamentGameId);
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;

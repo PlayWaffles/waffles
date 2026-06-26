@@ -2,13 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, tournamentSyrupReward, useProto } from "../state";
-import { loadTournamentBoard, loadCurrentTournamentBoard } from "@/player/api";
-import { useResilientAction } from "../useResilientAction";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, SyrupIcon, TicketIcon } from "../shared";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { scoreToXp } from "@/lib/player/xp";
 import { consolationSyrup } from "@/lib/game/prizeDistribution";
+import { useResultsTournamentBoardQuery } from "../hooks/usePlayerQueries";
 
 // Animated count between two values with an ease-out roll. Used for the rank
 // reveal (counts the big number down from the full field to the player's spot,
@@ -89,10 +88,7 @@ export const ResultsScreen = () => {
   // Re-opening standings in a fresh session (e.g. the Home "view standing" card)
   // has no `tournamentGameId` in local state — fall back to the current round so
   // the server hands back the real entry instead of empty defaults.
-  const { data: rawBoard, loading: boardLoading } = useResilientAction(
-    () => (proto.tournamentGameId ? loadTournamentBoard(proto.tournamentGameId) : loadCurrentTournamentBoard()),
-    [proto.tournamentGameId],
-  );
+  const { data: rawBoard, isLoading: boardLoading } = useResultsTournamentBoardQuery(proto.tournamentGameId);
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const settled = board?.settled ?? false;
   const provisional = !settled;
