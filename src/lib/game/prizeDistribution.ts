@@ -20,7 +20,8 @@
  *   2% / 2% / 2% / 2% / 1.5%
  *
  * Tail winners are dropped if their prize would be smaller than their ticket
- * amount, then the remaining winner shares are normalized back to 100%.
+ * amount, then the remaining winner shares are normalized back to 100%. Solo
+ * paid fields always receive the full available pool.
  *
  * @module prizeDistribution
  */
@@ -166,6 +167,18 @@ function buildWinnerAllocations(
 ): PrizeAllocation[] {
   if (prizePool <= 0) {
     return [];
+  }
+
+  if (paidEntries.length === 1) {
+    const [entry] = paidEntries;
+    return [{
+      entryId: entry.id,
+      userId: entry.userId,
+      rank: 1,
+      prize: prizePool,
+      username: entry.username,
+      tier: "podium",
+    }];
   }
 
   let schedule = getScheduleForPaidEntrants(paidEntries.length).slice(

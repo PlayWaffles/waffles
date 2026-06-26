@@ -56,6 +56,13 @@ describe("Prize Distribution Algorithm", () => {
     expect(result.allocations[0].tier).toBe("podium");
   });
 
+  it("pays the available pool to a solo paid entrant even when it is below their ticket amount", () => {
+    const result = calculatePrizeDistribution([createPlayer({ paidAmount: 0.05 })], 0.035);
+
+    expect(result.allocations[0].prize).toBeCloseTo(0.035, 6);
+    expect(result.allocations[0].tier).toBe("podium");
+  });
+
   it("uses winner-take-all for up to four paid entrants", () => {
     const result = calculatePrizeDistribution(createPlayers(4), 4);
     const winners = result.allocations.filter((allocation) => allocation.prize > 0);
