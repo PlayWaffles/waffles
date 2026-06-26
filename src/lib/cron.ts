@@ -1,83 +1,38 @@
 import cron from "node-cron";
 import { UserPlatform } from "@prisma";
-import { prisma } from "@/lib/db";
-import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/lifecycle";
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
-import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
+import { runGameRoundup } from "@/lib/game/roundup";
 import { ensureTournamentGame } from "@/lib/player/tournamentGames";
 import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
 import { env } from "@/lib/env";
 
 let cronJobsStarted = false;
+let roundupRunning = false;
 
 /**
  * Roundup ended games that haven't been settled yet. Finds games where
  * endsAt < now AND rankedAt is null, then ranks + publishes on-chain.
  */
-async function roundupGames() {
+async function roundupGames(source: string) {
+  if (roundupRunning) {
+    console.log("[Cron] Roundup skipped: previous run still active");
+    return;
+  }
+
+  roundupRunning = true;
   try {
-    const games = await prisma.game.findMany({
-      where: { endsAt: { lt: new Date() }, rankedAt: null },
-      select: { id: true, onchainId: true },
-    });
-
-    let ranked = 0;
-    let published = 0;
-
-    for (const game of games) {
-      try {
-        const result = await rankGame(game.id);
-        ranked++;
-
-        if (game.onchainId && result.prizesDistributed > 0) {
-          await publishResults(game.id);
-          published++;
-        } else {
-          sendResultNotifications(game.id).catch((e) =>
-            console.error(`[Cron] Notifications failed for ${game.id}:`, e)
-          );
-        }
-
-        console.log(`[Cron] Game ${game.id} rounded up`);
-      } catch (e) {
-        console.error(`[Cron] Game ${game.id}:`, e);
-      }
+    const result = await runGameRoundup(source);
+    console.log(
+      `[Cron] Roundup done: ${result.ranked} ranked, ${result.published + result.republished} published, ${result.failed} failed`,
+    );
+    if (result.scheduledCreated > 0) {
+      console.log(`[Cron] Auto-scheduled ${result.scheduledCreated} next game(s)`);
     }
-
-    // Retry publish for games that were ranked but never published on-chain
-    // (e.g. a prior publish threw — settler out of gas, RPC blip). Without this,
-    // a winner's prize is stuck un-claimable forever. Self-heals once fixable.
-    const stuck = await prisma.game.findMany({
-      where: {
-        endsAt: { lt: new Date() },
-        rankedAt: { not: null },
-        onChainAt: null,
-        onchainId: { not: null },
-        entries: { some: { prize: { gt: 0 } } },
-      },
-      select: { id: true },
-    });
-    let republished = 0;
-    for (const game of stuck) {
-      try {
-        await publishResults(game.id);
-        republished++;
-        console.log(`[Cron] Re-published stuck game ${game.id}`);
-      } catch (e) {
-        console.error(`[Cron] Re-publish failed for ${game.id}:`, e);
-      }
-    }
-
-    console.log(`[Cron] Roundup done: ${ranked} ranked, ${published + republished} published`);
-
-    const scheduled = await ensureNextAutoScheduledGames();
-    const created = scheduled.filter((result) => result.created).length;
-    if (created > 0) {
-      console.log(`[Cron] Auto-scheduled ${created} next game(s)`);
-    }
-  } catch (e) {
-    console.error("[Cron] Roundup failed:", e);
+  } catch (error) {
+    console.error("[Cron] Roundup failed:", error);
+  } finally {
+    roundupRunning = false;
   }
 }
 
@@ -154,8 +109,11 @@ export function startCronJobs() {
   cronJobsStarted = true;
 
   // Every 5 minutes: roundup unranked ended games
-  cron.schedule("*/5 * * * *", roundupGames);
+  cron.schedule("*/5 * * * *", () => {
+    void roundupGames("node_cron");
+  });
   console.log("[Cron] Scheduled: roundup-games (every 5 min)");
+  void roundupGames("startup");
 
   // Every minute: retry pending purchase syncs
   cron.schedule("* * * * *", reconcilePendingPurchasesJob);
