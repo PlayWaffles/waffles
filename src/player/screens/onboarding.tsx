@@ -329,7 +329,7 @@ const DemoSlide = ({
                 : "dim";
           const bg = {
             idle: "var(--cream-pure)",
-            correct: "var(--leaf)",
+            correct: "var(--correct)",
             wrong: "var(--live-red)",
             dim: "rgba(253,251,246,.4)",
           }[state];
@@ -372,7 +372,7 @@ const DemoSlide = ({
           style={{
             fontFamily: "var(--font-display)",
             fontSize: 16,
-            color: isCorrect ? "var(--leaf)" : "var(--ink-mute)",
+            color: isCorrect ? "var(--correct)" : "var(--ink-mute)",
             animation: "waffles-v2-onb-in .18s var(--ease-out-quart)",
           }}
         >
@@ -543,17 +543,16 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
   };
 
   // Finale: drop the just-created player onto Home with the live-tournament buy
-  // sheet primed — NOT a free level. The money moment is now part of signup.
+  // sheet primed (pendingTournamentJoin) — the money moment is part of signup,
+  // coherent with the paid pitch up top.
   const enterLiveRound = () => {
     trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, {
       step_index: idx,
       step_id: "welcome_play",
-      cta: "play_rookie_cup",
+      cta: "enter_live_round",
     });
-    // First-timers start with the free Rookie Cup (guaranteed win), not the paid
-    // live round — that's the coherent first-tournament experience.
     onPlay();
-    void proto.enterRookieCup();
+    proto.update({ pendingTournamentJoin: true });
   };
 
   const openLegal = (tab: LegalTab) => {
@@ -678,10 +677,22 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
             >
               {accountTitle}
             </div>
-            Pick a username so we can save your progress across devices.{" "}
-            <strong style={{ color: "var(--leaf)" }}>
-              Your first cup is on us — free.
-            </strong>
+            <div
+              style={{
+                fontSize: 15,
+                lineHeight: 1.5,
+                fontWeight: 600,
+                color: "var(--ink-mute)",
+                maxWidth: 320,
+                marginBottom: 18,
+              }}
+            >
+              Pick a username and we&apos;ll connect your wallet, so your winnings
+              stay yours.{" "}
+              <strong style={{ color: "var(--maple-500)" }}>
+                Your first entry is half price.
+              </strong>
+            </div>
             <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
               <span
                 aria-hidden="true"
@@ -1031,7 +1042,7 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
                 marginBottom: 8,
               }}
             >
-              Your first cup&apos;s on us
+              A round is live now
             </div>
             <div
               style={{
@@ -1042,11 +1053,11 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
                 marginBottom: 18,
               }}
             >
-              Answer 6 questions and outscore your opponents in the{" "}
+              Answer 6 questions, outscore the room, and split the pot. Your{" "}
               <strong style={{ color: "var(--maple-400, #FFD24D)" }}>
-                free Rookie Cup
-              </strong>
-              and win Syrup!
+                first entry is half price
+              </strong>{" "}
+              — just a few cents.
             </div>
           </div>
           <div
@@ -1062,7 +1073,7 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
               style={{ width: "100%", flex: "none" }}
               onClick={enterLiveRound}
             >
-              PLAY ROOKIE CUP
+              ENTER LIVE ROUND
             </button>
           </div>
         </div>
