@@ -554,10 +554,10 @@ export async function setAvatar(avatarId: string): Promise<void> {
   await playerSvc.setAvatar(user.id, avatarId);
 }
 
-export async function recordBadge(badgeId: string): Promise<void> {
+export async function recordBadge(badgeId: string, name?: string): Promise<void> {
   const user = await getCurrentUser();
   if (!user) return;
-  await playerSvc.recordBadge(user.id, badgeId);
+  await playerSvc.recordBadge(user.id, badgeId, name);
 }
 
 export async function buyStreakFreeze(): Promise<{ tickets: number; freezes: number } | null> {

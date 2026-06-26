@@ -89,7 +89,7 @@ export function BadgeUnlockWatcher() {
         badge_category: badge ? badgeAnalyticsCategory(id) : "unknown",
         unlock_source: "derived_state",
       });
-      void recordBadge(id);
+      void recordBadge(id, badge?.name);
     });
     writeSeen(seen);
     const newly = fresh.map(badgeById).filter((b): b is Badge => Boolean(b));

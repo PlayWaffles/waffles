@@ -432,12 +432,35 @@ export async function setAvatar(userId: string, avatarId: string): Promise<void>
 }
 
 // ── Badges (persist the earned moment; definitions stay client-derived) ──────
-export async function recordBadge(userId: string, badgeId: string): Promise<void> {
-  await prisma.userBadge.upsert({
-    where: { userId_badgeId: { userId, badgeId } },
-    create: { userId, badgeId },
-    update: {},
+export async function recordBadge(userId: string, badgeId: string, name?: string): Promise<void> {
+  // skipDuplicates lets us detect a FIRST-time earn: count > 0 ⇒ newly inserted,
+  // so we only notify once (not on every client re-record of an old badge).
+  const { count } = await prisma.userBadge.createMany({
+    data: [{ userId, badgeId }],
+    skipDuplicates: true,
   });
+  if (count === 0) return;
+
+  // A newly-earned badge lands as a SILENT bell-inbox notification (toast: false
+  // — the client already shows its own full-screen unlock overlay, so a toast
+  // would double up). It's delivered realtime so it appears in the bell live, and
+  // persisted so it's there on next open. Fire-and-forget: a notification hiccup
+  // must never block recording the badge.
+  const label = name?.trim() || "a new badge";
+  void import("@/lib/notifications/send")
+    .then(({ deliverInAppNotifications }) =>
+      deliverInAppNotifications(
+        [userId],
+        {
+          title: "Badge unlocked",
+          body: `You earned the "${label}" badge. View it in your collection.`,
+          targetUrl: "/profile",
+          notificationId: `badge-${badgeId}`,
+        },
+        { toast: false, emoji: "🏅", ctaLabel: "View badge", ctaAction: "screen:profile" },
+      ),
+    )
+    .catch((err) => console.error("[badge] notify failed:", err));
 }
 
 /**

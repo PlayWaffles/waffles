@@ -866,13 +866,15 @@ export function ProtoProvider({
       }
 
       if (message.type === "announcement.delivered") {
-        // Merge into the persistent feed (Home banner + inbox) AND raise a
-        // transient toast so the player sees the push immediately, whatever
-        // screen they're on. This branch only runs on live delivery, so the
-        // toast never fires for the initial feed load.
+        // Merge into the persistent feed (Home banner + inbox) AND — unless the
+        // sender opted out (`toast: false`) — raise a transient toast so the
+        // player sees the push immediately, whatever screen they're on. Bell-only
+        // deliveries (e.g. badge unlocks, which already show their own overlay)
+        // land silently in the inbox. This branch only runs on live delivery, so
+        // the toast never fires for the initial feed load.
         update((s) => ({
           announcements: mergeAnnouncement(s.announcements, message.announcement),
-          announcementToast: message.announcement,
+          announcementToast: message.toast === false ? s.announcementToast : message.announcement,
         }));
         return;
       }

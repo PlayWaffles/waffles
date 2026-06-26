@@ -31,11 +31,16 @@ function notificationCtaAction(targetUrl: string) {
 export async function deliverInAppNotifications(
   userIds: string[],
   payload: NotificationPayload,
+  // `toast: false` → bell inbox only, no transient toast. The presentation
+  // overrides let a caller theme the inbox card (e.g. a badge unlock uses 🏅 and
+  // a "View" CTA to the profile). Omitting any field keeps the generic defaults.
+  opts: { toast?: boolean; emoji?: string; tone?: string; ctaLabel?: string; ctaAction?: string } = {},
 ): Promise<number> {
   const uniqueUserIds = Array.from(new Set(userIds));
   if (uniqueUserIds.length === 0) return 0;
   const slug = notificationSlug(payload);
-  const ctaAction = notificationCtaAction(payload.targetUrl);
+  const ctaAction = opts.ctaAction ?? notificationCtaAction(payload.targetUrl);
+  const ctaLabel = opts.ctaLabel ?? "Open";
 
   const result = await prisma.$transaction(async (tx) => {
     const announcement = await tx.announcement.upsert({
@@ -44,18 +49,18 @@ export async function deliverInAppNotifications(
         slug,
         title: payload.title,
         body: payload.body,
-        ctaLabel: "Open",
+        ctaLabel,
         ctaAction,
         kind: "notification",
-        tone: "maple",
-        emoji: "🔔",
+        tone: opts.tone ?? "maple",
+        emoji: opts.emoji ?? "🔔",
         isActive: true,
         sortOrder: 90,
       },
       update: {
         title: payload.title,
         body: payload.body,
-        ctaLabel: "Open",
+        ctaLabel,
         ctaAction,
         isActive: true,
       },
@@ -86,7 +91,7 @@ export async function deliverInAppNotifications(
     return { count: uniqueUserIds.length, announcement: mapDbAnnouncement(announcement) };
   });
 
-  await deliverAnnouncementToUsers(uniqueUserIds, result.announcement);
+  await deliverAnnouncementToUsers(uniqueUserIds, result.announcement, { toast: opts.toast });
   return result.count;
 }
 

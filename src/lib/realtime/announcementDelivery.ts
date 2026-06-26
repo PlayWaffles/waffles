@@ -53,6 +53,7 @@ export async function deliverGlobalAnnouncement(announcement: PlayerAnnouncement
 export async function deliverAnnouncementToUsers(
   userIds: string[],
   announcement: PlayerAnnouncement,
+  opts: { toast?: boolean } = {},
 ) {
   const rooms = Array.from(new Set(userIds)).map(userAnnouncementsRoom);
   await Promise.all(
@@ -60,6 +61,9 @@ export async function deliverAnnouncementToUsers(
       deliverToRoom(room, {
         type: "announcement.delivered",
         announcement,
+        // Omit when true (the default) to keep the wire payload unchanged for
+        // existing callers; only send the flag when suppressing the toast.
+        ...(opts.toast === false ? { toast: false } : {}),
       }),
     ),
   );

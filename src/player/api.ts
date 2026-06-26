@@ -293,8 +293,8 @@ export function setAvatar(avatarId: string): Promise<void> {
   return callPlayerApi("setAvatar", [avatarId]);
 }
 
-export function recordBadge(badgeId: string): Promise<void> {
-  return callPlayerApi("recordBadge", [badgeId]);
+export function recordBadge(badgeId: string, name?: string): Promise<void> {
+  return callPlayerApi("recordBadge", [badgeId, name]);
 }
 
 export function buyStreakFreeze(): Promise<{ tickets: number; freezes: number } | null> {
