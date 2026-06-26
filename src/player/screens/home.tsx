@@ -3,9 +3,8 @@
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
-import { getTournament, loadCurrentTournamentBoard, loadRecentEntrants, loadMissions, type RecentEntrant, type TournamentRound } from "@/player/api";
+import type { RecentEntrant, TournamentRound } from "@/player/api";
 import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
-import { useResilientAction } from "../useResilientAction";
 import { ASSETS, Button, FlameIcon, Phone, PixelImg, resolveAvatar, Sheet, SoundToggle, SyrupIcon, TabBar, TicketIcon, TopHeader, useNow } from "../shared";
 import { AnnouncementBell } from "../announcements";
 import { useTheme } from "../theme";
@@ -13,6 +12,12 @@ import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { TWITTER_FOLLOW_URL } from "@/lib/social-links";
 import { XIcon } from "@/components/icons";
+import {
+  useHomeMissionsQuery,
+  useHomeRecentEntrantsQuery,
+  useHomeTournamentBoardQuery,
+  useHomeTournamentQuery,
+} from "../hooks/useHomeQueries";
 
 const XP_PER_LEVEL = 500;
 
@@ -241,38 +246,16 @@ const HomeMissions = () => {
     const id = setInterval(() => setResetIn(timeToUtcMidnight()), 60_000);
     return () => clearInterval(id);
   }, []);
-  const [loaded, setLoaded] = useState<HomeMissionRow[] | null>(null);
-  const [missionLoading, setMissionLoading] = useState(true);
-  useEffect(() => {
-    let active = true;
-    loadMissions()
-      .then((m) => {
-        if (!active) return;
-        if (!m || !m.length) {
-          setMissionLoading(false);
-          return;
-        }
-        setLoaded(
-          m
-            .filter((x) => x.featured && x.count < x.total)
-            .map((x) => ({
-              label: x.title,
-              cur: x.count,
-              tgt: x.total,
-              reward: `+${x.xp} XP`,
-              icon: homeMissionIcon(x.title),
-            })),
-        );
-        setMissionLoading(false);
-      })
-      .catch(() => {
-        if (active) setMissionLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
-  const missions = loaded ?? [];
+  const { data: loaded, isLoading: missionLoading } = useHomeMissionsQuery();
+  const missions: HomeMissionRow[] = (loaded ?? [])
+    .filter((x) => x.featured && x.count < x.total)
+    .map((x) => ({
+      label: x.title,
+      cur: x.count,
+      tgt: x.total,
+      reward: `+${x.xp} XP`,
+      icon: homeMissionIcon(x.title),
+    }));
   return (
     <button
       type="button"
@@ -400,17 +383,9 @@ export const HomeScreen = () => {
   const [entering, setEntering] = useState(false);
   const [entryError, setEntryError] = useState<string | null>(null);
   // Live, DB-backed details for the hero card (entry fee, close time, title /
-  // format / prize). Resilient fetch retries through the auth-cookie race and
-  // brief gap between tournament rounds; until it lands, the card shows loading /
-  // unavailable states instead of themed tournament copy.
-  // Live refresh — the pool, spots and player counts grow as people enter, so
-  // re-pull every 20s instead of freezing on the mount-time snapshot.
-  const [refreshKey, setRefreshKey] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setRefreshKey((k) => k + 1), 20_000);
-    return () => clearInterval(id);
-  }, []);
-  const { data: tourney, loading: tournamentLoading } = useResilientAction(() => getTournament(), [refreshKey]);
+  // format / prize). The query retries through the auth-cookie race and brief
+  // gap between tournament rounds, then polls so pool and player counts stay live.
+  const { data: tourney, isLoading: tournamentLoading } = useHomeTournamentQuery();
   const fee = tourney ? { entryFee: tourney.entryFee, standardFee: tourney.standardFee, firstEntry: tourney.firstEntry, skillBonus: tourney.skillBonus } : null;
   const round: TournamentRound | null = tourney?.round ?? null;
   const now = useNow();
@@ -488,10 +463,9 @@ export const HomeScreen = () => {
   // finish; first-timers get the "Top 100 win tickets" pitch instead.
   const lastRank = proto.lastTournamentRank;
 
-  // Real entrant count for the current tournament. Resilient fetch so the
-  // auth-cookie / between-rounds race doesn't drop it.
-  const { data: rawBoard } = useResilientAction(() => loadCurrentTournamentBoard(), [proto.tournamentGameId, refreshKey]);
-  const { data: recentBuyers } = useResilientAction(() => loadRecentEntrants(), [proto.tournamentGameId, refreshKey]);
+  // Real entrant count for the current tournament, refreshed with the home query cadence.
+  const { data: rawBoard } = useHomeTournamentBoardQuery(proto.tournamentGameId);
+  const { data: recentBuyers } = useHomeRecentEntrantsQuery(proto.tournamentGameId);
   const board = rawBoard && rawBoard.fieldSize > 0 ? rawBoard : null;
   const entered = board?.you != null;
   const enteredRank = board?.you?.rank ?? null;
@@ -503,7 +477,7 @@ export const HomeScreen = () => {
   // closes so the first-visit takeovers stay suppressed behind it (see Stage).
   useEffect(() => {
     if (!proto.pendingTournamentJoin || joinIntentOpenedRef.current) return;
-    if (!round || !fee) return; // wait for the resilient round fetch to land
+    if (!round || !fee) return; // wait for the live round query to land
     joinIntentOpenedRef.current = true;
     if (entered) {
       proto.update({ pendingTournamentJoin: false });
