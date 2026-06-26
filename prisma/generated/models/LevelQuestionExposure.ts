@@ -40,6 +40,7 @@ export type LevelQuestionExposureMinAggregateOutputType = {
   id: string | null
   userId: string | null
   templateId: string | null
+  factKey: string | null
   track: $Enums.LevelTrack | null
   seenCount: number | null
   firstSeenAt: Date | null
@@ -51,6 +52,7 @@ export type LevelQuestionExposureMaxAggregateOutputType = {
   id: string | null
   userId: string | null
   templateId: string | null
+  factKey: string | null
   track: $Enums.LevelTrack | null
   seenCount: number | null
   firstSeenAt: Date | null
@@ -62,6 +64,7 @@ export type LevelQuestionExposureCountAggregateOutputType = {
   id: number
   userId: number
   templateId: number
+  factKey: number
   track: number
   seenCount: number
   firstSeenAt: number
@@ -85,6 +88,7 @@ export type LevelQuestionExposureMinAggregateInputType = {
   id?: true
   userId?: true
   templateId?: true
+  factKey?: true
   track?: true
   seenCount?: true
   firstSeenAt?: true
@@ -96,6 +100,7 @@ export type LevelQuestionExposureMaxAggregateInputType = {
   id?: true
   userId?: true
   templateId?: true
+  factKey?: true
   track?: true
   seenCount?: true
   firstSeenAt?: true
@@ -107,6 +112,7 @@ export type LevelQuestionExposureCountAggregateInputType = {
   id?: true
   userId?: true
   templateId?: true
+  factKey?: true
   track?: true
   seenCount?: true
   firstSeenAt?: true
@@ -205,6 +211,7 @@ export type LevelQuestionExposureGroupByOutputType = {
   id: string
   userId: string
   templateId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount: number
   firstSeenAt: Date
@@ -239,6 +246,7 @@ export type LevelQuestionExposureWhereInput = {
   id?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   userId?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   templateId?: Prisma.StringFilter<"LevelQuestionExposure"> | string
+  factKey?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   track?: Prisma.EnumLevelTrackFilter<"LevelQuestionExposure"> | $Enums.LevelTrack
   seenCount?: Prisma.IntFilter<"LevelQuestionExposure"> | number
   firstSeenAt?: Prisma.DateTimeFilter<"LevelQuestionExposure"> | Date | string
@@ -252,6 +260,7 @@ export type LevelQuestionExposureOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   track?: Prisma.SortOrder
   seenCount?: Prisma.SortOrder
   firstSeenAt?: Prisma.SortOrder
@@ -264,11 +273,13 @@ export type LevelQuestionExposureOrderByWithRelationInput = {
 export type LevelQuestionExposureWhereUniqueInput = Prisma.AtLeast<{
   id?: string
   userId_track_templateId?: Prisma.LevelQuestionExposureUserIdTrackTemplateIdCompoundUniqueInput
+  userId_track_factKey?: Prisma.LevelQuestionExposureUserIdTrackFactKeyCompoundUniqueInput
   AND?: Prisma.LevelQuestionExposureWhereInput | Prisma.LevelQuestionExposureWhereInput[]
   OR?: Prisma.LevelQuestionExposureWhereInput[]
   NOT?: Prisma.LevelQuestionExposureWhereInput | Prisma.LevelQuestionExposureWhereInput[]
   userId?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   templateId?: Prisma.StringFilter<"LevelQuestionExposure"> | string
+  factKey?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   track?: Prisma.EnumLevelTrackFilter<"LevelQuestionExposure"> | $Enums.LevelTrack
   seenCount?: Prisma.IntFilter<"LevelQuestionExposure"> | number
   firstSeenAt?: Prisma.DateTimeFilter<"LevelQuestionExposure"> | Date | string
@@ -276,12 +287,13 @@ export type LevelQuestionExposureWhereUniqueInput = Prisma.AtLeast<{
   lastLevel?: Prisma.IntFilter<"LevelQuestionExposure"> | number
   user?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   template?: Prisma.XOR<Prisma.QuestionTemplateScalarRelationFilter, Prisma.QuestionTemplateWhereInput>
-}, "id" | "userId_track_templateId">
+}, "id" | "userId_track_templateId" | "userId_track_factKey">
 
 export type LevelQuestionExposureOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   track?: Prisma.SortOrder
   seenCount?: Prisma.SortOrder
   firstSeenAt?: Prisma.SortOrder
@@ -301,6 +313,7 @@ export type LevelQuestionExposureScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"LevelQuestionExposure"> | string
   userId?: Prisma.StringWithAggregatesFilter<"LevelQuestionExposure"> | string
   templateId?: Prisma.StringWithAggregatesFilter<"LevelQuestionExposure"> | string
+  factKey?: Prisma.StringWithAggregatesFilter<"LevelQuestionExposure"> | string
   track?: Prisma.EnumLevelTrackWithAggregatesFilter<"LevelQuestionExposure"> | $Enums.LevelTrack
   seenCount?: Prisma.IntWithAggregatesFilter<"LevelQuestionExposure"> | number
   firstSeenAt?: Prisma.DateTimeWithAggregatesFilter<"LevelQuestionExposure"> | Date | string
@@ -310,6 +323,7 @@ export type LevelQuestionExposureScalarWhereWithAggregatesInput = {
 
 export type LevelQuestionExposureCreateInput = {
   id?: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -323,6 +337,7 @@ export type LevelQuestionExposureUncheckedCreateInput = {
   id?: string
   userId: string
   templateId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -332,6 +347,7 @@ export type LevelQuestionExposureUncheckedCreateInput = {
 
 export type LevelQuestionExposureUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -345,6 +361,7 @@ export type LevelQuestionExposureUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -356,6 +373,7 @@ export type LevelQuestionExposureCreateManyInput = {
   id?: string
   userId: string
   templateId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -365,6 +383,7 @@ export type LevelQuestionExposureCreateManyInput = {
 
 export type LevelQuestionExposureUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -376,6 +395,7 @@ export type LevelQuestionExposureUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -399,10 +419,17 @@ export type LevelQuestionExposureUserIdTrackTemplateIdCompoundUniqueInput = {
   templateId: string
 }
 
+export type LevelQuestionExposureUserIdTrackFactKeyCompoundUniqueInput = {
+  userId: string
+  track: $Enums.LevelTrack
+  factKey: string
+}
+
 export type LevelQuestionExposureCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   track?: Prisma.SortOrder
   seenCount?: Prisma.SortOrder
   firstSeenAt?: Prisma.SortOrder
@@ -419,6 +446,7 @@ export type LevelQuestionExposureMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   track?: Prisma.SortOrder
   seenCount?: Prisma.SortOrder
   firstSeenAt?: Prisma.SortOrder
@@ -430,6 +458,7 @@ export type LevelQuestionExposureMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   userId?: Prisma.SortOrder
   templateId?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   track?: Prisma.SortOrder
   seenCount?: Prisma.SortOrder
   firstSeenAt?: Prisma.SortOrder
@@ -528,6 +557,7 @@ export type LevelQuestionExposureUncheckedUpdateManyWithoutTemplateNestedInput =
 
 export type LevelQuestionExposureCreateWithoutUserInput = {
   id?: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -539,6 +569,7 @@ export type LevelQuestionExposureCreateWithoutUserInput = {
 export type LevelQuestionExposureUncheckedCreateWithoutUserInput = {
   id?: string
   templateId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -579,6 +610,7 @@ export type LevelQuestionExposureScalarWhereInput = {
   id?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   userId?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   templateId?: Prisma.StringFilter<"LevelQuestionExposure"> | string
+  factKey?: Prisma.StringFilter<"LevelQuestionExposure"> | string
   track?: Prisma.EnumLevelTrackFilter<"LevelQuestionExposure"> | $Enums.LevelTrack
   seenCount?: Prisma.IntFilter<"LevelQuestionExposure"> | number
   firstSeenAt?: Prisma.DateTimeFilter<"LevelQuestionExposure"> | Date | string
@@ -588,6 +620,7 @@ export type LevelQuestionExposureScalarWhereInput = {
 
 export type LevelQuestionExposureCreateWithoutTemplateInput = {
   id?: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -599,6 +632,7 @@ export type LevelQuestionExposureCreateWithoutTemplateInput = {
 export type LevelQuestionExposureUncheckedCreateWithoutTemplateInput = {
   id?: string
   userId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -635,6 +669,7 @@ export type LevelQuestionExposureUpdateManyWithWhereWithoutTemplateInput = {
 export type LevelQuestionExposureCreateManyUserInput = {
   id?: string
   templateId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -644,6 +679,7 @@ export type LevelQuestionExposureCreateManyUserInput = {
 
 export type LevelQuestionExposureUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -655,6 +691,7 @@ export type LevelQuestionExposureUpdateWithoutUserInput = {
 export type LevelQuestionExposureUncheckedUpdateWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -665,6 +702,7 @@ export type LevelQuestionExposureUncheckedUpdateWithoutUserInput = {
 export type LevelQuestionExposureUncheckedUpdateManyWithoutUserInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   templateId?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -675,6 +713,7 @@ export type LevelQuestionExposureUncheckedUpdateManyWithoutUserInput = {
 export type LevelQuestionExposureCreateManyTemplateInput = {
   id?: string
   userId: string
+  factKey: string
   track: $Enums.LevelTrack
   seenCount?: number
   firstSeenAt?: Date | string
@@ -684,6 +723,7 @@ export type LevelQuestionExposureCreateManyTemplateInput = {
 
 export type LevelQuestionExposureUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -695,6 +735,7 @@ export type LevelQuestionExposureUpdateWithoutTemplateInput = {
 export type LevelQuestionExposureUncheckedUpdateWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -705,6 +746,7 @@ export type LevelQuestionExposureUncheckedUpdateWithoutTemplateInput = {
 export type LevelQuestionExposureUncheckedUpdateManyWithoutTemplateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   userId?: Prisma.StringFieldUpdateOperationsInput | string
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   track?: Prisma.EnumLevelTrackFieldUpdateOperationsInput | $Enums.LevelTrack
   seenCount?: Prisma.IntFieldUpdateOperationsInput | number
   firstSeenAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -718,6 +760,7 @@ export type LevelQuestionExposureSelect<ExtArgs extends runtime.Types.Extensions
   id?: boolean
   userId?: boolean
   templateId?: boolean
+  factKey?: boolean
   track?: boolean
   seenCount?: boolean
   firstSeenAt?: boolean
@@ -731,6 +774,7 @@ export type LevelQuestionExposureSelectCreateManyAndReturn<ExtArgs extends runti
   id?: boolean
   userId?: boolean
   templateId?: boolean
+  factKey?: boolean
   track?: boolean
   seenCount?: boolean
   firstSeenAt?: boolean
@@ -744,6 +788,7 @@ export type LevelQuestionExposureSelectUpdateManyAndReturn<ExtArgs extends runti
   id?: boolean
   userId?: boolean
   templateId?: boolean
+  factKey?: boolean
   track?: boolean
   seenCount?: boolean
   firstSeenAt?: boolean
@@ -757,6 +802,7 @@ export type LevelQuestionExposureSelectScalar = {
   id?: boolean
   userId?: boolean
   templateId?: boolean
+  factKey?: boolean
   track?: boolean
   seenCount?: boolean
   firstSeenAt?: boolean
@@ -764,7 +810,7 @@ export type LevelQuestionExposureSelectScalar = {
   lastLevel?: boolean
 }
 
-export type LevelQuestionExposureOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "templateId" | "track" | "seenCount" | "firstSeenAt" | "lastSeenAt" | "lastLevel", ExtArgs["result"]["levelQuestionExposure"]>
+export type LevelQuestionExposureOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "userId" | "templateId" | "factKey" | "track" | "seenCount" | "firstSeenAt" | "lastSeenAt" | "lastLevel", ExtArgs["result"]["levelQuestionExposure"]>
 export type LevelQuestionExposureInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   template?: boolean | Prisma.QuestionTemplateDefaultArgs<ExtArgs>
@@ -788,6 +834,7 @@ export type $LevelQuestionExposurePayload<ExtArgs extends runtime.Types.Extensio
     id: string
     userId: string
     templateId: string
+    factKey: string
     track: $Enums.LevelTrack
     seenCount: number
     firstSeenAt: Date
@@ -1221,6 +1268,7 @@ export interface LevelQuestionExposureFieldRefs {
   readonly id: Prisma.FieldRef<"LevelQuestionExposure", 'String'>
   readonly userId: Prisma.FieldRef<"LevelQuestionExposure", 'String'>
   readonly templateId: Prisma.FieldRef<"LevelQuestionExposure", 'String'>
+  readonly factKey: Prisma.FieldRef<"LevelQuestionExposure", 'String'>
   readonly track: Prisma.FieldRef<"LevelQuestionExposure", 'LevelTrack'>
   readonly seenCount: Prisma.FieldRef<"LevelQuestionExposure", 'Int'>
   readonly firstSeenAt: Prisma.FieldRef<"LevelQuestionExposure", 'DateTime'>

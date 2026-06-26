@@ -359,15 +359,6 @@ export async function submitRookieCup(answers: RoundAnswer[]): Promise<rookieCup
   return rookieCupSvc.submitRookieCup(user.id, answers);
 }
 
-/** Forfeit the one-time Rookie Cup (e.g. the player picked the live round at
- *  onboarding) so it never offers again. */
-export async function skipRookieCup(): Promise<{ ok: boolean }> {
-  const user = await getCurrentUser();
-  if (!user) return { ok: false };
-  await rookieCupSvc.skipRookieCup(user.id);
-  return { ok: true };
-}
-
 /** All-time tournament leaderboard — now ranked by total winnings (USDT), i.e.
  *  the "top earners" board. */
 export async function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {

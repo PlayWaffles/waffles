@@ -79,6 +79,7 @@ const POOL_TTL_MS = 60_000;
 
 type TemplateRow = {
   id: string;
+  factKey: string;
   content: string;
   options: string[];
   correctIndex: number;
@@ -98,6 +99,7 @@ type TemplateRow = {
 
 const TEMPLATE_SELECT = {
   id: true,
+  factKey: true,
   content: true,
   options: true,
   correctIndex: true,
@@ -217,6 +219,7 @@ function levelSlots(level: number, n: number): LevelSlot[] {
 // questions; "standard" draws everything else (evergreen).
 type Candidate = {
   id: string;
+  factKey: string;
   difficulty: Difficulty;
   kind: QuestionKind;
   category: string | null;
@@ -251,6 +254,7 @@ async function levelPool(track: LevelTrack): Promise<Candidate[]> {
     where,
     select: {
       id: true,
+      factKey: true,
       difficulty: true,
       kind: true,
       category: true,
@@ -281,12 +285,13 @@ async function levelExposureMap(
     where: { userId, track: TRACK_TO_ENUM[track] },
     select: {
       templateId: true,
+      factKey: true,
       seenCount: true,
       lastSeenAt: true,
     },
   });
   return new Map(rows.map((row) => [
-    row.templateId,
+    row.factKey,
     { seenCount: row.seenCount, lastSeenAt: row.lastSeenAt },
   ]));
 }
@@ -359,7 +364,7 @@ function bestTier(
 ): Candidate[] {
   const tiers = [exact, kindMatched, difficultyMatched, unused];
   for (const tier of tiers) {
-    const unseen = tier.filter((candidate) => !exposures.has(candidate.id));
+    const unseen = tier.filter((candidate) => !exposures.has(candidate.factKey));
     if (unseen.length > 0) return unseen;
   }
   return exact.length > 0
@@ -407,7 +412,7 @@ async function levelIds(
   const now = Date.now();
 
   for (const slot of levelSlots(level, n)) {
-    const unused = pool.filter((q) => !used.has(q.id));
+    const unused = pool.filter((q) => !used.has(q.id) && !used.has(q.factKey));
     if (unused.length === 0) break;
 
     const exact = unused.filter((q) => q.difficulty === slot.difficulty && q.kind === slot.kind);
@@ -416,9 +421,10 @@ async function levelIds(
     const tier = bestTier(exact, kindMatched, difficultyMatched, unused, exposures);
 
     const pick = pickRanked(tier, (candidate) =>
-      candidateScore(candidate, slot, usedKinds, usedCategories, exposures.get(candidate.id), now),
+      candidateScore(candidate, slot, usedKinds, usedCategories, exposures.get(candidate.factKey), now),
     );
     used.add(pick.id);
+    used.add(pick.factKey);
     usedKinds.add(pick.kind);
     if (pick.category) usedCategories.add(pick.category);
     out.push(pick.id);
@@ -434,26 +440,32 @@ async function recordLevelQuestionExposures(
 ): Promise<void> {
   if (!userId || templateIds.length === 0) return;
   const now = new Date();
+  const templates = await prisma.questionTemplate.findMany({
+    where: { id: { in: templateIds } },
+    select: { id: true, factKey: true },
+  });
   await prisma.$transaction(
-    templateIds.map((templateId) =>
+    templates.map((template) =>
       prisma.levelQuestionExposure.upsert({
         where: {
-          userId_track_templateId: {
+          userId_track_factKey: {
             userId,
             track: TRACK_TO_ENUM[track],
-            templateId,
+            factKey: template.factKey,
           },
         },
         create: {
           userId,
           track: TRACK_TO_ENUM[track],
-          templateId,
+          templateId: template.id,
+          factKey: template.factKey,
           seenCount: 1,
           firstSeenAt: now,
           lastSeenAt: now,
           lastLevel: level,
         },
         update: {
+          templateId: template.id,
           seenCount: { increment: 1 },
           lastSeenAt: now,
           lastLevel: level,

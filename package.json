@@ -43,6 +43,7 @@
     "lucide-react": "^0.562.0",
     "next": "16.2.9",
     "node-cron": "^4.2.1",
+    "openai": "^6.45.0",
     "papaparse": "^5.5.3",
     "partyserver": "^0.5.8",
     "partysocket": "^1.2.0",

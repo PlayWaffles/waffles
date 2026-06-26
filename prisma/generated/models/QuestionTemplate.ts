@@ -49,6 +49,7 @@ export type QuestionTemplateMinAggregateOutputType = {
   content: string | null
   correctIndex: number | null
   durationSec: number | null
+  factKey: string | null
   kind: $Enums.QuestionKind | null
   pick: number | null
   minefield: boolean | null
@@ -68,6 +69,7 @@ export type QuestionTemplateMaxAggregateOutputType = {
   content: string | null
   correctIndex: number | null
   durationSec: number | null
+  factKey: string | null
   kind: $Enums.QuestionKind | null
   pick: number | null
   minefield: boolean | null
@@ -88,6 +90,7 @@ export type QuestionTemplateCountAggregateOutputType = {
   options: number
   correctIndex: number
   durationSec: number
+  factKey: number
   kind: number
   correctSet: number
   pick: number
@@ -131,6 +134,7 @@ export type QuestionTemplateMinAggregateInputType = {
   content?: true
   correctIndex?: true
   durationSec?: true
+  factKey?: true
   kind?: true
   pick?: true
   minefield?: true
@@ -150,6 +154,7 @@ export type QuestionTemplateMaxAggregateInputType = {
   content?: true
   correctIndex?: true
   durationSec?: true
+  factKey?: true
   kind?: true
   pick?: true
   minefield?: true
@@ -170,6 +175,7 @@ export type QuestionTemplateCountAggregateInputType = {
   options?: true
   correctIndex?: true
   durationSec?: true
+  factKey?: true
   kind?: true
   correctSet?: true
   pick?: true
@@ -281,6 +287,7 @@ export type QuestionTemplateGroupByOutputType = {
   options: string[]
   correctIndex: number
   durationSec: number
+  factKey: string
   kind: $Enums.QuestionKind
   correctSet: number[]
   pick: number | null
@@ -328,6 +335,7 @@ export type QuestionTemplateWhereInput = {
   options?: Prisma.StringNullableListFilter<"QuestionTemplate">
   correctIndex?: Prisma.IntFilter<"QuestionTemplate"> | number
   durationSec?: Prisma.IntFilter<"QuestionTemplate"> | number
+  factKey?: Prisma.StringFilter<"QuestionTemplate"> | string
   kind?: Prisma.EnumQuestionKindFilter<"QuestionTemplate"> | $Enums.QuestionKind
   correctSet?: Prisma.IntNullableListFilter<"QuestionTemplate">
   pick?: Prisma.IntNullableFilter<"QuestionTemplate"> | number | null
@@ -354,6 +362,7 @@ export type QuestionTemplateOrderByWithRelationInput = {
   options?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   correctSet?: Prisma.SortOrder
   pick?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -383,6 +392,7 @@ export type QuestionTemplateWhereUniqueInput = Prisma.AtLeast<{
   options?: Prisma.StringNullableListFilter<"QuestionTemplate">
   correctIndex?: Prisma.IntFilter<"QuestionTemplate"> | number
   durationSec?: Prisma.IntFilter<"QuestionTemplate"> | number
+  factKey?: Prisma.StringFilter<"QuestionTemplate"> | string
   kind?: Prisma.EnumQuestionKindFilter<"QuestionTemplate"> | $Enums.QuestionKind
   correctSet?: Prisma.IntNullableListFilter<"QuestionTemplate">
   pick?: Prisma.IntNullableFilter<"QuestionTemplate"> | number | null
@@ -409,6 +419,7 @@ export type QuestionTemplateOrderByWithAggregationInput = {
   options?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   correctSet?: Prisma.SortOrder
   pick?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -441,6 +452,7 @@ export type QuestionTemplateScalarWhereWithAggregatesInput = {
   options?: Prisma.StringNullableListFilter<"QuestionTemplate">
   correctIndex?: Prisma.IntWithAggregatesFilter<"QuestionTemplate"> | number
   durationSec?: Prisma.IntWithAggregatesFilter<"QuestionTemplate"> | number
+  factKey?: Prisma.StringWithAggregatesFilter<"QuestionTemplate"> | string
   kind?: Prisma.EnumQuestionKindWithAggregatesFilter<"QuestionTemplate"> | $Enums.QuestionKind
   correctSet?: Prisma.IntNullableListFilter<"QuestionTemplate">
   pick?: Prisma.IntNullableWithAggregatesFilter<"QuestionTemplate"> | number | null
@@ -465,6 +477,7 @@ export type QuestionTemplateCreateInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -491,6 +504,7 @@ export type QuestionTemplateUncheckedCreateInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -517,6 +531,7 @@ export type QuestionTemplateUpdateInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -543,6 +558,7 @@ export type QuestionTemplateUncheckedUpdateInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -569,6 +585,7 @@ export type QuestionTemplateCreateManyInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -593,6 +610,7 @@ export type QuestionTemplateUpdateManyMutationInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -617,6 +635,7 @@ export type QuestionTemplateUncheckedUpdateManyInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -649,6 +668,7 @@ export type QuestionTemplateCountOrderByAggregateInput = {
   options?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   correctSet?: Prisma.SortOrder
   pick?: Prisma.SortOrder
@@ -681,6 +701,7 @@ export type QuestionTemplateMaxOrderByAggregateInput = {
   content?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   pick?: Prisma.SortOrder
   minefield?: Prisma.SortOrder
@@ -700,6 +721,7 @@ export type QuestionTemplateMinOrderByAggregateInput = {
   content?: Prisma.SortOrder
   correctIndex?: Prisma.SortOrder
   durationSec?: Prisma.SortOrder
+  factKey?: Prisma.SortOrder
   kind?: Prisma.SortOrder
   pick?: Prisma.SortOrder
   minefield?: Prisma.SortOrder
@@ -815,6 +837,7 @@ export type QuestionTemplateCreateWithoutStatsInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -840,6 +863,7 @@ export type QuestionTemplateUncheckedCreateWithoutStatsInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -881,6 +905,7 @@ export type QuestionTemplateUpdateWithoutStatsInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -906,6 +931,7 @@ export type QuestionTemplateUncheckedUpdateWithoutStatsInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -931,6 +957,7 @@ export type QuestionTemplateCreateWithoutLevelExposuresInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -956,6 +983,7 @@ export type QuestionTemplateUncheckedCreateWithoutLevelExposuresInput = {
   options?: Prisma.QuestionTemplateCreateoptionsInput | string[]
   correctIndex: number
   durationSec?: number
+  factKey: string
   kind?: $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateCreatecorrectSetInput | number[]
   pick?: number | null
@@ -997,6 +1025,7 @@ export type QuestionTemplateUpdateWithoutLevelExposuresInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1022,6 +1051,7 @@ export type QuestionTemplateUncheckedUpdateWithoutLevelExposuresInput = {
   options?: Prisma.QuestionTemplateUpdateoptionsInput | string[]
   correctIndex?: Prisma.IntFieldUpdateOperationsInput | number
   durationSec?: Prisma.IntFieldUpdateOperationsInput | number
+  factKey?: Prisma.StringFieldUpdateOperationsInput | string
   kind?: Prisma.EnumQuestionKindFieldUpdateOperationsInput | $Enums.QuestionKind
   correctSet?: Prisma.QuestionTemplateUpdatecorrectSetInput | number[]
   pick?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
@@ -1087,6 +1117,7 @@ export type QuestionTemplateSelect<ExtArgs extends runtime.Types.Extensions.Inte
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  factKey?: boolean
   kind?: boolean
   correctSet?: boolean
   pick?: boolean
@@ -1114,6 +1145,7 @@ export type QuestionTemplateSelectCreateManyAndReturn<ExtArgs extends runtime.Ty
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  factKey?: boolean
   kind?: boolean
   correctSet?: boolean
   pick?: boolean
@@ -1138,6 +1170,7 @@ export type QuestionTemplateSelectUpdateManyAndReturn<ExtArgs extends runtime.Ty
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  factKey?: boolean
   kind?: boolean
   correctSet?: boolean
   pick?: boolean
@@ -1162,6 +1195,7 @@ export type QuestionTemplateSelectScalar = {
   options?: boolean
   correctIndex?: boolean
   durationSec?: boolean
+  factKey?: boolean
   kind?: boolean
   correctSet?: boolean
   pick?: boolean
@@ -1180,7 +1214,7 @@ export type QuestionTemplateSelectScalar = {
   updatedAt?: boolean
 }
 
-export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "category" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
+export type QuestionTemplateOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "content" | "options" | "correctIndex" | "durationSec" | "factKey" | "kind" | "correctSet" | "pick" | "correctOrder" | "flags" | "minefield" | "kicker" | "clues" | "mediaUrl" | "soundUrl" | "theme" | "category" | "difficulty" | "usageCount" | "createdAt" | "updatedAt", ExtArgs["result"]["questionTemplate"]>
 export type QuestionTemplateInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   stats?: boolean | Prisma.QuestionTemplate$statsArgs<ExtArgs>
   levelExposures?: boolean | Prisma.QuestionTemplate$levelExposuresArgs<ExtArgs>
@@ -1201,6 +1235,7 @@ export type $QuestionTemplatePayload<ExtArgs extends runtime.Types.Extensions.In
     options: string[]
     correctIndex: number
     durationSec: number
+    factKey: string
     kind: $Enums.QuestionKind
     correctSet: number[]
     pick: number | null
@@ -1647,6 +1682,7 @@ export interface QuestionTemplateFieldRefs {
   readonly options: Prisma.FieldRef<"QuestionTemplate", 'String[]'>
   readonly correctIndex: Prisma.FieldRef<"QuestionTemplate", 'Int'>
   readonly durationSec: Prisma.FieldRef<"QuestionTemplate", 'Int'>
+  readonly factKey: Prisma.FieldRef<"QuestionTemplate", 'String'>
   readonly kind: Prisma.FieldRef<"QuestionTemplate", 'QuestionKind'>
   readonly correctSet: Prisma.FieldRef<"QuestionTemplate", 'Int[]'>
   readonly pick: Prisma.FieldRef<"QuestionTemplate", 'Int'>

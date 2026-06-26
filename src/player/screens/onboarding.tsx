@@ -14,7 +14,6 @@ import { LegalSheet, type LegalTab } from "../legal";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { getDemoQuestion, type DemoQuestion } from "@/actions/onboarding";
-import { skipRookieCup } from "@/player/api";
 
 // First-launch onboarding — money-first, v1-lean. The previous (v1) onboarding
 // converted browsers into *paying* players far better than v2's free-play
@@ -555,10 +554,10 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
       cta: "enter_live_round",
     });
     onPlay();
-    // Choosing the live round FORFEITS the one-time free Rookie Cup — mark it
-    // consumed so the Home card never offers it (optimistic + persisted).
-    proto.update({ pendingTournamentJoin: true, rookieDone: true });
-    void skipRookieCup();
+    // Land on Home with the buy sheet primed. (Picking this does NOT forfeit the
+    // free Rookie Cup — that only happens once they actually PAY for a live entry,
+    // handled in the entry flow.)
+    proto.update({ pendingTournamentJoin: true });
   };
   const playRookieCup = () => {
     trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, {

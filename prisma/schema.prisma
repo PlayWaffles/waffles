@@ -359,6 +359,7 @@ model QuestionTemplate {
   options      String[]
   correctIndex Int      @db.SmallInt
   durationSec  Int      @default(10) @db.SmallInt
+  factKey      String   @db.VarChar(160)
 
   // -- FORMAT (v2 multi-format support) --
   kind         QuestionKind @default(SINGLE)
@@ -396,6 +397,7 @@ model QuestionTemplate {
   // -- INDEXES --
   @@index([theme, difficulty])
   @@index([category])
+  @@index([factKey])
   @@index([createdAt(sort: Desc)])
   @@index([usageCount(sort: Desc)])
 }
@@ -774,6 +776,7 @@ model LevelQuestionExposure {
   userId     String
   template   QuestionTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
   templateId String
+  factKey    String           @db.VarChar(160)
   track      LevelTrack
   seenCount  Int              @default(1)
   firstSeenAt DateTime        @default(now())
@@ -781,8 +784,10 @@ model LevelQuestionExposure {
   lastLevel   Int             @db.SmallInt
 
   @@unique([userId, track, templateId])
+  @@unique([userId, track, factKey])
   @@index([userId, track, lastSeenAt(sort: Desc)])
   @@index([templateId])
+  @@index([factKey])
 }
 
 // -- Hourly tournament round entry. roundId = epoch-ms bucket of the round

@@ -1763,10 +1763,12 @@ export function ProtoProvider({
         },
       });
       // Entering a tournament marks "played today" (disables the level upsell
-      // for the rest of the day) and, on a NEW entry, tops up today's practice
-      // allowance (server granted it). loadState reconciles both on reload.
+      // for the rest of the day), forfeits the free Rookie Cup (a real paid entry
+      // graduates them — server does the same), and, on a NEW entry, tops up
+      // today's practice allowance. loadState reconciles all of it on reload.
       update((s) => ({
         enteredTournamentToday: true,
+        rookieDone: true,
         ...(res.alreadyEntered ? {} : { lives: s.lives + PRACTICE_PER_TOURNAMENT }),
       }));
       return { ok: true };

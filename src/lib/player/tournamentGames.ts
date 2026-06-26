@@ -19,6 +19,7 @@ import { prisma } from "@/lib/db";
 import { GameTheme, Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
 import { adjustTickets, grantTournamentPracticePlays } from "./playerState";
+import { skipRookieCup } from "./rookieCup";
 import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
@@ -588,6 +589,13 @@ export async function enterTournamentOnChain(input: {
       await grantTournamentPracticePlays(userId);
     } catch (e) {
       console.error("[buy-ticket] practice top-up failed", { userId, error: e instanceof Error ? e.message : String(e) });
+    }
+    // Paying for a real entry graduates the player from the free Rookie Cup —
+    // forfeit it (idempotent) so the Home card never offers it again. Best-effort.
+    try {
+      await skipRookieCup(userId);
+    } catch (e) {
+      console.error("[buy-ticket] rookie forfeit failed", { userId, error: e instanceof Error ? e.message : String(e) });
     }
     return { ok: true, entryId: entry.id, alreadyEntered: false };
   } catch (error) {

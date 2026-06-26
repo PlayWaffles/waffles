@@ -19,6 +19,7 @@
  */
 import { prisma } from "@/lib/db";
 import { GameTheme, Difficulty, QuestionKind } from "@prisma";
+import { seedFactKey } from "@/lib/questions/fact-key";
 
 const flag = (iso: string) => `https://flagcdn.com/w320/${iso}.png`;
 type D = "EASY" | "MEDIUM" | "HARD";
@@ -327,6 +328,20 @@ async function main() {
     content: r.content,
     options: r.options,
     correctIndex: r.correctIndex,
+    factKey: seedFactKey({
+      content: r.content,
+      options: r.options,
+      correctIndex: r.correctIndex,
+      kind: r.kind ?? QuestionKind.SINGLE,
+      correctSet: r.correctSet ?? [],
+      correctOrder: r.correctOrder ?? [],
+      kicker: r.kicker ?? null,
+      clues: r.clues ?? [],
+      mediaUrl: r.mediaUrl ?? null,
+      theme: GameTheme.FOOTBALL,
+      category: r.category,
+      difficulty: Difficulty[r.difficulty],
+    }),
     durationSec: r.durationSec ?? 12,
     kind: r.kind ?? QuestionKind.SINGLE,
     correctSet: r.correctSet ?? [],

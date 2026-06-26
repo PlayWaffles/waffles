@@ -7,6 +7,7 @@
  */
 const { prisma } = await import("@/lib/db");
 const { GameTheme, Difficulty, QuestionKind } = await import("@prisma");
+const { seedFactKey } = await import("@/lib/questions/fact-key");
 
 // ── Announcements (id = the client's announcement id, mirrors announcements.tsx) ──
 // sortOrder doubles as banner priority (higher shows first). tone + emoji drive
@@ -59,6 +60,17 @@ for (const m of MULTI) {
       content: m.content,
       options: m.options,
       correctIndex: m.correctIndex ?? 0,
+      factKey: seedFactKey({
+        content: m.content,
+        options: m.options,
+        correctIndex: m.correctIndex ?? 0,
+        theme: GameTheme.FOOTBALL,
+        category: "Sports",
+        difficulty: Difficulty.MEDIUM,
+        kind: m.kind,
+        correctSet: m.correctSet ?? [],
+        correctOrder: m.correctOrder ?? [],
+      }),
       theme: GameTheme.FOOTBALL,
       category: "Sports",
       difficulty: Difficulty.MEDIUM,

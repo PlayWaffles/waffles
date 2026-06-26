@@ -7,6 +7,7 @@ import { logAdminAction, AdminAction, EntityType } from "@/lib/audit";
 import { revalidatePath } from "next/cache";
 import { GameTheme, Difficulty } from "@prisma";
 import { recalculateGameRounds } from "@/lib/game/rounds";
+import { DuplicateQuestionFactError, assertUniqueQuestionFact, type ExistingQuestionFact, type QuestionFactInput } from "@/lib/questions/fact-key";
 
 // ==========================================
 // SCHEMAS
@@ -25,6 +26,39 @@ const TemplateSchema = z.object({
   mediaUrl: z.string().optional(),
   soundUrl: z.string().optional(),
 });
+
+async function questionFactCandidates(theme: GameTheme, excludeId?: string): Promise<ExistingQuestionFact[]> {
+  const rows = await prisma.questionTemplate.findMany({
+    where: {
+      theme,
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
+    select: {
+      id: true,
+      factKey: true,
+      content: true,
+      options: true,
+      correctIndex: true,
+      kind: true,
+      correctSet: true,
+      correctOrder: true,
+      kicker: true,
+      clues: true,
+      mediaUrl: true,
+      soundUrl: true,
+      theme: true,
+      category: true,
+      difficulty: true,
+    },
+    orderBy: { createdAt: "desc" },
+  });
+  return rows;
+}
+
+function duplicateError(error: unknown): string | null {
+  if (!(error instanceof DuplicateQuestionFactError)) return null;
+  return `Duplicate fact: matches ${error.duplicateTemplateId} (${error.reason})`;
+}
 
 // ==========================================
 // TYPES
@@ -103,11 +137,25 @@ export async function createTemplateAction(
   const correctIndex = data.correctAnswer.charCodeAt(0) - 65;
 
   try {
+    const factInput: QuestionFactInput = {
+      content: data.content,
+      options: [data.optionA, data.optionB, data.optionC, data.optionD],
+      correctIndex,
+      theme: data.theme,
+      difficulty: data.difficulty,
+      mediaUrl: data.mediaUrl || null,
+      soundUrl: data.soundUrl || null,
+    };
+    const factKey = await assertUniqueQuestionFact(
+      factInput,
+      await questionFactCandidates(data.theme),
+    );
     const template = await prisma.questionTemplate.create({
       data: {
         content: data.content,
         options: [data.optionA, data.optionB, data.optionC, data.optionD],
         correctIndex,
+        factKey,
         durationSec: data.durationSec,
         theme: data.theme,
         difficulty: data.difficulty,
@@ -132,6 +180,8 @@ export async function createTemplateAction(
 
     return { success: true, templateId: template.id };
   } catch (error) {
+    const duplicate = duplicateError(error);
+    if (duplicate) return { success: false, error: duplicate };
     console.error("Create template error:", error);
     return { success: false, error: "Failed to create template" };
   }
@@ -177,12 +227,27 @@ export async function updateTemplateAction(
   const correctIndex = data.correctAnswer.charCodeAt(0) - 65;
 
   try {
+    const factInput: QuestionFactInput = {
+      id: templateId,
+      content: data.content,
+      options: [data.optionA, data.optionB, data.optionC, data.optionD],
+      correctIndex,
+      theme: data.theme,
+      difficulty: data.difficulty,
+      mediaUrl: data.mediaUrl || null,
+      soundUrl: data.soundUrl || null,
+    };
+    const factKey = await assertUniqueQuestionFact(
+      factInput,
+      await questionFactCandidates(data.theme, templateId),
+    );
     await prisma.questionTemplate.update({
       where: { id: templateId },
       data: {
         content: data.content,
         options: [data.optionA, data.optionB, data.optionC, data.optionD],
         correctIndex,
+        factKey,
         durationSec: data.durationSec,
         theme: data.theme,
         difficulty: data.difficulty,
@@ -204,6 +269,8 @@ export async function updateTemplateAction(
 
     return { success: true, templateId };
   } catch (error) {
+    const duplicate = duplicateError(error);
+    if (duplicate) return { success: false, error: duplicate };
     console.error("Update template error:", error);
     return { success: false, error: "Failed to update template" };
   }
@@ -495,14 +562,40 @@ export async function bulkImportTemplatesAction(
       skipped += batch.length - validTemplates.length;
 
       if (validTemplates.length > 0) {
-        await prisma.questionTemplate.createMany({
-          data: validTemplates.map((t) => ({
+        const existingByTheme = new Map<GameTheme, ExistingQuestionFact[]>();
+        const prepared = [];
+        for (const t of validTemplates) {
+          const theme = t.theme || GameTheme.GENERAL;
+          const difficulty = t.difficulty || Difficulty.MEDIUM;
+          const candidates = existingByTheme.get(theme) ?? await questionFactCandidates(theme);
+          existingByTheme.set(theme, candidates);
+          const question: QuestionFactInput = {
             content: t.content,
             options: t.options,
             correctIndex: t.correctIndex,
+            theme,
+            difficulty,
+            mediaUrl: t.mediaUrl || null,
+            soundUrl: t.soundUrl || null,
+          };
+          const factKey = await assertUniqueQuestionFact(question, candidates);
+          prepared.push({ t, theme, difficulty, factKey });
+          candidates.push({
+            ...question,
+            id: `pending:${prepared.length}`,
+            factKey,
+          });
+        }
+
+        await prisma.questionTemplate.createMany({
+          data: prepared.map(({ t, theme, difficulty, factKey }) => ({
+            content: t.content,
+            options: t.options,
+            correctIndex: t.correctIndex,
+            factKey,
             durationSec: t.durationSec || 10,
-            theme: t.theme || GameTheme.GENERAL,
-            difficulty: t.difficulty || Difficulty.MEDIUM,
+            theme,
+            difficulty,
             mediaUrl: t.mediaUrl || null,
             soundUrl: t.soundUrl || null,
           })),
@@ -524,6 +617,8 @@ export async function bulkImportTemplatesAction(
 
     return { success: true, imported, skipped };
   } catch (error) {
+    const duplicate = duplicateError(error);
+    if (duplicate) return { success: false, error: duplicate };
     console.error("Bulk import templates error:", error);
     return { success: false, error: "Failed to import templates" };
   }

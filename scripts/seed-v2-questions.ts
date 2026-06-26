@@ -8,6 +8,7 @@
 const { prisma } = await import("@/lib/db");
 const { GameTheme, Difficulty, QuestionKind } = await import("@prisma");
 const { QUESTION_BANK } = await import("@/player/data/questions");
+const { seedFactKey } = await import("@/lib/questions/fact-key");
 
 const THEME_BY_CATEGORY: Record<string, (typeof GameTheme)[keyof typeof GameTheme]> = {
   Movies: GameTheme.MOVIES,
@@ -30,6 +31,15 @@ const data = QUESTION_BANK.map((q) => ({
   content: q.question,
   options: [...q.answers],
   correctIndex: q.correctIndex,
+  factKey: seedFactKey({
+    content: q.question,
+    options: [...q.answers],
+    correctIndex: q.correctIndex,
+    theme: themeFor(q),
+    category: q.category,
+    difficulty: DIFF[q.difficulty],
+    kind: QuestionKind.SINGLE,
+  }),
   durationSec: 10,
   theme: themeFor(q),
   category: q.category, // preserve the bank's fine-grained category verbatim
