@@ -166,6 +166,19 @@
   from { opacity: 1; }
   to { opacity: 0; }
 }
+/* Centered-modal entrance: a gentle fade + scale-up. Starts at 0.95 (not 0) so
+   the dialog grows into place rather than ballooning from nothing. Pair with
+   waffles-v2-backdrop-in on the scrim at the same duration/easing. */
+@keyframes waffles-v2-pop-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 1; transform: scale(1); }
+}
+/* Centered-modal exit: mirror of pop-in, ~20% faster (see MODAL_EXIT_MS). Pair
+   with waffles-v2-backdrop-out on the scrim. */
+@keyframes waffles-v2-pop-out {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(0.95); }
+}
 @keyframes waffles-v2-bob {
   0%, 100% { transform: translateX(-50%) translateY(0); }
   50% { transform: translateX(-50%) translateY(-3px); }
@@ -225,11 +238,11 @@
 /* Streak flame: flickers like a real flame — irregular vertical squash and
    tiny horizontal sway so it feels alive, not on a metronome. */
 @keyframes waffles-v2-flame-flicker {
-  0%, 100% { transform: scale(1, 1) translateX(0); filter: brightness(1); }
-  20% { transform: scale(1.05, 0.95) translateX(0.5px); filter: brightness(1.1); }
-  40% { transform: scale(0.96, 1.04) translateX(-0.5px); filter: brightness(0.95); }
-  60% { transform: scale(1.02, 0.98) translateX(0.3px); filter: brightness(1.08); }
-  80% { transform: scale(0.98, 1.02) translateX(-0.3px); filter: brightness(1); }
+  0%, 100% { transform: scale(1, 1) translateX(0); }
+  20% { transform: scale(1.05, 0.95) translateX(0.5px); }
+  40% { transform: scale(0.96, 1.04) translateX(-0.5px); }
+  60% { transform: scale(1.02, 0.98) translateX(0.3px); }
+  80% { transform: scale(0.98, 1.02) translateX(-0.3px); }
 }
 /* Confetti: a piece falls from above the viewport, drifting and rotating
    on the way down. Each piece varies via inline styles (delay, x-offset,
@@ -384,11 +397,24 @@
   100% { opacity: 0; transform: scale(1.4); }
 }
 /* Results — the player's own leaderboard row breathes a gold glow so the eye
-   finds it after the rows settle in. Border is held by inline style; only the
-   outer glow pulses here. */
+   finds it after the rows settle in. The glow lives on an ::after overlay that
+   holds a constant box-shadow and only pulses its opacity, so the loop stays on
+   the compositor instead of repainting box-shadow every frame. Delay is passed
+   per-row via --glow-delay (entrance settles first, then the glow begins). */
 @keyframes waffles-v2-row-glow {
-  0%, 100% { box-shadow: 0 0 0 rgba(255,210,77,0); }
-  50%      { box-shadow: 0 0 18px rgba(255,210,77,.38); }
+  0%, 100% { opacity: 0; }
+  50%      { opacity: 1; }
+}
+.waffles-v2 .waffles-v2-you-row { position: relative; }
+.waffles-v2 .waffles-v2-you-row::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(255,210,77,.38);
+  opacity: 0;
+  pointer-events: none;
+  animation: waffles-v2-row-glow 2.4s ease-in-out var(--glow-delay, 0.5s) infinite;
 }
 
 /* ── Game loader ─────────────────────────────────────────────────────────

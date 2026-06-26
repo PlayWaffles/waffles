@@ -6,7 +6,7 @@ import { syrupLabel, USDT_PER_TICKET, useProto } from "../state";
 import { deleteMyAccount } from "@/player/api";
 import { txStepLabel } from "../useTournamentWallet";
 import type { TournamentClaimItem } from "@/lib/player/tournamentGames";
-import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, Phone, PixelImg, resolveAvatar, SyrupIcon, TabBar, TopHeader } from "../shared";
+import { ASSETS, AssetWell, CATEGORY_COLORS, CategoryIcon, InfoButton, MODAL_EXIT_MS, Phone, PixelImg, resolveAvatar, SyrupIcon, TabBar, TopHeader } from "../shared";
 import { BADGES, badgeProgress, deriveBadgeStats, isBadgeEarned, type Badge, type BadgeStats } from "../data/badges";
 import { LegalSheet, type LegalTab } from "../legal";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -86,6 +86,16 @@ export const ProfileScreen = () => {
   const isEarned = (b: Badge) => proto.earnedBadges.includes(b.id) || isBadgeEarned(b, badgeStats);
   const earnedBadges = BADGES.filter(isEarned).length;
   const [selectedBadge, setSelectedBadge] = useState<Badge | null>(null);
+  // Animate the badge sheet out before clearing it (keeps it mounted during exit).
+  const [closingBadge, setClosingBadge] = useState(false);
+  const requestCloseBadge = () => {
+    if (closingBadge) return;
+    setClosingBadge(true);
+    window.setTimeout(() => {
+      setSelectedBadge(null);
+      setClosingBadge(false);
+    }, MODAL_EXIT_MS);
+  };
   const [legalTab, setLegalTab] = useState<LegalTab | null>(null);
 
   const [toast, setToast] = useState<string | null>(null);
@@ -260,6 +270,7 @@ export const ProfileScreen = () => {
                     badge_earned: isEarned(b),
                     badge_progress: Math.round(badgeProgress(b, badgeStats) * 100),
                   });
+                  setClosingBadge(false);
                   setSelectedBadge(b);
                 }}
               />
@@ -436,12 +447,12 @@ export const ProfileScreen = () => {
         const cur = Math.min(selectedBadge.current(badgeStats), selectedBadge.goal);
         return (
           <div
-            onClick={() => setSelectedBadge(null)}
-            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.65)", display: "grid", placeItems: "center", zIndex: 80, padding: 28 }}
+            onClick={requestCloseBadge}
+            style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,.65)", display: "grid", placeItems: "center", zIndex: 80, padding: 28, animation: closingBadge ? `waffles-v2-backdrop-out ${MODAL_EXIT_MS}ms var(--ease-out-quart) forwards` : "waffles-v2-backdrop-in 200ms var(--ease-out-quart)" }}
           >
             <div
               onClick={(e) => e.stopPropagation()}
-              style={{ background: "var(--surface-2)", border: `1px solid ${earned ? selectedBadge.accent : "rgba(255,255,255,.12)"}`, borderRadius: 18, padding: "24px 20px 18px", textAlign: "center", maxWidth: 300, width: "100%", boxShadow: "0 12px 40px rgba(0,0,0,.55)" }}
+              style={{ background: "var(--surface-2)", border: `1px solid ${earned ? selectedBadge.accent : "rgba(255,255,255,.12)"}`, borderRadius: 18, padding: "24px 20px 18px", textAlign: "center", maxWidth: 300, width: "100%", boxShadow: "0 12px 40px rgba(0,0,0,.55)", animation: closingBadge ? `waffles-v2-pop-out ${MODAL_EXIT_MS}ms var(--ease-out-quart) forwards` : "waffles-v2-pop-in 200ms var(--ease-out-quart)" }}
             >
               <div style={{ width: 84, height: 84, margin: "0 auto 14px", borderRadius: "50%", display: "grid", placeItems: "center", background: earned ? `radial-gradient(circle at 35% 25%, ${selectedBadge.accent}45, transparent 62%), #15151a` : "#141416", border: `2.5px solid ${earned ? selectedBadge.accent : "rgba(255,255,255,.1)"}`, boxShadow: earned ? `0 0 22px ${selectedBadge.accent}66` : "none" }}>
                 <PixelImg src={selectedBadge.icon} size={44} alt="" style={{ filter: earned ? undefined : "grayscale(1) brightness(.55)", opacity: earned ? 1 : 0.6 }} />
@@ -453,14 +464,14 @@ export const ProfileScreen = () => {
               ) : (
                 <div style={{ marginTop: 14 }}>
                   <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,.08)", overflow: "hidden" }}>
-                    <div style={{ width: `${pct * 100}%`, height: "100%", background: selectedBadge.accent, borderRadius: 99, transition: "width .3s var(--ease-out-quart)" }} />
+                    <div style={{ width: "100%", height: "100%", background: selectedBadge.accent, borderRadius: 99, transformOrigin: "left", transform: `scaleX(${pct})`, transition: "transform .3s var(--ease-out-quart)" }} />
                   </div>
                   <div style={{ fontSize: 11, fontWeight: 800, color: "var(--ink-mute)", marginTop: 6, fontFamily: "var(--font-display)" }}>{cur} / {selectedBadge.goal}</div>
                 </div>
               )}
               <button
                 type="button"
-                onClick={() => setSelectedBadge(null)}
+                onClick={requestCloseBadge}
                 style={{ marginTop: 18, width: "100%", background: "var(--maple-500)", color: "var(--frame)", border: "2px solid var(--frame)", borderRadius: 12, padding: "10px 0", fontFamily: "var(--font-display)", fontSize: 13, letterSpacing: 0.3, textAlign: "center", boxShadow: "0 3px 0 var(--frame)", cursor: "pointer" }}
               >
                 GOT IT

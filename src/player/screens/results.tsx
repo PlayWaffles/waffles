@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
+import type { CSSProperties } from "react";
 import { TOURNAMENT_PRIZES, usdtLabel, tournamentReward, tournamentRank, tournamentSyrupReward, useProto } from "../state";
 import { ASSETS, AssetWell, BottomCTA, Confetti, FlameIcon, Phone, PixelImg, resolveAvatar, SyrupIcon, TicketIcon } from "../shared";
 import { playSound } from "../sound";
@@ -14,7 +15,9 @@ import { useResultsTournamentBoardQuery } from "../hooks/usePlayerQueries";
 // reading as "out of everyone, you landed here") and the ticket prize (counts
 // up from 0). Snaps to the final value instantly under prefers-reduced-motion.
 const CountUp = ({ from, to, delayMs = 300, durationMs = 1300 }: { from: number; to: number; delayMs?: number; durationMs?: number }) => {
-  const [v, setV] = useState(from);
+  // Written imperatively to a ref rather than via setState — a count-up that
+  // re-rendered every frame would also re-render its parent each frame.
+  const ref = useRef<HTMLSpanElement>(null);
   const startedAt = useRef<number | null>(null);
   useEffect(() => {
     // Reduced motion collapses the count to a single frame (dur 0 → p=1).
@@ -22,6 +25,9 @@ const CountUp = ({ from, to, delayMs = 300, durationMs = 1300 }: { from: number;
     const dur = reduce ? 0 : durationMs;
     const delay = reduce ? 0 : delayMs;
     let raf = 0;
+    const write = (val: number) => {
+      if (ref.current) ref.current.textContent = Math.round(val).toLocaleString();
+    };
     const tick = (t: number) => {
       if (startedAt.current === null) startedAt.current = t;
       const elapsed = t - startedAt.current - delay;
@@ -31,13 +37,13 @@ const CountUp = ({ from, to, delayMs = 300, durationMs = 1300 }: { from: number;
       }
       const p = dur === 0 ? 1 : Math.min(1, elapsed / dur);
       const eased = 1 - Math.pow(1 - p, 3);
-      setV(Math.round(from + (to - from) * eased));
+      write(from + (to - from) * eased);
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [from, to, delayMs, durationMs]);
-  return <>{v.toLocaleString()}</>;
+  return <span ref={ref}>{from.toLocaleString()}</span>;
 };
 
 type Row = { r: number; n: string; s: number; av: string; you?: boolean };
@@ -55,6 +61,7 @@ const LeaderRow = ({ row, delay }: { row: Row; delay: number }) => {
   const medal = row.r === 1 ? "#FFD24D" : row.r === 2 ? "#bfc7d0" : row.r === 3 ? "#cd7f32" : "rgba(255,255,255,.4)";
   return (
     <div
+      className={row.you ? "waffles-v2-you-row" : undefined}
       style={{
         display: "flex",
         alignItems: "center",
@@ -63,7 +70,8 @@ const LeaderRow = ({ row, delay }: { row: Row; delay: number }) => {
         borderRadius: 12,
         background: row.you ? "rgba(255,210,77,.08)" : "transparent",
         border: row.you ? "1.5px solid var(--maple-500)" : "1.5px solid transparent",
-        animation: `waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) ${delay}s both${row.you ? `, waffles-v2-row-glow 2.4s ease-in-out ${delay + 0.5}s infinite` : ""}`,
+        animation: `waffles-v2-lvl-rise .45s cubic-bezier(0.22,1,0.36,1) ${delay}s both`,
+        ...(row.you ? ({ "--glow-delay": `${delay + 0.5}s` } as CSSProperties) : {}),
       }}
     >
       <div style={{ width: 26, fontFamily: "var(--font-display)", fontSize: 14, color: medal, textAlign: "center", flexShrink: 0, fontVariantNumeric: "tabular-nums" }}>{row.r}</div>

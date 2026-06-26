@@ -98,7 +98,7 @@ export const MissionsScreen = () => {
           <div style={{ fontSize: 12, fontWeight: 700, color: "#fff", lineHeight: 1.3 }}>{m.t}</div>
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
             <div style={{ flex: 1, height: 5, borderRadius: 99, background: "rgba(255,255,255,.06)", overflow: "hidden" }}>
-              <div style={{ width: `${pct}%`, height: "100%", background: "#FFD24D" }} />
+              <div style={{ width: "100%", height: "100%", background: "#FFD24D", transformOrigin: "left", transform: `scaleX(${pct / 100})`, transition: "transform .4s var(--ease-out-quart)" }} />
             </div>
             <span style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", whiteSpace: "nowrap" }}>{m.p}/{m.tot}</span>
           </div>

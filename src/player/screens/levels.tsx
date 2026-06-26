@@ -992,7 +992,7 @@ const LevelPathInner = () => {
             </div>
           </div>
           <div style={{ height: 6, width: 80, borderRadius: 99, background: "rgba(30,30,30,.25)", overflow: "hidden" }}>
-            <div style={{ width: `${milestone.pct}%`, height: "100%", background: "var(--frame)", borderRadius: 99 }} />
+            <div style={{ width: "100%", height: "100%", background: "var(--frame)", borderRadius: 99, transformOrigin: "left", transform: `scaleX(${milestone.pct / 100})`, transition: "transform .25s var(--ease-out-quart)" }} />
           </div>
         </div>
       </div>

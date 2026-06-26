@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
+import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import { useProto } from "../state";
 import { ASSETS, CATEGORY_COLORS, CategoryIcon, Phone, PixelImg } from "../shared";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { Illustration } from "../world-cup/components/parts";
 import { loadCurrentTournamentBoard, loadPowerUps } from "@/player/api";
-import type { PowerUpName } from "../state";
+import type { PowerUpName, Proto } from "../state";
 
 // Power-ups available to activate during a question (icon + label per kind).
 const POWERUP_DEFS: { kind: PowerUpName; label: string; icon: string }[] = [
@@ -30,7 +31,10 @@ const LIVE_AVATARS = [
 const avatarFor = (name: string) =>
   LIVE_AVATARS[[...name].reduce((s, c) => s + c.charCodeAt(0), 0) % LIVE_AVATARS.length];
 
-function LiveAnswerers() {
+// memo: this strip carries no props, so memoizing it keeps the 100ms question
+// timer (which re-renders QuestionScreen) from also re-rendering the avatar
+// stack — it only re-renders on its own trickle interval.
+const LiveAnswerers = memo(function LiveAnswerers() {
   const [people, setPeople] = useState<{ id: number; av: string }[]>([]);
   const [fieldSize, setFieldSize] = useState(0);
   const [shown, setShown] = useState(0);
@@ -86,7 +90,199 @@ function LiveAnswerers() {
       </div>
     </div>
   );
-}
+});
+
+// The question card (category, clue, media, prompt) — pure presentational, no
+// handlers, and none of its inputs change while the timer ticks, so memoizing it
+// keeps it out of the 100ms re-render of QuestionScreen.
+const QuestionCard = memo(function QuestionCard({ q, catColFg, cat, isMulti, isOrder, isSpatial, pick, orderN, picksLen }: { q: Proto["currentQuestion"]; catColFg: string; cat: string; isMulti: boolean; isOrder: boolean; isSpatial: boolean; pick: number; orderN: number; picksLen: number }) {
+  return (
+    <div style={{ background: "var(--cream-pure)", borderRadius: 14, padding: "18px 16px", position: "relative", border: `5px solid ${q.minefield ? "var(--live-red)" : "var(--leaf)"}`, borderTop: 0, borderLeft: 0, flexShrink: 0 }}>
+      <div className="chip" style={{ background: q.minefield ? "var(--live-red)" : catColFg, color: q.minefield ? "#fff" : "var(--frame)", position: "absolute", top: -12, left: 14, border: "2px solid var(--frame)" }}>
+        <CategoryIcon name={cat} size={14} /> {cat.toUpperCase()}
+      </div>
+      {/* Only show the kicker when it adds something the category pill above
+          doesn't already say — many newer formats set the kicker to the same
+          string as the category (e.g. "TAP ALL TRUE"), which printed twice. */}
+      {q.kicker && q.kicker.trim().toUpperCase() !== cat.toUpperCase() && (
+        <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: q.minefield ? "var(--live-red)" : catColFg, marginBottom: 8, textTransform: "uppercase" }}>{q.kicker}</div>
+      )}
+      {q.media && (
+        <div style={{ maxWidth: 248, margin: "0 auto 12px" }}>
+          <Illustration media={q.media} />
+        </div>
+      )}
+      {q.image && (
+        <div style={{ maxWidth: 300, margin: "0 auto 12px", borderRadius: 12, overflow: "hidden", border: "2px solid var(--frame)", background: "#000" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={q.image} alt="" loading="lazy" style={{ width: "100%", display: "block", aspectRatio: "16 / 10", objectFit: "cover" }} />
+        </div>
+      )}
+      {q.clues && q.clues.length > 0 && (
+        <ul style={{ listStyle: "none", margin: "0 0 10px", padding: 0, display: "flex", flexDirection: "column", gap: 5 }}>
+          {q.clues.map((c, i) => (
+            <li key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start", fontSize: 13, fontWeight: 600, color: "#3a3a3a", lineHeight: 1.3 }}>
+              <span aria-hidden style={{ color: catColFg, fontWeight: 900, flexShrink: 0 }}>›</span>
+              {c}
+            </li>
+          ))}
+        </ul>
+      )}
+      <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.25, color: "#191919" }}>{q.q}</div>
+      {isMulti && (
+        <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: catColFg }}>
+          SELECT {pick} · {picksLen}/{pick}
+        </div>
+      )}
+      {isOrder && (
+        <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: catColFg }}>
+          TAP IN ORDER · {picksLen}/{orderN}
+        </div>
+      )}
+      {isSpatial && (
+        <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: catColFg }}>TAP THE ANSWER</div>
+      )}
+    </div>
+  );
+});
+
+// The answer grid reconciles a button per option with rich per-state styling —
+// the heaviest part of the screen. Memoized so the 100ms timer doesn't re-diff
+// it: none of its inputs change while the clock ticks. Taps route through
+// answerRef (refreshed every parent render) so scoring still reads the LIVE
+// timer at tap time, despite this subtree not re-rendering on ticks.
+const AnswerGrid = memo(function AnswerGrid({ q, isMulti, isOrder, isSpatial, answered, eliminated, picks, setPicks, answerRef }: {
+  q: Proto["currentQuestion"];
+  isMulti: boolean;
+  isOrder: boolean;
+  isSpatial: boolean;
+  answered: number | null;
+  eliminated: number[];
+  picks: number[];
+  setPicks: Dispatch<SetStateAction<number[]>>;
+  answerRef: MutableRefObject<(i: number) => void>;
+}) {
+  const correctSet = q.correctSet ?? [];
+  const correctOrder = q.correctOrder ?? [];
+  const flags = q.flags ?? [];
+  const pick = q.pick ?? correctSet.length;
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: isSpatial ? "1fr 1fr 1fr" : "1fr 1fr", gap: 10, flexShrink: 0 }}>
+      {q.answers.map((text, i) => {
+        // 50/50 power-up removed this wrong option for this question.
+        const isEliminated = !isMulti && !isOrder && answered == null && eliminated.includes(i);
+        let state: "idle" | "selected" | "correct" | "wrong" | "dim" = isEliminated ? "dim" : "idle";
+        if (isMulti) {
+          if (answered != null) state = correctSet.includes(i) ? "correct" : picks.includes(i) ? "wrong" : "dim";
+          else state = picks.includes(i) ? "selected" : "idle";
+        } else if (isOrder) {
+          if (answered != null) state = picks.indexOf(i) === correctOrder.indexOf(i) ? "correct" : "wrong";
+          else state = picks.includes(i) ? "selected" : "idle";
+        } else if (answered != null) {
+          if (i === q.correct) state = "correct";
+          else if (i === answered) state = "wrong";
+          else state = "dim";
+        }
+        const orderPos = isOrder && picks.includes(i) ? picks.indexOf(i) + 1 : null;
+        const stateBg = { idle: "var(--cream-pure)", selected: "var(--maple-500)", correct: "var(--correct)", wrong: "var(--live-red)", dim: "rgba(253,251,246,.4)" }[state];
+        const stateColor = state === "wrong" ? "var(--ink)" : state === "correct" ? "var(--frame)" : "#191919";
+        const onTap = () => {
+          if (answered != null || isEliminated) return;
+          if (isMulti) {
+            setPicks((p) => (p.includes(i) ? p.filter((x) => x !== i) : p.length < pick ? [...p, i] : p));
+          } else if (isOrder) {
+            setPicks((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]));
+          } else {
+            playSound("answerSubmit");
+            answerRef.current(i);
+          }
+        };
+        return (
+          <button
+            key={i}
+            type="button"
+            disabled={answered != null || isEliminated}
+            onClick={onTap}
+            aria-label={`Answer: ${text}`}
+            aria-pressed={isMulti || isOrder ? picks.includes(i) : undefined}
+            style={{ position: "relative", background: stateBg, borderRadius: 12, padding: "12px 14px", minHeight: 66, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", textAlign: "left", color: stateColor, border: "5px solid var(--frame)", borderTop: 0, borderLeft: 0, font: "inherit", cursor: answered == null ? "pointer" : "default", transition: "background .12s var(--ease-out-quart), transform .12s var(--ease-out-quart)", transform: state === "correct" || state === "selected" ? "scale(1.03)" : "scale(1)", opacity: isEliminated ? 0.3 : 1 }}
+          >
+            {orderPos != null && (
+              <span style={{ position: "absolute", top: -8, left: -8, width: 22, height: 22, borderRadius: 99, background: "var(--frame)", color: "var(--maple-500)", fontFamily: "var(--font-display)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--maple-500)" }}>{orderPos}</span>
+            )}
+            {isSpatial && flags[i] && (
+              <div style={{ fontSize: 32, lineHeight: 1, textAlign: "center", marginBottom: 4 }} aria-hidden>{flags[i]}</div>
+            )}
+            <div style={{ fontFamily: "var(--font-display)", fontSize: isSpatial ? 13 : 16, lineHeight: 1.2, textAlign: isSpatial ? "center" : "left" }}>{text}</div>
+          </button>
+        );
+      })}
+    </div>
+  );
+});
+
+// The live countdown ring + digit. This is the ONLY element that animates during
+// a question, so it owns a local rAF loop that writes straight to refs — no React
+// state, no parent re-render. It derives remaining from the store's `deadlineAt`
+// (set once per question); when answered it freezes at the recorded snapshot.
+// Also voices the tense final-3s tick. Because the global timer no longer ticks at
+// 10Hz, this component is the entire per-frame cost of a running question.
+const RING_DASH = 264;
+const CountdownRing = memo(function CountdownRing({ deadlineAt, durationSec, answered, frozenSec }: {
+  deadlineAt: number | null;
+  durationSec: number;
+  answered: number | null;
+  frozenSec: number;
+}) {
+  const ringRef = useRef<SVGCircleElement>(null);
+  const digitRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const paint = (sec: number) => {
+      const clamped = Math.max(0, sec);
+      const pct = durationSec > 0 ? Math.max(0, Math.min(1, clamped / durationSec)) : 0;
+      const danger = clamped < 3;
+      if (ringRef.current) {
+        ringRef.current.style.strokeDashoffset = String(RING_DASH * (1 - pct));
+        ringRef.current.style.stroke = danger ? "#FC1919" : "#FFD24D";
+      }
+      if (digitRef.current) {
+        digitRef.current.textContent = clamped.toFixed(1);
+        digitRef.current.style.color = danger ? "#FC1919" : "#fff";
+      }
+    };
+    // Frozen states: answered (paint the recorded snapshot) or no clock yet.
+    if (answered != null || deadlineAt == null) {
+      paint(answered != null ? frozenSec : durationSec);
+      return;
+    }
+    const reduce = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    let raf = 0;
+    let finalFired = false;
+    const tick = () => {
+      const sec = (deadlineAt - Date.now()) / 1000;
+      paint(sec);
+      if (!reduce && !finalFired && sec > 0 && sec <= 3) {
+        finalFired = true;
+        playSound("timerFinal");
+      }
+      if (sec > 0) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [deadlineAt, durationSec, answered, frozenSec]);
+  return (
+    <div style={{ position: "absolute", top: 142, left: "50%", transform: "translateX(-50%)", width: 96, height: 96 }}>
+      <svg width="96" height="96" viewBox="0 0 96 96">
+        <circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,.08)" strokeWidth="8" fill="none" />
+        <circle ref={ringRef} cx="48" cy="48" r="42" stroke="#FFD24D" strokeWidth="8" fill="none" strokeDasharray={RING_DASH} strokeDashoffset={RING_DASH} strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: "stroke .3s" }} />
+      </svg>
+      <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
+        <div ref={digitRef} style={{ fontFamily: "var(--font-display)", fontSize: 32, color: "#fff", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{Math.max(0, durationSec).toFixed(1)}</div>
+        <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", letterSpacing: 0.5 }}>SECONDS</div>
+      </div>
+    </div>
+  );
+});
 
 export const QuestionScreen = () => {
   const proto = useProto();
@@ -96,10 +292,6 @@ export const QuestionScreen = () => {
   const total = proto.totalQuestions;
   const answered = proto.qAnswered;
   const totalTime = proto.tweaks.questionTime;
-  const timeLeft = proto.timer;
-  const ringPct = Math.max(0, Math.min(1, timeLeft / totalTime));
-  const ringDash = 264;
-  const ringOffset = ringDash * (1 - ringPct);
   const cat = q.cat;
   const catCol = CATEGORY_COLORS[cat] || { fg: "#FB72FF" };
   const hearts = proto.hearts;
@@ -142,18 +334,9 @@ export const QuestionScreen = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLevel, q?.id, idx]);
 
-  // Timer SFX — the shared countdown lives in state.tsx; here we voice it. The
-  // tense final-seconds tick fires once when the clock crosses into the last 3s
-  // (still unanswered), and the time-up sting fires on a timeout. Refs gate each
-  // to once per question so the 10Hz tick can't retrigger them.
-  const finalTickQRef = useRef<number | null>(null);
+  // Time-up sting fires once on a timeout. The tense final-seconds tick is voiced
+  // inside <CountdownRing> (it owns the live clock now). Ref gates to once per Q.
   const timeUpQRef = useRef<number | null>(null);
-  useEffect(() => {
-    if (answered == null && timeLeft > 0 && timeLeft <= 3 && finalTickQRef.current !== idx) {
-      finalTickQRef.current = idx;
-      playSound("timerFinal");
-    }
-  }, [answered, timeLeft, idx]);
   useEffect(() => {
     if (answered === -1 && timeUpQRef.current !== idx) {
       timeUpQRef.current = idx;
@@ -166,10 +349,18 @@ export const QuestionScreen = () => {
   const isSpatial = q.kind === "spatial";
   const correctSet = q.correctSet ?? [];
   const correctOrder = q.correctOrder ?? [];
-  const flags = q.flags ?? [];
   const pick = q.pick ?? correctSet.length;
   const orderN = q.answers.length;
   const needCount = isOrder ? orderN : pick;
+
+  // The memoized <AnswerGrid> doesn't re-render on timer ticks, so it can't close
+  // over a fresh proto.answerQuestion. Route taps through this ref (refreshed
+  // after every render) so scoring still reads the live timer at the moment of
+  // the tap — taps only fire after commit, so the ref is always current by then.
+  const answerRef = useRef(proto.answerQuestion);
+  useEffect(() => {
+    answerRef.current = proto.answerQuestion;
+  });
 
   // Local multi-select picks (before submit); reset when the question changes —
   // done during render (React's recommended alternative to an effect).
@@ -206,8 +397,10 @@ export const QuestionScreen = () => {
     proto.goto(isLevel ? "levels" : "home", { back: true });
   };
 
-  // Normalized result (matches the scoring in state.tsx).
-  const maxPts = Math.round(100 + timeLeft * 20);
+  // Normalized result (matches the scoring in state.tsx). proto.timer is the
+  // frozen remaining-at-answer snapshot once answered, so this matches the points
+  // awarded by the store.
+  const maxPts = Math.round(100 + proto.timer * 20);
   let points = 0;
   let result: "full" | "partial" | "miss" = "miss";
   if (answered != null) {
@@ -245,7 +438,7 @@ export const QuestionScreen = () => {
         </button>
         <div style={{ flex: 1, height: 8, borderRadius: 99, background: "rgba(255,255,255,.08)", display: "flex", border: "1px solid rgba(255,255,255,.05)" }}>
           {dots.map((on, i) => (
-            <div key={i} style={{ flex: 1, margin: "0 1px", background: on ? "#FFD24D" : "transparent", borderRadius: 99, transition: "background .3s" }} />
+            <div key={i} style={{ flex: 1, margin: "0 1px", background: on ? "#FFD24D" : "transparent", borderRadius: 99, transition: "background .15s ease" }} />
           ))}
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 4, color: "#fff", fontWeight: 800, fontSize: 13 }}>
@@ -275,69 +468,15 @@ export const QuestionScreen = () => {
       ) : (
         <div style={{ position: "absolute", top: 94, left: "50%", transform: "translateX(-50%)", display: "flex", gap: 6 }}>
           {[1, 2, 3].map((h) => (
-            <PixelImg key={h} src={h <= hearts ? ASSETS.heartFull : ASSETS.heartEmpty} size={32} alt="heart" style={{ filter: h <= hearts ? "drop-shadow(0 0 4px rgba(252,25,25,.5))" : "none", transition: "filter .3s" }} />
+            <PixelImg key={h} src={h <= hearts ? ASSETS.heartFull : ASSETS.heartEmpty} size={32} alt="heart" style={{ filter: h <= hearts ? "drop-shadow(0 0 4px rgba(252,25,25,.5))" : "none", transition: "filter .15s ease" }} />
           ))}
         </div>
       )}
 
-      <div style={{ position: "absolute", top: 142, left: "50%", transform: "translateX(-50%)", width: 96, height: 96 }}>
-        <svg width="96" height="96" viewBox="0 0 96 96">
-          <circle cx="48" cy="48" r="42" stroke="rgba(255,255,255,.08)" strokeWidth="8" fill="none" />
-          <circle cx="48" cy="48" r="42" stroke={timeLeft < 3 ? "#FC1919" : "#FFD24D"} strokeWidth="8" fill="none" strokeDasharray={ringDash} strokeDashoffset={ringOffset} strokeLinecap="round" transform="rotate(-90 48 48)" style={{ transition: "stroke-dashoffset .1s linear, stroke .3s" }} />
-        </svg>
-        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column" }}>
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 32, color: timeLeft < 3 ? "#FC1919" : "#fff", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{Math.max(0, timeLeft).toFixed(1)}</div>
-          <div style={{ fontSize: 9, fontWeight: 800, color: "rgba(255,255,255,.5)", letterSpacing: 0.5 }}>SECONDS</div>
-        </div>
-      </div>
+      <CountdownRing deadlineAt={proto.deadlineAt} durationSec={q.time ?? totalTime} answered={answered} frozenSec={proto.timer} />
 
       <div style={{ position: "absolute", top: 246, left: 16, right: 16, bottom: answered != null ? 96 : (isMulti || isOrder) ? 88 : 16, display: "flex", flexDirection: "column", gap: 14, paddingTop: 14, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none" }}>
-        <div style={{ background: "var(--cream-pure)", borderRadius: 14, padding: "18px 16px", position: "relative", border: `5px solid ${q.minefield ? "var(--live-red)" : "var(--leaf)"}`, borderTop: 0, borderLeft: 0, flexShrink: 0 }}>
-          <div className="chip" style={{ background: q.minefield ? "var(--live-red)" : catCol.fg, color: q.minefield ? "#fff" : "var(--frame)", position: "absolute", top: -12, left: 14, border: "2px solid var(--frame)" }}>
-            <CategoryIcon name={cat} size={14} /> {cat.toUpperCase()}
-          </div>
-          {/* Only show the kicker when it adds something the category pill above
-              doesn't already say — many newer formats set the kicker to the same
-              string as the category (e.g. "TAP ALL TRUE"), which printed twice. */}
-          {q.kicker && q.kicker.trim().toUpperCase() !== cat.toUpperCase() && (
-            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: 1.2, color: q.minefield ? "var(--live-red)" : catCol.fg, marginBottom: 8, textTransform: "uppercase" }}>{q.kicker}</div>
-          )}
-          {q.media && (
-            <div style={{ maxWidth: 248, margin: "0 auto 12px" }}>
-              <Illustration media={q.media} />
-            </div>
-          )}
-          {q.image && (
-            <div style={{ maxWidth: 300, margin: "0 auto 12px", borderRadius: 12, overflow: "hidden", border: "2px solid var(--frame)", background: "#000" }}>
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={q.image} alt="" loading="lazy" style={{ width: "100%", display: "block", aspectRatio: "16 / 10", objectFit: "cover" }} />
-            </div>
-          )}
-          {q.clues && q.clues.length > 0 && (
-            <ul style={{ listStyle: "none", margin: "0 0 10px", padding: 0, display: "flex", flexDirection: "column", gap: 5 }}>
-              {q.clues.map((c, i) => (
-                <li key={i} style={{ display: "flex", gap: 7, alignItems: "flex-start", fontSize: 13, fontWeight: 600, color: "#3a3a3a", lineHeight: 1.3 }}>
-                  <span aria-hidden style={{ color: catCol.fg, fontWeight: 900, flexShrink: 0 }}>›</span>
-                  {c}
-                </li>
-              ))}
-            </ul>
-          )}
-          <div style={{ fontFamily: "var(--font-display)", fontSize: 18, lineHeight: 1.25, color: "#191919" }}>{q.q}</div>
-          {isMulti && (
-            <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: catCol.fg }}>
-              SELECT {pick} · {picks.length}/{pick}
-            </div>
-          )}
-          {isOrder && (
-            <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: catCol.fg }}>
-              TAP IN ORDER · {picks.length}/{orderN}
-            </div>
-          )}
-          {isSpatial && (
-            <div style={{ marginTop: 6, fontSize: 12, fontWeight: 800, color: catCol.fg }}>TAP THE ANSWER</div>
-          )}
-        </div>
+        <QuestionCard q={q} catColFg={catCol.fg} cat={cat} isMulti={isMulti} isOrder={isOrder} isSpatial={isSpatial} pick={pick} orderN={orderN} picksLen={picks.length} />
 
       {isLevel && answered == null && POWERUP_DEFS.some((pu) => (powerUps[pu.kind] ?? 0) > 0) && (
         <div style={{ display: "flex", gap: 6, justifyContent: "center", marginBottom: 10, flexShrink: 0 }}>
@@ -363,57 +502,7 @@ export const QuestionScreen = () => {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: isSpatial ? "1fr 1fr 1fr" : "1fr 1fr", gap: 10, flexShrink: 0 }}>
-        {q.answers.map((text, i) => {
-          // 50/50 power-up removed this wrong option for this question.
-          const isEliminated = !isMulti && !isOrder && answered == null && proto.eliminated.includes(i);
-          let state: "idle" | "selected" | "correct" | "wrong" | "dim" = isEliminated ? "dim" : "idle";
-          if (isMulti) {
-            if (answered != null) state = correctSet.includes(i) ? "correct" : picks.includes(i) ? "wrong" : "dim";
-            else state = picks.includes(i) ? "selected" : "idle";
-          } else if (isOrder) {
-            if (answered != null) state = picks.indexOf(i) === correctOrder.indexOf(i) ? "correct" : "wrong";
-            else state = picks.includes(i) ? "selected" : "idle";
-          } else if (answered != null) {
-            if (i === q.correct) state = "correct";
-            else if (i === answered) state = "wrong";
-            else state = "dim";
-          }
-          const orderPos = isOrder && picks.includes(i) ? picks.indexOf(i) + 1 : null;
-          const stateBg = { idle: "var(--cream-pure)", selected: "var(--maple-500)", correct: "var(--correct)", wrong: "var(--live-red)", dim: "rgba(253,251,246,.4)" }[state];
-          const stateColor = state === "wrong" ? "var(--ink)" : state === "correct" ? "var(--frame)" : "#191919";
-          const onTap = () => {
-            if (answered != null || isEliminated) return;
-            if (isMulti) {
-              setPicks((p) => (p.includes(i) ? p.filter((x) => x !== i) : p.length < pick ? [...p, i] : p));
-            } else if (isOrder) {
-              setPicks((p) => (p.includes(i) ? p.filter((x) => x !== i) : [...p, i]));
-            } else {
-              playSound("answerSubmit");
-              proto.answerQuestion(i);
-            }
-          };
-          return (
-            <button
-              key={i}
-              type="button"
-              disabled={answered != null || isEliminated}
-              onClick={onTap}
-              aria-label={`Answer: ${text}`}
-              aria-pressed={isMulti || isOrder ? picks.includes(i) : undefined}
-              style={{ position: "relative", background: stateBg, borderRadius: 12, padding: "12px 14px", minHeight: 66, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "stretch", textAlign: "left", color: stateColor, border: "5px solid var(--frame)", borderTop: 0, borderLeft: 0, font: "inherit", cursor: answered == null ? "pointer" : "default", transition: "background .2s var(--ease-out-quart), transform .2s var(--ease-out-quart)", transform: state === "correct" || state === "selected" ? "scale(1.03)" : "scale(1)", opacity: isEliminated ? 0.3 : 1 }}
-            >
-              {orderPos != null && (
-                <span style={{ position: "absolute", top: -8, left: -8, width: 22, height: 22, borderRadius: 99, background: "var(--frame)", color: "var(--maple-500)", fontFamily: "var(--font-display)", fontSize: 12, display: "flex", alignItems: "center", justifyContent: "center", border: "2px solid var(--maple-500)" }}>{orderPos}</span>
-              )}
-              {isSpatial && flags[i] && (
-                <div style={{ fontSize: 32, lineHeight: 1, textAlign: "center", marginBottom: 4 }} aria-hidden>{flags[i]}</div>
-              )}
-              <div style={{ fontFamily: "var(--font-display)", fontSize: isSpatial ? 13 : 16, lineHeight: 1.2, textAlign: isSpatial ? "center" : "left" }}>{text}</div>
-            </button>
-          );
-        })}
-      </div>
+      <AnswerGrid q={q} isMulti={isMulti} isOrder={isOrder} isSpatial={isSpatial} answered={answered} eliminated={proto.eliminated} picks={picks} setPicks={setPicks} answerRef={answerRef} />
       </div>
 
       {/* Multi / ordered confirm */}
@@ -434,7 +523,7 @@ export const QuestionScreen = () => {
       )}
 
       {answered != null && (
-        <div role="status" aria-live="polite" style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: good ? "linear-gradient(180deg, var(--correct), var(--correct-dark))" : "linear-gradient(180deg, var(--live-red), #b30c0c)", padding: "14px 18px 22px", color: good ? "var(--frame)" : "var(--ink)", borderTop: "2px solid var(--frame)", animation: "waffles-v2-slideUp .25s var(--ease-out-quart)" }}>
+        <div role="status" aria-live="polite" style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: good ? "linear-gradient(180deg, var(--correct), var(--correct-dark))" : "linear-gradient(180deg, var(--live-red), #b30c0c)", padding: "14px 18px 22px", color: good ? "var(--frame)" : "var(--ink)", borderTop: "2px solid var(--frame)", animation: "waffles-v2-slideUp .18s var(--ease-out-quart)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 18 }}>
@@ -442,7 +531,7 @@ export const QuestionScreen = () => {
               </div>
               <div style={{ fontSize: 11, fontWeight: 700, opacity: 0.75 }}>
                 {good
-                  ? `Speed bonus · ${(totalTime - timeLeft).toFixed(1)}s`
+                  ? `Speed bonus · ${(totalTime - proto.timer).toFixed(1)}s`
                   : isMulti
                     ? `Answer: ${correctSet.map((i) => q.answers[i]).join(", ")}`
                     : isOrder

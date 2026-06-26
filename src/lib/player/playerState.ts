@@ -53,6 +53,9 @@ export type PlayerState = {
   annRead: string[];
   annDismissed: string[];
   earnedBadges: string[];
+  /** Whether the player has entered a paid tournament so far today (UTC) —
+   *  gates the every-5-levels tournament upsell. */
+  enteredTournamentToday: boolean;
 };
 
 // ── Track <-> enum mapping ──────────────────────────────────────────────────
@@ -128,7 +131,11 @@ export async function ensurePlayerDefaults(userId: string): Promise<void> {
 export async function loadPlayerState(userId: string): Promise<PlayerState> {
   await ensurePlayerDefaults(userId);
 
-  const [user, progress, winnings, lastSettled, annStates, badges, lastClaim] = await Promise.all([
+  // UTC day boundary for "entered a tournament today" (gates the level upsell).
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  const [user, progress, winnings, lastSettled, annStates, badges, lastClaim, enteredTodayEntry] = await Promise.all([
     prisma.user.findUniqueOrThrow({
       where: { id: userId },
       select: {
@@ -184,6 +191,11 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
       orderBy: { dayKey: "desc" },
       select: { dayKey: true },
     }),
+    // Has the player entered a paid tournament yet today? (UTC) — upsell gate.
+    prisma.gameEntry.findFirst({
+      where: { userId, paidAt: { gte: todayStart } },
+      select: { id: true },
+    }),
   ]);
 
   const levelByTrack: Record<Track, number> = { standard: 1, "world-cup": 1 };
@@ -222,6 +234,7 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
     annRead: annStates.filter((a) => a.readAt).map((a) => a.announcementId),
     annDismissed: annStates.filter((a) => a.dismissedAt).map((a) => a.announcementId),
     earnedBadges: badges.map((b) => b.badgeId),
+    enteredTournamentToday: !!enteredTodayEntry,
   };
 }
 

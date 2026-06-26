@@ -27,28 +27,48 @@ const XP_PER_LEVEL = 500;
 // by one animated `progress` value (0 → rawXp); width is set per-frame with no
 // CSS transition, so each wrap reads as a clean reset rather than draining back.
 const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number; onOpen: () => void }) => {
-  const [progress, setProgress] = useState(0);
+  // The XP roll-up plays on every home mount (high frequency), so it runs fully
+  // outside React: refs are mutated each frame instead of setState, and the bar
+  // fills via transform: scaleX (GPU, no layout) rather than an animated width.
+  const fillRef = useRef<HTMLDivElement | null>(null);
+  const lvlRef = useRef<HTMLSpanElement | null>(null);
+  const intoRef = useRef<HTMLSpanElement | null>(null);
   const startRef = useRef<number | null>(null);
   useEffect(() => {
     const reduce = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     const levels = Math.floor(rawXp / XP_PER_LEVEL);
-    const dur = reduce ? 0 : Math.min(2600, 800 + levels * 650);
+    const dur = reduce ? 0 : Math.min(1200, 600 + levels * 300);
     startRef.current = null;
     let raf = 0;
+    let lastLevel = -1;
+    const render = (progress: number) => {
+      const level = baseLevel + Math.floor(progress / XP_PER_LEVEL);
+      const into = Math.floor(progress % XP_PER_LEVEL);
+      const pct = (progress % XP_PER_LEVEL) / XP_PER_LEVEL;
+      if (fillRef.current) fillRef.current.style.transform = `scaleX(${pct})`;
+      if (intoRef.current) intoRef.current.textContent = `${into}/${XP_PER_LEVEL} XP`;
+      if (lvlRef.current && level !== lastLevel) {
+        lvlRef.current.textContent = `Lvl ${level}`;
+        // re-pop the number each time it rolls over (skip the initial mount,
+        // which already carries the pop from its inline animation)
+        if (lastLevel !== -1 && !reduce) {
+          lvlRef.current.style.animation = "none";
+          void lvlRef.current.offsetWidth; // force reflow so the pop restarts
+          lvlRef.current.style.animation = "waffles-v2-lvl-pop .4s var(--ease-out-quart)";
+        }
+        lastLevel = level;
+      }
+    };
     const tick = (t: number) => {
       if (startRef.current === null) startRef.current = t;
       const p = dur === 0 ? 1 : Math.min(1, (t - startRef.current) / dur);
       const eased = 1 - Math.pow(1 - p, 3);
-      setProgress(rawXp * eased);
+      render(rawXp * eased);
       if (p < 1) raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [rawXp]);
-
-  const level = baseLevel + Math.floor(progress / XP_PER_LEVEL);
-  const into = Math.floor(progress % XP_PER_LEVEL);
-  const pct = ((progress % XP_PER_LEVEL) / XP_PER_LEVEL) * 100;
+  }, [rawXp, baseLevel]);
 
   return (
     <button
@@ -59,12 +79,11 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
       style={{ flex: 1.4, background: "var(--surface-1)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "10px 14px" }}
     >
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 6 }}>
-        {/* keyed on level so the number re-pops each time it rolls over */}
-        <span key={level} style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.8, textTransform: "uppercase", display: "inline-block", animation: "waffles-v2-lvl-pop .4s var(--ease-out-quart)" }}>Lvl {level}</span>
-        <span style={{ fontSize: 11, fontWeight: 700, color: "var(--maple-500)", fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums" }}>{into}/{XP_PER_LEVEL} XP</span>
+        <span ref={lvlRef} style={{ fontSize: 10, fontWeight: 800, color: "var(--ink-faint)", letterSpacing: 0.8, textTransform: "uppercase", display: "inline-block", animation: "waffles-v2-lvl-pop .4s var(--ease-out-quart)" }}>Lvl {baseLevel}</span>
+        <span ref={intoRef} style={{ fontSize: 11, fontWeight: 700, color: "var(--maple-500)", fontFamily: "var(--font-display)", fontVariantNumeric: "tabular-nums" }}>0/{XP_PER_LEVEL} XP</span>
       </div>
       <div style={{ height: 8, borderRadius: 99, background: "rgba(255,255,255,0.05)", overflow: "hidden", border: "1px solid rgba(255,255,255,0.04)" }}>
-        <div style={{ width: `${pct}%`, height: "100%", background: "linear-gradient(90deg, var(--maple-500), var(--maple-400))", borderRadius: 99 }} />
+        <div ref={fillRef} style={{ width: "100%", height: "100%", background: "linear-gradient(90deg, var(--maple-500), var(--maple-400))", borderRadius: 99, transform: "scaleX(0)", transformOrigin: "left" }} />
       </div>
     </button>
   );
@@ -291,7 +310,7 @@ const HomeMissions = () => {
                   <span style={{ fontSize: 10, fontWeight: 800, color: done ? "#FF9F1C" : "rgba(255,255,255,.5)", fontFamily: "var(--font-display)" }}>{m.cur}/{m.tgt}</span>
                 </div>
                 <div style={{ height: 5, borderRadius: 99, background: "rgba(255,255,255,.05)", overflow: "hidden" }}>
-                  <div style={{ width: `${pct}%`, height: "100%", background: done ? "linear-gradient(90deg,#FF9F1C,#5DDDF0)" : "linear-gradient(90deg, #FFD24D, #F5A91B)", transition: "width .4s" }} />
+                  <div style={{ width: "100%", height: "100%", background: done ? "linear-gradient(90deg,#FF9F1C,#5DDDF0)" : "linear-gradient(90deg, #FFD24D, #F5A91B)", transform: `scaleX(${pct / 100})`, transformOrigin: "left", transition: "transform .4s var(--ease-out-quart)" }} />
                 </div>
               </div>
               <div style={{ fontSize: 10, fontWeight: 800, color: done ? "#FF9F1C" : "rgba(255,255,255,.55)", letterSpacing: 0.4, minWidth: 40, textAlign: "right" }}>

@@ -490,6 +490,9 @@ type State = {
   // Earned badge ids — DB-backed (UserBadge), overlaid from loadState. The
   // authoritative set; badge displays union this with any freshly-derived badge.
   earnedBadges: string[];
+  // Whether the player has entered a paid tournament yet today (UTC) — DB-backed
+  // via loadState, flipped true client-side on entry. Gates the level upsell.
+  enteredTournamentToday: boolean;
   // The live announcement feed (authored DB rows + per-user triggered cards),
   // fetched from the server. Empty until that load resolves.
   announcements: Announcement[];
@@ -523,7 +526,15 @@ type State = {
   eliminated: number[];
   shieldActive: boolean;
   countdownSec: number;
+  // `timer` is a frozen snapshot of remaining seconds, NOT a live-ticking value:
+  // it holds the full question duration at question start and the remaining time
+  // at the moment of answering (read by the result banner). The live countdown is
+  // derived from `deadlineAt` (epoch ms when the current question expires) — the
+  // visual tick runs locally in <CountdownRing> so global state never ticks at
+  // 10Hz. `deadlineAt` is null between questions; the clock starts when the
+  // question screen shows a fresh unanswered question.
   timer: number;
+  deadlineAt: number | null;
   // The selected questions for the current game (tournament round or level).
   // Repopulated each time a game starts so play never repeats the same set.
   roundQuestions: Question[];
@@ -595,6 +606,7 @@ const initialState = (tweaks: Tweaks): State => ({
   annRead: [],
   annDismissed: [],
   earnedBadges: [],
+  enteredTournamentToday: false,
   // Empty until the DB feed loads (loadAnnouncements) — fully server-driven.
   announcements: [],
   announcementToast: null,
@@ -612,6 +624,7 @@ const initialState = (tweaks: Tweaks): State => ({
   shieldActive: false,
   countdownSec: tweaks.lobbyCountdown,
   timer: tweaks.questionTime,
+  deadlineAt: null,
   roundQuestions: [], // server-issued on tournament entry; never seeded locally
   roundAnswers: [],
   pendingLevelQuestions: null,
@@ -808,6 +821,7 @@ export function ProtoProvider({
           annRead: s.annRead,
           annDismissed: s.annDismissed,
           earnedBadges: s.earnedBadges,
+          enteredTournamentToday: s.enteredTournamentToday,
         });
       }
       if (playerStateQuery.isFetched || playerStateQuery.isError) {
@@ -949,7 +963,7 @@ export function ProtoProvider({
         }
       }
       const t = setTimeout(() => {
-        update({ qIdx: 0, score: 0, qAnswered: null, qSelection: null, eliminated: [], shieldActive: false, timer: state.roundQuestions[0]?.time ?? tweaks.questionTime });
+        update({ qIdx: 0, score: 0, qAnswered: null, qSelection: null, eliminated: [], shieldActive: false, timer: state.roundQuestions[0]?.time ?? tweaks.questionTime, deadlineAt: null });
         goto("question");
       }, 0);
       return () => clearTimeout(t);
@@ -958,26 +972,41 @@ export function ProtoProvider({
     return () => clearTimeout(t);
   }, [state.screen, state.countdownSec, state.roundQuestions, state.mode, state.tournamentGameId, tweaks.questionTime, goto, update, track]);
 
-  // Question timer
+  // Question timer — start the clock. When a fresh, unanswered question is shown
+  // and no deadline is set yet, stamp one. Transitions clear `deadlineAt` to null
+  // for each new question, so this fires exactly once per question. The visual
+  // countdown is rendered locally (<CountdownRing> rAF); global state does NOT
+  // tick every 100ms, so question screens don't re-render during a question.
   useEffect(() => {
     if (state.screen !== "question") return;
     if (state.qAnswered !== null) return;
-    if (state.timer <= 0) {
-      const t = setTimeout(() => {
-        const q = state.roundQuestions[state.qIdx];
-        track(AnalyticsEvent.QuestionTimeout, questionAnalytics(q, {
-          question_index: state.qIdx + 1,
-          question_count: state.roundQuestions.length,
-          time_remaining_sec: 0,
-          score_after: state.score,
-        }));
-        update({ qAnswered: -1 });
-      }, 0);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(() => update({ timer: state.timer - 0.1 }), 100);
+    if (state.deadlineAt != null) return;
+    const dur = state.roundQuestions[state.qIdx]?.time ?? tweaks.questionTime;
+    // Deferred (not a synchronous setState-in-effect) — stamps the deadline a tick
+    // after the question screen settles; the sub-frame delay is immaterial.
+    const t = setTimeout(() => update({ deadlineAt: Date.now() + dur * 1000 }), 0);
     return () => clearTimeout(t);
-  }, [state.screen, state.timer, state.qAnswered, state.roundQuestions, state.qIdx, state.score, update, track]);
+  }, [state.screen, state.qIdx, state.qAnswered, state.deadlineAt, state.roundQuestions, tweaks.questionTime, update]);
+
+  // Question timer — expiry. A single timeout fires at the deadline (rescheduled
+  // if extra-time extends it). No per-100ms ticking.
+  useEffect(() => {
+    if (state.screen !== "question") return;
+    if (state.qAnswered !== null) return;
+    if (state.deadlineAt == null) return;
+    const fire = () => {
+      const q = state.roundQuestions[state.qIdx];
+      track(AnalyticsEvent.QuestionTimeout, questionAnalytics(q, {
+        question_index: state.qIdx + 1,
+        question_count: state.roundQuestions.length,
+        time_remaining_sec: 0,
+        score_after: state.score,
+      }));
+      update({ qAnswered: -1, timer: 0 });
+    };
+    const t = setTimeout(fire, Math.max(0, state.deadlineAt - Date.now()));
+    return () => clearTimeout(t);
+  }, [state.screen, state.deadlineAt, state.qAnswered, state.roundQuestions, state.qIdx, state.score, update, track]);
 
   // Background music: loop the game track during active play (lobby + question),
   // silent everywhere else. Both calls are no-ops while muted, and the track
@@ -1147,6 +1176,7 @@ export function ProtoProvider({
           eliminated: [],
           shieldActive: shielded ? false : state.shieldActive,
           timer: state.roundQuestions[state.qIdx + 1]?.time ?? tweaks.questionTime,
+          deadlineAt: null,
         });
         track(AnalyticsEvent.QuestionNextClicked, {
           mode: "level",
@@ -1216,6 +1246,7 @@ export function ProtoProvider({
           qSelection: null,
           eliminated: [],
           timer: state.roundQuestions[state.qIdx + 1]?.time ?? tweaks.questionTime,
+          deadlineAt: null,
         });
         track(AnalyticsEvent.QuestionNextClicked, {
           mode: "tournament",
@@ -1228,14 +1259,20 @@ export function ProtoProvider({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.qAnswered, state.qIdx]);
 
+  // Remaining seconds at this instant, derived from the deadline (the source of
+  // truth now that `timer` no longer ticks). Falls back to `timer` if no deadline.
+  const remainingSec = () =>
+    state.deadlineAt != null ? Math.max(0, (state.deadlineAt - Date.now()) / 1000) : state.timer;
+
   const answerQuestion = (answerIdx: number) => {
     if (state.qAnswered !== null) return;
     const q = state.roundQuestions[state.qIdx];
     if (!q) return;
     const correct = answerIdx === q.correct;
+    const rem = remainingSec();
     // Minefield is the high-risk format: a correct answer pays 1.5×, a wrong one
     // not only scores 0 but docks 150 (floored at 0) — "kills your run".
-    const base = Math.round(100 + state.timer * 20);
+    const base = Math.round(100 + rem * 20);
     const delta = q.minefield
       ? correct
         ? Math.round(base * 1.5)
@@ -1248,12 +1285,13 @@ export function ProtoProvider({
       question_index: state.qIdx + 1,
       question_count: state.roundQuestions.length,
       selected_option_hash: hashAnalyticsValue(answerIdx),
-      time_remaining_sec: Math.max(0, Math.round(state.timer)),
+      time_remaining_sec: Math.max(0, Math.round(rem)),
       score_delta: delta,
       score_after: Math.max(0, state.score + delta),
     }));
     update({
       qAnswered: answerIdx,
+      timer: rem,
       score: Math.max(0, state.score + delta),
     });
   };
@@ -1270,7 +1308,8 @@ export function ProtoProvider({
     const correctPicked = indices.filter((i) => cs.includes(i)).length;
     const wrongPicked = indices.filter((i) => !cs.includes(i)).length;
     const accuracy = Math.max(0, Math.min(1, (correctPicked - wrongPicked) / pick));
-    const base = Math.round(100 + state.timer * 20);
+    const rem = remainingSec();
+    const base = Math.round(100 + rem * 20);
     const delta = Math.round(base * accuracy);
     track(AnalyticsEvent.QuestionAnswerSubmitted, questionAnalytics(q, {
       mode: state.mode,
@@ -1278,13 +1317,14 @@ export function ProtoProvider({
       question_count: state.roundQuestions.length,
       selected_count: indices.length,
       selected_option_hash: hashAnalyticsValue(indices.join(",")),
-      time_remaining_sec: Math.max(0, Math.round(state.timer)),
+      time_remaining_sec: Math.max(0, Math.round(rem)),
       score_delta: delta,
       score_after: state.score + delta,
     }));
     update({
       qAnswered: -2,
       qSelection: indices,
+      timer: rem,
       score: state.score + delta,
     });
   };
@@ -1299,7 +1339,8 @@ export function ProtoProvider({
     const n = co.length || 1;
     const matches = order.filter((v, p) => v === co[p]).length;
     const accuracy = Math.max(0, Math.min(1, matches / n));
-    const base = Math.round(100 + state.timer * 20);
+    const rem = remainingSec();
+    const base = Math.round(100 + rem * 20);
     const delta = Math.round(base * accuracy);
     track(AnalyticsEvent.QuestionAnswerSubmitted, questionAnalytics(q, {
       mode: state.mode,
@@ -1307,13 +1348,14 @@ export function ProtoProvider({
       question_count: state.roundQuestions.length,
       selected_count: order.length,
       selected_option_hash: hashAnalyticsValue(order.join(",")),
-      time_remaining_sec: Math.max(0, Math.round(state.timer)),
+      time_remaining_sec: Math.max(0, Math.round(rem)),
       score_delta: delta,
       score_after: state.score + delta,
     }));
     update({
       qAnswered: -3,
       qSelection: order,
+      timer: rem,
       score: state.score + delta,
     });
   };
@@ -1400,7 +1442,7 @@ export function ProtoProvider({
     // No play is spent here — the intro is a free preview. The practice play is
     // consumed when the quiz actually begins (beginLevelQuiz), so backing out of
     // the intro costs nothing.
-    update({ mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, pendingLevelQuestions: null });
+    update({ mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, deadlineAt: null, pendingLevelQuestions: null });
     goto("levelIntro");
     // Prefetch the level's questions from the server during the intro screen so
     // play starts instantly.
@@ -1496,6 +1538,7 @@ export function ProtoProvider({
       eliminated: [],
       shieldActive: false,
       timer: questions[0]?.time ?? tweaks.questionTime,
+      deadlineAt: null,
       roundQuestions: questions,
       pendingLevelQuestions: null,
     });
@@ -1530,7 +1573,10 @@ export function ProtoProvider({
         });
       });
     if (kind === "EXTRA_TIME") {
-      update((s) => ({ timer: s.timer + 5 }));
+      // Push the deadline out by 5s; the deadline-expiry effect reschedules and
+      // the local ring picks up the new remaining on its next frame. `timer` is a
+      // frozen snapshot (not live), so it doesn't need adjusting here.
+      update((s) => ({ deadlineAt: (s.deadlineAt ?? Date.now()) + 5000 }));
       return;
     }
     if (kind === "SHIELD") {
@@ -1554,6 +1600,7 @@ export function ProtoProvider({
           qSelection: null,
           eliminated: [],
           timer: s.roundQuestions[s.qIdx + 1]?.time ?? tweaks.questionTime,
+          deadlineAt: null,
         };
       });
     }
@@ -1567,6 +1614,7 @@ export function ProtoProvider({
       qAnswered: null,
       hearts: 3,
       timer: tweaks.questionTime,
+      deadlineAt: null,
       countdownSec: tweaks.lobbyCountdown,
       roundQuestions: [], // server-issued on tournament entry; never seeded locally
       tournamentBonus: false,
@@ -1702,6 +1750,7 @@ export function ProtoProvider({
         qAnswered: null,
         hearts: 3,
         timer: mapped[0]?.time ?? tweaks.questionTime,
+        deadlineAt: null,
         countdownSec: tweaks.lobbyCountdown,
         tournamentStep: null,
         entryModal: {
@@ -1709,11 +1758,13 @@ export function ProtoProvider({
           endsAt: new Date(t.game.endsAt).getTime(),
         },
       });
-      // Tournament play tops up today's practice allowance (server granted it on
-      // a NEW entry; reflect it optimistically). loadState reconciles on reload.
-      if (!res.alreadyEntered) {
-        update((s) => ({ lives: s.lives + PRACTICE_PER_TOURNAMENT }));
-      }
+      // Entering a tournament marks "played today" (disables the level upsell
+      // for the rest of the day) and, on a NEW entry, tops up today's practice
+      // allowance (server granted it). loadState reconciles both on reload.
+      update((s) => ({
+        enteredTournamentToday: true,
+        ...(res.alreadyEntered ? {} : { lives: s.lives + PRACTICE_PER_TOURNAMENT }),
+      }));
       return { ok: true };
     } catch (e) {
       blog("[buy-ticket] enter flow threw", e);
@@ -1757,6 +1808,7 @@ export function ProtoProvider({
       qAnswered: null,
       hearts: 3,
       timer: mapped[0]?.time ?? tweaks.questionTime,
+      deadlineAt: null,
       countdownSec: tweaks.lobbyCountdown,
       tournamentStep: null,
     });
@@ -1787,6 +1839,7 @@ export function ProtoProvider({
       qSelection: null,
       hearts: 3,
       timer: mapped[0]?.time ?? tweaks.questionTime,
+      deadlineAt: null,
       countdownSec: tweaks.lobbyCountdown,
       tournamentStep: null,
     });

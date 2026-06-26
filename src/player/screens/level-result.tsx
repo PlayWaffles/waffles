@@ -18,25 +18,11 @@ import { useMiniPayTopUp } from "../useMiniPayTopUp";
 import { playSound } from "../sound";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 
-// One-time tournament upsell, shown the first time a player clears a level —
-// the highest-intent moment to convert a warmed-up free player into the paid,
-// prize-bearing live loop. Tracked in localStorage so it only fires once.
-const TOURNAMENT_UPSELL_KEY = "waffles.v2.tournamentUpsellSeen";
-const hasSeenTournamentUpsell = (): boolean => {
-  if (typeof window === "undefined") return true;
-  try {
-    return localStorage.getItem(TOURNAMENT_UPSELL_KEY) === "1";
-  } catch {
-    return true;
-  }
-};
-const markTournamentUpsellSeen = (): void => {
-  try {
-    localStorage.setItem(TOURNAMENT_UPSELL_KEY, "1");
-  } catch {
-    /* storage disabled — it'll just show again next session */
-  }
-};
+// Tournament upsell — shown every 5th level cleared, but only while the player
+// hasn't entered a tournament that day (gated on proto.enteredTournamentToday).
+// The highest-intent moment to convert a warmed-up free player into the paid,
+// prize-bearing live loop; it stops for the rest of the day once they enter one.
+const UPSELL_EVERY_N_LEVELS = 5;
 
 const TournamentUpsellSheet = ({
   score,
@@ -211,13 +197,15 @@ export const LevelWinScreen = () => {
     playSound("victory");
   }, []);
 
-  // After the win celebration plays, slide up the one-time tournament upsell.
+  // After the win celebration, slide up the tournament upsell — on the very first
+  // level and then every 5th level cleared, but only if the player hasn't already
+  // entered a tournament today.
   const [showUpsell, setShowUpsell] = useState(false);
   useEffect(() => {
-    if (justCompleted !== 1) return;
-    if (hasSeenTournamentUpsell()) return;
+    const isUpsellLevel = justCompleted === 1 || justCompleted % UPSELL_EVERY_N_LEVELS === 0;
+    if (!isUpsellLevel) return;
+    if (proto.enteredTournamentToday) return;
     const t = setTimeout(() => {
-      markTournamentUpsellSeen();
       trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellShown, {
         offer: "live_tournament",
         level_number: justCompleted,
@@ -228,7 +216,7 @@ export const LevelWinScreen = () => {
       setShowUpsell(true);
     }, 1600);
     return () => clearTimeout(t);
-  }, [justCompleted, proto.levelTrack, score, total]);
+  }, [justCompleted, proto.enteredTournamentToday, proto.levelTrack, score, total]);
 
   const dismissUpsell = () => {
     trackClientEvent(AnalyticsEvent.PostFirstLevelUpsellDismissed, {

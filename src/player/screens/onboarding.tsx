@@ -875,6 +875,10 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
                 borderRadius: 99,
                 background:
                   i === idx ? "var(--maple-500)" : "rgba(255,255,255,.18)",
+                // width (not scaleX) is intentional: these dots sit in a centered
+                // flex row with a gap, so the active dot must reserve real layout
+                // width or it overlaps its neighbour. The cost is negligible — a
+                // one-shot transition on a few tiny dots, fired on step advance.
                 transition: "width .3s var(--ease-out-quart), background .3s",
               }}
             />

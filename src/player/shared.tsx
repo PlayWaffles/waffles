@@ -493,6 +493,10 @@ export const InfoIcon = ({ size = 14 }: { size?: number }) => (
 // A working circular "i" help button: opens a dismissible info dialog explaining
 // the surrounding feature. Replaces the various decorative `i` glyphs that
 // looked tappable but did nothing.
+// Exit duration for centered modals — ~20% faster than the 200ms entrance, and
+// kept in sync between the CSS exit keyframes and the unmount timer.
+export const MODAL_EXIT_MS = 160;
+
 export const InfoButton = ({
   title,
   text,
@@ -503,6 +507,21 @@ export const InfoButton = ({
   size?: number;
 }) => {
   const [open, setOpen] = useState(false);
+  // Animate out before unmounting (mirrors the Sheet's closing pattern).
+  const [closing, setClosing] = useState(false);
+  const requestClose = (action?: string) => {
+    if (closing) return;
+    trackClientEvent(AnalyticsEvent.InfoClosed, {
+      component: "info_button",
+      info_title: title,
+      ...(action ? { action } : {}),
+    });
+    setClosing(true);
+    window.setTimeout(() => {
+      setOpen(false);
+      setClosing(false);
+    }, MODAL_EXIT_MS);
+  };
   return (
     <>
       <button
@@ -514,6 +533,7 @@ export const InfoButton = ({
             component: "info_button",
             info_title: title,
           });
+          setClosing(false);
           setOpen(true);
         }}
         style={{
@@ -544,13 +564,7 @@ export const InfoButton = ({
           role="dialog"
           aria-modal="true"
           aria-label={title}
-          onClick={() => {
-            trackClientEvent(AnalyticsEvent.InfoClosed, {
-              component: "info_button",
-              info_title: title,
-            });
-            setOpen(false);
-          }}
+          onClick={() => requestClose()}
           style={{
             position: "fixed",
             inset: 0,
@@ -560,6 +574,9 @@ export const InfoButton = ({
             alignItems: "center",
             justifyContent: "center",
             padding: 28,
+            animation: closing
+              ? `waffles-v2-backdrop-out ${MODAL_EXIT_MS}ms var(--ease-out-quart) forwards`
+              : "waffles-v2-backdrop-in 200ms var(--ease-out-quart)",
           }}
         >
           <div
@@ -578,6 +595,9 @@ export const InfoButton = ({
               // which would otherwise transform the body copy.
               textTransform: "none",
               letterSpacing: "normal",
+              animation: closing
+                ? `waffles-v2-pop-out ${MODAL_EXIT_MS}ms var(--ease-out-quart) forwards`
+                : "waffles-v2-pop-in 200ms var(--ease-out-quart)",
             }}
           >
             <div style={{ fontFamily: "var(--font-display)", fontSize: 18, color: "var(--ink)", marginBottom: 8 }}>{title}</div>
@@ -585,14 +605,7 @@ export const InfoButton = ({
             <button
               type="button"
               className="pressable"
-              onClick={() => {
-                trackClientEvent(AnalyticsEvent.InfoClosed, {
-                  component: "info_button",
-                  info_title: title,
-                  action: "got_it",
-                });
-                setOpen(false);
-              }}
+              onClick={() => requestClose("got_it")}
               style={{
                 marginTop: 18,
                 width: "100%",
@@ -817,6 +830,10 @@ export const Card = ({
 // Exit animation duration — kept in sync between the CSS and the unmount timer
 // so the sheet finishes sliding out before the parent removes it.
 const SHEET_EXIT_MS = 220;
+// Entrance duration — the panel and its backdrop move as one unit, so they share
+// this duration and easing (paired elements). Entrance is slower than exit.
+const SHEET_ENTER_MS = 300;
+const SHEET_ENTER_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
 
 export const Sheet = ({
   children,
@@ -868,7 +885,9 @@ export const Sheet = ({
         backdropFilter: "blur(4px)",
         display: "flex",
         alignItems: "flex-end",
-        animation: `${closing ? "waffles-v2-backdrop-out" : "waffles-v2-backdrop-in"} ${SHEET_EXIT_MS}ms ease forwards`,
+        animation: closing
+          ? `waffles-v2-backdrop-out ${SHEET_EXIT_MS}ms cubic-bezier(0.4, 0, 1, 1) forwards`
+          : `waffles-v2-backdrop-in ${SHEET_ENTER_MS}ms ${SHEET_ENTER_EASE} forwards`,
       }}
     >
       <div
@@ -882,7 +901,7 @@ export const Sheet = ({
           padding: "18px 18px max(20px, env(safe-area-inset-bottom))",
           animation: closing
             ? `waffles-v2-slideDown ${SHEET_EXIT_MS}ms cubic-bezier(0.4, 0, 1, 1) forwards`
-            : "waffles-v2-slideUp 300ms cubic-bezier(0.22, 1, 0.36, 1)",
+            : `waffles-v2-slideUp ${SHEET_ENTER_MS}ms ${SHEET_ENTER_EASE}`,
         }}
       >
         {handle && <div aria-hidden="true" style={{ width: 36, height: 4, borderRadius: 99, background: "rgba(253,251,246,0.2)", margin: "0 auto 14px" }} />}

@@ -1329,6 +1329,14 @@ const TicketCountUp = ({ from, to, onDone }: { from: number; to: number; onDone:
   const [v, setV] = useState(from);
   const startedAt = useRef<number | null>(null);
   useEffect(() => {
+    // The global CSS reduced-motion reset doesn't touch JS rAF loops, so honour
+    // the preference here: snap to the final value and skip the per-frame roll.
+    const reduce = typeof window !== "undefined" && !!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      setV(to);
+      const id = setTimeout(onDone, 600);
+      return () => clearTimeout(id);
+    }
     let raf = 0;
     const dur = 1100;
     const tick = (t: number) => {
