@@ -253,13 +253,15 @@ const HomeMissions = () => {
           return;
         }
         setLoaded(
-          m.filter((x) => x.featured).map((x) => ({
-            label: x.title,
-            cur: x.count,
-            tgt: x.total,
-            reward: `+${x.xp} XP`,
-            icon: homeMissionIcon(x.title),
-          })),
+          m
+            .filter((x) => x.featured && x.count < x.total)
+            .map((x) => ({
+              label: x.title,
+              cur: x.count,
+              tgt: x.total,
+              reward: `+${x.xp} XP`,
+              icon: homeMissionIcon(x.title),
+            })),
         );
         setMissionLoading(false);
       })
