@@ -12,7 +12,7 @@ import { prisma } from "@/lib/db";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import { LevelTrack, TicketLedgerReason, type Prisma } from "@prisma";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
-import { displayStreak } from "@/lib/player/dailyStreak";
+import { displayStreak, dayKeyUTC } from "@/lib/player/dailyStreak";
 import { isTriggeredId } from "@/lib/player/announcements";
 import { scoreToXp } from "@/lib/player/xp";
 
@@ -65,10 +65,26 @@ const ENUM_TO_TRACK: Record<LevelTrack, Track> = {
   [LevelTrack.WORLD_CUP]: "world-cup",
 };
 
-// ── Lives / milestone economy (mirrors state.tsx pure helpers) ──────────────
-export const LIVES_MAX = 5;
+// ── Practice allowance / milestone economy (mirrors state.tsx pure helpers) ──
+// `User.lives` is repurposed as the daily PRACTICE allowance: how many practice
+// levels you can start today. It resets to PRACTICE_BASE each UTC day and is
+// topped up by PRACTICE_PER_TOURNAMENT for every tournament entered that day —
+// the more tournaments you play, the more practice you unlock. `User.nextLifeAt`
+// is repurposed as the day-marker: the timestamp of the day the stored allowance
+// belongs to (a different UTC day ⇒ the allowance has reset to base).
+export const PRACTICE_BASE = 10; // free practice plays per UTC day
+export const PRACTICE_PER_TOURNAMENT = 5; // bonus plays granted per tournament entry
+// Kept for back-compat with existing imports/UI; LIVES_MAX is now the daily base
+// (the allowance can exceed it via tournament top-ups).
+export const LIVES_MAX = PRACTICE_BASE;
 export const LIFE_REGEN_MS = 5 * 60 * 1000;
 export const LIVES_REFILL_COST = 1;
+
+/** The practice allowance in effect for the current UTC day. The stored value
+ *  carries its day in `nextLifeAt`; on a new day it has reset to PRACTICE_BASE. */
+export function practiceAllowance(lives: number, dayMarker: Date | null, today = dayKeyUTC()): number {
+  return dayMarker && dayKeyUTC(dayMarker) === today ? lives : PRACTICE_BASE;
+}
 
 function ticketMilestoneInterval(level: number): number {
   if (level <= 20) return 5;
@@ -173,8 +189,9 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
   const levelByTrack: Record<Track, number> = { standard: 1, "world-cup": 1 };
   for (const p of progress) levelByTrack[ENUM_TO_TRACK[p.track]] = p.level;
 
-  // Reconcile lives on read so the meter is correct without a write.
-  const regen = regenLives(user.lives, user.nextLifeAt?.getTime() ?? null, Date.now());
+  // Practice allowance for today (resets to base on a new UTC day) — display
+  // only, no write; the persisted reset happens on the next consume/top-up.
+  const lives = practiceAllowance(user.lives, user.nextLifeAt ?? null);
   // Display-only streak: the held streak the player still has, without counting
   // today until it's claimed and without mutating anything on read.
   const streak = displayStreak({
@@ -187,8 +204,8 @@ export async function loadPlayerState(userId: string): Promise<PlayerState> {
     tickets: user.ticketBalance,
     xp: user.xp,
     streak,
-    lives: regen.lives,
-    nextLifeAt: regen.nextLifeAt,
+    lives,
+    nextLifeAt: user.nextLifeAt?.getTime() ?? null,
     streakFreezes: user.streakFreezes,
     rookieDone: user.rookieCupAt != null,
     username: user.username ?? "",
@@ -289,58 +306,81 @@ export async function advanceLevel(
   return result;
 }
 
-/** Consume one life on a failed level; start the regen clock if we were full. */
+/** Consume one practice play when a level is STARTED. Applies the daily reset
+ *  first (so the first play of a new day spends from the fresh base), then
+ *  decrements. Stamps `nextLifeAt` to today as the allowance day-marker.
+ *  (Named `loseLife` for back-compat with the existing client/route plumbing.) */
 export async function loseLife(userId: string): Promise<{ lives: number; nextLifeAt: number | null }> {
   return prisma.$transaction(async (tx) => {
     const u = await tx.user.findUniqueOrThrow({
       where: { id: userId },
       select: { lives: true, nextLifeAt: true },
     });
-    const reg = regenLives(u.lives, u.nextLifeAt?.getTime() ?? null, Date.now());
-    const wasFull = reg.lives >= LIVES_MAX;
-    const lives = Math.max(0, reg.lives - 1);
-    const nextLifeAt = wasFull ? Date.now() + LIFE_REGEN_MS : reg.nextLifeAt;
+    const allowance = practiceAllowance(u.lives, u.nextLifeAt);
+    const lives = Math.max(0, allowance - 1);
+    const now = new Date();
     await tx.user.update({
       where: { id: userId },
-      data: { lives, nextLifeAt: nextLifeAt == null ? null : new Date(nextLifeAt) },
+      data: { lives, nextLifeAt: now },
     });
     await trackServerEvent({
-      name: "life_lost_authoritative",
+      name: "practice_play_consumed",
       userId,
       tx,
-      properties: {
-        lives_before: reg.lives,
-        lives_after: lives,
-        next_life_at_present: nextLifeAt != null,
-      },
+      properties: { lives_before: allowance, lives_after: lives },
     });
-    return { lives, nextLifeAt };
+    return { lives, nextLifeAt: now.getTime() };
   });
 }
 
-/** Spend a ticket to refill lives to full. */
+/** Spend Syrup to buy extra practice plays today (the repurposed "refill"). */
 export async function refillLives(userId: string): Promise<{ lives: number; tickets: number } | null> {
   return prisma.$transaction(async (tx) => {
     const u = await tx.user.findUniqueOrThrow({
       where: { id: userId },
-      select: { lives: true, ticketBalance: true },
+      select: { lives: true, nextLifeAt: true, ticketBalance: true },
     });
-    if (u.lives >= LIVES_MAX || u.ticketBalance < LIVES_REFILL_COST) return null;
+    if (u.ticketBalance < LIVES_REFILL_COST) return null;
+    const allowance = practiceAllowance(u.lives, u.nextLifeAt);
     const tickets = await adjustTickets(userId, -LIVES_REFILL_COST, TicketLedgerReason.LIVES_REFILL, { tx });
-    await tx.user.update({ where: { id: userId }, data: { lives: LIVES_MAX, nextLifeAt: null } });
+    const lives = allowance + PRACTICE_PER_TOURNAMENT;
+    await tx.user.update({ where: { id: userId }, data: { lives, nextLifeAt: new Date() } });
     await trackServerEvent({
-      name: "lives_refill_authoritative",
+      name: "practice_plays_bought",
       userId,
       tx,
       properties: {
-        lives_before: u.lives,
-        lives_after: LIVES_MAX,
+        lives_before: allowance,
+        lives_after: lives,
         tickets_before: u.ticketBalance,
         tickets_after: tickets,
         ticket_delta: -LIVES_REFILL_COST,
       },
     });
-    return { lives: LIVES_MAX, tickets };
+    return { lives, tickets };
+  });
+}
+
+/** Grant the per-tournament practice top-up (called once when a tournament entry
+ *  is recorded). Applies the daily reset first, then adds the bonus on top. */
+export async function grantTournamentPracticePlays(userId: string): Promise<void> {
+  await prisma.$transaction(async (tx) => {
+    const u = await tx.user.findUnique({
+      where: { id: userId },
+      select: { lives: true, nextLifeAt: true },
+    });
+    if (!u) return;
+    const allowance = practiceAllowance(u.lives, u.nextLifeAt);
+    await tx.user.update({
+      where: { id: userId },
+      data: { lives: allowance + PRACTICE_PER_TOURNAMENT, nextLifeAt: new Date() },
+    });
+    await trackServerEvent({
+      name: "practice_plays_granted_tournament",
+      userId,
+      tx,
+      properties: { lives_before: allowance, lives_after: allowance + PRACTICE_PER_TOURNAMENT },
+    });
   });
 }
 

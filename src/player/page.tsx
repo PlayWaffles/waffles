@@ -6,6 +6,7 @@ import { THEMES, ThemeProvider, resolveThemeId, type ThemeId } from "./theme";
 import { CoachmarkProvider, TOURS, useCoachTour } from "./coachmarks";
 import { BadgeUnlockWatcher } from "./badge-unlock";
 import { AnnouncementToast, AnnouncementDetail, AnnouncementModalHost } from "./announcements";
+import { EntryGateModal } from "./entry-gate";
 import dynamic from "next/dynamic";
 import { DailyRewardSheet, hasUnclaimedDailyReward } from "./screens/daily-reward";
 import { LeagueResultTakeover, hasSeenLeagueResult } from "./screens/league-result";
@@ -240,6 +241,8 @@ const Stage = () => {
       <AnnouncementToast />
       {/* Global: tapping an announcement opens its details here, on any screen. */}
       <AnnouncementDetail />
+      {/* Global: post-purchase entry gate (timing + Telegram) → enters the lobby. */}
+      <EntryGateModal />
       {/* Global transient toast (e.g. a level whose server questions couldn't load). */}
       {proto.toast && (
         <div

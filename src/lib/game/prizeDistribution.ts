@@ -209,6 +209,20 @@ export function topWinnerShare(paidEntrants: number): number {
   return normalizeShares(schedule)[0] ?? 1;
 }
 
+/** Projected per-rank cut of a pool, using the SAME live bracket settlement uses
+ *  for a field of this size. Lets the lobby show "what each top rank pays" from
+ *  the (base-or-live) pool before a round settles — one entry per paying rank,
+ *  length = winnersForField(paidEntrants). Empty pool → no ladder. */
+export function projectedPrizeLadder(
+  prizePoolUsdc: number,
+  paidEntrants: number,
+): { rank: number; prize: number }[] {
+  if (prizePoolUsdc <= 0) return [];
+  const field = Math.max(1, paidEntrants);
+  const shares = normalizeShares(getScheduleForPaidEntrants(field).slice(0, field));
+  return shares.map((share, index) => ({ rank: index + 1, prize: prizePoolUsdc * share }));
+}
+
 /** Flat off-chain Syrup consolation paid to a top-half finisher who missed the
  *  cash podium. Tunable. */
 export const TOURNAMENT_CONSOLATION_SYRUP = 20;

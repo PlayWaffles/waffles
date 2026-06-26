@@ -1,11 +1,48 @@
 "use client";
 
 import { Fragment, useEffect, useState } from "react";
-import { TOURNAMENT_PRIZES, TOURNAMENT_TOP_PRIZE, useProto } from "../state";
+import { BASE_PRIZE_POOL_USDC, USDT_PER_TICKET, useProto } from "../state";
+import { projectedPrizeLadder } from "@/lib/game/prizeDistribution";
 import { ASSETS, Confetti, Phone, PixelImg, TicketIcon, TopHeader } from "../shared";
 import { useTheme } from "../theme";
 import { playSound } from "../sound";
 import { loadCurrentTournamentBoard } from "@/player/api";
+
+// Quick winning tips, rotated through during the pre-game countdown so the wait
+// is useful. Kept short (one glanceable line) and matched to the real mechanics
+// (speed scoring, 3 hearts, streaks, prize split).
+const WIN_TIPS: { icon: string; text: string }[] = [
+  { icon: "⚡", text: "Faster correct answers score more — don't dawdle." },
+  { icon: "👀", text: "Read every option before you lock one in." },
+  { icon: "❤️", text: "You start with 3 hearts — a wrong answer costs one." },
+  { icon: "🔥", text: "Chain correct answers to climb the leaderboard." },
+  { icon: "🎯", text: "Accuracy beats luck — skip the wild guess." },
+  { icon: "🏆", text: "Top finishers split the prize pool. Aim high." },
+];
+
+// "1st" / "2nd" / "3rd" / "Nth" for the prize ladder cells.
+const rankLabel = (rank: number) => {
+  const suffix = rank === 1 ? "st" : rank === 2 ? "nd" : rank === 3 ? "rd" : "th";
+  return `${rank}${suffix}`;
+};
+
+const WinTips = () => {
+  const [i, setI] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setI((p) => (p + 1) % WIN_TIPS.length), 3600);
+    return () => clearInterval(t);
+  }, []);
+  const tip = WIN_TIPS[i];
+  return (
+    <div style={{ background: "rgba(255,255,255,.04)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 14, padding: "10px 14px", display: "flex", alignItems: "center", gap: 11, minHeight: 52 }}>
+      <span style={{ fontSize: 20, flexShrink: 0 }} aria-hidden>{tip.icon}</span>
+      <div style={{ minWidth: 0 }}>
+        <div style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 1, textTransform: "uppercase", color: "rgba(255,255,255,.4)" }}>Tip to win</div>
+        <div key={i} style={{ fontSize: 12.5, fontWeight: 700, color: "var(--ink)", marginTop: 2, lineHeight: 1.3, animation: "waffles-v2-buyer-swap .35s ease" }}>{tip.text}</div>
+      </div>
+    </div>
+  );
+};
 
 export const LobbyScreen = () => {
   const proto = useProto();
@@ -23,16 +60,29 @@ export const LobbyScreen = () => {
     return () => clearTimeout(t);
   }, []);
 
-  // Real entrant count for the current round.
-  const [realEntrants, setRealEntrants] = useState(0);
+  // Real entrant count + live prize pool for the current round.
+  const [board, setBoard] = useState<{ fieldSize: number; prizePool: number }>({ fieldSize: 0, prizePool: 0 });
   useEffect(() => {
     let active = true;
     loadCurrentTournamentBoard()
-      .then((b) => { if (active && b) setRealEntrants(b.fieldSize); })
+      .then((b) => { if (active && b) setBoard({ fieldSize: b.fieldSize, prizePool: b.prizePool }); })
       .catch(() => {});
     return () => { active = false; };
   }, [proto.tournamentGameId]);
-  const playersJoined = Math.max(0, realEntrants);
+  const playersJoined = Math.max(0, board.fieldSize);
+
+  // Prize figures derive from the pool: the live round pool, floored at the
+  // guaranteed base pool ($1) — whichever is larger. The per-rank ladder and the
+  // headline top prize use the SAME settlement bracket, valued in tickets.
+  const poolUsdc = Math.max(BASE_PRIZE_POOL_USDC, board.prizePool);
+  // Always advertise a full 3-tier ceiling, even for a tiny/empty field: floor
+  // the bracket field to the smallest size that pays 3 ranks (the 50/30/20
+  // schedule), then use the real field's bracket once it naturally pays 3+.
+  const LADDER_MIN_FIELD = 5;
+  const prizeLadder = projectedPrizeLadder(poolUsdc, Math.max(board.fieldSize, LADDER_MIN_FIELD))
+    .slice(0, 3)
+    .map((t) => ({ label: rankLabel(t.rank), tickets: Math.max(1, Math.round(t.prize / USDT_PER_TICKET)) }));
+  const topPrizeTickets = prizeLadder[0]?.tickets ?? Math.max(1, Math.round(poolUsdc / USDT_PER_TICKET));
   const sec = proto.countdownSec;
   const mm = String(Math.floor(sec / 60)).padStart(2, "0");
   const ss = String(sec % 60).padStart(2, "0");
@@ -73,7 +123,7 @@ export const LobbyScreen = () => {
             </div>
             <div style={{ flex: 1, padding: "8px 10px", background: "rgba(255,210,77,.06)", border: "1px solid rgba(255,210,77,.15)", borderRadius: 10, textAlign: "center" }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "#FFD24D", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                <TicketIcon size={14} />{TOURNAMENT_TOP_PRIZE}
+                <TicketIcon size={14} />{topPrizeTickets}
               </div>
               <div>top prize</div>
             </div>
@@ -81,7 +131,7 @@ export const LobbyScreen = () => {
 
           {/* Full prize ladder so players see exactly what each tier pays. */}
           <div style={{ marginTop: 10, display: "flex", alignItems: "stretch", justifyContent: "space-around", background: "rgba(255,210,77,.05)", border: "1px solid rgba(255,210,77,.14)", borderRadius: 10, padding: "8px 6px" }}>
-            {TOURNAMENT_PRIZES.map((t, i) => (
+            {prizeLadder.map((t, i) => (
               <Fragment key={t.label}>
                 {i > 0 && <div style={{ width: 1, background: "rgba(255,255,255,.07)", margin: "2px 0" }} />}
                 <div style={{ flex: 1, textAlign: "center" }}>
@@ -103,6 +153,8 @@ export const LobbyScreen = () => {
           </div>
           <div style={{ flex: 1, fontSize: 12, fontWeight: 700, color: "var(--ink)" }}>3 friends are in this round</div>
         </div>
+
+        <WinTips />
       </div>
 
       <div className="bottom-bar">

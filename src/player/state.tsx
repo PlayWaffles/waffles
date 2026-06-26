@@ -136,6 +136,12 @@ export const TOURNAMENT_PRIZES: PrizeTier[] = [
 // Headline "win up to" figure.
 export const TOURNAMENT_TOP_PRIZE = TOURNAMENT_PRIZES[0].tickets;
 
+// Lobby-only guaranteed prize pool (USDC). The lobby advertises AT LEAST this
+// pool; once the live round's pool grows past it, the live pool is shown instead
+// (max of the two). Display-only framing — settlement always pays the real
+// on-chain pool. $1 ≈ 10 tickets at USDT_PER_TICKET.
+export const BASE_PRIZE_POOL_USDC = 1;
+
 // Tickets won for a given finishing rank. Single source of truth shared by the
 // finish reward (balance) and the results screen (display) so they never drift.
 export function tournamentReward(rank: number): number {
@@ -220,15 +226,18 @@ export function levelTicketMilestoneInfo(level: number): { earned: boolean; next
 }
 
 // ─── Lives ──────────────────────────────────────────────────────────────────
-// Lives are the stake on the solo level path: a *failed* level (hearts hit 0)
-// costs one life. They regenerate on a fast timer (prototype) or refill instantly
-// for tickets. At 0 lives the level path is gated until one returns.
-export const LIVES_MAX = 5;
-export const LIFE_REGEN_MS = 5 * 60 * 1000; // one life every 5 minutes (tunable)
-export const LIVES_REFILL_COST = 1;          // tickets to refill to full
+// `lives` is the daily PRACTICE allowance: how many practice levels you can
+// START today. Base PRACTICE_BASE per UTC day; every tournament you enter tops it
+// up by PRACTICE_PER_TOURNAMENT — paid play unlocks more free practice. Spent on
+// level start; at 0 the level path is gated until tomorrow or your next
+// tournament. (Server: lib/player/playerState.ts. `nextLifeAt` is now the
+// allowance day-marker, not a regen clock.)
+export const LIVES_MAX = 10;                 // the daily base (allowance can exceed it)
+export const PRACTICE_PER_TOURNAMENT = 5;    // plays granted per tournament entry
+export const LIFE_REGEN_MS = 5 * 60 * 1000;  // retained for back-compat (regen removed)
+export const LIVES_REFILL_COST = 1;          // Syrup to buy extra practice plays
 
-// Credit any lives regenerated since `nextLifeAt`. Pure; callers fold the result
-// into state. `nextLifeAt` is the epoch-ms the next life lands, null when full.
+// Retained (unused) so existing imports keep resolving; regen is removed.
 export function regenLives(lives: number, nextLifeAt: number | null, now: number): { lives: number; nextLifeAt: number | null } {
   if (lives >= LIVES_MAX || nextLifeAt == null) return { lives, nextLifeAt };
   let l = lives;
@@ -539,6 +548,11 @@ type State = {
   tournamentStep: TournamentTxStep | null;
   // True when the current tournament round earns the daily 2× XP bonus.
   tournamentBonus: boolean;
+  // Set right after a successful ticket purchase to show the entry gate modal
+  // ("you're in" + game timing + join Telegram) instead of dropping the player
+  // straight into the lobby countdown. Carries the joined game's start/end (ms);
+  // closing the modal enters the lobby. Null when not buying.
+  entryModal: { startsAt: number; endsAt: number } | null;
   // Whether the daily-reward sheet is open (driven globally so any screen,
   // e.g. the Home streak chip, can summon it).
   dailyOpen: boolean;
@@ -605,6 +619,7 @@ const initialState = (tweaks: Tweaks): State => ({
   rookieResult: null,
   tournamentStep: null,
   tournamentBonus: false,
+  entryModal: null,
   dailyOpen: false,
   wcTakeoverOpen: false,
   pendingTournamentJoin: false,
@@ -976,13 +991,8 @@ export function ProtoProvider({
     }
   }, [state.screen]);
 
-  // While not full, reconcile regenerated lives every second so the meter fills
-  // and the "next life" countdown stays live. No interval when full.
-  useEffect(() => {
-    if (state.lives >= LIVES_MAX) return;
-    const id = setInterval(() => update((s) => regenLives(s.lives, s.nextLifeAt, Date.now())), 1000);
-    return () => clearInterval(id);
-  }, [state.lives, update]);
+  // (Practice allowance no longer regenerates on a timer — it resets daily and
+  // tops up per tournament, so there's no per-second reconciliation tick.)
 
   // Auto-advance after answer
   useEffect(() => {
@@ -1053,26 +1063,16 @@ export function ProtoProvider({
           ? Math.max(unfailable ? 1 : 0, state.hearts - 1)
           : state.hearts;
         if (newHearts <= 0) {
-          track(AnalyticsEvent.LifeLost, {
-            reason: "level_failed",
-            lives_before: state.lives,
-            lives_after: Math.max(0, state.lives - 1),
-          });
+          // A failed level no longer costs a practice play — the play was already
+          // spent on START (enterLevel). A wrong run just ends.
           track(AnalyticsEvent.LevelFailed, {
             level_track: state.levelTrack,
             level_number: state.levelByTrack[state.levelTrack],
             score: state.score,
             question_count: totalQs,
-            lives_remaining: Math.max(0, state.lives - 1),
+            lives_remaining: state.lives,
           });
-          // Failing a level costs a life; start the regen clock if we were full.
-          const wasFull = state.lives >= LIVES_MAX;
-          update({
-            hearts: 0,
-            lives: Math.max(0, state.lives - 1),
-            nextLifeAt: wasFull ? Date.now() + LIFE_REGEN_MS : state.nextLifeAt,
-          });
-          void loseLife(); // persist the life loss (regen clock is server-side too)
+          update({ hearts: 0 });
           goto("levelFail");
           return;
         }
@@ -1370,36 +1370,37 @@ export function ProtoProvider({
     });
   };
 
-  // Both entry points gate on lives: at 0 we reconcile any regen and route to the
-  // level path (where the refill / wait UI lives) instead of starting a run the
-  // player can't afford to fail.
+  // Gate on the daily practice allowance: at 0 plays left, route to the level
+  // path (which shows the "out of practice — play a tournament" state) instead of
+  // starting a run. A play is spent here, on START.
   const enterLevel = () => {
-    const r = regenLives(state.lives, state.nextLifeAt, Date.now());
-    if (r.lives <= 0) {
+    if (state.lives <= 0) {
       track(AnalyticsEvent.LevelRetryClicked, {
         level_track: state.levelTrack,
         level_number: state.levelByTrack[state.levelTrack],
-        reason: "no_lives",
+        reason: "no_plays",
       });
-      update(r);
       goto("levels");
       return;
     }
     track(AnalyticsEvent.LevelStarted, {
       level_track: state.levelTrack,
       level_number: state.levelByTrack[state.levelTrack],
-      lives: r.lives,
+      lives: state.lives,
       question_count: tweaks.levelQuestions,
     });
     if (state.levelByTrack[state.levelTrack] === 1) {
       track(AnalyticsEvent.FirstLevelStarted, {
         level_track: state.levelTrack,
         level_number: 1,
-        lives: r.lives,
+        lives: state.lives,
         question_count: tweaks.levelQuestions,
       });
     }
-    update({ ...r, mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, pendingLevelQuestions: null });
+    // No play is spent here — the intro is a free preview. The practice play is
+    // consumed when the quiz actually begins (beginLevelQuiz), so backing out of
+    // the intro costs nothing.
+    update({ mode: "level", qIdx: 0, score: 0, qAnswered: null, hearts: 3, timer: tweaks.questionTime, pendingLevelQuestions: null });
     goto("levelIntro");
     // Prefetch the level's questions from the server during the intro screen so
     // play starts instantly.
@@ -1420,10 +1421,12 @@ export function ProtoProvider({
   const startLevel = enterLevel;
   const retryLevel = enterLevel;
 
+  // Buy extra practice plays with Syrup (the repurposed "refill") — no full-cap
+  // gate anymore (the allowance has no ceiling), just affordability.
   const refillLives = () => {
-    if (state.lives >= LIVES_MAX || state.tickets < LIVES_REFILL_COST) {
+    if (state.tickets < LIVES_REFILL_COST) {
       track(AnalyticsEvent.LivesRefillBlocked, {
-        reason: state.lives >= LIVES_MAX ? "lives_full" : "insufficient_tickets",
+        reason: "insufficient_tickets",
         tickets_balance: state.tickets,
         lives: state.lives,
       });
@@ -1438,13 +1441,14 @@ export function ProtoProvider({
       trackClientEvent(AnalyticsEvent.LivesRefillSucceeded, {
         screen: state.screen,
         tickets_after: result?.tickets ?? state.tickets - LIVES_REFILL_COST,
-        lives: result?.lives ?? LIVES_MAX,
+        lives: result?.lives ?? state.lives + PRACTICE_PER_TOURNAMENT,
         ticket_delta: -LIVES_REFILL_COST,
       });
+      if (result) update({ lives: result.lives, tickets: result.tickets });
     });
     update((s) => {
-      if (s.lives >= LIVES_MAX || s.tickets < LIVES_REFILL_COST) return {};
-      return { tickets: s.tickets - LIVES_REFILL_COST, lives: LIVES_MAX, nextLifeAt: null };
+      if (s.tickets < LIVES_REFILL_COST) return {};
+      return { tickets: s.tickets - LIVES_REFILL_COST, lives: s.lives + PRACTICE_PER_TOURNAMENT };
     });
   };
 
@@ -1471,6 +1475,19 @@ export function ProtoProvider({
       goto("levels");
       return;
     }
+    // Spend one practice play now that the quiz is actually starting (optimistic,
+    // then persist + reconcile with the server-authoritative allowance, which
+    // applies the daily reset). Guard against the allowance lapsing between the
+    // intro and BEGIN.
+    if (state.lives <= 0) {
+      update({ toast: "You’re out of practice for today — play a tournament for more." });
+      goto("levels");
+      return;
+    }
+    update({ lives: Math.max(0, state.lives - 1) });
+    void loseLife()
+      .then((res) => { if (res) update({ lives: res.lives, nextLifeAt: res.nextLifeAt }); })
+      .catch(() => {});
     const questions = rq;
     update({
       qIdx: 0,
@@ -1671,6 +1688,10 @@ export function ProtoProvider({
       track(AnalyticsEvent.TournamentLobbyEntered, entryContext);
       blog("[buy-ticket] entry confirmed ✓ — entering lobby", { gameId: t.game.id });
       const mapped: Question[] = t.questions.map((q) => ({ ...q }));
+      // Stage the round, but don't drop into the lobby countdown yet — surface
+      // the entry gate modal (timing + join Telegram) first. Closing it enters
+      // the lobby (see EntryGateModal). The lobby countdown is screen-gated, so
+      // it won't tick while the modal is up.
       update({
         mode: "tournament",
         tournamentGameId: t.game.id,
@@ -1683,8 +1704,16 @@ export function ProtoProvider({
         timer: mapped[0]?.time ?? tweaks.questionTime,
         countdownSec: tweaks.lobbyCountdown,
         tournamentStep: null,
+        entryModal: {
+          startsAt: new Date(t.game.startsAt).getTime(),
+          endsAt: new Date(t.game.endsAt).getTime(),
+        },
       });
-      goto("lobby");
+      // Tournament play tops up today's practice allowance (server granted it on
+      // a NEW entry; reflect it optimistically). loadState reconciles on reload.
+      if (!res.alreadyEntered) {
+        update((s) => ({ lives: s.lives + PRACTICE_PER_TOURNAMENT }));
+      }
       return { ok: true };
     } catch (e) {
       blog("[buy-ticket] enter flow threw", e);

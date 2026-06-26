@@ -18,7 +18,7 @@ import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
 import { Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
-import { adjustTickets } from "./playerState";
+import { adjustTickets, grantTournamentPracticePlays } from "./playerState";
 import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
@@ -554,6 +554,14 @@ export async function enterTournamentOnChain(input: {
       return created;
     });
     console.log("[buy-ticket] entry recorded ✓", { gameId, userId, entryId: entry.id });
+    // Tournament play tops up today's practice allowance (the free-practice loop
+    // is fed by paid play). Only on a NEW entry; best-effort — never fail the
+    // recorded entry over a practice top-up.
+    try {
+      await grantTournamentPracticePlays(userId);
+    } catch (e) {
+      console.error("[buy-ticket] practice top-up failed", { userId, error: e instanceof Error ? e.message : String(e) });
+    }
     return { ok: true, entryId: entry.id, alreadyEntered: false };
   } catch (error) {
     // Unique violation on (gameId,userId) or txHash → treat as already recorded.
@@ -683,12 +691,15 @@ export type TournamentStanding = {
 export type TournamentBoard = {
   gameId: string | null;
   fieldSize: number;
+  /** The round's live on-chain prize pool (USDC), funded by paid entries. Drives
+   *  the lobby's pool-based prize figures (floored at the lobby base pool). */
+  prizePool: number;
   standings: TournamentStanding[];
   you: TournamentStanding | null;
   settled: boolean;
 };
 
-const EMPTY_BOARD: TournamentBoard = { gameId: null, fieldSize: 0, standings: [], you: null, settled: false };
+const EMPTY_BOARD: TournamentBoard = { gameId: null, fieldSize: 0, prizePool: 0, standings: [], you: null, settled: false };
 
 /** Standings for a tournament game from the DB — ranked by score (final `rank`
  *  once settled), with the field size and the caller's own row. */
@@ -698,7 +709,7 @@ export async function tournamentStandings(
 ): Promise<TournamentBoard> {
   if (!gameId) return EMPTY_BOARD;
   const [game, entries] = await Promise.all([
-    prisma.game.findUnique({ where: { id: gameId }, select: { rankedAt: true, platform: true, network: true } }),
+    prisma.game.findUnique({ where: { id: gameId }, select: { rankedAt: true, platform: true, network: true, prizePool: true } }),
     prisma.gameEntry.findMany({
       where: { gameId, paidAt: { not: null } },
       orderBy: [{ score: "desc" }, { createdAt: "asc" }],
@@ -729,6 +740,7 @@ export async function tournamentStandings(
   return {
     gameId,
     fieldSize: ranked.length,
+    prizePool: game.prizePool,
     standings: ranked.slice(0, limit),
     you: opts.userId ? ranked.find((r) => r.you) ?? null : null,
     settled: game.rankedAt != null,
@@ -836,7 +848,7 @@ export async function allTimeLeaderboard(
 
   const standings = grouped.slice(0, limit).map((g, i) => toStanding(g, i + 1));
   const you = youIdx >= 0 ? toStanding(grouped[youIdx], youIdx + 1) : null;
-  return { gameId: null, fieldSize: grouped.length, standings, you, settled: true };
+  return { gameId: null, fieldSize: grouped.length, prizePool: 0, standings, you, settled: true };
 }
 
 export type PreviousGame = { id: string; label: string; title: string; endsAt: Date };

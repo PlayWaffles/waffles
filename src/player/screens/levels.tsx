@@ -2,8 +2,8 @@
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ArrowDown } from "lucide-react";
-import { LIVES_MAX, LIVES_REFILL_COST, levelTicketMilestoneInfo, syrupLabel, useProto, type LevelTrack } from "../state";
-import { ASSETS, Phone, PixelImg, SyrupIcon, TabBar, TopHeader, useNow } from "../shared";
+import { PRACTICE_PER_TOURNAMENT, LIVES_REFILL_COST, levelTicketMilestoneInfo, syrupLabel, useProto, type LevelTrack } from "../state";
+import { ASSETS, Phone, PixelImg, SyrupIcon, TabBar, TopHeader } from "../shared";
 
 // The two parallel solo campaigns the levels-page tab switches between. Each has
 // its own progression (state.levelByTrack); the active accent skins the tab.
@@ -764,11 +764,9 @@ const LevelPathInner = () => {
     const t = setTimeout(() => update({ levelJustUnlocked: null }), 1200);
     return () => clearTimeout(t);
   }, [levelJustUnlocked, update]);
-  // Lives gate (proto.lives / nextLifeAt kept current by the provider regen tick).
+  // Practice-allowance gate — `proto.lives` is how many practice plays are left
+  // today. At 0, play a tournament (or buy plays with Syrup) to get more.
   const outOfLives = proto.lives <= 0;
-  const livesNow = useNow(proto.lives < LIVES_MAX);
-  const livesNextMs = proto.nextLifeAt ? Math.max(0, proto.nextLifeAt - livesNow) : 0;
-  const nextLifeIn = `${String(Math.floor(livesNextMs / 60000)).padStart(2, "0")}:${String(Math.floor((livesNextMs % 60000) / 1000)).padStart(2, "0")}`;
   const canRefill = proto.tickets >= LIVES_REFILL_COST;
   const scrollRef = useRef<HTMLDivElement>(null);
   const currentTileRef = useRef<HTMLDivElement>(null);
@@ -877,13 +875,11 @@ const LevelPathInner = () => {
       <TopHeader tickets={tickets} title="FOREST" />
       <TrackTabs active={track} onSelect={proto.setLevelTrack} />
 
-      {/* Lives chip — current lives + time to the next one. */}
+      {/* Practice chip — plays left today. */}
       <div style={{ position: "absolute", top: 66, right: 16, zIndex: 13, display: "flex", alignItems: "center", gap: 6, background: "rgba(0,0,0,.5)", border: "1px solid rgba(255,255,255,.12)", borderRadius: 99, padding: "5px 10px" }}>
         <PixelImg src={ASSETS.heartFull} size={18} alt="" />
         <span style={{ color: "#fff", fontFamily: "var(--font-display)", fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{proto.lives}</span>
-        {proto.lives < LIVES_MAX && (
-          <span style={{ color: "rgba(255,255,255,.5)", fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{nextLifeIn}</span>
-        )}
+        <span style={{ color: "rgba(255,255,255,.5)", fontSize: 11, fontWeight: 700 }}>left</span>
       </div>
 
       <div
@@ -1033,9 +1029,13 @@ const LevelPathInner = () => {
           </svg>
         </button>
         {outOfLives ? (
-          <button className="cta maple" onClick={() => proto.refillLives()} disabled={!canRefill} style={!canRefill ? { opacity: 0.55, cursor: "default" } : undefined} aria-label={canRefill ? `Refill lives for ${syrupLabel(LIVES_REFILL_COST)}` : `Next life in ${nextLifeIn}`}>
-            {canRefill ? <>REFILL <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><SyrupIcon size={14} />{LIVES_REFILL_COST}</span></> : `NEXT LIFE ${nextLifeIn}`}
-          </button>
+          canRefill ? (
+            <button className="cta maple" onClick={() => proto.refillLives()} aria-label={`Buy more practice for ${syrupLabel(LIVES_REFILL_COST)}`}>
+              <>+{PRACTICE_PER_TOURNAMENT} PRACTICE <span style={{ display: "inline-flex", alignItems: "center", gap: 3 }}><SyrupIcon size={14} />{LIVES_REFILL_COST}</span></>
+            </button>
+          ) : (
+            <button className="cta maple" onClick={() => proto.goto("home")} aria-label="Play a tournament to unlock more practice">PLAY A TOURNAMENT</button>
+          )
         ) : (
           <button className="cta" data-coach="levels-play" onClick={() => startLevel()}>PLAY LEVEL {proto.level}</button>
         )}

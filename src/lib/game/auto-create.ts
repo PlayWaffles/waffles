@@ -15,6 +15,15 @@ import { enforceMinimumTicketPriceForPlatform } from "@/lib/tickets";
 // World Cup ends.
 const DEFAULT_GAME_THEME = GameTheme.FOOTBALL;
 const DEFAULT_GAME_COVER_URL = "/images/themes/football-moments.webp";
+// Per-theme cover art. Themes without a dedicated asset fall back to the default.
+// NOTE: GENERAL has no bespoke "Trivia" cover yet — it borrows meme-culture as a
+// stand-in; add /images/themes/general.webp (or similar) and point it here.
+const THEME_COVER: Partial<Record<GameTheme, string>> = {
+  FOOTBALL: "/images/themes/football-moments.webp",
+  MOVIES: "/images/themes/movie-scenes.webp",
+  ANIME: "/images/themes/anime.webp",
+  GENERAL: "/images/themes/meme-culture.webp",
+};
 const AUTO_QUESTION_COUNT = 6;
 const GAME_NUMBER_RETRY_LIMIT = 3;
 
@@ -71,6 +80,9 @@ export interface AutoCreateGameInput {
   roundBreakSec: number;
   maxPlayers: number;
   launchGroupId?: string;
+  /** Game theme — selects the question pool, title base and cover. Defaults to
+   *  DEFAULT_GAME_THEME (World Cup / FOOTBALL). */
+  theme?: GameTheme;
 }
 
 type QT = Awaited<ReturnType<typeof prisma.questionTemplate.findMany>>[number];
@@ -104,7 +116,7 @@ function pickDiverseQuestionIds(candidates: AutoQuestionCandidate[]) {
 // Build a category-varied question set while protecting players from seeing the
 // same templates over and over. Templates that have already appeared in more
 // than one game are held back unless the fresher pool cannot fill the game.
-async function getAutoQuestionTemplates() {
+async function getAutoQuestionTemplates(theme: GameTheme) {
   const orderBy: Prisma.QuestionTemplateOrderByWithRelationInput[] = [
     { usageCount: "asc" },
     { updatedAt: "asc" },
@@ -116,7 +128,7 @@ async function getAutoQuestionTemplates() {
   // six of the same. Least-used-first rotates the bank and surfaces the freshly
   // seeded formats; then top up with the next least-used if formats run short.
   const candidates = await prisma.questionTemplate.findMany({
-    where: { theme: DEFAULT_GAME_THEME },
+    where: { theme },
     orderBy,
     select: { id: true, category: true, usageCount: true },
   });
@@ -134,7 +146,7 @@ async function getAutoQuestionTemplates() {
 
   if (pickedIds.length < AUTO_QUESTION_COUNT) {
     throw new Error(
-      `Need at least ${AUTO_QUESTION_COUNT} ${DEFAULT_GAME_THEME} question templates before creating a game.`,
+      `Need at least ${AUTO_QUESTION_COUNT} ${theme} question templates before creating a game.`,
     );
   }
   const templates: QT[] = await prisma.questionTemplate.findMany({ where: { id: { in: pickedIds } } });
@@ -196,7 +208,9 @@ async function assignAutoQuestionsToGame(
 }
 
 export async function createAutoScheduledGame(input: AutoCreateGameInput) {
-  const templates = await getAutoQuestionTemplates();
+  const theme = input.theme ?? DEFAULT_GAME_THEME;
+  const coverUrl = THEME_COVER[theme] ?? DEFAULT_GAME_COVER_URL;
+  const templates = await getAutoQuestionTemplates(theme);
   const network = input.network ?? defaultNetworkForPlatform(input.platform);
   const ticketPrice = enforceMinimumTicketPriceForPlatform(
     input.ticketPrice,
@@ -214,14 +228,14 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
       try {
         game = await prisma.game.create({
           data: {
-            title: generateGameTitle({ gameNumber, theme: DEFAULT_GAME_THEME }),
+            title: generateGameTitle({ gameNumber, theme }),
             gameNumber,
             platform: input.platform,
             network,
             isTestnet: isTestnetNetwork(network),
             description: null,
-            theme: DEFAULT_GAME_THEME,
-            coverUrl: DEFAULT_GAME_COVER_URL,
+            theme,
+            coverUrl,
             launchGroupId: input.launchGroupId ?? null,
             startsAt: input.startsAt,
             endsAt: input.endsAt,
