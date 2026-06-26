@@ -70,7 +70,12 @@ export async function checkAndNotifyFlipped(
       // Check if this pushed them out of top 10
       if (pushPosition >= TOP_N) {
         // They got pushed out of top 10 entirely - definitely notify
-        const template = liveGame.flipped(gameNumber, scoringUsername);
+        // Platform decides the copy (MiniPay → in-app/USDT phrasing).
+        const game = await prisma.game.findUnique({
+          where: { id: gameId },
+          select: { platform: true },
+        });
+        const template = liveGame.flipped(gameNumber, scoringUsername, game?.platform);
         const payload = buildPayload(template, gameId, "pregame"); // Links to game lobby
 
         await sendToUser(pushedPlayer.userId, payload);

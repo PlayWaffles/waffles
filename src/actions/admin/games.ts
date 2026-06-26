@@ -264,8 +264,8 @@ export async function createGameAction(
 
       // If tickets open later, announce the game; otherwise tell users tickets are live
       const notifTemplate = data.ticketsOpenAt
-        ? templates.preGame.gameScheduled(gameNumber)
-        : templates.preGame.gameOpen(gameNumber);
+        ? templates.preGame.gameScheduled(gameNumber, undefined, platform)
+        : templates.preGame.gameOpen(gameNumber, undefined, undefined, undefined, platform);
 
       const usersToNotify = await prisma.user.findMany({
         where: {

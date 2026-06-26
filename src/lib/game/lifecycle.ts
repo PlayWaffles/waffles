@@ -422,7 +422,7 @@ export async function sendResultNotifications(gameId: string) {
   // Winners: personalized with rank
   await Promise.allSettled(
     winners.map((entry) => {
-      const template = postGame.winner(game.gameNumber, entry.rank!, undefined, meta);
+      const template = postGame.winner(game.gameNumber, entry.rank!, undefined, meta, game.platform);
       const payload = buildPayload(template, gameId, "result");
       return sendToUser(entry.userId, payload);
     }),
@@ -430,7 +430,7 @@ export async function sendResultNotifications(gameId: string) {
 
   // Non-winners: batch notification
   if (nonWinners.length > 0) {
-    const template = postGame.results(game.gameNumber, meta);
+    const template = postGame.results(game.gameNumber, meta, game.platform);
     const payload = buildPayload(template, gameId, "result");
     await sendBatch(payload, nonWinners.map((e) => e.userId));
   }
@@ -453,7 +453,7 @@ export async function sendResultNotifications(gameId: string) {
   });
   const warmNonBuyers = Array.from(new Set(warmProgress.map((p) => p.userId)));
   if (warmNonBuyers.length > 0) {
-    const template = postGame.roundWrap(game.gameNumber, meta);
+    const template = postGame.roundWrap(game.gameNumber, meta, game.platform);
     const payload = buildPayload(template, gameId, "pregame");
     await sendBatch(payload, warmNonBuyers);
   }

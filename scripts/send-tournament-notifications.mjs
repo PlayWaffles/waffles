@@ -28,6 +28,10 @@ const username = process.argv[2] ?? "quickfalcon49";
 
 const { prisma } = await import("../src/lib/db.ts");
 const { deliverAnnouncementToUsers } = await import("../src/lib/realtime/announcementDelivery.ts");
+// Pull the REAL MiniPay copy from the shared templates so this demo shows exactly
+// what the app sends. `MP` is the MINIPAY platform arg the templates branch on.
+const { preGame, liveGame, postGame } = await import("../src/lib/notifications/templates.ts");
+const MP = "MINIPAY";
 
 const user = await prisma.user.findFirst({
   where: { username: { equals: username, mode: "insensitive" } },
@@ -40,66 +44,28 @@ if (!user) {
 
 const now = Date.now();
 const base = { publishedAt: now, startsAt: now, endsAt: now + 60 * 60 * 1000 };
+const meta = { title: "World Cup Bowl #10", category: "Football", prizePool: 1 };
 
-// Tournament lifecycle for MiniPay (USDT, 0.10 entry, no push framing):
-// open → filling → boosted → starting → live(flipped) → settled → won → claimed.
+// Tournament lifecycle, rendered from the real templates.ts MiniPay variants
+// (platform = MINIPAY): open → filling → boosted → starting → flipped → settled
+// → won → claimed. Presentation (tone/emoji/cta/surface) is added per event.
 const examples = [
-  {
-    label: "gameOpen — round live (maple · CTA → join on Home)",
-    id: "auto:tour-open", priority: 70, tone: "maple", emoji: "🎟️",
-    title: "Today's round is live",
-    body: "0.10 USDT to enter, winners split the pool. Jump in before it fills up.",
-    cta: { label: "Join the round", screen: "home" }, ...base,
-  },
-  {
-    label: "almostSoldOut — filling up (leaf · CTA → Home)",
-    id: "auto:tour-almost", priority: 75, tone: "leaf", emoji: "🔥",
-    title: "Almost full",
-    body: "Only 8 spots left in the live round. Grab yours before it closes.",
-    cta: { label: "Grab a spot", screen: "home" }, ...base,
-  },
-  {
-    label: "prizePoolBoost — pool grew (maple · CTA → Home)",
-    id: "auto:tour-boost", priority: 80, tone: "maple", emoji: "💰",
-    title: "The prize pool just grew",
-    body: "Bigger USDT payouts this round — same 0.10 USDT to enter.",
-    cta: { label: "See the pool", screen: "home" }, ...base,
-  },
-  {
-    label: "countdown5min — starting soon (leaf · CTA → Home/lobby)",
-    id: "auto:tour-5min", priority: 85, tone: "leaf", emoji: "⏰",
-    title: "Starting in 5 minutes",
-    body: "The round's about to begin. Get ready to play.",
-    cta: { label: "Get ready", screen: "home" }, ...base,
-  },
-  {
-    label: "flipped — passed on leaderboard (berry · CTA → leaderboard)",
-    id: "auto:tour-flipped", priority: 90, tone: "berry", emoji: "⚡",
-    title: "SwiftFalcon23 just passed you",
-    body: "You've slipped a place in the live round. Answer faster to take it back.",
-    cta: { label: "See standings", screen: "leaderboard" }, ...base,
-  },
-  {
-    label: "results — settled, non-winner (leaf · CTA → results screen)",
-    id: "auto:tour-results", priority: 80, tone: "leaf", emoji: "🎯",
-    title: "The round's settled",
-    body: "See who won and exactly where you placed.",
-    cta: { label: "See your result", screen: "results" }, ...base,
-  },
-  {
-    label: "winner — top finish (maple · CTA → Prize Wallet)",
-    id: "auto:tour-winner", priority: 100, tone: "maple", emoji: "🥇",
-    title: "You finished #1",
-    body: "0.40 USDT is yours. Tap to claim it from your Prize Wallet.",
-    cta: { label: "Claim your prize", screen: "profile" }, ...base,
-  },
-  {
-    label: "claimed — claim confirmation (leaf · info, no CTA)",
-    id: "auto:tour-claimed", priority: 60, tone: "leaf", emoji: "✅",
-    title: "Prize claimed",
-    body: "0.40 USDT is on its way to your wallet. See you in the next round.",
-    surface: "toast", ...base,
-  },
+  { label: "gameOpen", id: "auto:tour-open", priority: 70, tone: "maple", emoji: "🎟️",
+    ...preGame.gameOpen(10, 8, 1, meta, MP), cta: { label: "Join the round", screen: "home" }, ...base },
+  { label: "almostSoldOut", id: "auto:tour-almost", priority: 75, tone: "leaf", emoji: "🔥",
+    ...preGame.almostSoldOut(10, 8, MP), cta: { label: "Grab a spot", screen: "home" }, ...base },
+  { label: "prizePoolBoost", id: "auto:tour-boost", priority: 80, tone: "maple", emoji: "💰",
+    ...preGame.prizePoolBoost(10, "0.50", "1.00", MP), cta: { label: "See the pool", screen: "home" }, ...base },
+  { label: "countdown5min", id: "auto:tour-5min", priority: 85, tone: "leaf", emoji: "⏰",
+    ...preGame.countdown5min(10, undefined, MP), cta: { label: "Get ready", screen: "home" }, ...base },
+  { label: "flipped", id: "auto:tour-flipped", priority: 90, tone: "berry", emoji: "⚡",
+    ...liveGame.flipped(10, "SwiftFalcon23", MP), cta: { label: "See standings", screen: "leaderboard" }, ...base },
+  { label: "results", id: "auto:tour-results", priority: 80, tone: "leaf", emoji: "🎯",
+    ...postGame.results(10, meta, MP), cta: { label: "See your result", screen: "results" }, ...base },
+  { label: "winner", id: "auto:tour-winner", priority: 100, tone: "maple", emoji: "🥇",
+    ...postGame.winner(10, 1, "0.40", meta, MP), cta: { label: "Claim your prize", screen: "profile" }, ...base },
+  { label: "claimed", id: "auto:tour-claimed", priority: 60, tone: "leaf", emoji: "✅",
+    ...postGame.claimed("0.40", MP), surface: "toast", ...base },
 ];
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));

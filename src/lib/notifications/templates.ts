@@ -9,6 +9,7 @@
  */
 
 import { env } from "@/lib/env";
+import { UserPlatform } from "@prisma";
 
 // ==========================================
 // TYPES
@@ -18,6 +19,21 @@ export interface NotificationTemplate {
   title: string;
   body: string;
 }
+
+// ==========================================
+// PLATFORM-AWARE COPY
+// ==========================================
+// MiniPay is an in-app-only surface (no push) and settles prizes in USDT, while
+// Farcaster/Base use USDC (rendered as "$"). Tournament-lifecycle templates take
+// an optional `platform` and return MiniPay-specific copy for it — USDT framing
+// and in-app phrasing (no "turn on notifications"-style push language). When
+// `platform` is omitted they keep the original Farcaster/Base copy unchanged.
+
+const isMiniPay = (platform?: UserPlatform) => platform === UserPlatform.MINIPAY;
+
+/** Money label per platform: MiniPay → "0.40 USDT", others → "$0.40". */
+const money = (amount: string | number, platform?: UserPlatform) =>
+  isMiniPay(platform) ? `${amount} USDT` : `$${amount}`;
 
 /**
  * The live game's details, so a card reads "World Cup Bowl #010" with its real
@@ -52,22 +68,44 @@ const spotsText = (left: number) =>
 
 export const preGame = {
   /** When a new game is created and open for ticket purchases */
-  gameOpen: (gameNumber: number, spotsLeft?: number, prizePool?: number, meta?: GameMeta): NotificationTemplate => ({
-    title: `${gameLabel(gameNumber, meta)} is LIVE`,
-    body: spotsLeft != null && prizePool != null
-      ? `${spotsLeft} spots. $${prizePool} pot. Go.`
-      : meta?.category
-        ? `${meta.category} trivia is live. Grab your ticket before they're gone.`
-        : "Tickets are available. Grab yours before they're gone.",
-  }),
+  gameOpen: (gameNumber: number, spotsLeft?: number, prizePool?: number, meta?: GameMeta, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: "Today's round is live",
+        body: spotsLeft != null && prizePool != null
+          ? `${spotsText(spotsLeft)} · ${money(prizePool, platform)} pool. Grab your spot.`
+          : meta?.category
+            ? `${meta.category} trivia is live — grab your spot before it fills.`
+            : "A new round just opened — grab your spot before it fills.",
+      };
+    }
+    return {
+      title: `${gameLabel(gameNumber, meta)} is LIVE`,
+      body: spotsLeft != null && prizePool != null
+        ? `${spotsLeft} spots. $${prizePool} pot. Go.`
+        : meta?.category
+          ? `${meta.category} trivia is live. Grab your ticket before they're gone.`
+          : "Tickets are available. Grab yours before they're gone.",
+    };
+  },
 
   /** When a new game is announced but tickets open later */
-  gameScheduled: (gameNumber: number, meta?: GameMeta): NotificationTemplate => ({
-    title: `${gameLabel(gameNumber, meta)} announced`,
-    body: meta?.category
-      ? `${meta.category} trivia incoming. Tickets drop soon.`
-      : "New game incoming. Tickets drop soon.",
-  }),
+  gameScheduled: (gameNumber: number, meta?: GameMeta, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: "Next round incoming",
+        body: meta?.category
+          ? `${meta.category} trivia drops soon — get ready.`
+          : "A new round drops soon — get ready.",
+      };
+    }
+    return {
+      title: `${gameLabel(gameNumber, meta)} announced`,
+      body: meta?.category
+        ? `${meta.category} trivia incoming. Tickets drop soon.`
+        : "New game incoming. Tickets drop soon.",
+    };
+  },
 
   /** 24 hours before game starts */
   countdown24h: (gameNumber: number, spotsLeft?: number): NotificationTemplate => ({
@@ -102,22 +140,42 @@ export const preGame = {
   }),
 
   /** 5 minutes before game starts */
-  countdown5min: (gameNumber: number, spotsLeft?: number): NotificationTemplate => ({
-    title: "5 MINUTES",
-    body: spotsLeft != null && spotsLeft <= 5
-      ? `${spotsText(spotsLeft)}. NOW OR NEVER.`
-      : "Game starts in 5 minutes. Get your ticket immediately.",
-  }),
+  countdown5min: (gameNumber: number, spotsLeft?: number, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: "Starting in 5 minutes",
+        body: spotsLeft != null && spotsLeft <= 5
+          ? `${spotsText(spotsLeft)} — last call before the round begins.`
+          : "The round's about to begin — get ready to play.",
+      };
+    }
+    return {
+      title: "5 MINUTES",
+      body: spotsLeft != null && spotsLeft <= 5
+        ? `${spotsText(spotsLeft)}. NOW OR NEVER.`
+        : "Game starts in 5 minutes. Get your ticket immediately.",
+    };
+  },
 
   /** When game is almost full (90% of maxPlayers) */
-  almostSoldOut: (gameNumber: number, spotsLeft?: number): NotificationTemplate => ({
-    title: spotsLeft != null && spotsLeft <= 3
-      ? `${spotsLeft} SPOTS LEFT`
-      : "Almost sold out",
-    body: spotsLeft != null
-      ? `Waffles #${formatGameNum(gameNumber)} is almost gone. ${spotsText(spotsLeft)}.`
-      : `Only a few tickets left for Waffles #${formatGameNum(gameNumber)}.`,
-  }),
+  almostSoldOut: (gameNumber: number, spotsLeft?: number, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: spotsLeft != null && spotsLeft <= 3 ? `${spotsLeft} spots left` : "Almost full",
+        body: spotsLeft != null
+          ? `Today's round is nearly full. ${spotsText(spotsLeft)} — grab yours.`
+          : "Today's round is nearly full. Grab a spot before it closes.",
+      };
+    }
+    return {
+      title: spotsLeft != null && spotsLeft <= 3
+        ? `${spotsLeft} SPOTS LEFT`
+        : "Almost sold out",
+      body: spotsLeft != null
+        ? `Waffles #${formatGameNum(gameNumber)} is almost gone. ${spotsText(spotsLeft)}.`
+        : `Only a few tickets left for Waffles #${formatGameNum(gameNumber)}.`,
+    };
+  },
 
   /** When a game sells out — sent to non-ticket-holders */
   soldOut: (gameNumber: number): NotificationTemplate => ({
@@ -135,10 +193,18 @@ export const preGame = {
   }),
 
   /** When the prize pool gets sponsored */
-  prizePoolBoost: (gameNumber: number, boostAmount: string, totalPrizePool: string): NotificationTemplate => ({
-    title: `$${totalPrizePool} POT`,
-    body: `Waffles #${formatGameNum(gameNumber)} prize pool just doubled. Bigger pot, same ticket price.`,
-  }),
+  prizePoolBoost: (gameNumber: number, boostAmount: string, totalPrizePool: string, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: `${money(totalPrizePool, platform)} pool`,
+        body: "Today's round just grew — bigger USDT payouts, same entry.",
+      };
+    }
+    return {
+      title: `$${totalPrizePool} POT`,
+      body: `Waffles #${formatGameNum(gameNumber)} prize pool just doubled. Bigger pot, same ticket price.`,
+    };
+  },
 };
 
 // ==========================================
@@ -177,12 +243,22 @@ export const ticketOpen = {
   }),
 
   /** Tickets are now open */
-  nowOpen: (gameNumber: number, spotsLeft?: number, prizePool?: number): NotificationTemplate => ({
-    title: "TICKETS ARE LIVE",
-    body: spotsLeft != null && prizePool != null
-      ? `Waffles #${formatGameNum(gameNumber)}. ${spotsLeft} spots. $${prizePool} pot. Go.`
-      : `Waffles #${formatGameNum(gameNumber)} is open. Go go go.`,
-  }),
+  nowOpen: (gameNumber: number, spotsLeft?: number, prizePool?: number, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: "The round is live",
+        body: spotsLeft != null && prizePool != null
+          ? `${spotsText(spotsLeft)} · ${money(prizePool, platform)} pool. Jump in.`
+          : "The round just opened — jump in before it fills.",
+      };
+    }
+    return {
+      title: "TICKETS ARE LIVE",
+      body: spotsLeft != null && prizePool != null
+        ? `Waffles #${formatGameNum(gameNumber)}. ${spotsLeft} spots. $${prizePool} pot. Go.`
+        : `Waffles #${formatGameNum(gameNumber)} is open. Go go go.`,
+    };
+  },
 };
 
 // ==========================================
@@ -191,10 +267,18 @@ export const ticketOpen = {
 
 export const liveGame = {
   /** Player got passed on leaderboard */
-  flipped: (gameNumber: number, byUsername: string): NotificationTemplate => ({
-    title: `${byUsername} just passed you`,
-    body: "They're coming for your spot. Get back in there.",
-  }),
+  flipped: (gameNumber: number, byUsername: string, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: `${byUsername} just passed you`,
+        body: "You've slipped a place in the live round — answer faster to take it back.",
+      };
+    }
+    return {
+      title: `${byUsername} just passed you`,
+      body: "They're coming for your spot. Get back in there.",
+    };
+  },
 
   /** Multiple friends overtook you */
   rivalryAlert: (count: number): NotificationTemplate => ({
@@ -209,8 +293,16 @@ export const liveGame = {
 
 export const postGame = {
   /** Sent to top 3 winners */
-  winner: (gameNumber: number, rank: number, prize?: string, meta?: GameMeta): NotificationTemplate => {
+  winner: (gameNumber: number, rank: number, prize?: string, meta?: GameMeta, platform?: UserPlatform): NotificationTemplate => {
     const emoji = rank === 1 ? "🥇" : rank === 2 ? "🥈" : "🥉";
+    if (isMiniPay(platform)) {
+      return {
+        title: `You finished #${rank} ${emoji}`,
+        body: prize
+          ? `${money(prize, platform)} is yours from ${gameLabel(gameNumber, meta)}. Tap to claim it.`
+          : `You placed #${rank} in ${gameLabel(gameNumber, meta)}. Tap to see your prize.`,
+      };
+    }
     return {
       title: `#${rank} ${emoji} — You won`,
       body: prize
@@ -229,35 +321,73 @@ export const postGame = {
   },
 
   /** Sent to all non-winners */
-  results: (gameNumber: number, meta?: GameMeta): NotificationTemplate => ({
-    title: `${gameLabel(gameNumber, meta)} results`,
-    body: meta?.category
-      ? `${meta.category} trivia is settled. See who won and where you placed.`
-      : "See who won and where you placed.",
-  }),
+  results: (gameNumber: number, meta?: GameMeta, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: "The round's settled",
+        body: meta?.category
+          ? `${meta.category} trivia is settled — see who won and exactly where you placed.`
+          : "See who won and exactly where you placed.",
+      };
+    }
+    return {
+      title: `${gameLabel(gameNumber, meta)} results`,
+      body: meta?.category
+        ? `${meta.category} trivia is settled. See who won and where you placed.`
+        : "See who won and where you placed.",
+    };
+  },
 
   /** FOMO recap for warm players who SKIPPED this round — drives them into the
    *  next one. Leads with the pool that just paid out, since real money is the
    *  hook. */
-  roundWrap: (gameNumber: number, meta?: GameMeta): NotificationTemplate => ({
-    title: `${gameLabel(gameNumber, meta)} wrapped`,
-    body:
-      meta?.prizePool != null && meta.prizePool > 0
-        ? `$${meta.prizePool.toFixed(2)} just went to the top 15. The next round's live — don't sit this one out.`
-        : "The top 15 just split the pool. A new round's live — get in this time.",
-  }),
+  roundWrap: (gameNumber: number, meta?: GameMeta, platform?: UserPlatform): NotificationTemplate => {
+    const pool = meta?.prizePool;
+    if (isMiniPay(platform)) {
+      return {
+        title: "The round wrapped",
+        body:
+          pool != null && pool > 0
+            ? `${money(pool.toFixed(2), platform)} just went to the winners. The next round's live — don't sit it out.`
+            : "The winners just split the pool. A new round's live — get in this time.",
+      };
+    }
+    return {
+      title: `${gameLabel(gameNumber, meta)} wrapped`,
+      body:
+        pool != null && pool > 0
+          ? `$${pool.toFixed(2)} just went to the top 15. The next round's live — don't sit this one out.`
+          : "The top 15 just split the pool. A new round's live — get in this time.",
+    };
+  },
 
   /** Reminder for unclaimed prizes */
-  unclaimed: (gameNumber: number, amount: string): NotificationTemplate => ({
-    title: `$${amount} waiting for you`,
-    body: `Your Waffles #${formatGameNum(gameNumber)} winnings are unclaimed. Tap to collect.`,
-  }),
+  unclaimed: (gameNumber: number, amount: string, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: `${money(amount, platform)} waiting for you`,
+        body: "Your winnings are unclaimed. Tap to collect them.",
+      };
+    }
+    return {
+      title: `$${amount} waiting for you`,
+      body: `Your Waffles #${formatGameNum(gameNumber)} winnings are unclaimed. Tap to collect.`,
+    };
+  },
 
   /** Confirmation when prize is claimed */
-  claimed: (amount: string): NotificationTemplate => ({
-    title: `$${amount} sent to your wallet`,
-    body: "Prize claimed. See you next game.",
-  }),
+  claimed: (amount: string, platform?: UserPlatform): NotificationTemplate => {
+    if (isMiniPay(platform)) {
+      return {
+        title: `${money(amount, platform)} sent to your wallet`,
+        body: "Prize claimed. See you in the next round.",
+      };
+    }
+    return {
+      title: `$${amount} sent to your wallet`,
+      body: "Prize claimed. See you next game.",
+    };
+  },
 };
 
 // ==========================================

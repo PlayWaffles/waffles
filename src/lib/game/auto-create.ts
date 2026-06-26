@@ -302,8 +302,8 @@ export async function createAutoScheduledGame(input: AutoCreateGameInput) {
     const { themeLabel } = await import("@/lib/player/roundQuestions");
     const meta = { title: game.title, category: themeLabel(game.theme) };
     const notifTemplate = input.ticketsOpenAt
-      ? preGame.gameScheduled(gameNumber, meta)
-      : preGame.gameOpen(gameNumber, undefined, undefined, meta);
+      ? preGame.gameScheduled(gameNumber, meta, input.platform)
+      : preGame.gameOpen(gameNumber, undefined, undefined, meta, input.platform);
 
     const usersToNotify = await prisma.user.findMany({
       where: {
