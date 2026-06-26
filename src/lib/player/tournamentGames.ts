@@ -108,10 +108,10 @@ export const TOURNAMENT_MAX_PLAYERS = 20;
 // Entry pricing. The contract requires the entry payment to EXACTLY equal the
 // game's on-chain price, so there is ONE flat price for everyone — the game
 // floor. STANDARD_FEE is display-only: the UI shows it struck through above the
-// real price so entry always reads as a discount ("$0.10 → $0.05"), but nobody
+// real price so entry always reads as a discount ("$0.20 → $0.10"), but nobody
 // is ever charged it. (Per-user pricing is impossible here — one game, one price.)
-export const TOURNAMENT_ENTRY_FEE_USDC = 0.05; // the real, flat on-chain price
-export const TOURNAMENT_STANDARD_FEE_USDC = 0.1; // display-only "was" price (struck through)
+export const TOURNAMENT_ENTRY_FEE_USDC = 0.1; // the real, flat on-chain price
+export const TOURNAMENT_STANDARD_FEE_USDC = 0.2; // display-only "was" price (struck through)
 const DEFAULT_ENTRY_FEE_USDC = TOURNAMENT_ENTRY_FEE_USDC; // game floor = the flat price
 
 /**

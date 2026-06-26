@@ -283,7 +283,7 @@ export const ProfileScreen = () => {
             <div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 13, color: "#fff", letterSpacing: 0.4 }}>PRIZE WALLET</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.5)", marginTop: 2 }}>Tournament winnings · paid in USDT</div>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--maple-500)", marginTop: 3 }}>1 ticket = $0.05</div>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "var(--maple-500)", marginTop: 3 }}>1 ticket = $0.10</div>
             </div>
             <div style={{ textAlign: "right" }}>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 20, color: "#FF9F1C", lineHeight: 1 }}>{claimableUsdt.toFixed(2)} USDT</div>

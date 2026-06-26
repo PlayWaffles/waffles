@@ -135,7 +135,7 @@ const TournamentUpsellSheet = ({
           <div style={{ fontSize: 12, fontWeight: 800, color: "var(--ink-soft)", textAlign: "center", margin: "12px 0" }}>Loading live tournament details...</div>
         )}
 
-        {/* Flat $0.05 for everyone; the struck $0.10 is the season anchor. Card
+        {/* Flat $0.10 for everyone; the struck standard fee is the season anchor. Card
             shows for all — copy is personalized: genuine first-timers get the
             "first tournament" welcome, returning players the World Cup framing. */}
         {fee && (

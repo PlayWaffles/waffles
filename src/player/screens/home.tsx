@@ -98,8 +98,8 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         )}
       </div>
 
-      {/* Entry is a flat $0.05 for everyone, every round — the struck-through
-          standardFee ($0.10) is the season anchor (never charged). The discount
+      {/* Entry is a flat $0.10 for everyone, every round — the struck-through
+          standardFee is the season anchor (never charged). The discount
           card shows for ALL players; only the framing is personalized: genuine
           first-timers (no prior GameEntry) get a one-time "first tournament"
           welcome, returning players get the evergreen "World Cup special." (When

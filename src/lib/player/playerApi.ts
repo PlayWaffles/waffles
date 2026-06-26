@@ -242,7 +242,7 @@ export async function getTournament(): Promise<
     // Anchor = 2× the real price, so the struck-through "was" always reads as a
     // clean 50% off for ANY game price. A fixed $0.10 constant broke when the
     // live game itself costs $0.10 (anchor == price → no visible discount); this
-    // adapts: $0.10 game → "$0.20 → $0.10", $0.05 v2 game → "$0.10 → $0.05".
+    // adapts: $0.10 game → "$0.20 → $0.10".
     standardFee: game.entryFee * 2,
     firstEntry,
     skillBonus,

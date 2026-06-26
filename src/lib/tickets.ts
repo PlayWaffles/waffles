@@ -1,7 +1,7 @@
 import type { TicketPurchaseSource, UserPlatform } from "@prisma";
 
 export const DEFAULT_TICKET_PRICE = 1;
-export const MINIPAY_MINIMUM_TICKET_PRICE = 0.05;
+export const MINIPAY_MINIMUM_TICKET_PRICE = 0.1;
 
 export interface TicketPricingConfig {
   platform?: UserPlatform | null;
