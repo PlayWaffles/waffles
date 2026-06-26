@@ -16,7 +16,7 @@
  */
 import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
-import { Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { GameTheme, Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
 import { accrueLeaguePoints } from "./leagues";
 import { adjustTickets, grantTournamentPracticePlays } from "./playerState";
 import { recordQuestionStats } from "./questionStats";
@@ -146,9 +146,15 @@ export async function ensureTournamentGame(
   // Deterministic per window+platform+network — the (launchGroupId, platform) unique
   // makes concurrent "ensure" calls race-safe: only one create wins. Uses the window
   // index (not the full ms timestamp) so the key fits the launchGroupId VarChar(36).
-  const launchGroupId = `trn:${platform}:${network}:${Math.floor(startsAt.getTime() / TOURNAMENT_ROUND_MS)}`;
-  try {
-    const created = await createAutoScheduledGame({
+  const windowIndex = Math.floor(startsAt.getTime() / TOURNAMENT_ROUND_MS);
+  const launchGroupId = `trn:${platform}:${network}:${windowIndex}`;
+  // Alternate the tournament theme each window: even → World Cup (FOOTBALL),
+  // odd → General (Trivia / GENERAL). Deterministic by window, so both platforms
+  // share the same cadence.
+  const theme = windowIndex % 2 === 0 ? GameTheme.FOOTBALL : GameTheme.GENERAL;
+
+  const createWith = (gameTheme: GameTheme) =>
+    createAutoScheduledGame({
       platform,
       network,
       startsAt,
@@ -160,7 +166,11 @@ export async function ensureTournamentGame(
       ticketPrice: DEFAULT_ENTRY_FEE_USDC,
       roundBreakSec: recent?.roundBreakSec ?? 0,
       maxPlayers: TOURNAMENT_MAX_PLAYERS,
+      theme: gameTheme,
     });
+
+  try {
+    const created = await createWith(theme);
     return { created: true, gameId: created.gameId };
   } catch (error) {
     // A concurrent request created this window's game first (unique launchGroupId +
@@ -171,6 +181,18 @@ export async function ensureTournamentGame(
         select: { id: true },
       });
       if (existing) return { created: false, gameId: existing.id };
+    }
+    // The General round couldn't be built (most likely too few GENERAL question
+    // templates) — never leave a window without a tournament: fall back to the
+    // World Cup theme. (Template checks throw before any DB write, so there's no
+    // partial game to collide with.)
+    if (theme !== GameTheme.FOOTBALL) {
+      console.warn(
+        `[tournament] ${theme} round create failed — falling back to World Cup:`,
+        error instanceof Error ? error.message : error,
+      );
+      const created = await createWith(GameTheme.FOOTBALL);
+      return { created: true, gameId: created.gameId };
     }
     throw error;
   }
