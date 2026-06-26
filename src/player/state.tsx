@@ -1212,7 +1212,9 @@ export function ProtoProvider({
           // Rookie Cup: settle synchronously against the ghost field and credit
           // the Syrup; the result screen reads `rookieResult` once it lands.
           void submitRookieCup(nextAnswers).then((res) => {
-            if (res) update((s) => ({ rookieResult: res, tickets: s.tickets + res.syrup }));
+            // Mark the cup done so the Home first-timer card hides immediately
+            // (server also records it; loadState reconciles on reload).
+            if (res) update((s) => ({ rookieResult: res, tickets: s.tickets + res.syrup, rookieDone: true }));
           });
         }
         // Local provisional placement shown on the results screen (the locked

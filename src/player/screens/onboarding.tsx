@@ -14,6 +14,7 @@ import { LegalSheet, type LegalTab } from "../legal";
 import { useWalletSignIn } from "@/hooks/useWalletSignIn";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
 import { getDemoQuestion, type DemoQuestion } from "@/actions/onboarding";
+import { skipRookieCup } from "@/player/api";
 
 // First-launch onboarding — money-first, v1-lean. The previous (v1) onboarding
 // converted browsers into *paying* players far better than v2's free-play
@@ -542,9 +543,11 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
     setIdx((i) => i + 1);
   };
 
-  // Finale: drop the just-created player onto Home with the live-tournament buy
-  // sheet primed (pendingTournamentJoin) — the money moment is part of signup,
-  // coherent with the paid pitch up top.
+  // Finale is a two-way choice (welcome modal): both dismiss onboarding via
+  // onPlay(), then either start the FREE Rookie Cup quiz directly, or land on
+  // Home with the live-tournament buy sheet primed (pendingTournamentJoin).
+  // Whichever they skip stays available later (Home's Rookie Cup card / the
+  // live tournament card), so the two complement rather than compete.
   const enterLiveRound = () => {
     trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, {
       step_index: idx,
@@ -552,7 +555,19 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
       cta: "enter_live_round",
     });
     onPlay();
-    proto.update({ pendingTournamentJoin: true });
+    // Choosing the live round FORFEITS the one-time free Rookie Cup — mark it
+    // consumed so the Home card never offers it (optimistic + persisted).
+    proto.update({ pendingTournamentJoin: true, rookieDone: true });
+    void skipRookieCup();
+  };
+  const playRookieCup = () => {
+    trackClientEvent(AnalyticsEvent.OnboardingSlideNextClicked, {
+      step_index: idx,
+      step_id: "welcome_play",
+      cta: "play_rookie_cup",
+    });
+    onPlay();
+    void proto.enterRookieCup();
   };
 
   const openLegal = (tab: LegalTab) => {
@@ -1042,7 +1057,7 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
                 marginBottom: 8,
               }}
             >
-              A round is live now
+              How do you want to start?
             </div>
             <div
               style={{
@@ -1053,11 +1068,7 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
                 marginBottom: 18,
               }}
             >
-              Answer 6 questions, outscore the room, and split the pot. Your{" "}
-              <strong style={{ color: "var(--maple-400, #FFD24D)" }}>
-                first entry is half price
-              </strong>{" "}
-              — just a few cents.
+              Warm up with a free cup, or jump straight into a live cash round.
             </div>
           </div>
           <div
@@ -1065,15 +1076,63 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
               padding: "0 18px max(20px, env(safe-area-inset-bottom))",
               position: "relative",
               zIndex: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: 10,
             }}
           >
+            {/* Free Rookie Cup — the gentle, no-risk first taste. */}
             <button
               type="button"
-              className="cta maple"
-              style={{ width: "100%", flex: "none" }}
-              onClick={enterLiveRound}
+              onClick={playRookieCup}
+              style={{
+                width: "100%",
+                borderRadius: 14,
+                border: "none",
+                padding: "11px 16px",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                fontFamily: "var(--font-display)",
+                background: "linear-gradient(180deg, #FFD24D, #F5A91B)",
+                color: "#3a2a00",
+                boxShadow: "0 4px 0 #b5790f",
+              }}
             >
-              ENTER LIVE ROUND
+              <span style={{ fontSize: 16, letterSpacing: 0.3 }}>
+                PLAY FREE ROOKIE CUP
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.75 }}>
+                Guaranteed win + Syrup · no entry fee
+              </span>
+            </button>
+            {/* Straight into the paid live round (buy sheet primed on Home). */}
+            <button
+              type="button"
+              onClick={enterLiveRound}
+              style={{
+                width: "100%",
+                borderRadius: 14,
+                padding: "11px 16px",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1,
+                fontFamily: "var(--font-display)",
+                background: "rgba(255,255,255,.06)",
+                border: "1.5px solid rgba(255,255,255,.18)",
+                color: "#fff",
+              }}
+            >
+              <span style={{ fontSize: 15, letterSpacing: 0.3 }}>
+                ENTER A LIVE ROUND
+              </span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
+                Real USDT pot · first entry half price
+              </span>
             </button>
           </div>
         </div>

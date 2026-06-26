@@ -80,6 +80,16 @@ export async function getRookieCup(userId: string): Promise<RookieCup> {
   return { done: false, questions, fieldSize: ROOKIE_FIELD_SIZE };
 }
 
+/** Forfeit the one-time Rookie Cup WITHOUT playing it — e.g. the player chose the
+ *  live round at onboarding instead. Marks it consumed so it never offers again.
+ *  Idempotent (the `rookieCupAt: null` guard won't overwrite a real completion). */
+export async function skipRookieCup(userId: string): Promise<void> {
+  await prisma.user.updateMany({
+    where: { id: userId, rookieCupAt: null },
+    data: { rookieCupAt: new Date() },
+  });
+}
+
 /** Re-score the player's answers server-side against the template answer keys
  *  (anti-skew — the client never reports its own score). */
 async function scoreRookieAnswers(answers: RoundAnswer[]): Promise<number> {

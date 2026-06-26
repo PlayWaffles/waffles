@@ -600,6 +600,28 @@ export const HomeScreen = () => {
 
       <div style={{ position: "absolute", top: 50, left: 0, right: 0, bottom: 84, overflowY: "auto", overflowX: "hidden", scrollbarWidth: "none", WebkitOverflowScrolling: "touch" }}>
         <div style={{ padding: "0 12px 12px", display: "flex", flexDirection: "column", gap: 14 }}>
+        {/* First-timer nudge: the free intro tournament (guaranteed win + Syrup,
+            no entry fee). Shown only until it's been played (rookieDone). */}
+        {!proto.rookieDone && (
+          <button
+            type="button"
+            onClick={() => { void proto.enterRookieCup(); }}
+            aria-label="Play your free Rookie Cup — your first tournament, on us"
+            style={{ textAlign: "left", background: "radial-gradient(120% 120% at 0% 0%, rgba(255,210,77,.18), rgba(255,210,77,.04))", border: "1px solid rgba(255,210,77,.45)", borderRadius: 18, padding: 16, cursor: "pointer", display: "flex", alignItems: "center", gap: 13, position: "relative", overflow: "hidden" }}
+          >
+            <PixelImg src={ASSETS.trophy} size={46} alt="" style={{ flexShrink: 0, filter: "drop-shadow(0 4px 10px rgba(0,0,0,.35))" }} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 3 }}>
+                <span style={{ background: "var(--maple-500)", color: "var(--frame)", fontFamily: "var(--font-display)", fontSize: 10, letterSpacing: 0.5, padding: "2px 8px", borderRadius: 99, border: "1.5px solid var(--frame)" }}>FREE</span>
+                <span style={{ fontFamily: "var(--font-display)", fontSize: 17, color: "#fff" }}>Rookie Cup</span>
+              </div>
+              <div style={{ fontSize: 12.5, fontWeight: 700, color: "rgba(255,255,255,.6)", lineHeight: 1.35 }}>
+                Your first tournament&apos;s on us — answer 6, win Syrup. No entry fee.
+              </div>
+            </div>
+            <div className="btn-3d-gold" style={{ flexShrink: 0, fontFamily: "var(--font-display)", fontSize: 13, color: "#3a2a00", background: "linear-gradient(180deg, #FFD24D, #F5A91B)", borderRadius: 11, padding: "9px 14px" }}>PLAY</div>
+          </button>
+        )}
         {recentBuyers && recentBuyers.length > 0 && <LiveBuyingStrip entrants={recentBuyers} title={round?.title ?? "the tournament"} />}
         <div
           role="button"

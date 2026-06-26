@@ -32,6 +32,7 @@ const handlers = {
   listPreviousGames: playerApi.listPreviousGames,
   getRookieCup: playerApi.getRookieCup,
   submitRookieCup: playerApi.submitRookieCup,
+  skipRookieCup: playerApi.skipRookieCup,
   loadRecentEntrants: playerApi.loadRecentEntrants,
   confirmTournamentClaim: playerApi.confirmTournamentClaim,
   reconcileTournamentClaim: playerApi.reconcileTournamentClaim,

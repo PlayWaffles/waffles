@@ -184,6 +184,10 @@ export function submitRookieCup(answers: RoundAnswer[]): Promise<rookieCupSvc.Ro
   return callPlayerApi("submitRookieCup", [answers]);
 }
 
+export function skipRookieCup(): Promise<{ ok: boolean }> {
+  return callPlayerApi("skipRookieCup");
+}
+
 export function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
   return callPlayerApi("loadAllTimeLeaderboard");
 }
