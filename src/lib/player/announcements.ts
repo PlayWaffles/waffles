@@ -24,9 +24,10 @@ export type PlayerAnnouncement = {
   emoji: string;
   title: string;
   body: string;
-  // CTA either navigates to a screen, or opens a season takeover via `theme`.
-  // When set, tapping the announcement runs the CTA instead of opening details.
-  cta?: { label: string; screen?: string; theme?: string };
+  // CTA either navigates to a screen, opens a season takeover via `theme`, or
+  // opens a global sheet via `sheet` (e.g. the daily-reward/streak sheet). When
+  // set, tapping the announcement runs the CTA instead of opening details.
+  cta?: { label: string; screen?: string; theme?: string; sheet?: "daily" };
   // What tapping the announcement does (in the live toast or the bell inbox).
   // Every announcement shows as the transient top toast on delivery and is logged
   // in the inbox; `surface` only controls the tap behaviour:
@@ -55,6 +56,7 @@ function normalizeTone(tone: string): AnnouncementTone {
 /**
  * Parse the stored `ctaAction` into the tap behaviour:
  *   "screen:<name>" / "theme:<id>" → a navigating CTA
+ *   "sheet:daily"                  → open a global sheet (the daily-reward/streak sheet)
  *   "open:small" / "open:full"     → open the details as a modal
  *   anything else / empty          → the "disappears" toast: informational, no
  *                                     modal on tap.
@@ -66,6 +68,7 @@ function parseAction(
   const [kind, value] = (action ?? "").split(":", 2);
   if (kind === "screen" && value && label) return { cta: { label, screen: value } };
   if (kind === "theme" && value && label) return { cta: { label, theme: value } };
+  if (kind === "sheet" && value === "daily" && label) return { cta: { label, sheet: "daily" } };
   if (kind === "open") return { surface: value === "full" ? "full" : "small" };
   return { surface: "toast" };
 }

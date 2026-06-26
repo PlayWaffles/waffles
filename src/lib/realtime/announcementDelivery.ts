@@ -22,7 +22,13 @@ function partySecret() {
 }
 
 async function deliverToRoom(room: string, message: AnnouncementRealtimeMessage) {
-  const response = await fetch(`https://${partyHost()}/parties/main/${encodeURIComponent(room)}`, {
+  // The room name is used verbatim by the client (PartySocket connects to
+  // `/parties/main/user:<id>` with a RAW colon) and PartyServer derives the
+  // Durable Object id from the raw path segment. encodeURIComponent() would turn
+  // the colon into `%3A`, routing this POST to a DIFFERENT DO than the one the
+  // client is connected to — the broadcast would land in an empty room and never
+  // reach the player. So the path segment must match the client's exactly (raw).
+  const response = await fetch(`https://${partyHost()}/parties/main/${room}`, {
     method: "POST",
     headers: {
       "content-type": "application/json",

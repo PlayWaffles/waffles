@@ -49,6 +49,18 @@ export const actOnAnnouncement = (proto: Proto, a: Announcement, sourceScreen: S
     proto.update({ wcTakeoverOpen: true });
     return;
   }
+  if (a.cta?.sheet === "daily") {
+    trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
+      announcement_id: a.id,
+      announcement_type: a.tone,
+      cta_target: "sheet:daily",
+      source_screen: sourceScreen,
+    });
+    // The daily-reward/streak sheet is a global overlay (proto.dailyOpen), not a
+    // screen — open it directly so it surfaces on whatever screen the player's on.
+    proto.update({ dailyOpen: true });
+    return;
+  }
   if (a.cta?.screen) {
     trackClientEvent(AnalyticsEvent.AnnouncementCtaClicked, {
       announcement_id: a.id,
