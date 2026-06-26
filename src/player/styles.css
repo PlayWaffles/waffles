@@ -24,6 +24,11 @@
   --berry: #FB72FF;
   --leaf: #FF9F1C;
   --leaf-dark: #D97706;
+  /* True green for correctness/success (the in-game "correct answer" state). The
+     "leaf" tokens above are actually the orange accent, so correctness uses its
+     own green and never reads as orange. */
+  --correct: #2bbf5b;
+  --correct-dark: #1f8f44;
   --sky: #FF9F1C;
   --sky-dark: #D97706;
   --live-red: #FC1919;

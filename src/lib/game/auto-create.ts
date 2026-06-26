@@ -80,9 +80,14 @@ export interface AutoCreateGameInput {
   roundBreakSec: number;
   maxPlayers: number;
   launchGroupId?: string;
-  /** Game theme — selects the question pool, title base and cover. Defaults to
+  /** Game theme — sets the stored theme, title base and cover. Defaults to
    *  DEFAULT_GAME_THEME (World Cup / FOOTBALL). */
   theme?: GameTheme;
+  /** When true, draw questions from a MIX of all non-football themes (movies,
+   *  anime, crypto, general, …) rather than the single `theme`. Used for the
+   *  "General" tournament; the stored `theme` (e.g. GENERAL) only drives the
+   *  title/cover. */
+  mixed?: boolean;
 }
 
 type QT = Awaited<ReturnType<typeof prisma.questionTemplate.findMany>>[number];
@@ -116,7 +121,7 @@ function pickDiverseQuestionIds(candidates: AutoQuestionCandidate[]) {
 // Build a category-varied question set while protecting players from seeing the
 // same templates over and over. Templates that have already appeared in more
 // than one game are held back unless the fresher pool cannot fill the game.
-async function getAutoQuestionTemplates(theme: GameTheme) {
+async function getAutoQuestionTemplates(themeFilter: Prisma.QuestionTemplateWhereInput) {
   const orderBy: Prisma.QuestionTemplateOrderByWithRelationInput[] = [
     { usageCount: "asc" },
     { updatedAt: "asc" },
@@ -128,7 +133,7 @@ async function getAutoQuestionTemplates(theme: GameTheme) {
   // six of the same. Least-used-first rotates the bank and surfaces the freshly
   // seeded formats; then top up with the next least-used if formats run short.
   const candidates = await prisma.questionTemplate.findMany({
-    where: { theme },
+    where: themeFilter,
     orderBy,
     select: { id: true, category: true, usageCount: true },
   });
@@ -146,7 +151,7 @@ async function getAutoQuestionTemplates(theme: GameTheme) {
 
   if (pickedIds.length < AUTO_QUESTION_COUNT) {
     throw new Error(
-      `Need at least ${AUTO_QUESTION_COUNT} ${theme} question templates before creating a game.`,
+      `Need at least ${AUTO_QUESTION_COUNT} matching question templates before creating a game.`,
     );
   }
   const templates: QT[] = await prisma.questionTemplate.findMany({ where: { id: { in: pickedIds } } });
@@ -210,7 +215,11 @@ async function assignAutoQuestionsToGame(
 export async function createAutoScheduledGame(input: AutoCreateGameInput) {
   const theme = input.theme ?? DEFAULT_GAME_THEME;
   const coverUrl = THEME_COVER[theme] ?? DEFAULT_GAME_COVER_URL;
-  const templates = await getAutoQuestionTemplates(theme);
+  // Mixed rounds draw from every non-football theme; otherwise the single theme.
+  const themeFilter: Prisma.QuestionTemplateWhereInput = input.mixed
+    ? { theme: { not: GameTheme.FOOTBALL } }
+    : { theme };
+  const templates = await getAutoQuestionTemplates(themeFilter);
   const network = input.network ?? defaultNetworkForPlatform(input.platform);
   const ticketPrice = enforceMinimumTicketPriceForPlatform(
     input.ticketPrice,

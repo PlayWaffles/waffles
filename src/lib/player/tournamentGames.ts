@@ -148,12 +148,12 @@ export async function ensureTournamentGame(
   // index (not the full ms timestamp) so the key fits the launchGroupId VarChar(36).
   const windowIndex = Math.floor(startsAt.getTime() / TOURNAMENT_ROUND_MS);
   const launchGroupId = `trn:${platform}:${network}:${windowIndex}`;
-  // Alternate the tournament theme each window: even → World Cup (FOOTBALL),
-  // odd → General (Trivia / GENERAL). Deterministic by window, so both platforms
-  // share the same cadence.
-  const theme = windowIndex % 2 === 0 ? GameTheme.FOOTBALL : GameTheme.GENERAL;
+  // Alternate the tournament each window: even → World Cup (FOOTBALL questions),
+  // odd → General (a MIX of all non-football themes; stored theme GENERAL drives
+  // the title/cover). Deterministic by window, so both platforms share cadence.
+  const isWorldCup = windowIndex % 2 === 0;
 
-  const createWith = (gameTheme: GameTheme) =>
+  const createWith = (gameTheme: GameTheme, mixed: boolean) =>
     createAutoScheduledGame({
       platform,
       network,
@@ -167,10 +167,13 @@ export async function ensureTournamentGame(
       roundBreakSec: recent?.roundBreakSec ?? 0,
       maxPlayers: TOURNAMENT_MAX_PLAYERS,
       theme: gameTheme,
+      mixed,
     });
 
   try {
-    const created = await createWith(theme);
+    const created = isWorldCup
+      ? await createWith(GameTheme.FOOTBALL, false)
+      : await createWith(GameTheme.GENERAL, true);
     return { created: true, gameId: created.gameId };
   } catch (error) {
     // A concurrent request created this window's game first (unique launchGroupId +
@@ -182,16 +185,16 @@ export async function ensureTournamentGame(
       });
       if (existing) return { created: false, gameId: existing.id };
     }
-    // The General round couldn't be built (most likely too few GENERAL question
-    // templates) — never leave a window without a tournament: fall back to the
-    // World Cup theme. (Template checks throw before any DB write, so there's no
-    // partial game to collide with.)
-    if (theme !== GameTheme.FOOTBALL) {
+    // The General (mixed) round couldn't be built (most likely too few non-football
+    // question templates) — never leave a window without a tournament: fall back
+    // to the World Cup round. (Template checks throw before any DB write, so
+    // there's no partial game to collide with.)
+    if (!isWorldCup) {
       console.warn(
-        `[tournament] ${theme} round create failed — falling back to World Cup:`,
+        "[tournament] General (mixed) round create failed — falling back to World Cup:",
         error instanceof Error ? error.message : error,
       );
-      const created = await createWith(GameTheme.FOOTBALL);
+      const created = await createWith(GameTheme.FOOTBALL, false);
       return { created: true, gameId: created.gameId };
     }
     throw error;

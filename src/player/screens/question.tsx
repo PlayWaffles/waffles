@@ -380,7 +380,7 @@ export const QuestionScreen = () => {
             else state = "dim";
           }
           const orderPos = isOrder && picks.includes(i) ? picks.indexOf(i) + 1 : null;
-          const stateBg = { idle: "var(--cream-pure)", selected: "var(--maple-500)", correct: "var(--leaf)", wrong: "var(--live-red)", dim: "rgba(253,251,246,.4)" }[state];
+          const stateBg = { idle: "var(--cream-pure)", selected: "var(--maple-500)", correct: "var(--correct)", wrong: "var(--live-red)", dim: "rgba(253,251,246,.4)" }[state];
           const stateColor = state === "wrong" ? "var(--ink)" : state === "correct" ? "var(--frame)" : "#191919";
           const onTap = () => {
             if (answered != null || isEliminated) return;
@@ -434,7 +434,7 @@ export const QuestionScreen = () => {
       )}
 
       {answered != null && (
-        <div role="status" aria-live="polite" style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: good ? "linear-gradient(180deg, var(--leaf), var(--leaf-dark))" : "linear-gradient(180deg, var(--live-red), #b30c0c)", padding: "14px 18px 22px", color: good ? "var(--frame)" : "var(--ink)", borderTop: "2px solid var(--frame)", animation: "waffles-v2-slideUp .25s var(--ease-out-quart)" }}>
+        <div role="status" aria-live="polite" style={{ position: "absolute", bottom: 0, left: 0, right: 0, background: good ? "linear-gradient(180deg, var(--correct), var(--correct-dark))" : "linear-gradient(180deg, var(--live-red), #b30c0c)", padding: "14px 18px 22px", color: good ? "var(--frame)" : "var(--ink)", borderTop: "2px solid var(--frame)", animation: "waffles-v2-slideUp .25s var(--ease-out-quart)" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div>
               <div style={{ fontFamily: "var(--font-display)", fontSize: 18 }}>
