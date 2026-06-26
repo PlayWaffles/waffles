@@ -11,6 +11,7 @@ import { waffleGameAbi } from "./abi";
 import { withBuilderCodeDataSuffix } from "./builderCode";
 import {
   PAYMENT_TOKEN_DECIMALS,
+  getPaymentTokenAddress,
   getWaffleContractAddress,
 } from "./config";
 import { type ChainPlatform } from "./platform";
@@ -18,6 +19,7 @@ import type { GameNetwork } from "./network";
 
 const CREATE_GAME_GAS_LIMIT = BigInt(120_000);
 const CREATE_GAME_RETRY_LIMIT = 3;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 // ============================================================================
 // Types (v5 Contract)
@@ -64,6 +66,7 @@ export async function createGameOnChain(
   const walletClient = getOperatorWalletClient(chainTarget);
   const publicClient = getPublicClient(chainTarget);
   const contractAddress = getWaffleContractAddress(chainTarget);
+  const tokenAddress = getPaymentTokenAddress(chainTarget);
   const minimumTicketPrice = parseUnits(
     minTicketPriceUSDC.toString(),
     PAYMENT_TOKEN_DECIMALS,
@@ -77,6 +80,33 @@ export async function createGameOnChain(
   let balanceAtSend: bigint | null = null;
 
   try {
+    const [tokenCode, contractToken] = await Promise.all([
+      publicClient.getBytecode({ address: tokenAddress }),
+      publicClient.readContract({
+        address: contractAddress,
+        abi: waffleGameAbi,
+        functionName: "paymentToken",
+      }) as Promise<`0x${string}`>,
+    ]);
+
+    if (!tokenCode || tokenCode === "0x") {
+      throw new Error(
+        `${platform} ${network} payment token ${tokenAddress} is not deployed.`,
+      );
+    }
+
+    if (contractToken.toLowerCase() === ZERO_ADDRESS) {
+      throw new Error(
+        `${platform} ${network} Waffle contract ${contractAddress} has no payment token configured.`,
+      );
+    }
+
+    if (contractToken.toLowerCase() !== tokenAddress.toLowerCase()) {
+      throw new Error(
+        `${platform} ${network} Waffle contract ${contractAddress} uses payment token ${contractToken}, but the app is configured for ${tokenAddress}.`,
+      );
+    }
+
     const request = withBuilderCodeDataSuffix({
       address: contractAddress,
       abi: waffleGameAbi,
@@ -180,7 +210,7 @@ export async function getOnChainGame(
     }
 
     return game;
-  } catch (error) {
+  } catch {
     console.log(`[Chain] Game ${onchainId} not found on-chain`);
     return null;
   }

@@ -45,7 +45,8 @@ const APPROVE_GAS_LIMIT = BigInt(100_000);
 const BUY_TICKET_GAS_LIMIT = BigInt(245_574);
 const NETWORK_FEE_BUFFER_USDC = "0.002";
 const CELO_MAINNET_CHAIN_ID = 42220;
-const CELO_ALFAJORES_CHAIN_ID = 11142220;
+const CELO_SEPOLIA_CHAIN_ID = 11142220;
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 /**
  * Progress steps for the on-chain entry/claim flow (mirrors v1's PurchaseStep).
@@ -90,7 +91,7 @@ function walletErrorMessage(error: unknown, platform: ChainPlatform): string {
 
 function miniPayChainName(chainId: number) {
   if (chainId === CELO_MAINNET_CHAIN_ID) return "Celo mainnet";
-  if (chainId === CELO_ALFAJORES_CHAIN_ID) return "Celo Alfajores testnet";
+  if (chainId === CELO_SEPOLIA_CHAIN_ID) return "Celo Sepolia testnet";
   return `chain ${chainId}`;
 }
 
@@ -111,6 +112,37 @@ function tokenUnitsForGas(gasLimit: bigint, gasPrice: bigint) {
 function assertSuccessfulReceipt(receipt: { status: "success" | "reverted" }, label: string) {
   if (receipt.status !== "success") {
     throw new Error(`${label} transaction failed on-chain`);
+  }
+}
+
+async function assertPaymentConfigMatchesChain(params: {
+  publicClient: NonNullable<ReturnType<typeof usePublicClient>>;
+  chainId: number;
+  contractAddress: `0x${string}`;
+  tokenAddress: `0x${string}`;
+}) {
+  const { publicClient, chainId, contractAddress, tokenAddress } = params;
+  const chainName = miniPayChainName(chainId);
+
+  const tokenCode = await publicClient.getBytecode({ address: tokenAddress });
+  if (!tokenCode || tokenCode === "0x") {
+    throw new Error(`Payment token ${tokenAddress} is not deployed on ${chainName}.`);
+  }
+
+  const contractToken = (await publicClient.readContract({
+    address: contractAddress,
+    abi: waffleGameAbi,
+    functionName: "paymentToken",
+  })) as `0x${string}`;
+
+  if (contractToken.toLowerCase() === ZERO_ADDRESS) {
+    throw new Error(`Tournament contract ${contractAddress} has no payment token configured on ${chainName}.`);
+  }
+
+  if (contractToken.toLowerCase() !== tokenAddress.toLowerCase()) {
+    throw new Error(
+      `Tournament contract ${contractAddress} uses payment token ${contractToken}, but the app is configured for ${tokenAddress} on ${chainName}.`,
+    );
   }
 }
 
@@ -155,6 +187,13 @@ export function useTournamentWallet() {
           }
           await switchChainAsync({ chainId });
         }
+
+        await assertPaymentConfigMatchesChain({
+          publicClient,
+          chainId,
+          contractAddress,
+          tokenAddress,
+        });
 
         const [allowance, balance, gasPrice] = await Promise.all([
           publicClient.readContract({
