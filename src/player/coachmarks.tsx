@@ -38,7 +38,7 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "home-join",
       title: "Join a live tournament",
-      body: "Every hour, thousands answer the same questions at once. Tap here to jump in.",
+      body: "Every 4 hours, thousands answer the same questions at once. Tap here to jump in.",
       placement: "top",
     },
     {

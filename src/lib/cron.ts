@@ -5,7 +5,7 @@ import { rankGame, publishResults, sendResultNotifications } from "@/lib/game/li
 import { processPendingPurchases } from "@/lib/game/pending-purchases";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
-import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
+import { ensureTournamentGame } from "@/lib/player/tournamentGames";
 import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
 import { env } from "@/lib/env";
 
@@ -103,17 +103,17 @@ async function ticketOpenNotificationsJob() {
 }
 
 /**
- * Ensure each platform has a live hourly v2 tournament game (on-chain, with
- * questions). Idempotent — a no-op when the current hour already has one.
+ * Ensure each platform has a live v2 tournament game (on-chain, with
+ * questions). Idempotent — a no-op when the current window already has one.
  * Mirrors POST /api/cron/ensure-tournament-rounds.
  */
 async function ensureTournamentRoundsJob() {
   const platforms = [UserPlatform.FARCASTER, UserPlatform.MINIPAY] as const;
   for (const platform of platforms) {
     try {
-      const { created, gameId } = await ensureHourlyTournamentGame(platform);
+      const { created, gameId } = await ensureTournamentGame(platform);
       if (created) {
-        console.log(`[Cron] Created hourly tournament game ${gameId} (${platform})`);
+        console.log(`[Cron] Created tournament game ${gameId} (${platform})`);
       }
     } catch (e) {
       console.error(`[Cron] ensure-tournament-rounds failed (${platform}):`, e);
@@ -167,7 +167,7 @@ export function startCronJobs() {
 
   // Every minute: ensure each platform has a live v2 tournament game. The
   // operation is idempotent, so frequent checks self-heal if the process misses
-  // the exact top-of-hour tick during a restart, deploy, or blocked event loop.
+  // the exact window boundary during a restart, deploy, or blocked event loop.
   cron.schedule("* * * * *", ensureTournamentRoundsJob);
   console.log("[Cron] Scheduled: ensure-tournament-rounds (every min)");
   ensureTournamentRoundsJob();

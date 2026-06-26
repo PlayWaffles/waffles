@@ -185,7 +185,7 @@ export type TournamentRound = {
   todayPrizePoolUsdc: number;
   recentEntryCount: number;
   participantAvatars: TournamentParticipantAvatar[];
-  /** True for the migrated v1 24h game; false once hourly v2 rounds take over. */
+  /** True for the migrated v1 24h game; false once v2 tournament rounds take over. */
   legacyV1: boolean;
 };
 
@@ -211,14 +211,14 @@ export async function getTournament(): Promise<
   const user = await getCurrentUser();
   if (!user) return null;
   try {
-    await tournamentSvc.ensureHourlyTournamentGame(user.platform);
+    await tournamentSvc.ensureTournamentGame(user.platform);
   } catch (error) {
-    // Creating the hourly game can fail for operational reasons (e.g. the operator
+    // Creating the tournament game can fail for operational reasons (e.g. the operator
     // wallet is out of gas to send the on-chain create). Don't 500 the player API —
-    // fall back to any existing game for the hour; if there is none, the caller
+    // fall back to any existing game for the window; if there is none, the caller
     // returns null and the UI shows "live game unavailable".
     console.error(
-      "[getTournament] ensureHourlyTournamentGame failed:",
+      "[getTournament] ensureTournamentGame failed:",
       error instanceof Error ? error.message : error,
     );
   }
@@ -261,8 +261,8 @@ export async function getTournament(): Promise<
       todayPrizePoolUsdc: game.todayPrizePool,
       recentEntryCount: game.recentEntryCount,
       participantAvatars: game.participantAvatars,
-      // v2 tournaments run a 1-hour window; the migrated v1 game runs ~24h.
-      legacyV1: game.endsAt.getTime() - game.startsAt.getTime() > 2 * 60 * 60 * 1000,
+      // v2 tournaments run a 4-hour window; the migrated v1 game runs ~24h.
+      legacyV1: game.endsAt.getTime() - game.startsAt.getTime() > 2 * tournamentSvc.TOURNAMENT_ROUND_MS,
     },
   };
 }

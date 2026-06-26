@@ -2,7 +2,7 @@ import { UserPlatform } from "@prisma";
 import { prisma } from "@/lib/db";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 
-const ONE_HOUR_MS = 60 * 60 * 1000;
+const FOUR_HOURS_MS = 4 * 60 * 60 * 1000;
 // Default spots (entry cap) for an auto-scheduled game. Set here rather than
 // carried forward so the cap is a deliberate default, not whatever the last
 // game happened to use.
@@ -10,18 +10,18 @@ const ONE_HOUR_MS = 60 * 60 * 1000;
 // (see tournamentGames.ts).
 const DEFAULT_MAX_PLAYERS = 20;
 
-// Continuous hourly cadence: a new 1-hour game starts the moment the last one
-// ends, back-to-back, 24/7 (no weekday/time gating). Kept back-to-back even if
-// `now` is a touch past that end (cron ran a beat late) so there's no gap, as
-// long as the resulting hour-long game would still be ongoing. If a whole hour
-// or more was missed, re-align to the top of the current hour so a fresh game
+// Continuous four-hour cadence: a new 4-hour game starts the moment the last
+// one ends, back-to-back, 24/7 (no weekday/time gating). Kept back-to-back even
+// if `now` is a touch past that end (cron ran a beat late) so there's no gap,
+// as long as the resulting game would still be ongoing. If a whole window or
+// more was missed, re-align to the current 4-hour boundary so a fresh game
 // covers `now`.
 export function getNextAutoGameStart(lastEndsAt: Date, now = new Date()) {
-  if (lastEndsAt.getTime() + ONE_HOUR_MS > now.getTime()) {
+  if (lastEndsAt.getTime() + FOUR_HOURS_MS > now.getTime()) {
     return new Date(lastEndsAt);
   }
   const aligned = new Date(now);
-  aligned.setUTCMinutes(0, 0, 0);
+  aligned.setUTCHours(Math.floor(aligned.getUTCHours() / 4) * 4, 0, 0, 0);
   return aligned;
 }
 
@@ -33,7 +33,7 @@ interface ScheduleSeed {
 
 export function buildNextAutoGameSchedule(seed: ScheduleSeed, now = new Date()) {
   const nextStartsAt = getNextAutoGameStart(seed.endsAt, now);
-  const nextEndsAt = new Date(nextStartsAt.getTime() + ONE_HOUR_MS);
+  const nextEndsAt = new Date(nextStartsAt.getTime() + FOUR_HOURS_MS);
 
   let nextTicketsOpenAt: Date | null = null;
   if (seed.ticketsOpenAt) {

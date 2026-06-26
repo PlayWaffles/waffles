@@ -21,7 +21,7 @@ export type Theme = {
   copy: {
     appName: string;     // header wordmark
     liveBadge: string;   // the pulsing "LIVE" chip
-    liveTitle: string;   // the hourly event name
+    liveTitle: string;   // the live event name
     liveTagline: string; // event subline
   };
 };

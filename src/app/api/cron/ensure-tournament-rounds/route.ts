@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { UserPlatform } from "@prisma";
 import { assertProductionCron, env } from "@/lib/env";
-import { ensureHourlyTournamentGame } from "@/lib/player/tournamentGames";
+import { ensureTournamentGame } from "@/lib/player/tournamentGames";
 
 export const maxDuration = 60;
 
 /**
- * Ensures each platform has a live hourly tournament `Game` (on-chain, with
- * questions). Idempotent — a no-op when the current hour already has one.
- * Register on an hourly schedule alongside the game lifecycle settlement cron.
+ * Ensures each platform has a live tournament `Game` (on-chain, with
+ * questions). Idempotent — a no-op when the current tournament window already
+ * has one.
  */
 export async function POST(request: NextRequest) {
   const productionOnly = assertProductionCron();
@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
   const results = [];
   for (const platform of platforms) {
     try {
-      results.push({ platform, ...(await ensureHourlyTournamentGame(platform)) });
+      results.push({ platform, ...(await ensureTournamentGame(platform)) });
     } catch (error) {
       results.push({
         platform,

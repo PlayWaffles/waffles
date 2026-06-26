@@ -16,7 +16,7 @@ type Options = { retries?: number; delayMs?: number };
  * asynchronously by AuthBootstrap, which can lag the client mount that the page
  * gates on. A plain fire-once `useEffect(...).catch(() => {})` left screens
  * permanently empty whenever it raced that cookie (or a transient gap, e.g. the
- * moment between hourly tournament rounds). This retries a few times before
+ * moment between tournament rounds). This retries a few times before
  * giving up, so the data fills in once the session/data is actually ready —
  * without each screen re-implementing the same retry loop.
  *

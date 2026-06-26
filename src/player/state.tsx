@@ -279,10 +279,10 @@ export function classifyWalletError(message: string): string {
   return "wallet_error";
 }
 
-// ─── Hourly display windows ─────────────────────────────────────────────────
-// Client helpers for bucketed top-of-hour display copy. On-chain tournament
+// ─── Tournament display windows ─────────────────────────────────────────────
+// Client helpers for bucketed tournament-window display copy. On-chain tournament
 // settlement is driven by GameEntry/game lifecycle state, not this local clock.
-export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000;
+export const TOURNAMENT_ROUND_MS = 4 * 60 * 60 * 1000;
 export const roundIdFor = (now: number): number => Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS;
 export const roundCloseAt = (roundId: number): number => roundId + TOURNAMENT_ROUND_MS;
 

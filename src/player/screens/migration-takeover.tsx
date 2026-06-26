@@ -10,7 +10,7 @@ const WHATS_NEW: { icon: string; title: string; text: string }[] = [
   { icon: "🪜", title: "Levels", text: "Climb through levels and earn rewards as you play." },
   { icon: "📈", title: "Earn XP", text: "Every game you play earns XP and levels up your profile." },
   { icon: "🍯", title: "Syrup", text: "Your new in-game currency — spend it on power-ups, cosmetics & emotes." },
-  { icon: "⏱️", title: "Games every hour", text: "A new tournament every hour. No more waiting to play." },
+  { icon: "⏱️", title: "Games every 4 hours", text: "A new tournament every 4 hours. No more waiting to play." },
   { icon: "🎯", title: "Daily missions", text: "Knock them out for extra rewards." },
   { icon: "🔥", title: "Daily rewards & streaks", text: "Show up daily and keep your streak alive." },
 ];

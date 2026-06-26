@@ -2,7 +2,7 @@
  * Solo level-campaign question sourcing (served from the DB, no local bank) plus
  * the shared template→client mappers reused by the tournament read path.
  *
- * NB: tournament rounds are NOT issued here. Each hourly tournament `Game` has
+ * NB: tournament rounds are NOT issued here. Each tournament `Game` has
  * its own `Question` rows, assigned at game-creation time from theme-matched
  * `QuestionTemplate`s (see `getAutoQuestionTemplates` in `lib/game/auto-create`),
  * and read back via `getTournamentClientQuestions` in `lib/player/tournamentGames`.

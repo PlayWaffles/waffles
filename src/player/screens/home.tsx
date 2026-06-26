@@ -397,7 +397,7 @@ export const HomeScreen = () => {
   const [entryError, setEntryError] = useState<string | null>(null);
   // Live, DB-backed details for the hero card (entry fee, close time, title /
   // format / prize). Resilient fetch retries through the auth-cookie race and
-  // brief gap between hourly rounds; until it lands, the card shows loading /
+  // brief gap between tournament rounds; until it lands, the card shows loading /
   // unavailable states instead of themed tournament copy.
   // Live refresh — the pool, spots and player counts grow as people enter, so
   // re-pull every 20s instead of freezing on the mount-time snapshot.

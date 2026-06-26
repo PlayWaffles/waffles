@@ -13,7 +13,7 @@ import { ASSETS, PixelImg } from "../shared";
 const PERKS: { icon: string; text: string }[] = [
   { icon: "⚽", text: "Football trivia, refreshed daily" },
   { icon: "🔀", text: "New question formats — pick, order & more" },
-  { icon: "⏱️", text: "Live tournaments every hour" },
+  { icon: "⏱️", text: "Live tournaments every 4 hours" },
   { icon: "🏆", text: `Win up to ${usdtLabel(TOURNAMENT_TOP_PRIZE)} in real prizes` },
 ];
 
@@ -23,7 +23,7 @@ export const WorldCupTakeover = ({ onClose }: { onClose: () => void }) => {
   // (page.tsx → dismissWorldCupTakeover), so it won't auto-show again.
   const dismiss = onClose;
 
-  // Live countdown to the next top-of-the-hour kickoff.
+  // Live countdown to the next tournament-window kickoff.
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const t = setInterval(() => setNow(Date.now()), 1000);

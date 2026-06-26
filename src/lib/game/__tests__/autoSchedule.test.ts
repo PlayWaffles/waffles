@@ -5,7 +5,7 @@ import {
 } from "@/lib/game/auto-schedule";
 
 describe("auto game scheduling", () => {
-  it("starts the next game the moment the last one ends (back-to-back hourly)", () => {
+  it("starts the next game the moment the last one ends (back-to-back 4-hour cadence)", () => {
     const lastEndsAt = new Date("2026-04-06T15:00:00.000Z");
     const now = new Date("2026-04-06T14:30:00.000Z"); // last game still live
 
@@ -23,16 +23,16 @@ describe("auto game scheduling", () => {
     );
   });
 
-  it("re-aligns to the top of the current hour when a whole hour or more was missed", () => {
-    const lastEndsAt = new Date("2026-04-06T13:00:00.000Z");
-    const now = new Date("2026-04-06T15:20:00.000Z"); // >1h since last end
+  it("re-aligns to the current 4-hour boundary when a whole window or more was missed", () => {
+    const lastEndsAt = new Date("2026-04-06T08:00:00.000Z");
+    const now = new Date("2026-04-06T15:20:00.000Z"); // >4h since last end
 
     expect(getNextAutoGameStart(lastEndsAt, now)).toEqual(
-      new Date("2026-04-06T15:00:00.000Z"),
+      new Date("2026-04-06T12:00:00.000Z"),
     );
   });
 
-  it("uses a 1-hour duration and preserves ticket lead time when still in the future", () => {
+  it("uses a 4-hour duration and preserves ticket lead time when still in the future", () => {
     const schedule = buildNextAutoGameSchedule(
       {
         startsAt: new Date("2026-04-03T14:00:00.000Z"),
@@ -43,7 +43,7 @@ describe("auto game scheduling", () => {
     );
 
     expect(schedule.startsAt).toEqual(new Date("2026-04-03T15:00:00.000Z"));
-    expect(schedule.endsAt).toEqual(new Date("2026-04-03T16:00:00.000Z"));
+    expect(schedule.endsAt).toEqual(new Date("2026-04-03T19:00:00.000Z"));
     expect(schedule.ticketsOpenAt).toEqual(new Date("2026-04-03T14:55:00.000Z"));
   });
 
@@ -54,12 +54,12 @@ describe("auto game scheduling", () => {
         endsAt: new Date("2026-04-03T13:00:00.000Z"),
         ticketsOpenAt: new Date("2026-04-03T11:55:00.000Z"), // 5m lead
       },
-      new Date("2026-04-03T14:57:00.000Z"),
+      new Date("2026-04-03T16:57:00.000Z"),
     );
 
-    // last game ended >1h ago → re-aligned to top of current hour (15:00)
-    expect(schedule.startsAt).toEqual(new Date("2026-04-03T15:00:00.000Z"));
-    // 5m lead → 14:55, which is before now (14:57) → null
+    // last game ended >4h ago → re-aligned to current 4-hour boundary (16:00)
+    expect(schedule.startsAt).toEqual(new Date("2026-04-03T16:00:00.000Z"));
+    // 5m lead → 15:55, which is before now (16:57) → null
     expect(schedule.ticketsOpenAt).toBe(null);
   });
 });

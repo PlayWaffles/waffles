@@ -1,7 +1,7 @@
 /**
  * v2 tournament rounds, ON-CHAIN — a tournament round IS a v1 `Game`.
  *
- * Instead of the off-chain `RoundEntry` ledger, the hourly tournament reuses the
+ * Instead of the off-chain `RoundEntry` ledger, the tournament reuses the
  * existing v1 money lifecycle end-to-end:
  *   - schedule + create on-chain  → `createAutoScheduledGame` → `createGameOnChain`
  *   - entry (real USDC deposit)   → `verifyTicketPurchase` → `GameEntry`
@@ -93,13 +93,13 @@ async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Hourly scheduling — the v1 auto-scheduler is Mon/Wed/Fri day-long games, NOT
-// hourly, so tournaments get their own hourly cadence (still reusing v1's game
+// Tournament scheduling — the v1 auto-scheduler is Mon/Wed/Fri day-long games,
+// NOT tournament cadence, so tournaments get their own cadence (still reusing v1's game
 // creation: questions assigned + created on-chain).
 // ---------------------------------------------------------------------------
 
-export const TOURNAMENT_ROUND_MS = 60 * 60 * 1000; // hourly
-const TICKETS_LEAD_MS = 5 * 60 * 1000; // sales open 5m before the hour
+export const TOURNAMENT_ROUND_MS = 4 * 60 * 60 * 1000;
+const TICKETS_LEAD_MS = 5 * 60 * 1000;
 // Smaller fields → higher win rate. A top-N-of-50 schedule means most players
 // never cash; a tighter field (plus the top-half Syrup consolation at
 // settlement) means ~half the field leaves with a reward. Tunable.
@@ -115,11 +115,11 @@ export const TOURNAMENT_STANDARD_FEE_USDC = 0.1; // display-only "was" price (st
 const DEFAULT_ENTRY_FEE_USDC = TOURNAMENT_ENTRY_FEE_USDC; // game floor = the flat price
 
 /**
- * Ensure the platform's current hour has a live tournament `Game`, creating one
+ * Ensure the platform's current tournament window has a live `Game`, creating one
  * (on-chain, with questions) if not. Idempotent — a no-op when a game already
- * covers `now`. Intended to be driven by an hourly cron.
+ * covers `now`. Intended to be driven by cron.
  */
-export async function ensureHourlyTournamentGame(
+export async function ensureTournamentGame(
   platform: UserPlatform,
   network: GameNetwork = defaultNetworkForPlatform(platform),
 ): Promise<{ created: boolean; gameId: string }> {
@@ -132,7 +132,7 @@ export async function ensureHourlyTournamentGame(
   });
   if (live) return { created: false, gameId: live.id };
 
-  // Align to the current hour boundary so every entrant shares one window.
+  // Align to the current tournament boundary so every entrant shares one window.
   const startsAt = new Date(Math.floor(now / TOURNAMENT_ROUND_MS) * TOURNAMENT_ROUND_MS);
   const endsAt = new Date(startsAt.getTime() + TOURNAMENT_ROUND_MS);
 
@@ -143,9 +143,9 @@ export async function ensureHourlyTournamentGame(
     select: { roundBreakSec: true },
   });
 
-  // Deterministic per hour+platform+network — the (launchGroupId, platform) unique
-  // makes concurrent "ensure" calls race-safe: only one create wins. Uses the hour
-  // INDEX (not the full ms timestamp) so the key fits the launchGroupId VarChar(36).
+  // Deterministic per window+platform+network — the (launchGroupId, platform) unique
+  // makes concurrent "ensure" calls race-safe: only one create wins. Uses the window
+  // index (not the full ms timestamp) so the key fits the launchGroupId VarChar(36).
   const launchGroupId = `trn:${platform}:${network}:${Math.floor(startsAt.getTime() / TOURNAMENT_ROUND_MS)}`;
   try {
     const created = await createAutoScheduledGame({
@@ -163,7 +163,7 @@ export async function ensureHourlyTournamentGame(
     });
     return { created: true, gameId: created.gameId };
   } catch (error) {
-    // A concurrent request created this hour's game first (unique launchGroupId +
+    // A concurrent request created this window's game first (unique launchGroupId +
     // platform) — use theirs instead of surfacing a 500.
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       const existing = await prisma.game.findFirst({
@@ -380,12 +380,12 @@ export async function currentTournamentGame(
  *  welcome vs the evergreen World Cup framing). The current round isn't entered
  *  yet at upsell time, so a zero count means a genuine first-timer.
  *
- *  Scoped to tournament games only: v2 tournaments run a 1-hour window, v1
+ *  Scoped to tournament games only: v2 tournaments run a 4-hour window, v1
  *  games are day-long, and there's no discriminator column — so a migrated v1
  *  player (who has v1 entries but no tournament entry) still gets the
  *  first-timer welcome on their first v2 tournament. */
 export async function isFirstTournamentEntry(userId: string): Promise<boolean> {
-  // Comfortably above the 1h tournament window, well below a day-long v1 game.
+  // Comfortably above the tournament window, well below a day-long v1 game.
   const MAX_TOURNAMENT_MS = 2 * TOURNAMENT_ROUND_MS;
   const rows = await prisma.gameEntry.findMany({
     where: { userId },
