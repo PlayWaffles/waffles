@@ -6,6 +6,7 @@ import { runGameRoundup } from "@/lib/game/roundup";
 import { ensureTournamentGame } from "@/lib/player/tournamentGames";
 import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
 import { env } from "@/lib/env";
+import { sendDueTelegramGameStartedAnnouncements } from "@/lib/telegram/waffles-bot";
 
 let cronJobsStarted = false;
 let roundupRunning = false;
@@ -54,6 +55,17 @@ async function ticketOpenNotificationsJob() {
     await sendTicketOpenNotifications();
   } catch (e) {
     console.error("[Cron] Ticket open notifications failed:", e);
+  }
+}
+
+async function telegramGameStartedAnnouncementsJob() {
+  try {
+    const sent = await sendDueTelegramGameStartedAnnouncements();
+    if (sent > 0) {
+      console.log(`[Cron] Waffles Bot: ${sent} game start announcement(s) sent`);
+    }
+  } catch (e) {
+    console.error("[Cron] Waffles Bot game start announcements failed:", e);
   }
 }
 
@@ -122,6 +134,11 @@ export function startCronJobs() {
   // Every minute: send ticket opening countdown notifications
   cron.schedule("* * * * *", ticketOpenNotificationsJob);
   console.log("[Cron] Scheduled: ticket-open-notifications (every min)");
+
+  // Every minute: announce newly-live games to the configured Telegram group.
+  cron.schedule("* * * * *", telegramGameStartedAnnouncementsJob);
+  console.log("[Cron] Scheduled: telegram-game-started-announcements (every min)");
+  telegramGameStartedAnnouncementsJob();
 
   // Every minute: ensure each platform has a live v2 tournament game. The
   // operation is idempotent, so frequent checks self-heal if the process misses

@@ -66,6 +66,8 @@ export type GameMinAggregateOutputType = {
   rankedAt: Date | null
   onChainAt: Date | null
   onChainTxHash: string | null
+  telegramStartedAt: Date | null
+  telegramResultsAt: Date | null
   merkleRoot: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -93,6 +95,8 @@ export type GameMaxAggregateOutputType = {
   rankedAt: Date | null
   onChainAt: Date | null
   onChainTxHash: string | null
+  telegramStartedAt: Date | null
+  telegramResultsAt: Date | null
   merkleRoot: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -122,6 +126,8 @@ export type GameCountAggregateOutputType = {
   rankedAt: number
   onChainAt: number
   onChainTxHash: number
+  telegramStartedAt: number
+  telegramResultsAt: number
   merkleRoot: number
   createdAt: number
   updatedAt: number
@@ -169,6 +175,8 @@ export type GameMinAggregateInputType = {
   rankedAt?: true
   onChainAt?: true
   onChainTxHash?: true
+  telegramStartedAt?: true
+  telegramResultsAt?: true
   merkleRoot?: true
   createdAt?: true
   updatedAt?: true
@@ -196,6 +204,8 @@ export type GameMaxAggregateInputType = {
   rankedAt?: true
   onChainAt?: true
   onChainTxHash?: true
+  telegramStartedAt?: true
+  telegramResultsAt?: true
   merkleRoot?: true
   createdAt?: true
   updatedAt?: true
@@ -225,6 +235,8 @@ export type GameCountAggregateInputType = {
   rankedAt?: true
   onChainAt?: true
   onChainTxHash?: true
+  telegramStartedAt?: true
+  telegramResultsAt?: true
   merkleRoot?: true
   createdAt?: true
   updatedAt?: true
@@ -341,6 +353,8 @@ export type GameGroupByOutputType = {
   rankedAt: Date | null
   onChainAt: Date | null
   onChainTxHash: string | null
+  telegramStartedAt: Date | null
+  telegramResultsAt: Date | null
   merkleRoot: string | null
   createdAt: Date
   updatedAt: Date
@@ -393,6 +407,8 @@ export type GameWhereInput = {
   rankedAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainTxHash?: Prisma.StringNullableFilter<"Game"> | string | null
+  telegramStartedAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
+  telegramResultsAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   merkleRoot?: Prisma.StringNullableFilter<"Game"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Game"> | Date | string
@@ -425,6 +441,8 @@ export type GameOrderByWithRelationInput = {
   rankedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  telegramStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  telegramResultsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   merkleRoot?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -462,6 +480,8 @@ export type GameWhereUniqueInput = Prisma.AtLeast<{
   rankedAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   onChainTxHash?: Prisma.StringNullableFilter<"Game"> | string | null
+  telegramStartedAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
+  telegramResultsAt?: Prisma.DateTimeNullableFilter<"Game"> | Date | string | null
   merkleRoot?: Prisma.StringNullableFilter<"Game"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Game"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Game"> | Date | string
@@ -494,6 +514,8 @@ export type GameOrderByWithAggregationInput = {
   rankedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainAt?: Prisma.SortOrderInput | Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrderInput | Prisma.SortOrder
+  telegramStartedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  telegramResultsAt?: Prisma.SortOrderInput | Prisma.SortOrder
   merkleRoot?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -531,6 +553,8 @@ export type GameScalarWhereWithAggregatesInput = {
   rankedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
   onChainAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
   onChainTxHash?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
+  telegramStartedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
+  telegramResultsAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Game"> | Date | string | null
   merkleRoot?: Prisma.StringNullableWithAggregatesFilter<"Game"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Game"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Game"> | Date | string
@@ -560,6 +584,8 @@ export type GameCreateInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -592,6 +618,8 @@ export type GameUncheckedCreateInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -624,6 +652,8 @@ export type GameUpdateInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -656,6 +686,8 @@ export type GameUncheckedUpdateInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -688,6 +720,8 @@ export type GameCreateManyInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -717,6 +751,8 @@ export type GameUpdateManyMutationInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -746,6 +782,8 @@ export type GameUncheckedUpdateManyInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -801,6 +839,8 @@ export type GameCountOrderByAggregateInput = {
   rankedAt?: Prisma.SortOrder
   onChainAt?: Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrder
+  telegramStartedAt?: Prisma.SortOrder
+  telegramResultsAt?: Prisma.SortOrder
   merkleRoot?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -837,6 +877,8 @@ export type GameMaxOrderByAggregateInput = {
   rankedAt?: Prisma.SortOrder
   onChainAt?: Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrder
+  telegramStartedAt?: Prisma.SortOrder
+  telegramResultsAt?: Prisma.SortOrder
   merkleRoot?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -864,6 +906,8 @@ export type GameMinOrderByAggregateInput = {
   rankedAt?: Prisma.SortOrder
   onChainAt?: Prisma.SortOrder
   onChainTxHash?: Prisma.SortOrder
+  telegramStartedAt?: Prisma.SortOrder
+  telegramResultsAt?: Prisma.SortOrder
   merkleRoot?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -983,6 +1027,8 @@ export type GameCreateWithoutQuestionsInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1014,6 +1060,8 @@ export type GameUncheckedCreateWithoutQuestionsInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1061,6 +1109,8 @@ export type GameUpdateWithoutQuestionsInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1092,6 +1142,8 @@ export type GameUncheckedUpdateWithoutQuestionsInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1123,6 +1175,8 @@ export type GameCreateWithoutEntriesInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1154,6 +1208,8 @@ export type GameUncheckedCreateWithoutEntriesInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1201,6 +1257,8 @@ export type GameUpdateWithoutEntriesInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1232,6 +1290,8 @@ export type GameUncheckedUpdateWithoutEntriesInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1263,6 +1323,8 @@ export type GameCreateWithoutPendingPurchasesInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1294,6 +1356,8 @@ export type GameUncheckedCreateWithoutPendingPurchasesInput = {
   rankedAt?: Date | string | null
   onChainAt?: Date | string | null
   onChainTxHash?: string | null
+  telegramStartedAt?: Date | string | null
+  telegramResultsAt?: Date | string | null
   merkleRoot?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1341,6 +1405,8 @@ export type GameUpdateWithoutPendingPurchasesInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1372,6 +1438,8 @@ export type GameUncheckedUpdateWithoutPendingPurchasesInput = {
   rankedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   onChainTxHash?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  telegramStartedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  telegramResultsAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   merkleRoot?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1452,6 +1520,8 @@ export type GameSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
+  telegramStartedAt?: boolean
+  telegramResultsAt?: boolean
   merkleRoot?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1485,6 +1555,8 @@ export type GameSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
+  telegramStartedAt?: boolean
+  telegramResultsAt?: boolean
   merkleRoot?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1514,6 +1586,8 @@ export type GameSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
+  telegramStartedAt?: boolean
+  telegramResultsAt?: boolean
   merkleRoot?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1543,12 +1617,14 @@ export type GameSelectScalar = {
   rankedAt?: boolean
   onChainAt?: boolean
   onChainTxHash?: boolean
+  telegramStartedAt?: boolean
+  telegramResultsAt?: boolean
   merkleRoot?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "network" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "ticketsOpenAt" | "ticketOpenNotifsSent" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "isTestnet" | "rankedAt" | "onChainAt" | "onChainTxHash" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
+export type GameOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "gameNumber" | "onchainId" | "platform" | "network" | "title" | "description" | "theme" | "coverUrl" | "launchGroupId" | "startsAt" | "endsAt" | "ticketsOpenAt" | "ticketOpenNotifsSent" | "tierPrices" | "prizePool" | "playerCount" | "roundBreakSec" | "maxPlayers" | "isTestnet" | "rankedAt" | "onChainAt" | "onChainTxHash" | "telegramStartedAt" | "telegramResultsAt" | "merkleRoot" | "createdAt" | "updatedAt", ExtArgs["result"]["game"]>
 export type GameInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   questions?: boolean | Prisma.Game$questionsArgs<ExtArgs>
   entries?: boolean | Prisma.Game$entriesArgs<ExtArgs>
@@ -1589,6 +1665,8 @@ export type $GamePayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     rankedAt: Date | null
     onChainAt: Date | null
     onChainTxHash: string | null
+    telegramStartedAt: Date | null
+    telegramResultsAt: Date | null
     merkleRoot: string | null
     createdAt: Date
     updatedAt: Date
@@ -2041,6 +2119,8 @@ export interface GameFieldRefs {
   readonly rankedAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly onChainAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly onChainTxHash: Prisma.FieldRef<"Game", 'String'>
+  readonly telegramStartedAt: Prisma.FieldRef<"Game", 'DateTime'>
+  readonly telegramResultsAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly merkleRoot: Prisma.FieldRef<"Game", 'String'>
   readonly createdAt: Prisma.FieldRef<"Game", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Game", 'DateTime'>

@@ -2,6 +2,10 @@ import { prisma } from "@/lib/db";
 import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
 import { publishResults, rankGame, sendResultNotifications } from "@/lib/game/lifecycle";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
+import {
+  sendDueTelegramGameResultAnnouncements,
+  sendTelegramGameResults,
+} from "@/lib/telegram/waffles-bot";
 
 export type GameRoundupResult = {
   gamesChecked: number;
@@ -49,6 +53,12 @@ export async function runGameRoundup(source: string): Promise<GameRoundupResult>
           );
         }
 
+        try {
+          await sendTelegramGameResults(game.id);
+        } catch (error) {
+          console.error(`[Cron] Waffles Bot results failed for ${game.id}:`, error);
+        }
+
         console.log(`[Cron] Game ${game.id} rounded up`);
       } catch (error) {
         failed++;
@@ -93,6 +103,17 @@ export async function runGameRoundup(source: string): Promise<GameRoundupResult>
         });
         console.error(`[Cron] Re-publish failed for ${game.id}:`, error);
       }
+    }
+
+    let telegramResultsSent = 0;
+    try {
+      telegramResultsSent = await sendDueTelegramGameResultAnnouncements();
+      if (telegramResultsSent > 0) {
+        console.log(`[Cron] Waffles Bot: ${telegramResultsSent} result announcement(s) sent`);
+      }
+    } catch (error) {
+      failed++;
+      console.error("[Cron] Waffles Bot result announcements failed:", error);
     }
 
     const scheduled = await ensureNextAutoScheduledGames();

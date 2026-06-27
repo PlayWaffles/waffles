@@ -3343,6 +3343,8 @@ export const GameScalarFieldEnum = {
   rankedAt: 'rankedAt',
   onChainAt: 'onChainAt',
   onChainTxHash: 'onChainTxHash',
+  telegramStartedAt: 'telegramStartedAt',
+  telegramResultsAt: 'telegramResultsAt',
   merkleRoot: 'merkleRoot',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
