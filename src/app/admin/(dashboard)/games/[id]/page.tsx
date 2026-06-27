@@ -13,7 +13,9 @@ import {
 import { getGamePhase } from "@/lib/types";
 import { SponsorGameCard } from "@/components/admin/SponsorGameCard";
 import { RoundupButton } from "@/components/admin/RoundupButton";
+import { WinnersExportButton, type AdminWinner } from "@/components/admin/WinnersExportButton";
 import { formatAdminGameLabel } from "@/lib/game/labels";
+import { themeLabel } from "@/lib/player/roundQuestions";
 
 // ============================================
 // HELPER COMPONENTS
@@ -158,7 +160,7 @@ export default async function GameDetailPage({
                         prize: true,
                         claimedAt: true,
                         user: {
-                            select: { username: true, pfpUrl: true, wallet: true },
+                            select: { username: true, pfpUrl: true, wallet: true, avatarId: true },
                         },
                     },
                 },
@@ -172,6 +174,24 @@ export default async function GameDetailPage({
     }
 
     const phase = getGamePhase(game);
+
+    // Winners for the per-game export graphic — ranked entries that placed (rank
+    // set), best first. The card's podium uses the top 3; winnerCount is everyone
+    // who won a prize. Prizes are in the platform's payment token.
+    const winnersForExport: AdminWinner[] = game.entries
+        .filter((e) => e.rank != null)
+        .sort((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+        .slice(0, 8)
+        .map((e) => ({
+            rank: e.rank!,
+            name: e.user.username || (e.user.wallet ? `${e.user.wallet.slice(0, 6)}…` : "Player"),
+            score: e.score,
+            prize: e.prize ?? 0,
+            avatarId: e.user.avatarId ?? null,
+            seed: e.user.username || e.user.wallet || String(e.rank),
+        }));
+    const exportWinnerCount = game.entries.filter((e) => (e.prize ?? 0) > 0).length;
+    const exportCurrency = game.platform === "MINIPAY" ? "USDT" : "USDC";
 
     // Format dates
     const formatDate = (date: Date) => {
@@ -203,6 +223,17 @@ export default async function GameDetailPage({
                     </span>
                 </div>
                 <div className="flex items-center gap-2">
+                    {phase === "ENDED" && game.rankedAt && winnersForExport.length > 0 && (
+                        <WinnersExportButton
+                            title={formatAdminGameLabel(game.title, game.platform)}
+                            category={themeLabel(game.theme)}
+                            pool={game.prizePool}
+                            currency={exportCurrency}
+                            winners={winnersForExport}
+                            winnerCount={exportWinnerCount}
+                            fileSlug={`${game.id}`}
+                        />
+                    )}
                     {phase === "ENDED" && (
                         <RoundupButton
                             gameId={game.id}
