@@ -12,11 +12,13 @@ import { forwardRef } from "react";
 export const WINNERS_CARD_W = 1200;
 export const WINNERS_CARD_H = 675;
 
-// Use the app's next/font CSS vars when present (player/sample), else the font by
-// name (admin loads them via a <link>), else a rounded system fallback.
-const HERO = 'var(--font-baloo), "Baloo 2", ui-rounded, "Segoe UI", system-ui, sans-serif';
-const DISPLAY = 'var(--font-fredoka), "Fredoka", ui-rounded, "Segoe UI", system-ui, sans-serif';
-const BODY = 'var(--font-nunito), "Nunito", system-ui, -apple-system, sans-serif';
+// The app's typefaces, referenced by their real family names (NOT a next/font
+// CSS var — that lives on an ancestor and won't resolve inside an html-to-image
+// capture). The export loads + embeds these same fonts (see exportWinners), and
+// the previews inject them too, so the card looks identical on screen and in PNG.
+const HERO = '"Baloo 2", ui-rounded, "Segoe UI", system-ui, sans-serif';
+const DISPLAY = '"Fredoka", ui-rounded, "Segoe UI", system-ui, sans-serif';
+const BODY = '"Nunito", system-ui, -apple-system, sans-serif';
 
 const GOLD = "#FFD24D";
 const INK = "#FDFBF6";

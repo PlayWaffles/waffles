@@ -2,13 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { WinnersCard, WINNERS_CARD_W, WINNERS_CARD_H, type WinnerEntry } from "@/components/winners/WinnersCard";
-import { downloadWinnersPng } from "@/components/winners/exportWinners";
+import { downloadWinnersPng, ensureWinnersFonts } from "@/components/winners/exportWinners";
 import { resolveAvatar } from "@/player/shared";
-
-// Brand fonts for the capture — the admin shell doesn't load them, so inject the
-// Google Fonts stylesheet once. The card's font stack falls back gracefully until
-// they're ready, and the export awaits document.fonts.ready.
-const FONTS_HREF = "https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&family=Fredoka:wght@500;600;700&family=Nunito:wght@700;800&display=swap";
 
 export type AdminWinner = {
   rank: number;
@@ -41,12 +36,7 @@ export function WinnersExportButton({
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    if (document.querySelector(`link[data-winners-fonts]`)) return;
-    const link = document.createElement("link");
-    link.rel = "stylesheet";
-    link.href = FONTS_HREF;
-    link.setAttribute("data-winners-fonts", "");
-    document.head.appendChild(link);
+    ensureWinnersFonts();
   }, []);
 
   const entries: WinnerEntry[] = winners.map((w) => ({

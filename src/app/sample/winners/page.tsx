@@ -12,7 +12,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { WinnersCard, WINNERS_CARD_W, WINNERS_CARD_H, type WinnerEntry } from "@/components/winners/WinnersCard";
-import { downloadWinnersPng } from "@/components/winners/exportWinners";
+import { downloadWinnersPng, ensureWinnersFonts } from "@/components/winners/exportWinners";
 
 const GAME = { title: "World Cup Bowl #177", category: "Football", pool: 4.0 };
 const SHARES = [0.28, 0.19, 0.14, 0.1, 0.08, 0.07, 0.07, 0.07];
@@ -32,6 +32,7 @@ export default function WinnersSamplePage() {
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
+    ensureWinnersFonts();
     const measure = () => setScale(Math.min(1, (Math.min(window.innerWidth - 40, 1200)) / WINNERS_CARD_W));
     const id = requestAnimationFrame(measure);
     window.addEventListener("resize", measure);
