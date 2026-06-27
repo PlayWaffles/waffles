@@ -147,6 +147,10 @@ const envSchema = z.object({
   VERCEL_PROJECT_PRODUCTION_URL: z.string().optional(),
   VERCEL_URL: z.string().optional(),
   VERCEL_ENV: z.enum(["production", "preview", "development"]).optional(),
+
+  // Telegram group announcements
+  TELEGRAM_BOT_TOKEN: z.preprocess(cleanEnvString, z.string().optional()),
+  TELEGRAM_GROUP_CHAT_ID: z.preprocess(cleanEnvString, z.string().optional()),
 });
 
 const getEnv = () => {
@@ -211,6 +215,8 @@ const getEnv = () => {
     VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     VERCEL_URL: process.env.VERCEL_URL,
     VERCEL_ENV: process.env.VERCEL_ENV,
+    TELEGRAM_BOT_TOKEN: process.env.TELEGRAM_BOT_TOKEN,
+    TELEGRAM_GROUP_CHAT_ID: process.env.TELEGRAM_GROUP_CHAT_ID,
   });
 
   if (!parsed.success) {
@@ -335,6 +341,8 @@ const getEnv = () => {
       payload: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_PAYLOAD,
       signature: data.NEXT_PUBLIC_ACCOUNT_ASSOCIATION_SIGNATURE,
     },
+    telegramBotToken: data.TELEGRAM_BOT_TOKEN,
+    telegramGroupChatId: data.TELEGRAM_GROUP_CHAT_ID,
   };
 };
 

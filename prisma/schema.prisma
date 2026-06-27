@@ -304,6 +304,8 @@ model Game {
   rankedAt      DateTime? // When ranks/prizes were calculated (Step 1)
   onChainAt     DateTime? // When merkle root was published on-chain (Step 2)
   onChainTxHash String?   @db.VarChar(66) // TX that submitted merkle root
+  telegramStartedAt DateTime? // When Waffles Bot announced the round started
+  telegramResultsAt DateTime? // When Waffles Bot announced final results
 
   // -- MERKLE DATA (for on-chain claims) --
   merkleRoot String? @db.VarChar(66) // 0x-prefixed, 32 bytes
@@ -324,6 +326,8 @@ model Game {
   @@index([platform, endsAt])
   @@index([startsAt])
   @@index([endsAt])
+  @@index([telegramStartedAt])
+  @@index([telegramResultsAt])
 }
 
 enum GameTheme {
