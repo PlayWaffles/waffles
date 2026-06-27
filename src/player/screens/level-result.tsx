@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import {
   HEADLINE_TOP_PRIZE_TICKETS,
   isDailyBonusAvailable,
+  levelPassThreshold,
   levelTicketMilestoneInfo,
   LIVES_MAX,
   LIVES_REFILL_COST,
@@ -356,6 +357,16 @@ export const LevelFailScreen = () => {
   const nextMs = proto.nextLifeAt ? Math.max(0, proto.nextLifeAt - now) : 0;
   const nextLifeIn = `${String(Math.floor(nextMs / 60000)).padStart(2, "0")}:${String(Math.floor((nextMs % 60000) / 1000)).padStart(2, "0")}`;
   const canRefill = proto.tickets >= LIVES_REFILL_COST;
+  // Why the run ended decides the copy: ran out of hearts, vs survived but didn't
+  // clear the points threshold needed to advance.
+  const failedOnPoints = proto.levelFailReason === "points";
+  const passThreshold = levelPassThreshold(proto.roundQuestions.length || proto.totalQuestions || 0);
+  const failHeading = failedOnPoints ? "NOT ENOUGH POINTS" : "OUT OF HEARTS";
+  const failSubtext = failedOnPoints
+    ? `You scored ${proto.score} — clear ${passThreshold} to advance. Give it another go.`
+    : outOfLives
+      ? "You're out of lives. Refill, or wait for one to come back."
+      : "That cost you a life — your progress is saved.";
   return (
     <Phone statusDark>
       <div className="bg-deep" />
@@ -366,9 +377,9 @@ export const LevelFailScreen = () => {
         <div style={{ marginTop: 14, display: "flex", justifyContent: "center", filter: "drop-shadow(0 0 24px rgba(252,25,25,.4))" }}>
           <PixelImg src={ASSETS.heartBroken} size={92} alt="failed" />
         </div>
-        <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, marginTop: 10, color: "#FC1919" }}>OUT OF HEARTS</div>
+        <div style={{ fontFamily: "var(--font-hero)", fontWeight: 800, fontSize: 34, marginTop: 10, color: "#FC1919" }}>{failHeading}</div>
         <div style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,.55)", marginTop: 6, padding: "0 32px" }}>
-          {outOfLives ? "You're out of lives. Refill, or wait for one to come back." : "That cost you a life — your progress is saved."}
+          {failSubtext}
         </div>
       </div>
 

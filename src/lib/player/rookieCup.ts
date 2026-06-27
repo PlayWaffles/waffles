@@ -33,6 +33,38 @@ const KIND_MAP: Record<QuestionKind, ScorableKind> = {
 export type RookieGhost = { name: string; score: number };
 export type RookieStanding = { rank: number; name: string; score: number; you: boolean };
 
+// Adjective + noun pools mirroring the app's username generator (onboarding.tsx),
+// so synthetic opponents are indistinguishable from real players in the field.
+const GHOST_NAME_ADJ = ["Swift", "Golden", "Clever", "Lucky", "Mighty", "Sneaky", "Brave", "Quick", "Sharp", "Wild", "Royal", "Turbo", "Witty", "Bold", "Crispy"] as const;
+const GHOST_NAME_NOUN = ["Fox", "Waffle", "Owl", "Panda", "Whiz", "Champ", "Sage", "Ace", "Falcon", "Maple", "Brain", "Tiger", "Wizard", "Otter", "Bishop"] as const;
+const pickRandom = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+/** A plausible score for a 6-question rookie round, simulated per-question (a
+ *  realistic ~62% hit rate, each correct worth a speed-varied 100–280) so the
+ *  synthetic scores look like real play rather than a flat random number. */
+function syntheticGhostScore(): number {
+  let score = 0;
+  for (let i = 0; i < ROOKIE_QUESTION_COUNT; i++) {
+    if (Math.random() < 0.62) score += 100 + Math.floor(Math.random() * 181);
+  }
+  return score;
+}
+
+/** Synthetic opponents to TOP UP the ghost field when there aren't enough real
+ *  past players yet (e.g. a fresh platform). Unique names in the app's style; the
+ *  field is always framed as "the field", never as live opponents. */
+function syntheticGhosts(count: number, used: Set<string>): RookieGhost[] {
+  const out: RookieGhost[] = [];
+  let guard = 0;
+  while (out.length < count && guard++ < count * 60) {
+    const name = `${pickRandom(GHOST_NAME_ADJ)}${pickRandom(GHOST_NAME_NOUN)}${10 + Math.floor(Math.random() * 90)}`.slice(0, 20);
+    if (used.has(name)) continue;
+    used.add(name);
+    out.push({ name, score: syntheticGhostScore() });
+  }
+  return out;
+}
+
 export type RookieCup = {
   /** Already played → graduated; the client should route straight to the real game. */
   done: boolean;
@@ -67,6 +99,14 @@ export async function buildGhostField(platform: UserPlatform, n: number): Promis
     seen.add(r.userId);
     out.push({ name: r.user.username ?? "Player", score: r.score });
     if (out.length >= n) break;
+  }
+  // Top up with realistic synthetic opponents so the rookie always faces a full
+  // field (~n), even on a platform with few or no real past players yet — instead
+  // of "#1 of 1". Their scores simulate real 6-question rounds; `winnableField`
+  // still guarantees the rookie lands on the podium.
+  if (out.length < n) {
+    const usedNames = new Set(out.map((g) => g.name));
+    out.push(...syntheticGhosts(n - out.length, usedNames));
   }
   return out;
 }

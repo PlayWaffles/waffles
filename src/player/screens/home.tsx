@@ -426,6 +426,17 @@ export const HomeScreen = () => {
     const res = await proto.enterTournamentOnChain(entrySourceRef.current);
     setEntering(false);
     if (res.ok) {
+      // Dedicated, easy-to-dashboard success event for a ticket bought from Home.
+      trackClientEvent(AnalyticsEvent.HomeTicketPurchased, {
+        screen: "home",
+        entry_source: entrySourceRef.current,
+        entry_fee: fee?.entryFee ?? null,
+        first_entry: fee?.firstEntry ?? null,
+        prize_pool_usdc: round?.prizePoolUsdc ?? null,
+        game_id: tourney?.game.id ?? null,
+        revenue: fee?.entryFee ?? null,
+        currency: "USD",
+      });
       setGate(null);
       if (proto.pendingTournamentJoin) proto.update({ pendingTournamentJoin: false });
     } else setEntryError(res.error ?? "Entry failed");

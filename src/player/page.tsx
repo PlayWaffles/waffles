@@ -170,7 +170,10 @@ const Stage = () => {
   useEffect(() => {
     // Suppressed while the onboarding join intent is pending so it can't stack
     // on top of the buy sheet; re-runs and can open once the intent clears.
-    if (!showOnboarding && !modalActive && screen === "home" && !proto.pendingTournamentJoin && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
+    // Also held until the Rookie Cup is done (rookieDone) — a first-timer should
+    // finish their intro cup first, then get the daily-reward pop on returning
+    // home, not the instant they tap "Play Rookie Cup".
+    if (!showOnboarding && !modalActive && screen === "home" && proto.rookieDone && !proto.pendingTournamentJoin && !dailyAutoShown.current && hasUnclaimedDailyReward()) {
       dailyAutoShown.current = true;
       trackClientEvent(AnalyticsEvent.DailyRewardAutoOpened, {
         screen: "home",
@@ -178,7 +181,7 @@ const Stage = () => {
       });
       update({ dailyOpen: true });
     }
-  }, [showOnboarding, modalActive, screen, update, proto.pendingTournamentJoin]);
+  }, [showOnboarding, modalActive, screen, update, proto.pendingTournamentJoin, proto.rookieDone]);
 
   // Warm the code-split screen chunks during idle time after first paint, so
   // they're cached before the player navigates — off the initial critical path.

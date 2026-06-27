@@ -185,6 +185,10 @@ export const AnalyticsEvent = {
   TicketPurchaseSyncSucceeded: "ticket_purchase_sync_succeeded",
   TicketPurchaseSyncFailed: "ticket_purchase_sync_failed",
   TicketPurchaseFailed: "ticket_purchase_failed",
+  // Dedicated single success event for a ticket bought from the Home buy sheet —
+  // a clean dashboard signal on top of the full funnel above. Carries the
+  // `entry_source` (home tap vs onboarding funnel) so it can still be split.
+  HomeTicketPurchased: "home_ticket_purchased",
   PostFirstLevelUpsellShown: "post_first_level_upsell_shown",
   PostFirstLevelUpsellAccepted: "post_first_level_upsell_accepted",
   PostFirstLevelUpsellDismissed: "post_first_level_upsell_dismissed",

@@ -222,6 +222,16 @@ function ticketMilestoneInterval(level: number): number {
 export function isLevelTicketMilestone(level: number): boolean {
   return level > 0 && level % ticketMilestoneInterval(level) === 0;
 }
+
+// Minimum points a run must score to ADVANCE (clear) a level. Surviving on
+// hearts alone isn't enough — the run also has to score at least this, scaled to
+// the level's length (~one solid correct answer's worth per couple of questions),
+// so a barely-scraped run doesn't progress. Level 1 (the guaranteed-win
+// onboarding level) is exempt at the call site. Tunable.
+export const LEVEL_PASS_POINTS_PER_QUESTION = 60;
+export function levelPassThreshold(totalQuestions: number): number {
+  return Math.max(0, Math.round(totalQuestions * LEVEL_PASS_POINTS_PER_QUESTION));
+}
 // Progress toward the next milestone — drives the level-win card. `prev`/`next`
 // are the surrounding milestone levels so the bar fills smoothly across bands.
 export function levelTicketMilestoneInfo(level: number): { earned: boolean; nextLevel: number; toGo: number; pct: number } {
@@ -526,6 +536,9 @@ type State = {
   // The level that was just unlocked by completing the previous one — drives the
   // one-shot unlock animation on the level path. Cleared after it plays.
   levelJustUnlocked: number | null;
+  // Why the last level run failed — drives the fail screen's copy: "hearts" (ran
+  // out of hearts) vs "points" (survived but scored under the pass threshold).
+  levelFailReason: "hearts" | "points";
   mode: GameMode;
   hearts: number;
   qIdx: number;
@@ -625,6 +638,7 @@ const initialState = (tweaks: Tweaks): State => ({
   username: "",
   avatarId: null,
   levelJustUnlocked: null,
+  levelFailReason: "hearts",
   mode: "tournament",
   hearts: 3,
   qIdx: 0,
@@ -1113,12 +1127,37 @@ export function ProtoProvider({
             score: state.score,
             question_count: totalQs,
             lives_remaining: state.lives,
+            fail_reason: "hearts",
           });
-          update({ hearts: 0 });
+          update({ hearts: 0, levelFailReason: "hearts" });
           goto("levelFail");
           return;
         }
         if (state.qIdx + 1 >= totalQs) {
+          // Clearing a level needs more than surviving on hearts — the run must
+          // also beat the points threshold. Level 1 (the guaranteed-win onboarding
+          // level) is exempt so a brand-new player can never fail their first run.
+          // (Checked before the `track` shadowing below so the analytics wrapper
+          // is still in scope.)
+          const passThreshold = levelPassThreshold(totalQs);
+          if (!unfailable && state.score < passThreshold) {
+            // `trackClientEvent` (not the `track` wrapper) since `track` is
+            // shadowed by the `const track` below for this whole block scope.
+            trackClientEvent(AnalyticsEvent.LevelFailed, {
+              screen: state.screen,
+              mode: "level",
+              level_track: state.levelTrack,
+              level_number: state.levelByTrack[state.levelTrack],
+              score: state.score,
+              question_count: totalQs,
+              lives_remaining: state.lives,
+              fail_reason: "points",
+              min_points: passThreshold,
+            });
+            update({ hearts: newHearts, levelFailReason: "points" });
+            goto("levelFail");
+            return;
+          }
           const track = state.levelTrack;
           const newLevel = state.levelByTrack[track] + 1;
           const xpGain = scoreToXp(state.score);

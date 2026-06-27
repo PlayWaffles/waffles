@@ -12,6 +12,25 @@ import {
 } from "@/player/api";
 import { MigrationBody } from "./bodies/migration";
 import { WorldCupBody } from "./bodies/world-cup";
+import { UpdateBody } from "./bodies/update";
+
+// One-time "big update" changelog — gated client-side (per device) since it's a
+// static announcement with no per-user server state.
+const UPDATE_SEEN_KEY = "waffles.v2.announce.big-update-2026-06";
+const getUpdateNotice = async (): Promise<{ show: boolean }> => {
+  try {
+    return { show: localStorage.getItem(UPDATE_SEEN_KEY) !== "1" };
+  } catch {
+    return { show: false };
+  }
+};
+const dismissUpdate = (): void => {
+  try {
+    localStorage.setItem(UPDATE_SEEN_KEY, "1");
+  } catch {
+    /* storage disabled — it'll just show again next session */
+  }
+};
 
 // ===== Modal announcement registry ===========================================
 // One entry per full-screen / small-modal announcement. To add a new one, append
@@ -38,6 +57,16 @@ export type ModalAnnouncement = {
 };
 
 export const MODAL_ANNOUNCEMENTS: ModalAnnouncement[] = [
+  {
+    // The big-rebuild changelog — highest precedence so everyone sees it first.
+    // Suppressed during the onboarding→join funnel so it never covers the buy
+    // sheet; brand-new users see it on their first Home visit.
+    slug: "big-update-2026-06",
+    render: (close) => <UpdateBody onClose={close} />,
+    getNotice: getUpdateNotice,
+    dismiss: dismissUpdate,
+    suppressWhilePendingJoin: true,
+  },
   {
     // One-time "welcome to v2" for migrated users. Highest precedence so it never
     // stacks under the season takeover.
