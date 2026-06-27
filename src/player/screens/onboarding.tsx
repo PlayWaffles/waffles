@@ -704,7 +704,7 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
               Pick a username and we&apos;ll connect your wallet, so your winnings
               stay yours.{" "}
               <strong style={{ color: "var(--maple-500)" }}>
-                Your first entry is half price.
+                Your first ticket is 50% off.
               </strong>
             </div>
             <div style={{ position: "relative", width: "100%", maxWidth: 320 }}>
@@ -1130,7 +1130,7 @@ export const OnboardingScreen = ({ onPlay }: { onPlay: () => void }) => {
                 ENTER A LIVE ROUND
               </span>
               <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,.55)" }}>
-                Real USDT pot · first entry half price
+                Real USDT pot · first ticket 50% off
               </span>
             </button>
           </div>

@@ -207,12 +207,13 @@ const Stage = () => {
 
   // Contextual coach marks for the current screen — fire once per screen, but
   // never while the first-launch intro is up (its DOM has none of the targets).
-  // Suppress the small coach tips while a full-screen overlay is up (onboarding,
-  // a modal announcement, daily reward) so they don't spotlight elements hidden
-  // behind it. They run after the overlay is dismissed — progressive disclosure:
-  // big moment first, then the contextual tips.
+  // Suppress the small coach tips while a full-screen overlay OR the auto-opened
+  // tournament buy sheet is up (onboarding, a modal announcement, daily reward,
+  // pendingTournamentJoin) so they don't stack on / spotlight elements hidden
+  // behind it. They run once the overlay clears — progressive disclosure: big
+  // moment first, then the contextual tips.
   useCoachTour(proto.screen, TOURS[proto.screen] ?? [], {
-    enabled: !showOnboarding && !modalActive && !proto.dailyOpen && !leagueResult,
+    enabled: !showOnboarding && !modalActive && !proto.dailyOpen && !leagueResult && !proto.pendingTournamentJoin,
   });
 
   return (

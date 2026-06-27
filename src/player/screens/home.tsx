@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
-import { isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
+import { HEADLINE_TOP_PRIZE_TICKETS, isDailyBonusAvailable, TOURNAMENT_PRIZES, TOURNAMENT_TICKET_COST, USDT_PER_TICKET, usdtLabel, useProto } from "../state";
 import { txStepLabel } from "../useTournamentWallet";
 import type { RecentEntrant, TournamentRound } from "@/player/api";
 import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
@@ -139,7 +139,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>{fee.firstEntry ? "First tournament" : "World Cup special"}</div>
-            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{fee.firstEntry ? "Your first tournament, half price" : "50% off entry, all season"}</div>
+            <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{fee.firstEntry ? "Your first ticket, 50% off" : "50% off tickets, all season"}</div>
           </div>
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>
@@ -526,11 +526,11 @@ export const HomeScreen = () => {
   const realEntrants = board && board.fieldSize > 0 ? board.fieldSize : (round?.playerCount ?? 0);
   const fieldSize = realEntrants;
 
-  // Headline top prize = the #1 finisher's cut of the *live* pool, straight from
-  // the settlement bracket (topPrizeUsdc = pool × topWinnerShare), valued in
-  // tickets. No hardcoded floor — it's the real algo, so it grows as the pool
-  // fills. Floored at 1 ticket only so a near-empty round never renders "🎫 0".
-  const prizeTickets = round ? Math.max(1, Math.round(round.topPrizeUsdc / USDT_PER_TICKET)) : 0;
+  // "Win up to" headline = the #1 finisher's cut of a guaranteed $10 pool at the
+  // projected full field ($4.00), shared with the post-level upsell. Pool-
+  // INDEPENDENT so a sparse hourly round doesn't undersell the prize; on-chain
+  // settlement always pays the real live pool.
+  const prizeTickets = HEADLINE_TOP_PRIZE_TICKETS;
   // Winner count from the same bracket → "Winner takes the pool" vs "Top N split
   // the pool" (replaces the static, almost-always-wrong "Top 100").
   const winnerCount = round?.winnerCount ?? 1;

@@ -2,11 +2,11 @@
 
 import { useEffect, useState } from "react";
 import {
+  HEADLINE_TOP_PRIZE_TICKETS,
   isDailyBonusAvailable,
   levelTicketMilestoneInfo,
   LIVES_MAX,
   LIVES_REFILL_COST,
-  USDT_PER_TICKET,
   usdtLabel,
   syrupLabel,
   useProto,
@@ -62,7 +62,10 @@ const TournamentUpsellSheet = ({
   const usd = (n: number) => `$${n.toFixed(2)}`;
 
   const playingNow = round?.playerCount ?? null;
-  const prizeTickets = round ? Math.max(1, Math.round(round.topPrizeUsdc / USDT_PER_TICKET)) : null;
+  // "Win up to" headline: the #1 finisher's cut of a guaranteed $10 pool at the
+  // projected full field ($4.00) — pool-independent, so a sparse live round
+  // doesn't undersell the prize. Settlement still pays the real on-chain pool.
+  const prizeTickets = HEADLINE_TOP_PRIZE_TICKETS;
 
   // Keep the sheet open through the on-chain flow so the player sees live
   // progress (approve → pay → verify) on the button instead of the sheet
@@ -132,7 +135,7 @@ const TournamentUpsellSheet = ({
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>{fee.firstEntry ? "First tournament" : "World Cup special"}</div>
-              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{fee.firstEntry ? "Your first tournament, half price" : "50% off entry, all season"}</div>
+              <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>{fee.firstEntry ? "Your first ticket, 50% off" : "50% off tickets, all season"}</div>
             </div>
             <div style={{ textAlign: "right", flexShrink: 0 }}>
               <div style={{ fontSize: 11, fontWeight: 700, color: "var(--ink-faint)", textDecoration: "line-through" }}>{usd(fee.standardFee)}</div>

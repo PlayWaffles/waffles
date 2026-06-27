@@ -157,7 +157,7 @@ export const ShopScreen = () => {
   );
   const { powerUps, cosmetics, bundles, featured } = built;
 
-  // First-timer half-price ticket offer (client-read, hydration-safe). Hidden
+  // First-timer 50%-off ticket offer (client-read, hydration-safe). Hidden
   // locally the moment it's bought, since localStorage changes don't re-notify.
   const firstTicketOffer = useSyncExternalStore(() => () => {}, isFirstTicketOfferAvailable, () => false);
   const [offerHidden, setOfferHidden] = useState(false);
@@ -557,7 +557,7 @@ export const ShopScreen = () => {
             <button
               type="button"
               onClick={buyFirstTicket}
-              aria-label={`Buy your first ticket at half price, ${usdtLabel(TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT))}`}
+              aria-label={`Buy your first ticket at 50% off, ${usdtLabel(TOURNAMENT_TICKET_COST * (1 - FIRST_TICKET_DISCOUNT))}`}
               style={{ width: "100%", textAlign: "left", display: "flex", alignItems: "center", gap: 12, background: "rgba(255,210,77,0.10)", border: "1.5px solid var(--maple-500)", borderRadius: 14, padding: "12px 14px", marginBottom: 10, cursor: "pointer" }}
             >
               <div style={{ position: "relative", flexShrink: 0 }}>
@@ -566,7 +566,7 @@ export const ShopScreen = () => {
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 10, fontWeight: 800, color: "var(--maple-500)", letterSpacing: 1, textTransform: "uppercase" }}>First-timer offer</div>
-                <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first ticket, half price</div>
+                <div style={{ fontFamily: "var(--font-display)", fontSize: 14, color: "var(--ink)", marginTop: 2 }}>Your first ticket, 50% off</div>
                 <div style={{ fontSize: 10, fontWeight: 700, color: "var(--ink-faint)", marginTop: 2 }}>1 ticket = 1 live entry</div>
               </div>
               <div style={{ textAlign: "right", flexShrink: 0 }}>

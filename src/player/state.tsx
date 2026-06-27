@@ -13,6 +13,7 @@ import PartySocket from "partysocket";
 import { type VMedia } from "./world-cup/data";
 import { THEMES, resolveThemeId } from "./theme";
 import { scoreToXp } from "@/lib/player/xp";
+import { topWinnerShare } from "@/lib/game/prizeDistribution";
 import {
   advanceLevel,
   // Aliased: these collide with same-named local proto methods below whose
@@ -164,6 +165,16 @@ export function usdtLabel(tickets: number): string {
   return `${ticketsToUsdt(tickets).toFixed(2)} USDT`;
 }
 
+// Advertised "win up to" headline figure — display/marketing ONLY (on-chain
+// settlement always pays the real live pool). It's the #1 finisher's cut of a
+// guaranteed $10 prize pool at the projected full field (101+ bracket → 40%),
+// i.e. 40 tickets / $4.00. Pool-INDEPENDENT on purpose, so a near-empty live
+// round still advertises the real ceiling instead of a sparse hourly pool.
+export const ADVERTISED_PRIZE_POOL_USDC = 10;
+export const HEADLINE_TOP_PRIZE_TICKETS = Math.round(
+  (ADVERTISED_PRIZE_POOL_USDC / USDT_PER_TICKET) * topWinnerShare(PROJECTED_TOURNAMENT_FIELD_SIZE),
+);
+
 // "Syrup" is the off-chain soft currency (earned by playing; spent on lives,
 // power-ups for solo levels, and cosmetics). It is NOT money and has no cash
 // value — show the plain count, paired with <SyrupIcon>. (Internally still
@@ -173,7 +184,7 @@ export function syrupLabel(amount: number): string {
   return `${amount} ${SYRUP_NAME}`;
 }
 
-// First-timer ticket offer: a player's very first ticket is half price
+// First-timer ticket offer: a player's very first ticket is 50% off
 // (0.10 → 0.05 USDT). One-time, tracked in localStorage. Used by the
 // post-first-level tournament upsell to lower the barrier to the first entry.
 export const FIRST_TICKET_DISCOUNT = 0.5;
