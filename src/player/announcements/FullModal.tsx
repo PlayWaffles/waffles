@@ -39,6 +39,13 @@ export const FullModal = ({
     style={{
       position: "absolute",
       inset: 0,
+      // Cap to the SMALL viewport (matching the Phone shell) so the sticky footer
+      // CTA stays above the browser/Android system chrome. The frame is
+      // `min-height: 100dvh`, so a plain `inset: 0` lets the takeover stretch to
+      // 100dvh and the footer ends up behind the system nav bar (the "LET'S GO"
+      // button got cut off on Android). svh is top-anchored here, so the button
+      // lands just above the nav bar.
+      maxHeight: "100svh",
       zIndex,
       display: "flex",
       flexDirection: "column",
