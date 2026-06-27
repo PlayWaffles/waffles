@@ -879,8 +879,15 @@ export async function allTimeLeaderboard(
     by: ["userId"],
     where: { paidAt: { not: null }, game: { platform, network, onchainId: { not: null } } },
     _sum: { score: true, prize: true },
-    orderBy: [{ _sum: { prize: "desc" } }, { _sum: { score: "desc" } }],
   });
+  // Rank by total winnings (USDT) desc, then summed score desc. Losers settle with
+  // prize=null (see game/lifecycle), so a player who never won has a NULL prize sum.
+  // We sort in JS coalescing null→0 — relying on the DB's `_sum.prize desc` would
+  // place those NULL sums FIRST (Postgres NULLS FIRST), floating never-won players
+  // to the top of the "top earners" board.
+  grouped.sort(
+    (a, b) => (b._sum.prize ?? 0) - (a._sum.prize ?? 0) || (b._sum.score ?? 0) - (a._sum.score ?? 0),
+  );
   const topIds = grouped.slice(0, limit).map((g) => g.userId);
   const youIdx = opts.userId ? grouped.findIndex((g) => g.userId === opts.userId) : -1;
   const idsToName = [...new Set([...topIds, ...(youIdx >= 0 ? [opts.userId!] : [])])];
