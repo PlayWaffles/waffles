@@ -52,43 +52,37 @@ const Img = (p: { src: string; alt?: string; style?: React.CSSProperties }) => <
 function StatTile({ stat }: { stat: WrappedStat }) {
   const c = COLORS[stat.color];
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", borderRadius: 16, background: `linear-gradient(135deg, ${c}1f, ${c}0a)`, border: `1px solid ${c}3d`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.05)` }}>
-      <div style={{ width: 52, height: 52, borderRadius: 13, background: `${c}1a`, border: `1px solid ${c}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+    <div style={{ height: "100%", display: "flex", alignItems: "center", gap: 18, padding: "0 26px", borderRadius: 18, background: `linear-gradient(135deg, ${c}22, ${c}0b)`, border: `1px solid ${c}3d`, boxShadow: `inset 0 1px 0 rgba(255,255,255,.05)` }}>
+      <div style={{ width: 64, height: 64, borderRadius: 16, background: `${c}1c`, border: `1px solid ${c}33`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
         {stat.asset === "players" ? (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "center" }}>
             {[ASSET.avFox, ASSET.avBear, ASSET.avFrog].map((s, i) => (
-              <Img key={i} src={s} style={{ width: 22, height: 22, boxSizing: "border-box", borderRadius: "50%", marginLeft: i ? -9 : 0, border: "2px solid #15110b", objectFit: "cover" }} />
+              <Img key={i} src={s} style={{ width: 28, height: 28, boxSizing: "border-box", borderRadius: "50%", marginLeft: i ? -11 : 0, border: "2px solid #15110b", objectFit: "cover" }} />
             ))}
           </div>
         ) : (
-          <Img src={ASSET[stat.asset]} style={{ width: 34, height: 34, objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(0,0,0,.4))" }} />
+          <Img src={ASSET[stat.asset]} style={{ width: 42, height: 42, objectFit: "contain", filter: "drop-shadow(0 2px 3px rgba(0,0,0,.4))" }} />
         )}
       </div>
       <div style={{ minWidth: 0 }}>
-        <div style={{ fontFamily: HERO, fontWeight: 800, fontSize: 30, color: c, lineHeight: 1, fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.value}</div>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 500, fontSize: 13, color: "rgba(253,251,246,.6)", textTransform: "uppercase", letterSpacing: 0.5, marginTop: 3 }}>{stat.label}</div>
+        <div style={{ fontFamily: HERO, fontWeight: 800, fontSize: 42, color: c, lineHeight: 1, fontVariantNumeric: "tabular-nums", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{stat.value}</div>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 500, fontSize: 14, color: "rgba(253,251,246,.6)", textTransform: "uppercase", letterSpacing: 0.6, marginTop: 4 }}>{stat.label}</div>
       </div>
     </div>
   );
 }
 
-// Deterministic decorative scatter (coins/footballs/confetti) — pure during render.
+// A single, intentional confetti band across the top — frames the title without
+// scattering noise over the content. Deterministic (pure during render).
 const rand = (seed: number) => {
   const x = Math.sin(seed * 99.13) * 43758.5453;
   return x - Math.floor(x);
 };
-const SCATTER = Array.from({ length: 9 }, (_, i) => ({
-  src: i % 3 === 0 ? ASSET.coin : i % 3 === 1 ? ASSET.football : ASSET.gem,
-  left: rand(i + 1) * 96,
-  top: rand(i + 5) * 92,
-  size: 26 + rand(i + 11) * 26,
-  rot: Math.round(rand(i + 17) * 60 - 30),
-}));
-const CONFETTI = Array.from({ length: 18 }, (_, i) => ({
+const CONFETTI = Array.from({ length: 14 }, (_, i) => ({
   color: ["#FFD24D", "#FF9F1C", "#FB72FF", "#00CFF2", "#36D17C"][i % 5],
   left: rand(i + 30) * 100,
-  top: rand(i + 44) * 40,
-  size: 6 + rand(i + 51) * 7,
+  top: rand(i + 44) * 14,
+  size: 6 + rand(i + 51) * 6,
   rot: Math.round(rand(i + 61) * 90 - 45),
 }));
 
@@ -101,13 +95,9 @@ export const WrappedCard = forwardRef<HTMLDivElement, WrappedData>(function Wrap
       {/* glows */}
       <div style={{ position: "absolute", top: -160, left: -60, width: 660, height: 560, background: "radial-gradient(ellipse at center, rgba(255,210,77,.26), transparent 60%)", pointerEvents: "none" }} />
       <div style={{ position: "absolute", bottom: -180, right: -80, width: 620, height: 520, background: "radial-gradient(ellipse at center, rgba(0,207,242,.14), transparent 62%)", pointerEvents: "none" }} />
-      {/* scattered art (faint) */}
-      {SCATTER.map((s, i) => (
-        <Img key={i} src={s.src} style={{ position: "absolute", left: `${s.left}%`, top: `${s.top}%`, width: s.size, height: s.size, objectFit: "contain", transform: `rotate(${s.rot}deg)`, opacity: 0.16, pointerEvents: "none" }} />
-      ))}
-      {/* confetti specks */}
+      {/* confetti band across the top */}
       {CONFETTI.map((c, i) => (
-        <div key={`c${i}`} style={{ position: "absolute", left: `${c.left}%`, top: `${c.top}%`, width: c.size, height: c.size * 0.6, background: c.color, borderRadius: 2, transform: `rotate(${c.rot}deg)`, opacity: 0.85, pointerEvents: "none" }} />
+        <div key={`c${i}`} style={{ position: "absolute", left: `${c.left}%`, top: `${c.top}%`, width: c.size, height: c.size * 0.6, background: c.color, borderRadius: 2, transform: `rotate(${c.rot}deg)`, opacity: 0.7, pointerEvents: "none" }} />
       ))}
 
       <div style={{ position: "relative", zIndex: 3, height: "100%", display: "flex", flexDirection: "column", padding: "34px 46px 28px" }}>
@@ -156,7 +146,7 @@ export const WrappedCard = forwardRef<HTMLDivElement, WrappedData>(function Wrap
             </h1>
             <div style={{ fontFamily: DISPLAY, fontWeight: 600, fontSize: 18, color: "rgba(253,251,246,.6)", marginTop: 6 }}>{monthLabel} · the month in review</div>
 
-            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: 12, marginTop: 18 }}>
+            <div style={{ flex: 1, display: "grid", gridTemplateColumns: "1fr 1fr", gridAutoRows: "1fr", gap: 14, marginTop: 18 }}>
               {stats.map((s, i) => (
                 <StatTile key={i} stat={s} />
               ))}
