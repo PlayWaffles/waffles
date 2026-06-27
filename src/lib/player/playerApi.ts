@@ -367,11 +367,14 @@ export async function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> 
   return tournamentSvc.allTimeLeaderboard(user.platform, { userId: user.id, limit: 50 });
 }
 
-/** Levels leaderboard — players ranked by total XP for the caller's platform. */
-export async function loadLevelsLeaderboard(): Promise<levelsSvc.LevelBoard | null> {
+/** Levels leaderboard — players ranked by campaign level within a practice track
+ *  (Standard or World Cup) for the caller's platform. */
+export async function loadLevelsLeaderboard(
+  track: levelsSvc.LeaderboardTrack,
+): Promise<levelsSvc.LevelBoard | null> {
   const user = await getCurrentUser();
   if (!user) return null;
-  return levelsSvc.levelsLeaderboard(user.platform, { userId: user.id, limit: 50 });
+  return levelsSvc.levelsLeaderboard(user.platform, { userId: user.id, limit: 50, track });
 }
 
 /** Ended games for the platform — V1 "Past games" tab picker. */

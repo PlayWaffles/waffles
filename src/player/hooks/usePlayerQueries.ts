@@ -1,6 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { LevelTrack } from "@/lib/player/roundQuestions";
 import {
   getTournament,
   listPreviousGames,
@@ -51,7 +52,7 @@ export const playerQueryKeys = {
   recentEntrants: (gameId: string | null) => ["player", "recent-entrants", gameId ?? "current"] as const,
   disabledTournamentBoard: () => ["player", "tournament-board", "disabled"] as const,
   allTimeLeaderboard: () => ["player", "leaderboard", "all-time"] as const,
-  levelsLeaderboard: () => ["player", "leaderboard", "levels"] as const,
+  levelsLeaderboard: (track: string) => ["player", "leaderboard", "levels", track] as const,
   previousGames: () => ["player", "previous-games"] as const,
   missions: () => ["player", "missions"] as const,
   partnerOffers: () => ["player", "partner-offers"] as const,
@@ -166,10 +167,10 @@ export function useAllTimeLeaderboardQuery() {
   });
 }
 
-export function useLevelsLeaderboardQuery() {
+export function useLevelsLeaderboardQuery(track: LevelTrack) {
   return useQuery({
-    queryKey: playerQueryKeys.levelsLeaderboard(),
-    queryFn: () => queryPlayerApi(async () => requireReady(await loadLevelsLeaderboard(), "Levels leaderboard")),
+    queryKey: playerQueryKeys.levelsLeaderboard(track),
+    queryFn: () => queryPlayerApi(async () => requireReady(await loadLevelsLeaderboard(track), "Levels leaderboard")),
     ...stableQueryOptions,
   });
 }

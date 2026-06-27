@@ -95,7 +95,7 @@ const XpBar = ({ baseLevel, rawXp, onOpen }: { baseLevel: number; rawXp: number;
 // sheet (with both the free earn-by-playing route and a buy route) when they
 // can't. Both share the shop's sheet visual language.
 
-const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets, winnersLabel }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean; skillBonus: number } | null; round: TournamentRound | null; prizeTickets: number; winnersLabel: string }) => {
+const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, round, prizeTickets }: { onClose: () => void; onConfirm: () => void; pending: boolean; stepLabel: string | null; error: string | null; fee: { entryFee: number; standardFee: number; firstEntry: boolean; skillBonus: number } | null; round: TournamentRound | null; prizeTickets: number }) => {
   const usd = (n: number) => `$${n.toFixed(2)}`;
   const canJoin = !!fee && !!round;
   // MiniPay: if the wallet can't cover the entry, swap JOIN for a one-tap
@@ -119,7 +119,7 @@ const JoinConfirmSheet = ({ onClose, onConfirm, pending, stepLabel, error, fee, 
         </div>
         {round && (
           <div style={{ marginTop: 8, display: "inline-flex", alignItems: "center", gap: 5, fontSize: 12, fontWeight: 800, color: "var(--maple-500)" }}>
-            <TicketIcon size={14} />Win up to {usdtLabel(prizeTickets)} — {winnersLabel.toLowerCase()}
+            <TicketIcon size={14} />Win up to {usdtLabel(prizeTickets)}
           </div>
         )}
       </div>
@@ -542,10 +542,6 @@ export const HomeScreen = () => {
   // INDEPENDENT so a sparse hourly round doesn't undersell the prize; on-chain
   // settlement always pays the real live pool.
   const prizeTickets = HEADLINE_TOP_PRIZE_TICKETS;
-  // Winner count from the same bracket → "Winner takes the pool" vs "Top N split
-  // the pool" (replaces the static, almost-always-wrong "Top 100").
-  const winnerCount = round?.winnerCount ?? 1;
-  const winnersLabel = winnerCount <= 1 ? "Winner takes all" : `Top ${winnerCount} split the pool`;
 
   // V4 card: the whole prize pool in tickets (not just the top cut) + its USDT
   // peg value, and the capped-field scarcity meter (playerCount / maxPlayers).
@@ -771,7 +767,6 @@ export const HomeScreen = () => {
           fee={fee}
           round={round}
           prizeTickets={prizeTickets}
-          winnersLabel={winnersLabel}
           pending={entering}
           stepLabel={proto.tournamentStep ? txStepLabel(proto.tournamentStep) : null}
           error={entryError}

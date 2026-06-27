@@ -8,7 +8,14 @@
  * scoped (XP is global per user, but boards never mix MiniPay/Farcaster fields).
  */
 import { prisma } from "@/lib/db";
-import type { UserPlatform } from "@prisma";
+import { LevelTrack, type UserPlatform } from "@prisma";
+
+const TRACK_TO_ENUM = {
+  standard: LevelTrack.STANDARD,
+  "world-cup": LevelTrack.WORLD_CUP,
+} as const;
+
+export type LeaderboardTrack = keyof typeof TRACK_TO_ENUM;
 
 // Mirrors the Home XP bar rollover (see XP_PER_LEVEL in screens/home.tsx). Kept
 // here so the server-derived level matches what the player sees client-side.
@@ -34,12 +41,19 @@ export type LevelBoard = {
 };
 
 /** Top players by total XP for a platform, plus the caller's own true rank
- *  (resolved even when they fall outside the top `limit`). */
+ *  (resolved even when they fall outside the top `limit`).
+ *
+ *  When `opts.track` is set the board instead ranks players by how far they've
+ *  climbed *that* practice campaign (LevelProgress.level), with global XP as the
+ *  tiebreaker and display metric. Only players past level 1 (cleared at least one
+ *  level) appear. */
 export async function levelsLeaderboard(
   platform: UserPlatform,
-  opts: { userId?: string; limit?: number } = {},
+  opts: { userId?: string; limit?: number; track?: LeaderboardTrack } = {},
 ): Promise<LevelBoard> {
   const limit = opts.limit ?? 50;
+
+  if (opts.track) return trackLeaderboard(platform, opts.track, { userId: opts.userId, limit });
 
   const top = await prisma.user.findMany({
     where: { platform, xp: { gt: 0 } },
@@ -77,5 +91,62 @@ export async function levelsLeaderboard(
   }
 
   const fieldSize = await prisma.user.count({ where: { platform, xp: { gt: 0 } } });
+  return { fieldSize, standings, you };
+}
+
+/** Per-track campaign board: ranked by LevelProgress.level (desc), then global XP
+ *  (desc) as the tiebreaker. Levels are coarse, so the XP tiebreak keeps ordering
+ *  stable within a level and gives each row a granular metric to display. */
+async function trackLeaderboard(
+  platform: UserPlatform,
+  track: LeaderboardTrack,
+  opts: { userId?: string; limit: number },
+): Promise<LevelBoard> {
+  const trackEnum = TRACK_TO_ENUM[track];
+  // Only surface players who've cleared at least one level (everyone is seeded at
+  // level 1), so a fresh board isn't a wall of tied level-1 rows.
+  const where = { track: trackEnum, level: { gt: 1 }, user: { platform } };
+
+  const top = await prisma.levelProgress.findMany({
+    where,
+    orderBy: [{ level: "desc" }, { user: { xp: "desc" } }],
+    take: opts.limit,
+    select: { userId: true, level: true, user: { select: { username: true, xp: true } } },
+  });
+
+  const toStanding = (
+    p: { userId: string; level: number; user: { username: string | null; xp: number } },
+    rank: number,
+  ): LevelStanding => ({
+    rank,
+    userId: p.userId,
+    name: p.user.username ?? "Player",
+    xp: p.user.xp,
+    level: p.level,
+    you: !!opts.userId && opts.userId === p.userId,
+  });
+
+  const standings = top.map((p, i) => toStanding(p, i + 1));
+
+  // Caller's own row: present in the top slice, else resolve their true rank by
+  // counting everyone strictly ahead under the same (level desc, xp desc) order.
+  let you: LevelStanding | null = standings.find((s) => s.you) ?? null;
+  if (!you && opts.userId) {
+    const me = await prisma.levelProgress.findUnique({
+      where: { userId_track: { userId: opts.userId, track: trackEnum } },
+      select: { userId: true, level: true, user: { select: { username: true, xp: true } } },
+    });
+    if (me && me.level > 1) {
+      const aheadByLevel = await prisma.levelProgress.count({
+        where: { ...where, level: { gt: me.level } },
+      });
+      const aheadAtLevel = await prisma.levelProgress.count({
+        where: { ...where, level: me.level, user: { platform, xp: { gt: me.user.xp } } },
+      });
+      you = toStanding(me, aheadByLevel + aheadAtLevel + 1);
+    }
+  }
+
+  const fieldSize = await prisma.levelProgress.count({ where });
   return { fieldSize, standings, you };
 }

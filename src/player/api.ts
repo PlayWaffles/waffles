@@ -188,8 +188,8 @@ export function loadAllTimeLeaderboard(): Promise<TournamentBoard | null> {
   return callPlayerApi("loadAllTimeLeaderboard");
 }
 
-export function loadLevelsLeaderboard(): Promise<LevelBoard | null> {
-  return callPlayerApi("loadLevelsLeaderboard");
+export function loadLevelsLeaderboard(track: LevelTrack): Promise<LevelBoard | null> {
+  return callPlayerApi("loadLevelsLeaderboard", [track]);
 }
 
 export function listPreviousGames(): Promise<tournamentSvc.PreviousGame[]> {

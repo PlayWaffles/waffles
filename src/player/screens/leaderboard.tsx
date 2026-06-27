@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { LevelTrack } from "@/lib/player/roundQuestions";
 import { useProto } from "../state";
 import { ASSETS, InfoButton, Phone, PixelImg, resolveAvatar, TabBar } from "../shared";
 import { AnalyticsEvent, trackClientEvent } from "@/lib/analytics";
@@ -27,6 +28,7 @@ type Player = {
   // Tournament rows.
   score?: number;
   winnings?: number; // USDT (payment-token units); shown when > 0
+  alwaysShowWon?: boolean; // Top-earners board: surface USDT even at $0.00
   // Levels rows.
   level?: number;
   xp?: number;
@@ -51,8 +53,14 @@ const LeaderRow = ({ p }: { p: Player }) => {
         </div>
       ) : (
         <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-          {p.winnings != null && p.winnings > 0 && (
-            <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "var(--leaf)", background: "rgba(20,185,133,.14)", border: "1px solid rgba(20,185,133,.3)", borderRadius: 99, padding: "2px 8px", fontVariantNumeric: "tabular-nums" }}>{fmtUsd(p.winnings)}</span>
+          {p.winnings != null && (p.winnings > 0 || p.alwaysShowWon) && (
+            // Green "you cashed in" badge for real winnings; a muted $0.00 chip on
+            // the top-earners board so every row carries its USDT figure beside points.
+            p.winnings > 0 ? (
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "var(--leaf)", background: "rgba(20,185,133,.14)", border: "1px solid rgba(20,185,133,.3)", borderRadius: 99, padding: "2px 8px", fontVariantNumeric: "tabular-nums" }}>{fmtUsd(p.winnings)}</span>
+            ) : (
+              <span style={{ fontFamily: "var(--font-display)", fontSize: 12, color: "var(--ink-faint)", background: "var(--surface-2)", border: "1px solid rgba(253,251,246,.08)", borderRadius: 99, padding: "2px 8px", fontVariantNumeric: "tabular-nums" }}>{fmtUsd(p.winnings)}</span>
+            )
           )}
           <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
             <PixelImg src={ASSETS.trophy} size={24} alt="" />
@@ -68,12 +76,13 @@ export const LeaderboardScreen = () => {
   const proto = useProto();
   const [mode, setMode] = useState<Mode>("tournament");
   const [tab, setTab] = useState<Tab>("current");
+  const [practiceTrack, setPracticeTrack] = useState<LevelTrack>("standard");
   const [pickedGameId, setPickedGameId] = useState<string | null>(null);
   const isLevels = mode === "levels";
 
   const { data: currentBoard } = useCurrentTournamentBoardQuery();
   const { data: allTimeBoard } = useAllTimeLeaderboardQuery();
-  const { data: levelsBoard } = useLevelsLeaderboardQuery();
+  const { data: levelsBoard } = useLevelsLeaderboardQuery(practiceTrack);
   const { data: pastGames } = usePreviousGamesQuery();
   // The picker defaults to the most recent ended game (derived, not stored, so we
   // never setState in an effect just to pick a default).
@@ -87,11 +96,11 @@ export const LeaderboardScreen = () => {
 
   const leaders: Player[] = isLevels
     ? (levelsBoard?.standings ?? []).map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, you: s.you, avatar: avatarFor(s), level: s.level, xp: s.xp }))
-    : (tBoard?.standings ?? []).map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, you: s.you, avatar: avatarFor(s), score: s.score, winnings: s.prize }));
+    : (tBoard?.standings ?? []).map((s) => ({ rank: s.rank, name: s.you ? proto.username || s.name : s.name, you: s.you, avatar: avatarFor(s), score: s.score, winnings: s.prize, alwaysShowWon: tab === "alltime" }));
 
   const you: Player | null = isLevels
     ? (levelsBoard?.you ? { rank: levelsBoard.you.rank, name: proto.username || levelsBoard.you.name, you: true, avatar: avatarFor(levelsBoard.you), level: levelsBoard.you.level, xp: levelsBoard.you.xp } : null)
-    : (tBoard?.you ? { rank: tBoard.you.rank, name: proto.username || tBoard.you.name, you: true, avatar: avatarFor(tBoard.you), score: tBoard.you.score, winnings: tBoard.you.prize } : null);
+    : (tBoard?.you ? { rank: tBoard.you.rank, name: proto.username || tBoard.you.name, you: true, avatar: avatarFor(tBoard.you), score: tBoard.you.score, winnings: tBoard.you.prize, alwaysShowWon: tab === "alltime" } : null);
 
   const fieldSize = (isLevels ? levelsBoard?.fieldSize : tBoard?.fieldSize) ?? leaders.length;
   const hasBoard = Boolean(isLevels ? levelsBoard : tBoard);
@@ -99,16 +108,17 @@ export const LeaderboardScreen = () => {
   useEffect(() => {
     trackClientEvent(AnalyticsEvent.LeaderboardViewed, {
       screen: "leaderboard",
-      leaderboard_tab: isLevels ? "levels" : tab,
+      leaderboard_tab: isLevels ? `levels-${practiceTrack}` : tab,
       field_size: fieldSize,
       rank: you?.rank ?? 0,
       score_after: (isLevels ? you?.xp : you?.score) ?? 0,
       has_live_board: hasBoard,
     });
-  }, [isLevels, tab, fieldSize, you?.rank, you?.xp, you?.score, hasBoard]);
+  }, [isLevels, tab, practiceTrack, fieldSize, you?.rank, you?.xp, you?.score, hasBoard]);
 
+  const trackLabel = practiceTrack === "world-cup" ? "World Cup" : "General";
   const heading = isLevels
-    ? "Top by XP"
+    ? `${trackLabel} ladder`
     : tab === "current"
       ? "This game"
       : tab === "alltime"
@@ -117,12 +127,12 @@ export const LeaderboardScreen = () => {
 
   const metricLabel = isLevels ? "Level" : tab === "alltime" ? "Won" : "Score";
   const metricInfo = isLevels
-    ? "Players ranked by total XP. You earn XP for every question you answer — in both practice and live tournaments — and your level is your XP milestone."
+    ? `Players ranked by how far they've climbed the ${trackLabel} practice campaign. Each track keeps its own ladder — clear levels to rise. XP (earned on every question) breaks ties.`
     : tab === "alltime"
       ? "Top earners — ranked by total winnings (USDT) across every tournament you've cashed in."
       : "Your score is the points you earned answering questions — faster correct answers score more. Winnings (USDT) show beside the score once a game settles.";
   const emptyCopy = isLevels
-    ? "Play practice rounds to earn XP and climb the ranks."
+    ? `Clear a level in the ${trackLabel} campaign to land on the ladder.`
     : tab === "current"
       ? "This game's board fills up as players answer."
       : tab === "alltime"
@@ -195,6 +205,29 @@ export const LeaderboardScreen = () => {
                   setTab(t.id);
                 }}
                 style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: tab === t.id ? 900 : 700, color: tab === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: tab === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Practice sub-tabs — one ladder per campaign track (General / World Cup). */}
+        {isLevels && (
+          <div style={{ display: "flex", borderBottom: "1px solid rgba(253, 251, 246, 0.08)", padding: "0 12px" }}>
+            {([
+              { id: "standard" as const, label: "General" },
+              { id: "world-cup" as const, label: "World Cup" },
+            ]).map((t) => (
+              <button
+                key={t.id}
+                onClick={() => {
+                  if (practiceTrack !== t.id) {
+                    trackClientEvent(AnalyticsEvent.LeaderboardTabChanged, { screen: "leaderboard", previous_tab: `levels-${practiceTrack}`, leaderboard_tab: `levels-${t.id}` });
+                  }
+                  setPracticeTrack(t.id);
+                }}
+                style={{ flex: 1, background: "transparent", border: "none", padding: "14px 0 12px", fontFamily: "var(--font-body)", fontSize: 14, fontWeight: practiceTrack === t.id ? 900 : 700, color: practiceTrack === t.id ? "var(--ink)" : "var(--ink-faint)", borderBottom: practiceTrack === t.id ? "2.5px solid var(--maple-500)" : "2.5px solid transparent", cursor: "pointer" }}
               >
                 {t.label}
               </button>
