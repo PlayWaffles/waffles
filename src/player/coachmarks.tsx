@@ -44,7 +44,7 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "home-continue",
       title: "Or warm up solo",
-      body: "Not ready for a crowd? Play the level path at your own pace, any time.",
+      body: "Not ready for a crowd? Play practice at your own pace, any time.",
       placement: "top",
     },
     {
@@ -65,22 +65,16 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
   levelIntro: [
     {
       target: "intro-lives",
-      title: "Three lives per level",
+      title: "Three hearts per level",
       body: "A wrong answer costs a heart. Lose all three and you'll retry — so answer fast for bonus points.",
       placement: "top",
-    },
-  ],
-  shop: [
-    {
-      title: "Power up your game",
-      body: "Spend Syrup on lives, power-ups and cosmetics — earn more by playing every day.",
     },
   ],
   profile: [
     {
       target: "profile-tickets",
       title: "This is your Syrup",
-      body: "Syrup is your in-app currency. Earn it from daily rewards, levels and missions, then spend it on lives, power-ups and cosmetics.",
+      body: "Syrup is your in-app currency. Earn it from daily rewards, practice and missions, then spend it on extra practice plays.",
       placement: "bottom",
     },
   ],
@@ -88,7 +82,7 @@ export const TOURS: Partial<Record<ScreenName, CoachStep[]>> = {
     {
       target: "leaderboard-you",
       title: "That's you",
-      body: "Score points by playing levels and tournaments to climb the leaderboard and win the pot.",
+      body: "Score points by playing practice and tournaments to climb the leaderboard and win the pot.",
       placement: "top",
     },
   ],
