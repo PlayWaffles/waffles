@@ -1,10 +1,3 @@
-/**
- * Cron: Roundup Games
- * GET|POST /api/cron/roundup-games
- *
- * Auto-ranks and publishes ended games that haven't settled yet. Called every 5 min.
- */
-
 import { NextRequest } from "next/server";
 import { runRoundupCronRequest } from "@/lib/game/roundup-route";
 
