@@ -4,7 +4,7 @@
  * Instead of the off-chain `RoundEntry` ledger, the tournament reuses the
  * existing v1 money lifecycle end-to-end:
  *   - schedule + create on-chain  → `createAutoScheduledGame` → `createGameOnChain`
- *   - entry (real USDC deposit)   → `verifyTicketPurchase` → `GameEntry`
+ *   - entry (real USDC deposit)   → `recordPaidEntry` → `GameEntry`
  *   - play + score                → server-authoritative scoring (this file)
  *   - settle (merkle on-chain)    → `rankGame` + `publishResults` (lifecycle.ts)
  *   - claim (pull from pool)      → the v1 claim route + `verifyClaim`
@@ -14,28 +14,26 @@
  * exposing the current game, recording verified entries, and scoring answers
  * against the game's own authoritative questions.
  */
-import { parseUnits } from "viem";
 import { prisma } from "@/lib/db";
-import { GameTheme, Prisma, QuestionKind, TicketLedgerReason, TicketPurchaseSource, type UserPlatform } from "@prisma";
+import { GameTheme, Prisma, QuestionKind, TicketLedgerReason, type UserPlatform } from "@prisma";
+import { recordPaidEntry } from "@/lib/game/ticket-settlement";
+import { tournamentEntryHooks } from "@/lib/game/ticket-settlement-adapters";
 import { accrueLeaguePoints } from "./leagues";
-import { adjustTickets, grantTournamentPracticePlays } from "./playerState";
-import { skipRookieCup } from "./rookieCup";
+import { adjustTickets } from "./playerState";
 import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
-import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
 import { defaultNetworkForPlatform, type GameNetwork } from "@/lib/chain/network";
-import { isPrizeClaimedOnChain, verifyClaim, verifyTicketPurchase } from "@/lib/chain/verify";
-import { calculatePrizePoolContribution } from "@/lib/admin-utils";
+import { isPrizeClaimedOnChain, verifyClaim } from "@/lib/chain/verify";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getDisplayName } from "@/lib/address";
 import { formatGameLabel } from "@/lib/game/labels";
-import { trackServerEvent } from "@/lib/server-analytics";
+import { PAYMENT_TOKEN_DECIMALS } from "@/lib/chain";
+import { scoreTournamentRound, type RoundAnswer } from "@/lib/game/scoring-authority";
+import { isTournamentGame } from "@/lib/game/scoring-mode";
+import { canAnswer } from "@/lib/game/timing";
 import {
-  scoreAnswer,
-  scoreRound,
   tournamentSkillBonus,
-  type RoundAnswer,
   type ScorableKind,
   type ScorableQuestion,
 } from "./scoring";
@@ -96,9 +94,7 @@ async function gameQuestions(gameId: string): Promise<GameQuestionRow[]> {
 }
 
 // ---------------------------------------------------------------------------
-// Tournament scheduling — the v1 auto-scheduler is Mon/Wed/Fri day-long games,
-// NOT tournament cadence, so tournaments get their own cadence (still reusing v1's game
-// creation: questions assigned + created on-chain).
+// Tournament scheduling — 4-hour windows, created on-chain via ensureTournamentGame.
 // ---------------------------------------------------------------------------
 
 export const TOURNAMENT_ROUND_MS = 4 * 60 * 60 * 1000;
@@ -309,8 +305,7 @@ async function participantAvatarsForGame(
 }
 
 /** The platform's current tournament round — the soonest game that hasn't ended.
- *  Scheduling/creation is handled by the existing v1 auto-scheduler; here we
- *  only read it. */
+ *  Scheduling/creation is handled by ensureTournamentGame (cron); here we only read it. */
 export async function currentTournamentGame(
   platform: UserPlatform,
   network: GameNetwork = defaultNetworkForPlatform(platform),
@@ -413,14 +408,12 @@ export async function currentTournamentGame(
  *  player (who has v1 entries but no tournament entry) still gets the
  *  first-timer welcome on their first v2 tournament. */
 export async function isFirstTournamentEntry(userId: string): Promise<boolean> {
-  // Comfortably above the tournament window, well below a day-long v1 game.
-  const MAX_TOURNAMENT_MS = 2 * TOURNAMENT_ROUND_MS;
   const rows = await prisma.gameEntry.findMany({
     where: { userId },
     select: { game: { select: { startsAt: true, endsAt: true } } },
   });
-  const priorTournamentEntries = rows.filter(
-    (r) => r.game.endsAt.getTime() - r.game.startsAt.getTime() <= MAX_TOURNAMENT_MS,
+  const priorTournamentEntries = rows.filter((r) =>
+    isTournamentGame(r.game),
   ).length;
   return priorTournamentEntries === 0;
 }
@@ -489,130 +482,48 @@ export async function enterTournamentOnChain(input: {
 }): Promise<EnterResult> {
   const { userId, gameId, txHash, wallet, entrySource = "unknown" } = input;
   console.log("[buy-ticket] server verify start", { userId, gameId, txHash, wallet });
-  const game = await prisma.game.findUnique({
-    where: { id: gameId },
-    select: { id: true, onchainId: true, platform: true, network: true, tierPrices: true, endsAt: true },
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true, platform: true, username: true, pfpUrl: true, wallet: true },
   });
-  if (!game?.onchainId) {
-    console.warn("[buy-ticket] reject: game_not_onchain", { gameId, hasGame: !!game });
-    return { ok: false, error: "game_not_onchain" };
-  }
-  if (new Date() >= game.endsAt) {
-    console.warn("[buy-ticket] reject: game_ended", { gameId, endsAt: game.endsAt.toISOString() });
-    return { ok: false, error: "game_ended" };
+  if (!user) {
+    return { ok: false, error: "user_not_found" };
   }
 
-  const existing = await prisma.gameEntry.findUnique({
-    where: { gameId_userId: { gameId, userId } },
-    select: { id: true },
-  });
-  if (existing) {
-    console.log("[buy-ticket] already entered (short-circuit)", { gameId, userId, entryId: existing.id });
-    return { ok: true, entryId: existing.id, alreadyEntered: true };
-  }
-
-  // Flat price = the game's on-chain floor. The contract enforces the exact
-  // amount, so verify the deposit against that floor (never a client value).
-  const entryFee = game.tierPrices[0] ?? DEFAULT_ENTRY_FEE_USDC;
-  console.log("[buy-ticket] verifying on-chain", {
-    gameId, platform: game.platform, network: game.network,
-    onchainId: game.onchainId, expectedBuyer: wallet, entryFee, txHash,
-  });
-  const verification = await verifyTicketPurchase({
-    platform: game.platform,
-    network: game.network,
-    txHash: txHash as `0x${string}`,
-    expectedGameId: game.onchainId as `0x${string}`,
-    expectedBuyer: wallet as `0x${string}`,
-    minimumAmount: parseUnits(entryFee.toString(), PAYMENT_TOKEN_DECIMALS),
-  });
-  if (!verification.verified) {
-    console.warn("[buy-ticket] verification FAILED", {
-      gameId, userId, txHash, error: verification.error, retryable: verification.retryable,
-    });
-    return { ok: false, error: verification.error ?? "verification_failed", retryable: verification.retryable };
-  }
-  console.log("[buy-ticket] verified ✓ — recording entry", { gameId, userId, entryFee });
-  const prizePoolContribution = calculatePrizePoolContribution(entryFee);
-  // Skill-edge: a starting score cushion from World Cup campaign depth. Folded
-  // into `score` so the entrant lands on the live board with their head start
-  // immediately; `submitTournamentAnswers` rebuilds score = round + bonusScore.
   const bonusScore = await playerSkillBonus(userId);
 
-  try {
-    const entry = await prisma.$transaction(async (tx) => {
-      const created = await tx.gameEntry.create({
-        data: {
-          gameId,
-          userId,
-          txHash,
-          payerWallet: wallet,
-          paidAmount: entryFee,
-          paidAt: new Date(),
-          purchaseSource: TicketPurchaseSource.PAID,
-          bonusScore,
-          score: bonusScore,
-        },
-        select: { id: true },
-      });
-      // Denormalized pool + headcount, mirroring v1's on-entry bookkeeping.
-      await tx.game.update({
-        where: { id: gameId },
-        data: { prizePool: { increment: prizePoolContribution }, playerCount: { increment: 1 } },
-      });
-      // Authoritative, DB-backed purchase event — emitted in the same tx as the
-      // entry write so it can't drift from reality (and rolls back with it).
-      // Only fires on a *new* entry, never the already-entered short-circuits,
-      // so revenue isn't double-counted. `revenue` mirrors the client's Umami
-      // figure (entry fee is USDC, ~1:1 USD) for browser-vs-DB reconciliation.
-      await trackServerEvent({
-        name: "ticket_purchase_authoritative",
-        userId,
-        tx,
-        properties: {
-          game_id: gameId,
-          onchain_id: game.onchainId,
-          platform: game.platform,
-          revenue: entryFee,
-          currency: "USD",
-          entry_fee: entryFee,
-          entry_source: entrySource,
-        },
-      });
-      return created;
+  const result = await recordPaidEntry(
+    user,
+    {
+      gameId,
+      txHash,
+      paidAmount: 0, // authoritative amount comes from game.tierPrices[0] in the adapter
+      payerWallet: wallet,
+    },
+    tournamentEntryHooks({ entrySource, skillBonus: bonusScore }),
+  );
+
+  if (!result.success) {
+    console.warn("[buy-ticket] settlement failed", {
+      gameId,
+      userId,
+      txHash,
+      error: result.error,
+      retryable: result.retryable,
     });
-    console.log("[buy-ticket] entry recorded ✓", { gameId, userId, entryId: entry.id });
-    // Tournament play tops up today's practice allowance (the free-practice loop
-    // is fed by paid play). Only on a NEW entry; best-effort — never fail the
-    // recorded entry over a practice top-up.
-    try {
-      await grantTournamentPracticePlays(userId);
-    } catch (e) {
-      console.error("[buy-ticket] practice top-up failed", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
-    // Paying for a real entry graduates the player from the free Rookie Cup —
-    // forfeit it (idempotent) so the Home card never offers it again. Best-effort.
-    try {
-      await skipRookieCup(userId);
-    } catch (e) {
-      console.error("[buy-ticket] rookie forfeit failed", { userId, error: e instanceof Error ? e.message : String(e) });
-    }
-    return { ok: true, entryId: entry.id, alreadyEntered: false };
-  } catch (error) {
-    // Unique violation on (gameId,userId) or txHash → treat as already recorded.
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      const existingNow = await prisma.gameEntry.findUnique({
-        where: { gameId_userId: { gameId, userId } },
-        select: { id: true },
-      });
-      if (existingNow) {
-        console.log("[buy-ticket] entry race (P2002) — already recorded", { gameId, userId, entryId: existingNow.id });
-        return { ok: true, entryId: existingNow.id, alreadyEntered: true };
-      }
-    }
-    console.error("[buy-ticket] entry write FAILED", { gameId, userId, error: error instanceof Error ? error.message : String(error) });
-    throw error;
+    return {
+      ok: false,
+      error: result.error,
+      retryable: result.retryable,
+    };
   }
+
+  return {
+    ok: true,
+    entryId: result.entryId,
+    alreadyEntered: !result.entryWasCreated,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -632,29 +543,18 @@ export async function submitTournamentAnswers(
 ): Promise<{ score: number; updated: boolean } | null> {
   const game = await prisma.game.findUnique({
     where: { id: gameId },
-    select: { id: true, endsAt: true, gameNumber: true },
+    select: { id: true, startsAt: true, endsAt: true, gameNumber: true },
   });
   if (!game) return null;
-  if (new Date() >= game.endsAt) return { score: 0, updated: false };
+
+  const answerTiming = canAnswer(game);
+  if (!answerTiming.allowed) {
+    return { score: 0, updated: false };
+  }
 
   const rows = await gameQuestions(gameId);
   const issued = rows.map(toScorable);
-  const roundScore = scoreRound(issued, answers);
-
-  // Per-question breakdown in the GameEntry.answers JSON shape v1 uses.
-  const byId = new Map(issued.map((q) => [q.id, q]));
-  const answersJson: Record<string, { selected: number | null; correct: boolean; points: number; ms: number }> = {};
-  for (const a of answers ?? []) {
-    const q = byId.get(a.id);
-    if (!q) continue;
-    const points = scoreAnswer(q, a);
-    answersJson[a.id] = {
-      selected: a.selection.length ? a.selection[0] : null,
-      correct: points > 0,
-      points,
-      ms: a.responseMs,
-    };
-  }
+  const { roundScore, records: answersJson } = scoreTournamentRound(issued, answers);
 
   // Prior best score for this entry, so league points accrue only the
   // improvement (the tournament keeps the best of repeated submissions).

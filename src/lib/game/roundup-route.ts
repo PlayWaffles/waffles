@@ -21,7 +21,7 @@ export async function runRoundupCronRequest(request: NextRequest) {
   try {
     const result = await runGameRoundup("http_cron");
     console.log(
-      `[Cron] Done: ${result.ranked} ranked, ${result.published + result.republished} published, ${result.scheduledCreated} scheduled`,
+      `[Cron] Done: ${result.ranked} ranked, ${result.published + result.republished} published`,
     );
     return NextResponse.json(result);
   } catch (error) {

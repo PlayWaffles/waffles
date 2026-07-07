@@ -19,7 +19,7 @@ const {
   getPublicClient,
 } = await import("@/lib/chain");
 const { recalculateGameRounds } = await import("@/lib/game/rounds");
-const { processPendingPurchases } = await import("@/lib/game/pending-purchases");
+
 const { publishResults } = await import("@/lib/game/lifecycle");
 const { formatGameLabel } = await import("@/lib/game/labels");
 const { PAYMENT_TOKEN_DECIMALS } = await import("@/lib/chain/config");
@@ -226,8 +226,6 @@ async function waitForIndexedEntry(gameId: string, wallet: string | null, timeou
   const deadline = Date.now() + timeoutMs;
 
   while (Date.now() < deadline) {
-    await processPendingPurchases(10);
-
     const entries = await prisma.gameEntry.findMany({
       where: {
         gameId,

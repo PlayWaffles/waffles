@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { CLAIM_DELAY_MS } from "@/lib/constants";
+import { canClaim } from "@/lib/game/timing";
 import { getAuthFromRequest, type ApiError } from "@/lib/auth";
 import {
   resolvePlatformGameVisibility,
@@ -75,6 +75,7 @@ export async function GET(
         network: true,
         merkleRoot: true,
         onChainAt: true,
+        startsAt: true,
         endsAt: true,
       },
     });
@@ -96,18 +97,16 @@ export async function GET(
       );
     }
 
-    // Check if claim window has opened
-    const claimOpensAt = new Date(game.endsAt.getTime() + CLAIM_DELAY_MS);
-    const now = new Date();
-    if (now < claimOpensAt) {
+    const claimTiming = canClaim(game);
+    if (!claimTiming.allowed) {
       return NextResponse.json<MerkleProofApiError>(
         {
-          error: "Claim window not yet open",
-          code: "CLAIM_NOT_OPEN",
-          claimOpensAt: claimOpensAt.toISOString(),
-          remainingMs: claimOpensAt.getTime() - now.getTime(),
+          error: claimTiming.error,
+          code: claimTiming.code,
+          claimOpensAt: claimTiming.claimOpensAt?.toISOString(),
+          remainingMs: claimTiming.remainingMs,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 

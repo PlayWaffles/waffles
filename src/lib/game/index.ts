@@ -1,25 +1,7 @@
 /**
  * Game Library
- *
- * Exports all game-related utilities including:
- * - Server-side cached queries
- * - Prize distribution logic
- * - Scoring algorithms
- * - Game lifecycle management
  */
 
-// Queries (server-side, cached)
-export {
-  getCurrentOrNextGame,
-  getGameById,
-  getLastGameWinners,
-  type GameWithQuestionCount,
-  type GameQueryResult,
-  type LastGameResult,
-  type LastGameWinner,
-} from "./queries";
-
-// Prize distribution
 export {
   calculatePrizeDistribution,
   formatDistribution,
@@ -30,13 +12,49 @@ export {
   type DistributionResult,
 } from "./prizeDistribution";
 
-// Scoring
-export * from "./scoring";
+export {
+  scoreTournamentRound,
+  scoreAnswer,
+  scoreRound,
+  type GameAnswerRecord,
+  type ScorableQuestion,
+  type RoundAnswer,
+} from "./scoring-authority";
 
-// Lifecycle
+export { isTournamentGame, TOURNAMENT_WINDOW_MS } from "./scoring-mode";
+
+export {
+  rankStage,
+  publishStage,
+  notifyStage,
+  settleGame,
+  type RankResult,
+  type PublishResult,
+  type SettleResult,
+} from "./settlement";
+
 export {
   rankGame,
   publishResults,
-  type RankResult,
-  type PublishResult,
+  sendResultNotifications,
 } from "./lifecycle";
+
+export {
+  getPhase,
+  getGamePhase,
+  canAnswer,
+  canPurchaseTicket,
+  canClaim,
+  checkTiming,
+  timingErrorStatus,
+  type GamePhase,
+  type GameTiming,
+  type TimingGuardResult,
+} from "./timing";
+
+export {
+  recordPaidEntry,
+  type TicketSettlementInput,
+  type TicketSettlementResult,
+  type TicketSettlementUser,
+} from "./ticket-settlement";

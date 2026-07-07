@@ -113,4 +113,4 @@ export async function GET(
   }
 }
 
-// Note: POST handler moved to Server Action: src/actions/game.ts (purchaseGameTicket)
+// Ticket purchase is via tournament entry: POST /api/v1/player/enterTournament

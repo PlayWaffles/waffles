@@ -12,7 +12,7 @@ import { recalculateGameRounds } from "@/lib/game/rounds";
 import { formatGameLabel } from "@/lib/game/labels";
 import { getNextGameNumberForNetwork } from "@/lib/game/numbering";
 import { isTestnetNetwork } from "@/lib/chain/network";
-import { rankGame, publishResults } from "@/lib/game/lifecycle";
+import { settleGame } from "@/lib/game/lifecycle";
 import { defaultNetworkForPlatform } from "@/lib/chain";
 import { getMinimumTicketPriceForPlatform } from "@/lib/tickets";
 
@@ -619,15 +619,9 @@ export async function roundupGameAction(gameId: string): Promise<{
     if (!game) return { success: false, error: "Game not found" };
     if (game.endsAt > new Date()) return { success: false, error: "Game has not ended yet" };
 
-    // 1. Rank entries
-    const rankResult = await rankGame(gameId);
-
-    // 2. Publish on-chain if applicable
-    let published = false;
-    if (game.onchainId && rankResult.prizesDistributed > 0) {
-      const publishResult = await publishResults(gameId);
-      published = publishResult.success;
-    }
+    const settleResult = await settleGame(gameId);
+    const rankResult = settleResult.ranked;
+    const published = settleResult.published;
 
     await logAdminAction({
       adminId,

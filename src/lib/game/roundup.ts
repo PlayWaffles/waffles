@@ -1,6 +1,5 @@
 import { prisma } from "@/lib/db";
-import { ensureNextAutoScheduledGames } from "@/lib/game/auto-schedule";
-import { publishResults, rankGame, sendResultNotifications } from "@/lib/game/lifecycle";
+import { publishResults, settleGame } from "@/lib/game/lifecycle";
 import { hashServerAnalyticsId, trackServerEvent } from "@/lib/server-analytics";
 import {
   sendDueTelegramGameResultAnnouncements,
@@ -13,8 +12,6 @@ export type GameRoundupResult = {
   published: number;
   republished: number;
   failed: number;
-  scheduledChecked: number;
-  scheduledCreated: number;
   durationMs: number;
 };
 
@@ -41,17 +38,9 @@ export async function runGameRoundup(source: string): Promise<GameRoundupResult>
 
     for (const game of games) {
       try {
-        const result = await rankGame(game.id);
+        const result = await settleGame(game.id);
         ranked++;
-
-        if (game.onchainId && result.prizesDistributed > 0) {
-          await publishResults(game.id);
-          published++;
-        } else {
-          sendResultNotifications(game.id).catch((error) =>
-            console.error(`[Cron] Notifications failed for ${game.id}:`, error),
-          );
-        }
+        if (result.published) published++;
 
         try {
           await sendTelegramGameResults(game.id);
@@ -116,16 +105,12 @@ export async function runGameRoundup(source: string): Promise<GameRoundupResult>
       console.error("[Cron] Waffles Bot result announcements failed:", error);
     }
 
-    const scheduled = await ensureNextAutoScheduledGames();
-    const scheduledCreated = scheduled.filter((result) => result.created).length;
     const result = {
       gamesChecked,
       ranked,
       published,
       republished,
       failed,
-      scheduledChecked: scheduled.length,
-      scheduledCreated,
       durationMs: Date.now() - startedAt,
     };
 
@@ -138,8 +123,6 @@ export async function runGameRoundup(source: string): Promise<GameRoundupResult>
         published: result.published,
         republished: result.republished,
         failed: result.failed,
-        scheduled_checked: result.scheduledChecked,
-        scheduled_created: result.scheduledCreated,
         duration_ms: result.durationMs,
       },
     });

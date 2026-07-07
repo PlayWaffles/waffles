@@ -187,8 +187,6 @@ export type TournamentRound = {
   todayPrizePoolUsdc: number;
   recentEntryCount: number;
   participantAvatars: TournamentParticipantAvatar[];
-  /** True for the migrated v1 24h game; false once v2 tournament rounds take over. */
-  legacyV1: boolean;
 };
 
 export async function getTournament(): Promise<
@@ -263,15 +261,11 @@ export async function getTournament(): Promise<
       todayPrizePoolUsdc: game.todayPrizePool,
       recentEntryCount: game.recentEntryCount,
       participantAvatars: game.participantAvatars,
-      // v2 tournaments run a 4-hour window; the migrated v1 game runs ~24h.
-      legacyV1: game.endsAt.getTime() - game.startsAt.getTime() > 2 * tournamentSvc.TOURNAMENT_ROUND_MS,
     },
   };
 }
 
-/** Record a tournament entry after the player's on-chain `buyTicket` deposit.
- *  The client sends the entry tx hash; the server verifies it on-chain (reusing
- *  v1's `verifyTicketPurchase`) before creating the entry. */
+/** Record a tournament entry after the player's on-chain `buyTicket` deposit. */
 export async function enterTournament(
   gameId: string,
   txHash: string,

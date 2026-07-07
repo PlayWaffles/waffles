@@ -51,17 +51,15 @@ export function buildMerkleTree(winners: Winner[]): MerkleTreeResult {
   };
 }
 
-/**
- * Generates Merkle proofs for all winners at once
- * Returns a map of address -> { amount, proof }
- */
-export function generateAllProofs(
-  winners: Winner[]
-): Map<string, { amount: bigint; proof: `0x${string}`[] }> {
-  if (winners.length === 0) return new Map();
+export type WinnerProofMap = Map<
+  string,
+  { amount: bigint; proof: `0x${string}`[] }
+>;
 
-  const { tree } = buildMerkleTree(winners);
-  const proofs = new Map<string, { amount: bigint; proof: `0x${string}`[] }>();
+function proofsFromTree(
+  tree: StandardMerkleTree<[string, string, bigint]>,
+): WinnerProofMap {
+  const proofs: WinnerProofMap = new Map();
 
   for (const [i, leaf] of tree.entries()) {
     const [, leafAddress, leafAmount] = leaf;
@@ -73,6 +71,35 @@ export function generateAllProofs(
   }
 
   return proofs;
+}
+
+/**
+ * Generates Merkle proofs for all winners at once.
+ * Pass an existing tree result to avoid rebuilding the tree.
+ */
+export function generateAllProofs(
+  winners: Winner[],
+  existing?: MerkleTreeResult,
+): WinnerProofMap {
+  if (winners.length === 0) return new Map();
+  const treeResult = existing ?? buildMerkleTree(winners);
+  return proofsFromTree(treeResult.tree);
+}
+
+/**
+ * Build the Merkle tree and all winner proofs in one pass.
+ */
+export function buildMerkleTreeWithProofs(winners: Winner[]): {
+  root: `0x${string}`;
+  tree: StandardMerkleTree<[string, string, bigint]>;
+  proofs: WinnerProofMap;
+} {
+  const treeResult = buildMerkleTree(winners);
+  return {
+    root: treeResult.root,
+    tree: treeResult.tree,
+    proofs: proofsFromTree(treeResult.tree),
+  };
 }
 
 /**
