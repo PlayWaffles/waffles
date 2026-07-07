@@ -5,6 +5,7 @@ import { GameFilter } from "./_components/GameFilter";
 import { TicketReconciliationCard } from "./_components/TicketReconciliationCard";
 import { RecoverPaidTicketButton } from "./_components/RecoverPaidTicketButton";
 import { ResolveOnchainPurchaseButton } from "./_components/ResolveOnchainPurchaseButton";
+import { SyncOnchainPurchasesButton } from "./_components/SyncOnchainPurchasesButton";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { Prisma, TicketPurchaseSource, UserPlatform } from "@prisma";
 import { formatUnits, parseAbiItem } from "viem";
@@ -447,6 +448,9 @@ export default async function TicketsPage({
         getStats(resolvedParams.platform),
         getRecentOnchainMismatches(resolvedParams.platform),
     ]);
+    const recoverableTxHashes = onchainMismatches
+        .filter((row) => row.status === "MISSING_IN_DB")
+        .map((row) => row.txHash);
 
     return (
         <div className="space-y-6">
@@ -461,13 +465,18 @@ export default async function TicketsPage({
             </div>
 
             <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                <div className="mb-4 flex flex-col gap-1">
-                    <h2 className="text-lg font-bold text-white font-display">
-                        Recent Onchain Purchases Missing From DB
-                    </h2>
-                    <p className="text-sm text-white/60">
-                        Crawls recent TicketPurchased events on both supported chains and highlights unresolved purchases.
-                    </p>
+                <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="flex flex-col gap-1">
+                        <h2 className="text-lg font-bold text-white font-display">
+                            Recent Onchain Purchases Missing From DB
+                        </h2>
+                        <p className="text-sm text-white/60">
+                            Crawls recent TicketPurchased events on both supported chains and highlights unresolved purchases.
+                        </p>
+                    </div>
+                    {recoverableTxHashes.length > 0 ? (
+                        <SyncOnchainPurchasesButton txHashes={recoverableTxHashes} />
+                    ) : null}
                 </div>
 
                 {onchainMismatches.length === 0 ? (

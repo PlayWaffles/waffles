@@ -22,6 +22,17 @@ export type ReconcilePaidTicketResult =
   | { success: true; entryId: string; message: string }
   | { success: false; error: string };
 
+export type SyncOnchainPurchasesResult =
+  | {
+      success: true;
+      synced: number;
+      alreadySynced: number;
+      failed: number;
+      message: string;
+      errors: string[];
+    }
+  | { success: false; error: string };
+
 const reconcilePaidTicketSchema = z.object({
   txHash: z
     .string()
@@ -107,30 +118,29 @@ function revalidateTicketAdminPaths(gameId?: string) {
     revalidatePath(`/admin/games/${gameId}`);
   }
   revalidatePath("/play");
+  revalidatePath("/game");
+  revalidatePath("/(app)/(game)", "layout");
 }
 
-export async function reconcilePaidTicketAction(
-  _prevState: ReconcilePaidTicketResult | null,
-  formData: FormData,
-): Promise<ReconcilePaidTicketResult> {
-  const auth = await requireAdminSession();
-  if (!auth.authenticated || !auth.session) {
-    return { success: false, error: "Unauthorized" };
-  }
-  const session = auth.session;
-
-  const parsed = reconcilePaidTicketSchema.safeParse({
-    txHash: formData.get("txHash")?.toString().trim(),
+async function syncPendingPurchaseByTxHash(txHash: string, entryId: string) {
+  await prisma.pendingPurchase.updateMany({
+    where: { txHash: { equals: txHash, mode: "insensitive" } },
+    data: {
+      status: "SYNCED",
+      lastError: null,
+      syncedEntryId: entryId,
+      syncedAt: new Date(),
+    },
   });
+}
 
-  if (!parsed.success) {
-    return {
-      success: false,
-      error: parsed.error.issues[0]?.message || "Invalid input",
-    };
-  }
-
-  const txHash = parsed.data.txHash;
+async function recoverPaidTicketByTxHash(params: {
+  txHash: string;
+  adminId: string;
+  source: string;
+  notifyLogTag: string;
+}): Promise<ReconcilePaidTicketResult & { entryWasCreated?: boolean }> {
+  const { txHash, adminId, source, notifyLogTag } = params;
   const inspected = await inspectPaidTicketPurchase(txHash);
 
   if (!inspected) {
@@ -147,10 +157,14 @@ export async function reconcilePaidTicketAction(
   });
 
   if (existingByTxHash) {
+    await syncPendingPurchaseByTxHash(txHash, existingByTxHash.id);
+    revalidateTicketAdminPaths(existingByTxHash.gameId);
+
     return {
       success: true,
       entryId: existingByTxHash.id,
       message: "This purchase is already synced in the database.",
+      entryWasCreated: false,
     };
   }
 
@@ -242,6 +256,15 @@ export async function reconcilePaidTicketAction(
     });
 
     await unlockReferralRewards(tx, user.id);
+    await tx.pendingPurchase.updateMany({
+      where: { txHash: { equals: txHash, mode: "insensitive" } },
+      data: {
+        status: "SYNCED",
+        lastError: null,
+        syncedEntryId: entry.id,
+        syncedAt: new Date(),
+      },
+    });
 
     return {
       entryId: entry.id,
@@ -251,12 +274,12 @@ export async function reconcilePaidTicketAction(
   });
 
   await logAdminAction({
-    adminId: session.userId,
+    adminId,
     action: AdminAction.MANUAL_TICKET_CREATE,
     entityType: EntityType.TICKET,
     entityId: result.entryId,
     details: {
-      source: "onchain_reconcile",
+      source,
       txHash,
       gameId: game.id,
       userId: user.id,
@@ -267,10 +290,7 @@ export async function reconcilePaidTicketAction(
     },
   });
 
-  revalidatePath("/admin/tickets");
-  revalidatePath(`/admin/games/${game.id}`);
-  revalidatePath("/game");
-  revalidatePath("/(app)/(game)", "layout");
+  revalidateTicketAdminPaths(game.id);
 
   if (user.hasGameAccess && !user.isBanned) {
     void import("@/lib/notifications/templates").then(
@@ -279,7 +299,7 @@ export async function reconcilePaidTicketAction(
           transactional.ticketSecured(formatGameTime(game.startsAt)),
         );
         sendToUser(user.id, payload).catch((error) =>
-          console.error("[admin-tickets] reconcile_paid_ticket_notify_failed", error),
+          console.error(`[admin-tickets] ${notifyLogTag}`, error),
         );
       },
     );
@@ -289,6 +309,110 @@ export async function reconcilePaidTicketAction(
     success: true,
     entryId: result.entryId,
     message: `Recovered paid ticket for ${user.username || inspected.buyer} on ${game.title}.`,
+    entryWasCreated: true,
+  };
+}
+
+export async function reconcilePaidTicketAction(
+  _prevState: ReconcilePaidTicketResult | null,
+  formData: FormData,
+): Promise<ReconcilePaidTicketResult> {
+  const auth = await requireAdminSession();
+  if (!auth.authenticated || !auth.session) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const parsed = reconcilePaidTicketSchema.safeParse({
+    txHash: formData.get("txHash")?.toString().trim(),
+  });
+
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: parsed.error.issues[0]?.message || "Invalid input",
+    };
+  }
+
+  return recoverPaidTicketByTxHash({
+    txHash: parsed.data.txHash,
+    adminId: auth.session.userId,
+    source: "onchain_reconcile",
+    notifyLogTag: "reconcile_paid_ticket_notify_failed",
+  });
+}
+
+export async function syncRecoverableOnchainPurchasesAction(
+  _prevState: SyncOnchainPurchasesResult | null,
+  formData: FormData,
+): Promise<SyncOnchainPurchasesResult> {
+  const auth = await requireAdminSession();
+  if (!auth.authenticated || !auth.session) {
+    return { success: false, error: "Unauthorized" };
+  }
+
+  const txHashes = [
+    ...new Set(
+      formData
+        .getAll("txHash")
+        .map((value) => value.toString().trim())
+        .filter(Boolean),
+    ),
+  ];
+
+  if (txHashes.length === 0) {
+    return { success: false, error: "No recoverable purchases selected." };
+  }
+
+  let synced = 0;
+  let alreadySynced = 0;
+  const errors: string[] = [];
+
+  for (const txHash of txHashes) {
+    const parsed = reconcilePaidTicketSchema.safeParse({ txHash });
+    if (!parsed.success) {
+      errors.push(`${txHash}: ${parsed.error.issues[0]?.message || "Invalid input"}`);
+      continue;
+    }
+
+    const result = await recoverPaidTicketByTxHash({
+      txHash: parsed.data.txHash,
+      adminId: auth.session.userId,
+      source: "onchain_bulk_sync",
+      notifyLogTag: "sync_onchain_purchase_notify_failed",
+    });
+
+    if (!result.success) {
+      errors.push(`${txHash}: ${result.error}`);
+      continue;
+    }
+
+    if (result.entryWasCreated) {
+      synced += 1;
+    } else {
+      alreadySynced += 1;
+    }
+  }
+
+  const failed = errors.length;
+  if (synced === 0 && alreadySynced === 0) {
+    return {
+      success: false,
+      error: `No purchases synced. ${errors.slice(0, 3).join(" ")}`,
+    };
+  }
+
+  revalidateTicketAdminPaths();
+
+  return {
+    success: true,
+    synced,
+    alreadySynced,
+    failed,
+    errors: errors.slice(0, 3),
+    message:
+      failed > 0
+        ? `Synced ${synced}; ${alreadySynced} already synced; ${failed} failed.`
+        : `Synced ${synced}; ${alreadySynced} already synced.`,
   };
 }
 
@@ -334,10 +458,13 @@ export async function reconcilePaidTicketToUserAction(
 
   const existingByTxHash = await prisma.gameEntry.findUnique({
     where: { txHash },
-    select: { id: true },
+    select: { id: true, gameId: true },
   });
 
   if (existingByTxHash) {
+    await syncPendingPurchaseByTxHash(txHash, existingByTxHash.id);
+    revalidateTicketAdminPaths(existingByTxHash.gameId);
+
     return {
       success: true,
       entryId: existingByTxHash.id,
@@ -433,6 +560,15 @@ export async function reconcilePaidTicketToUserAction(
       });
 
       await unlockReferralRewards(tx, user.id);
+      await tx.pendingPurchase.updateMany({
+        where: { txHash: { equals: txHash, mode: "insensitive" } },
+        data: {
+          status: "SYNCED",
+          lastError: null,
+          syncedEntryId: entry.id,
+          syncedAt: new Date(),
+        },
+      });
 
       return {
         entryId: entry.id,
@@ -469,10 +605,7 @@ export async function reconcilePaidTicketToUserAction(
     },
   });
 
-  revalidatePath("/admin/tickets");
-  revalidatePath(`/admin/games/${game.id}`);
-  revalidatePath("/game");
-  revalidatePath("/(app)/(game)", "layout");
+  revalidateTicketAdminPaths(game.id);
 
   if (user.hasGameAccess && !user.isBanned) {
     void import("@/lib/notifications/templates").then(
