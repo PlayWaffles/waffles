@@ -27,7 +27,6 @@
   },
   "include": [
     "next-env.d.ts",
-    "instrumentation.ts",
     "next.config.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
