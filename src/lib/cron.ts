@@ -2,6 +2,7 @@ import cron from "node-cron";
 import { UserPlatform } from "@prisma";
 import { sendTicketOpenNotifications } from "@/lib/game/ticket-open-notifications";
 import { runGameRoundup } from "@/lib/game/roundup";
+import { runTicketIndexer } from "@/lib/chain/indexer";
 import { ensureTournamentGame } from "@/lib/player/tournamentGames";
 import { closeLeagueSeason } from "@/lib/player/leagueSettlement";
 import { env } from "@/lib/env";
@@ -26,6 +27,14 @@ async function roundupGames(source: string) {
     console.error("[Cron] Roundup failed:", error);
   } finally {
     roundupRunning = false;
+  }
+}
+
+async function ticketIndexerJob(source: string) {
+  try {
+    await runTicketIndexer(source);
+  } catch (e) {
+    console.error("[Cron] Ticket indexer failed:", e);
   }
 }
 
@@ -91,6 +100,14 @@ export function startCronJobs() {
   });
   console.log("[Cron] Scheduled: roundup-games (every 5 min)");
   void roundupGames("startup");
+
+  // Every minute: project on-chain TicketPurchased events into DB entries, so a
+  // purchase the client never reported back still lands (self-heals desync).
+  cron.schedule("* * * * *", () => {
+    void ticketIndexerJob("node_cron");
+  });
+  console.log("[Cron] Scheduled: ticket-indexer (every min)");
+  void ticketIndexerJob("startup");
 
   cron.schedule("* * * * *", ticketOpenNotificationsJob);
   console.log("[Cron] Scheduled: ticket-open-notifications (every min)");

@@ -395,6 +395,7 @@ export const ModelName = {
   Question: 'Question',
   GameEntry: 'GameEntry',
   PendingPurchase: 'PendingPurchase',
+  ChainIndexerCursor: 'ChainIndexerCursor',
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
   AuditLog: 'AuditLog',
@@ -436,7 +437,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "levelQuestionExposure" | "roundEntry" | "announcement" | "announcementState" | "announcementRecipient" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
+    modelProps: "user" | "userWallet" | "referralReward" | "quest" | "completedQuest" | "game" | "questionTemplate" | "questionStat" | "question" | "gameEntry" | "pendingPurchase" | "chainIndexerCursor" | "notificationToken" | "notificationLog" | "auditLog" | "analyticsEvent" | "inviteCode" | "ticketLedger" | "levelProgress" | "levelQuestionExposure" | "roundEntry" | "announcement" | "announcementState" | "announcementRecipient" | "questProgress" | "league" | "leagueCohort" | "leagueMember" | "shopItem" | "purchase" | "powerUpInventory" | "userCosmetic" | "userBoost" | "userBadge" | "partnerOffer" | "partnerOfferClaim" | "seasonPassClaim" | "dailyRewardClaim"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -1251,6 +1252,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PendingPurchaseCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PendingPurchaseCountAggregateOutputType> | number
+        }
+      }
+    }
+    ChainIndexerCursor: {
+      payload: Prisma.$ChainIndexerCursorPayload<ExtArgs>
+      fields: Prisma.ChainIndexerCursorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ChainIndexerCursorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ChainIndexerCursorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>
+        }
+        findFirst: {
+          args: Prisma.ChainIndexerCursorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ChainIndexerCursorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>
+        }
+        findMany: {
+          args: Prisma.ChainIndexerCursorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>[]
+        }
+        create: {
+          args: Prisma.ChainIndexerCursorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>
+        }
+        createMany: {
+          args: Prisma.ChainIndexerCursorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ChainIndexerCursorCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>[]
+        }
+        delete: {
+          args: Prisma.ChainIndexerCursorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>
+        }
+        update: {
+          args: Prisma.ChainIndexerCursorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>
+        }
+        deleteMany: {
+          args: Prisma.ChainIndexerCursorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ChainIndexerCursorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ChainIndexerCursorUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>[]
+        }
+        upsert: {
+          args: Prisma.ChainIndexerCursorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ChainIndexerCursorPayload>
+        }
+        aggregate: {
+          args: Prisma.ChainIndexerCursorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateChainIndexerCursor>
+        }
+        groupBy: {
+          args: Prisma.ChainIndexerCursorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChainIndexerCursorGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ChainIndexerCursorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ChainIndexerCursorCountAggregateOutputType> | number
         }
       }
     }
@@ -3472,6 +3547,18 @@ export const PendingPurchaseScalarFieldEnum = {
 export type PendingPurchaseScalarFieldEnum = (typeof PendingPurchaseScalarFieldEnum)[keyof typeof PendingPurchaseScalarFieldEnum]
 
 
+export const ChainIndexerCursorScalarFieldEnum = {
+  id: 'id',
+  chainKey: 'chainKey',
+  contract: 'contract',
+  lastBlock: 'lastBlock',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChainIndexerCursorScalarFieldEnum = (typeof ChainIndexerCursorScalarFieldEnum)[keyof typeof ChainIndexerCursorScalarFieldEnum]
+
+
 export const NotificationTokenScalarFieldEnum = {
   id: 'id',
   userId: 'userId',
@@ -4350,6 +4437,7 @@ export type GlobalOmitConfig = {
   question?: Prisma.QuestionOmit
   gameEntry?: Prisma.GameEntryOmit
   pendingPurchase?: Prisma.PendingPurchaseOmit
+  chainIndexerCursor?: Prisma.ChainIndexerCursorOmit
   notificationToken?: Prisma.NotificationTokenOmit
   notificationLog?: Prisma.NotificationLogOmit
   auditLog?: Prisma.AuditLogOmit

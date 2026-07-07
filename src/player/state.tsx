@@ -23,6 +23,7 @@ import {
   recordLevelPlay,
   getTournament,
   enterTournament,
+  reconcileTournamentEntry,
   submitTournamentAnswers,
   getRookieCup,
   submitRookieCup,
@@ -38,7 +39,7 @@ import {
   setUsername as setUsernameAction,
   logClient,
 } from "@/player/api";
-import type { TournamentEntrySource } from "@/lib/player/tournamentGames";
+import type { EnterResult, TournamentEntrySource } from "@/lib/player/tournamentGames";
 import type { RookieResult } from "@/lib/player/rookieCup";
 import { type Announcement } from "./announcements";
 import { soundManager } from "./sound";
@@ -1762,18 +1763,27 @@ export function ProtoProvider({
       }
     };
     try {
-      const txHash = await tournamentWallet.enter(
+      const entered = await tournamentWallet.enter(
         assertChainPlatform(t.game.platform),
         t.game.network,
         t.game.onchainId as `0x${string}`,
         t.game.entryFee,
         onStep,
       );
-      track(AnalyticsEvent.TicketPurchaseTxConfirmed, entryContext);
-      blog("[buy-ticket] on-chain done, verifying server-side", { txHash });
       update({ tournamentStep: "verifying" });
       track(AnalyticsEvent.TicketPurchaseSyncStarted, entryContext);
-      const res = await enterTournament(t.game.id, txHash, entrySource);
+      // Two ways in: a fresh purchase (verify its tx), or a wallet that already
+      // held a ticket the DB never recorded (reconcile the existing purchase —
+      // no second on-chain tx). Both yield the same EnterResult for the tail.
+      let res: EnterResult | null;
+      if (entered.status === "already_owned") {
+        blog("[buy-ticket] wallet already owns ticket — reconciling entry", { gameId: t.game.id });
+        res = await reconcileTournamentEntry(t.game.id);
+      } else {
+        track(AnalyticsEvent.TicketPurchaseTxConfirmed, entryContext);
+        blog("[buy-ticket] on-chain done, verifying server-side", { txHash: entered.txHash });
+        res = await enterTournament(t.game.id, entered.txHash, entrySource);
+      }
       if (!res || !res.ok) {
         blog("[buy-ticket] server verify rejected", { res });
         update({ tournamentStep: null });

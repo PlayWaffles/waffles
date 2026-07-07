@@ -24,6 +24,7 @@ import { recordQuestionStats } from "./questionStats";
 import { displayCategory, shuffleQuestionOptions } from "./roundQuestions";
 import { defaultNetworkForPlatform, type GameNetwork } from "@/lib/chain/network";
 import { isPrizeClaimedOnChain, verifyClaim } from "@/lib/chain/verify";
+import { findTicketPurchaseTx } from "@/lib/chain/ticketLogs";
 import { createAutoScheduledGame } from "@/lib/game/auto-create";
 import { checkAndNotifyFlipped } from "@/lib/notifications/liveNotify";
 import { getDisplayName } from "@/lib/address";
@@ -524,6 +525,46 @@ export async function enterTournamentOnChain(input: {
     entryId: result.entryId,
     alreadyEntered: !result.entryWasCreated,
   };
+}
+
+/**
+ * Recover an entry for a wallet that already holds an on-chain ticket but has no
+ * DB entry (client bought, then died before reporting back). Finds the wallet's
+ * `TicketPurchased` tx on-chain and records it through the same verified path.
+ * Idempotent. Called from the pre-buy `hasTicket` guard so a stuck player is
+ * synced in instead of re-buying (which would revert `AlreadyHasTicket`).
+ */
+export async function reconcileTournamentEntry(input: {
+  userId: string;
+  gameId: string;
+  wallet: string;
+}): Promise<EnterResult> {
+  const { userId, gameId, wallet } = input;
+  const game = await prisma.game.findUnique({
+    where: { id: gameId },
+    select: { onchainId: true, platform: true, network: true },
+  });
+  if (!game) return { ok: false, error: "game_not_found" };
+  if (!game.onchainId) return { ok: false, error: "game_not_onchain" };
+
+  const txHash = await findTicketPurchaseTx(
+    { platform: game.platform, network: game.network },
+    game.onchainId as `0x${string}`,
+    wallet as `0x${string}`,
+  );
+  if (!txHash) {
+    // hasTicket said true but we can't find the purchase log — treat as retryable
+    // rather than fabricate an entry; the indexer will also pick it up.
+    console.warn("[buy-ticket] reconcile: no TicketPurchased log found", { gameId, wallet });
+    return { ok: false, error: "no_onchain_purchase", retryable: true };
+  }
+
+  console.log("[buy-ticket] reconcile: recording existing on-chain purchase", {
+    gameId,
+    wallet,
+    txHash,
+  });
+  return enterTournamentOnChain({ userId, gameId, txHash, wallet });
 }
 
 // ---------------------------------------------------------------------------

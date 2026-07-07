@@ -569,6 +569,20 @@ model PendingPurchase {
   @@index([gameId, createdAt(sort: Desc)])
 }
 
+// Cursor for the on-chain event indexer. One row per (platform, network); the
+// indexer tails `TicketPurchased` logs from `lastBlock` forward and projects
+// them into GameEntry rows, so a purchase the client never reported back still
+// lands in the DB. Projection is idempotent (GameEntry is unique on
+// [gameId,userId] and txHash), so re-scanning a block range is always safe.
+model ChainIndexerCursor {
+  id        String   @id @default(cuid())
+  chainKey  String   @unique @db.VarChar(64) // "<platform>:<network>", e.g. "MINIPAY:CELO_MAINNET"
+  contract  String   @db.VarChar(42)
+  lastBlock BigInt // highest block already projected (kept behind a reorg-safe head)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 // ==========================================
 // 5. NOTIFICATIONS
 // ==========================================

@@ -62,6 +62,7 @@ export const ModelName = {
   Question: 'Question',
   GameEntry: 'GameEntry',
   PendingPurchase: 'PendingPurchase',
+  ChainIndexerCursor: 'ChainIndexerCursor',
   NotificationToken: 'NotificationToken',
   NotificationLog: 'NotificationLog',
   AuditLog: 'AuditLog',
@@ -359,6 +360,18 @@ export const PendingPurchaseScalarFieldEnum = {
 } as const
 
 export type PendingPurchaseScalarFieldEnum = (typeof PendingPurchaseScalarFieldEnum)[keyof typeof PendingPurchaseScalarFieldEnum]
+
+
+export const ChainIndexerCursorScalarFieldEnum = {
+  id: 'id',
+  chainKey: 'chainKey',
+  contract: 'contract',
+  lastBlock: 'lastBlock',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type ChainIndexerCursorScalarFieldEnum = (typeof ChainIndexerCursorScalarFieldEnum)[keyof typeof ChainIndexerCursorScalarFieldEnum]
 
 
 export const NotificationTokenScalarFieldEnum = {

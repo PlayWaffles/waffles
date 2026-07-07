@@ -62,6 +62,16 @@ export type TournamentTxStep =
   | "claiming"
   | "verifying";
 
+/**
+ * Result of `enter()`. Normally a fresh purchase with its tx hash. But if the
+ * wallet already holds an on-chain ticket (paid before, never recorded), we skip
+ * the buy entirely and tell the caller to reconcile the existing entry instead
+ * of re-buying (which the contract would reject with `AlreadyHasTicket`).
+ */
+export type EnterOutcome =
+  | { status: "purchased"; txHash: `0x${string}` }
+  | { status: "already_owned" };
+
 /** Player-facing label for each step. */
 export function txStepLabel(step: TournamentTxStep | null): string {
   switch (step) {
@@ -164,7 +174,7 @@ export function useTournamentWallet() {
       onchainId: `0x${string}`,
       entryFeeUsdc: number,
       onStep?: (step: TournamentTxStep) => void,
-    ): Promise<`0x${string}`> => {
+    ): Promise<EnterOutcome> => {
       if (!address) throw new Error("Connect a wallet to enter.");
       if (!publicClient) throw new Error("no_public_client");
       const target = { platform, network };
@@ -195,7 +205,7 @@ export function useTournamentWallet() {
           tokenAddress,
         });
 
-        const [allowance, balance, gasPrice] = await Promise.all([
+        const [allowance, balance, gasPrice, ownsTicket] = await Promise.all([
           publicClient.readContract({
             address: tokenAddress,
             abi: ERC20_ABI,
@@ -209,7 +219,25 @@ export function useTournamentWallet() {
             args: [address],
           }) as Promise<bigint>,
           publicClient.getGasPrice(),
+          // Pre-buy guard: does this wallet already hold a ticket for this game?
+          publicClient.readContract({
+            address: contractAddress,
+            abi: waffleGameAbi,
+            functionName: "hasTicket",
+            args: [onchainId, address],
+          }) as Promise<boolean>,
         ]);
+
+        // Already paid on-chain but not yet recorded in our DB (client died before
+        // syncing, or the indexer hasn't caught up). Re-buying would revert with
+        // AlreadyHasTicket — instead, tell the caller to reconcile the entry.
+        if (ownsTicket) {
+          blog("[buy-ticket] wallet already owns ticket — skipping buy, will reconcile", {
+            onchainId,
+            address,
+          });
+          return { status: "already_owned" };
+        }
         const needsApproval = allowance < amount;
         const gasLimit = needsApproval
           ? APPROVE_GAS_LIMIT + BUY_TICKET_GAS_LIMIT
@@ -277,7 +305,7 @@ export function useTournamentWallet() {
         const buyReceipt = await publicClient.waitForTransactionReceipt({ hash: buyHash });
         assertSuccessfulReceipt(buyReceipt, "Ticket purchase");
         blog("[buy-ticket] buyTicket confirmed ✓", { buyHash });
-        return buyHash;
+        return { status: "purchased", txHash: buyHash };
       } catch (error) {
         // Log the RAW error (the friendly message hides the on-chain revert reason).
         blog("[buy-ticket] wallet.enter FAILED — raw error:", error);

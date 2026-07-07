@@ -95,6 +95,11 @@ export type GameEntry = Prisma.GameEntryModel
  */
 export type PendingPurchase = Prisma.PendingPurchaseModel
 /**
+ * Model ChainIndexerCursor
+ * 
+ */
+export type ChainIndexerCursor = Prisma.ChainIndexerCursorModel
+/**
  * Model NotificationToken
  * 
  */

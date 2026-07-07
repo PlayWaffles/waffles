@@ -19,7 +19,7 @@ import type { League } from "@/lib/player/leagues";
 import type { PartnerOffer, PartnerClaimResult } from "@/lib/player/partnerOffers";
 import type { SeasonPass, SeasonClaimResult } from "@/lib/player/seasonPass";
 import type { PlayerState } from "@/lib/player/playerState";
-import type { TournamentRound, PowerUps } from "@/lib/player/playerApi";
+import type { PowerUps, TournamentRound } from "@/lib/player/playerHandlers";
 import type * as leaguesSvc from "@/lib/player/leagues";
 import type * as tournamentSvc from "@/lib/player/tournamentGames";
 import type * as rookieCupSvc from "@/lib/player/rookieCup";
@@ -147,6 +147,13 @@ export function enterTournament(
   entrySource: TournamentEntrySource = "unknown",
 ): Promise<EnterResult | null> {
   return callPlayerApi("enterTournament", [gameId, txHash, entrySource]);
+}
+
+// Record an entry for a wallet that already holds an on-chain ticket but has no
+// DB entry (the pre-buy `hasTicket` guard hit). The server finds the existing
+// purchase tx and records it — no second on-chain transaction.
+export function reconcileTournamentEntry(gameId: string): Promise<EnterResult | null> {
+  return callPlayerApi("reconcileTournamentEntry", [gameId]);
 }
 
 export function submitTournamentAnswers(
