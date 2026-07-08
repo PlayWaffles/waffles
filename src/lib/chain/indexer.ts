@@ -38,6 +38,10 @@ const CONFIRMATIONS = 6n;
 /** Re-scan this many blocks below the cursor each run. Idempotent projection
  *  makes the overlap free and self-heals a shallow reorg near the tail. */
 const REORG_OVERLAP = 12n;
+/** Cap how far one run advances the cursor. A very stale cursor (e.g. after an
+ *  outage) then catches up over several runs instead of one huge scan — which
+ *  also keeps request counts sane on range-capped RPCs. */
+const MAX_BLOCKS_PER_RUN = 2_000n;
 
 type ProjectOutcome = "recorded" | "exists" | "no_game" | "no_user" | "failed" | "skipped";
 
@@ -136,7 +140,9 @@ async function indexTarget(target: IndexTarget): Promise<void> {
 
   const overlapStart = cursor.lastBlock + 1n - REORG_OVERLAP;
   const fromBlock = overlapStart > 0n ? overlapStart : 0n;
-  const toBlock = safeHead;
+  // Bound how far one run advances so a stale cursor converges over several runs.
+  const toBlock =
+    safeHead - fromBlock > MAX_BLOCKS_PER_RUN ? fromBlock + MAX_BLOCKS_PER_RUN : safeHead;
   if (toBlock < fromBlock) return; // nothing new past the confirmation window
 
   const logs = await scanTicketPurchasedLogs(target, fromBlock, toBlock);
