@@ -48,7 +48,7 @@ export const WorldCupBody = ({ onClose }: { onClose: () => void }) => {
           <div aria-hidden style={{ position: "absolute", top: 0, left: 0, right: 0, height: 320, backgroundImage: "radial-gradient(circle, #FFD24D 2px, transparent 2.5px), radial-gradient(circle, #2bbf5b 2px, transparent 2.5px), radial-gradient(circle, #fff 1.5px, transparent 2px)", backgroundSize: "80px 80px, 100px 100px, 70px 70px", backgroundPosition: "0 0, 30px 40px, 50px 20px", opacity: 0.4, pointerEvents: "none" }} />
         </>
       }
-      contentStyle={{ overflowY: "visible", justifyContent: "center", padding: "0 28px" }}
+      contentStyle={{ justifyContent: "safe center", padding: "0 28px" }}
       footerStyle={{ padding: "0 18px max(20px, env(safe-area-inset-bottom))", display: "flex", flexDirection: "column", gap: 10 }}
       footer={
         <button type="button" className="cta maple" onClick={onClose} style={{ width: "100%", flex: "none" }}>

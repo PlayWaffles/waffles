@@ -57,6 +57,7 @@ export const FullModal = ({
     <div
       style={{
         flex: 1,
+        minHeight: 0,
         overflowY: "auto",
         display: "flex",
         flexDirection: "column",
@@ -71,7 +72,7 @@ export const FullModal = ({
       {children}
     </div>
     {footer != null && (
-      <div style={{ padding: "10px 18px max(20px, env(safe-area-inset-bottom))", position: "relative", zIndex: 1, ...footerStyle }}>
+      <div style={{ flexShrink: 0, padding: "10px 18px max(20px, env(safe-area-inset-bottom))", position: "relative", zIndex: 1, ...footerStyle }}>
         {footer}
       </div>
     )}
